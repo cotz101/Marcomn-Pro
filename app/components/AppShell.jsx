@@ -9,6 +9,7 @@ import { useRef } from 'react';
 import { useProfile } from '@/app/context/ProfileContext';
 import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
 import CreateCompanyModal from '@/src/components/company/CreateCompanyModal';
+import PostJobModal from '@/src/components/jobs/PostJobModal';
 import { createClient } from '@/lib/supabase';
 
 const DEFAULT_PROFILE = {
@@ -30,6 +31,7 @@ export default function AppShell({ children, userEmail, userId }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mnetworkOpen, setMnetworkOpen] = useState(false);
   const [showCreateCompany, setShowCreateCompany] = useState(false);
+  const [showPostJob, setShowPostJob] = useState(false);
   const mnetworkRef = useRef(null);
   const avatarRef = useRef(null);
 
@@ -65,6 +67,11 @@ export default function AppShell({ children, userEmail, userId }) {
     setCurrentIdentity({ type: 'company', id: company.id, data: company });
   };
 
+  const handleJobPosted = (job) => {
+    setShowPostJob(false);
+    router.push('/jobs');
+  };
+
   // UI state based on current identity
   const isCompany = currentIdentity.type === 'company';
   const identityName = isCompany ? currentIdentity.data.name : profile.fullName;
@@ -85,6 +92,14 @@ export default function AppShell({ children, userEmail, userId }) {
           userId={userId}
           onComplete={handleCompanyCreated}
           onClose={() => setShowCreateCompany(false)}
+        />
+      )}
+
+      {showPostJob && (
+        <PostJobModal 
+          isOpen={showPostJob}
+          onClose={() => setShowPostJob(false)}
+          onComplete={handleJobPosted}
         />
       )}
 
@@ -110,14 +125,25 @@ export default function AppShell({ children, userEmail, userId }) {
             {mnetworkOpen && (
               <div className="dropdown-menu" style={{ top: '48px', left: '-50px', right: 'auto', width: '200px' }} onClick={() => setMnetworkOpen(false)}>
                 <Link href="/logbook" className="dropdown-item"><Home size={18} /> Logbook</Link>
+                <Link href="/jobs" className="dropdown-item"><Briefcase size={18} /> Jobs</Link>
                 <Link href="/groups" className="dropdown-item"><Users size={18} /> Groups</Link>
-                <Link href="/talent" className="dropdown-item"><Briefcase size={18} /> Talent</Link>
+                <Link href="/talent" className="dropdown-item"><Users size={18} /> Talent</Link>
                 <Link href="/connections" className="dropdown-item"><UserPlus size={18} /> Connections</Link>
               </div>
             )}
           </nav>
 
           <div className="header-right" ref={avatarRef}>
+            {onboardingCompleted && (
+              <button 
+                className="btn-post-job hidden md:flex" 
+                onClick={() => setShowPostJob(true)}
+              >
+                <Briefcase size={16} />
+                <span>Post a Job</span>
+              </button>
+            )}
+            
             <div className="avatar-dropdown" onClick={() => setDropdownOpen(!dropdownOpen)}>
               <div style={{ position: 'relative' }}>
                 {isCompany && !currentIdentity.data.logo_url ? (
@@ -217,8 +243,12 @@ export default function AppShell({ children, userEmail, userId }) {
           <Users size={20} />
           <span className="text-[10px] font-medium">Groups</span>
         </Link>
-        <Link href="/talent" className={`flex flex-col items-center gap-1 ${pathname === '/talent' ? 'text-blue-600' : 'text-gray-500'} dark:text-gray-400`}>
+        <Link href="/jobs" className={`flex flex-col items-center gap-1 ${pathname === '/jobs' ? 'text-blue-600' : 'text-gray-500'} dark:text-gray-400`}>
           <Briefcase size={20} />
+          <span className="text-[10px] font-medium">Jobs</span>
+        </Link>
+        <Link href="/talent" className={`flex flex-col items-center gap-1 ${pathname === '/talent' ? 'text-blue-600' : 'text-gray-500'} dark:text-gray-400`}>
+          <Users size={20} />
           <span className="text-[10px] font-medium">Talent</span>
         </Link>
         <Link href="/connections" className={`flex flex-col items-center gap-1 ${pathname === '/connections' ? 'text-blue-600' : 'text-gray-500'} dark:text-gray-400`}>
@@ -230,6 +260,28 @@ export default function AppShell({ children, userEmail, userId }) {
       <main className="app-layout">
         {typeof children === 'function' ? children({ profile, setProfile, userId }) : children}
       </main>
+      <style jsx>{`
+        .btn-post-job {
+          background: #e0f2fe;
+          color: #00B4D8;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-size: 13px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+          margin-right: 12px;
+        }
+        .btn-post-job:hover {
+          background: #00B4D8;
+          color: white;
+          transform: translateY(-1px);
+        }
+      `}</style>
     </>
   );
 }
