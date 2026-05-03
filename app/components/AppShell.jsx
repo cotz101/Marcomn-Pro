@@ -69,7 +69,7 @@ export default function AppShell({ children, userEmail, userId }) {
             Marcomn
           </Link>
 
-          <nav className="nav-links" style={{ position: 'relative' }} ref={mnetworkRef}>
+          <nav className="nav-links hidden md:flex" style={{ position: 'relative' }} ref={mnetworkRef}>
             <div
               className="nav-link"
               onClick={() => setMnetworkOpen(!mnetworkOpen)}
@@ -92,7 +92,7 @@ export default function AppShell({ children, userEmail, userId }) {
           <div className="header-right" ref={avatarRef}>
             <div className="avatar-dropdown" onClick={() => setDropdownOpen(!dropdownOpen)}>
               <img src={profile.profilePic || '/profile_pic.png'} alt="Me" className="avatar-img" />
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              <span className="hidden md:inline" style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 Me <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
               </span>
 
@@ -115,6 +115,26 @@ export default function AppShell({ children, userEmail, userId }) {
           </div>
         </div>
       </header>
+
+      {/* Mobile Bottom Tab Bar */}
+      <nav className="fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around items-center h-16 md:hidden z-50 dark:bg-[#1d2226] dark:border-gray-700">
+        <Link href="/logbook" className={`flex flex-col items-center gap-1 ${pathname === '/logbook' ? 'text-blue-600' : 'text-gray-500'} dark:text-gray-400`}>
+          <Home size={20} />
+          <span className="text-[10px] font-medium">Logbook</span>
+        </Link>
+        <Link href="/groups" className={`flex flex-col items-center gap-1 ${pathname === '/groups' ? 'text-blue-600' : 'text-gray-500'} dark:text-gray-400`}>
+          <Users size={20} />
+          <span className="text-[10px] font-medium">Groups</span>
+        </Link>
+        <Link href="/talent" className={`flex flex-col items-center gap-1 ${pathname === '/talent' ? 'text-blue-600' : 'text-gray-500'} dark:text-gray-400`}>
+          <Briefcase size={20} />
+          <span className="text-[10px] font-medium">Talent</span>
+        </Link>
+        <Link href="/connections" className={`flex flex-col items-center gap-1 ${pathname === '/connections' ? 'text-blue-600' : 'text-gray-500'} dark:text-gray-400`}>
+          <UserPlus size={20} />
+          <span className="text-[10px] font-medium">Connect</span>
+        </Link>
+      </nav>
 
       <main className="app-layout">
         {typeof children === 'function' ? children({ profile, setProfile, userId }) : children}

@@ -176,11 +176,21 @@ a {
 /* App Layout */
 .app-layout {
   max-width: 1128px;
-  margin: 24px auto;
-  padding: 0 16px;
+  margin: 16px auto;
+  padding: 0 8px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
+  padding-bottom: 80px; /* Space for mobile tab bar */
+}
+
+@media (min-width: 768px) {
+  .app-layout {
+    margin: 24px auto;
+    padding: 0 16px;
+    gap: 24px;
+    padding-bottom: 0;
+  }
 }
 
 /* Cards & Feeds */
@@ -201,7 +211,13 @@ a {
 }
 
 .post-card {
-  padding: 16px;
+  padding: 12px;
+}
+
+@media (min-width: 768px) {
+  .post-card {
+    padding: 16px;
+  }
 }
 
 .post-header {
@@ -273,8 +289,14 @@ a {
 /* Grids */
 .groups-grid, .talent-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: 1fr;
   gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .groups-grid, .talent-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
 }
 
 .group-card {

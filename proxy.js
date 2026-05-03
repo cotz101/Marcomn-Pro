@@ -32,7 +32,7 @@ export async function proxy(request) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  if (pathname === '/login' && user) {
+  if ((pathname === '/' || pathname === '/login') && user) {
     return NextResponse.redirect(new URL('/logbook', request.url));
   }
 
