@@ -13,23 +13,32 @@ export default function LogbookFeed({ profile }) {
       .from('posts')
       .select(`
         *,
-        author:profiles(full_name, avatar_url, headline)
+        author:profiles(full_name, avatar_url, headline),
+        company:companies(name, logo_url, industry)
       `)
       .order('created_at', { ascending: false });
 
     if (data && !error) {
-      const formattedPosts = data.map(post => ({
-        id: post.id,
-        author: post.author?.full_name || 'Anonymous',
-        headline: post.author?.headline || 'Maritime Professional',
-        time: new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        avatar: post.author?.avatar_url || '/profile_pic.png',
-        content: post.content,
-        type: post.title ? 'article' : 'standard',
-        title: post.title,
-        media: post.media_url,
-        mediaType: post.media_type
-      }));
+      const formattedPosts = data.map(post => {
+        const isCompanyPost = !!post.posted_as_company_id;
+        const authorName = isCompanyPost ? post.company?.name : post.author?.full_name;
+        const authorAvatar = isCompanyPost ? post.company?.logo_url : post.author?.avatar_url;
+        const authorHeadline = isCompanyPost ? post.company?.industry : post.author?.headline;
+        
+        return {
+          id: post.id,
+          author: authorName || 'Anonymous',
+          headline: authorHeadline || (isCompanyPost ? 'Maritime Company' : 'Maritime Professional'),
+          time: new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          avatar: authorAvatar || (isCompanyPost ? '/favicon.svg' : '/profile_pic.png'),
+          isCompany: isCompanyPost,
+          content: post.content,
+          type: post.title ? 'article' : 'standard',
+          title: post.title,
+          media: post.media_url,
+          mediaType: post.media_type
+        };
+      });
       setPosts(formattedPosts);
     }
   }, [supabase]);
@@ -68,7 +77,12 @@ export default function LogbookFeed({ profile }) {
       {posts.map(post => (
         <div key={post.id} className="card post-card">
           <div className="post-header">
-            <img src={post.avatar} alt={post.author} className="post-avatar" />
+            <img 
+              src={post.avatar} 
+              alt={post.author} 
+              className="post-avatar" 
+              style={{ borderRadius: post.isCompany ? '8px' : '50%' }}
+            />
             <div>
               <div className="post-author">{post.author}</div>
               <div className="post-headline">{post.headline}</div>

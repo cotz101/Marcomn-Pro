@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, Briefcase, UserPlus, Ship, Moon, Sun, ChevronDown, Network } from 'lucide-react';
+import { Home, Users, Briefcase, UserPlus, Ship, Moon, Sun, ChevronDown, Network, Check, Building2 } from 'lucide-react';
 import { useRef } from 'react';
 import { useProfile } from '@/app/context/ProfileContext';
+import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
+import CreateCompanyModal from '@/src/components/company/CreateCompanyModal';
+import { createClient } from '@/lib/supabase';
 
 const DEFAULT_PROFILE = {
   fullName: 'MarComn User',
@@ -20,9 +23,13 @@ const DEFAULT_PROFILE = {
 export default function AppShell({ children, userEmail, userId }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { profile, setProfile } = useProfile();
+  const { 
+    profile, setProfile, onboardingCompleted, setOnboardingCompleted,
+    companies, refreshCompanies, currentIdentity, setCurrentIdentity 
+  } = useProfile();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mnetworkOpen, setMnetworkOpen] = useState(false);
+  const [showCreateCompany, setShowCreateCompany] = useState(false);
   const mnetworkRef = useRef(null);
   const avatarRef = useRef(null);
 
@@ -46,9 +53,44 @@ export default function AppShell({ children, userEmail, userId }) {
     router.push('/');
   };
 
+  const handleOnboardingComplete = (data) => {
+    setProfile(data);
+    setOnboardingCompleted(true);
+  };
+
+  const handleCompanyCreated = (company) => {
+    refreshCompanies();
+    setShowCreateCompany(false);
+    // Automatically switch to the new company context
+    setCurrentIdentity({ type: 'company', id: company.id, data: company });
+  };
+
+  // UI state based on current identity
+  const isCompany = currentIdentity.type === 'company';
+  const identityName = isCompany ? currentIdentity.data.name : profile.fullName;
+  const identityImage = isCompany ? (currentIdentity.data.logo_url || '/company_placeholder.png') : (profile.profilePic || '/profile_pic.png');
+
   return (
     <>
-      <header className="header">
+      {!onboardingCompleted && (
+        <OnboardingModal 
+          userId={userId} 
+          userEmail={userEmail} 
+          onComplete={handleOnboardingComplete} 
+        />
+      )}
+
+      {showCreateCompany && (
+        <CreateCompanyModal 
+          userId={userId}
+          onComplete={handleCompanyCreated}
+          onClose={() => setShowCreateCompany(false)}
+        />
+      )}
+
+      <header className="header" style={{
+        borderTop: isCompany ? '4px solid #00B4D8' : 'none' // Visual cue for company mode
+      }}>
         <div className="header-container">
           <Link href="/logbook" className="brand-logo">
             <Ship size={28} />
@@ -77,14 +119,84 @@ export default function AppShell({ children, userEmail, userId }) {
 
           <div className="header-right" ref={avatarRef}>
             <div className="avatar-dropdown" onClick={() => setDropdownOpen(!dropdownOpen)}>
-              <img src={profile.profilePic || '/profile_pic.png'} alt="Me" className="avatar-img" />
+              <div style={{ position: 'relative' }}>
+                {isCompany && !currentIdentity.data.logo_url ? (
+                  <div style={{ 
+                    width: 32, height: 32, borderRadius: '8px', background: '#0e2a4d', 
+                    color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 
+                  }}>
+                    {currentIdentity.data.name?.[0] || 'C'}
+                  </div>
+                ) : (
+                  <img 
+                    src={identityImage} 
+                    alt="Me" 
+                    className="avatar-img" 
+                    style={{ borderRadius: isCompany ? '8px' : '50%' }}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = isCompany ? '/favicon.svg' : '/profile_pic.png';
+                    }}
+                  />
+                )}
+              </div>
               <span className="hidden md:inline" style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                {profile.fullName} <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                {identityName} {isCompany && <span style={{ color: '#00B4D8', marginLeft: 4 }}>[Company]</span>} <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
               </span>
 
               {dropdownOpen && (
-                <div className="dropdown-menu" onClick={() => setDropdownOpen(false)}>
-                  <Link href="/profile" className="dropdown-item">View Profile</Link>
+                <div className="dropdown-menu" onClick={(e) => e.stopPropagation()}>
+                  <div style={{ padding: '8px 16px', fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Switch Identity
+                  </div>
+                  
+                  {/* User Identity */}
+                  <div 
+                    className="dropdown-item" 
+                    style={{ background: !isCompany ? '#f1f5f9' : 'transparent', cursor: 'pointer' }}
+                    onClick={() => { 
+                      setCurrentIdentity({ type: 'user', id: userId }); 
+                      setDropdownOpen(false);
+                      router.push('/profile');
+                    }}
+                  >
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>U</div>
+                    <span>Personal: {profile.fullName}</span>
+                    {!isCompany && <Check size={14} style={{ marginLeft: 'auto', color: '#00B4D8' }} />}
+                  </div>
+
+                  {/* Company Identities */}
+                  {companies.map(company => (
+                    <div 
+                      key={company.id}
+                      className="dropdown-item" 
+                      style={{ background: isCompany && currentIdentity.id === company.id ? '#f1f5f9' : 'transparent', cursor: 'pointer' }}
+                      onClick={() => { 
+                        setCurrentIdentity({ type: 'company', id: company.id, data: company }); 
+                        setDropdownOpen(false);
+                        router.push(`/company/${company.id}`);
+                      }}
+                    >
+                      {company.logo_url ? (
+                        <img src={company.logo_url} style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover' }} alt="" />
+                      ) : (
+                        <div style={{ width: 24, height: 24, borderRadius: '4px', background: '#0e2a4d', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>
+                          {company.name?.[0] || 'C'}
+                        </div>
+                      )}
+                      <span>{company.name}</span>
+                      {isCompany && currentIdentity.id === company.id && <Check size={14} style={{ marginLeft: 'auto', color: '#00B4D8' }} />}
+                    </div>
+                  ))}
+
+                  <div style={{ borderTop: '1px solid var(--border-color)', margin: '4px 0' }} />
+                  
+                  <div className="dropdown-item" style={{ cursor: 'pointer', color: '#00B4D8' }} onClick={() => { setShowCreateCompany(true); setDropdownOpen(false); }}>
+                    <Building2 size={16} /> Create Company
+                  </div>
+
+                  <div style={{ borderTop: '1px solid var(--border-color)', margin: '4px 0' }} />
+                  <Link href="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>View Profile</Link>
                   <div className="dropdown-item" onClick={handleSignOut} style={{ color: '#cc0000', cursor: 'pointer' }}>
                     Sign out
                   </div>

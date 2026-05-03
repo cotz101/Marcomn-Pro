@@ -168,9 +168,10 @@ export default function ExperienceSection({ userId }) {
             onClick={() => { setEditTarget(null); setModalMode('add'); }}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
-              background: 'var(--primary)', color: 'white',
+              background: 'var(--primary-btn)', color: 'white',
               border: 'none', borderRadius: 8, padding: '7px 14px',
-              fontSize: 13, fontWeight: 600, cursor: 'pointer'
+              fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              transition: 'all 0.2s ease'
             }}
           >
             <Plus size={15} /> Add job

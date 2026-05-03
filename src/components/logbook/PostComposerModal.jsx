@@ -1,13 +1,21 @@
 import { X, Image as ImageIcon, Video as VideoIcon, ChevronDown } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { useProfile } from '@/app/context/ProfileContext';
 
 export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profile }) {
+  const { currentIdentity } = useProfile();
   const [content, setContent] = useState('');
   const [media, setMedia] = useState(null);
   const [mediaType, setMediaType] = useState(null);
   const fileInputRef = useRef(null);
 
   if (!isOpen) return null;
+
+  const isCompany = currentIdentity?.type === 'company';
+  const identityName = isCompany ? currentIdentity.data.name : profile?.fullName;
+  const identityImage = isCompany 
+    ? (currentIdentity.data.logo_url || '/favicon.svg') 
+    : (profile?.profilePic || '/profile_pic.png');
 
   const handleMediaUpload = (e) => {
     const file = e.target.files[0];
@@ -42,10 +50,14 @@ export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profi
       <div className="post-composer-modal">
         <div className="composer-header">
           <div className="composer-user-info">
-            <img src={profile?.profilePic || '/profile_pic.png'} alt="Me" />
+            <img 
+              src={identityImage} 
+              alt={identityName} 
+              style={{ borderRadius: isCompany ? '4px' : '50%' }}
+            />
             <div className="composer-name-group">
               <span className="composer-name">
-                {profile?.fullName || 'User'} <ChevronDown size={16} color="var(--text-secondary)" />
+                {identityName} <ChevronDown size={16} color="var(--text-secondary)" />
               </span>
               <span className="composer-visibility">Post to Anyone</span>
             </div>

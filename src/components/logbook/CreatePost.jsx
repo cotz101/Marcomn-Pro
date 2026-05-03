@@ -8,8 +8,14 @@ import { useProfile } from '@/app/context/ProfileContext';
 export default function CreatePost({ profile }) {
   const [isArticleOpen, setIsArticleOpen] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
-  const { userId } = useProfile();
+  const { userId, currentIdentity } = useProfile();
   const supabase = createClient();
+
+  const isCompany = currentIdentity?.type === 'company';
+  const identityName = isCompany ? currentIdentity.data.name : profile?.fullName;
+  const identityImage = isCompany 
+    ? (currentIdentity.data.logo_url || '/favicon.svg') 
+    : (profile?.profilePic || '/profile_pic.png');
 
   const handlePostSubmit = async (postData) => {
     const { error } = await supabase.from('posts').insert({
@@ -17,7 +23,8 @@ export default function CreatePost({ profile }) {
       content: postData.content,
       title: postData.title || null,
       media_url: postData.media || null,
-      media_type: postData.mediaType || 'image'
+      media_type: postData.mediaType || 'image',
+      posted_as_company_id: isCompany ? currentIdentity.id : null
     });
 
     if (!error) {
@@ -32,12 +39,12 @@ export default function CreatePost({ profile }) {
     <>
       <div className="card create-post-card">
         <div className="create-post-top">
-          <img src={profile?.profilePic || '/profile_pic.png'} alt="Me" className="post-avatar" style={{ width: '48px', height: '48px' }} />
+          <img src={identityImage} alt={identityName} className="post-avatar" style={{ width: '48px', height: '48px', borderRadius: isCompany ? '8px' : '50%' }} />
           <div 
             className="create-post-input"
             onClick={() => setIsComposerOpen(true)}
           >
-            Start a post
+            Start a post as {identityName}
           </div>
         </div>
         <div className="create-post-actions">

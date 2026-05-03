@@ -23,6 +23,9 @@ export function ProfileProvider({ children, userId, userEmail }) {
     fullName: userEmail?.split('@')[0] || 'User' 
   });
   const [loading, setLoading] = useState(true);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(true); // default true to avoid flash
+  const [companies, setCompanies] = useState([]);
+  const [currentIdentity, setCurrentIdentity] = useState({ type: 'user', id: userId }); // { type: 'user' | 'company', id: string, data: object }
 
   const fetchProfile = useCallback(async () => {
     if (!userId) {
@@ -38,6 +41,7 @@ export function ProfileProvider({ children, userId, userEmail }) {
       .single();
     
     if (data && !error) {
+      setOnboardingCompleted(data.onboarding_completed ?? false);
       setProfileState({
         fullName: data.full_name || userEmail?.split('@')[0] || 'User',
         headline: data.headline || DEFAULT_PROFILE.headline,
@@ -49,20 +53,53 @@ export function ProfileProvider({ children, userId, userEmail }) {
         profilePic: data.avatar_url || DEFAULT_PROFILE.profilePic,
         coverPhoto: data.cover_photo_url || DEFAULT_PROFILE.coverPhoto,
       });
+    } else {
+      // New user with no profile row yet
+      setOnboardingCompleted(false);
     }
     setLoading(false);
   }, [userId, userEmail]);
 
+  const fetchCompanies = useCallback(async () => {
+    if (!userId) return;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('company_members')
+      .select('role, companies (*)')
+      .eq('profile_id', userId);
+
+    if (data && !error) {
+      // Ensure unique company IDs
+      const uniqueCompanies = [];
+      const seenIds = new Set();
+      
+      data.forEach(m => {
+        if (m.companies && !seenIds.has(m.companies.id)) {
+          uniqueCompanies.push({ ...m.companies, role: m.role });
+          seenIds.add(m.companies.id);
+        }
+      });
+      
+      setCompanies(uniqueCompanies);
+    }
+  }, [userId]);
+
   useEffect(() => {
     fetchProfile();
-  }, [fetchProfile]);
+    fetchCompanies();
+  }, [fetchProfile, fetchCompanies]);
 
   const setProfile = (newProfile) => {
     setProfileState(prev => ({ ...prev, ...newProfile }));
   };
 
   return (
-    <ProfileContext.Provider value={{ profile, setProfile, loading, refreshProfile: fetchProfile, userId }}>
+    <ProfileContext.Provider value={{ 
+      profile, setProfile, loading, refreshProfile: fetchProfile, userId, 
+      onboardingCompleted, setOnboardingCompleted,
+      companies, setCompanies, refreshCompanies: fetchCompanies,
+      currentIdentity, setCurrentIdentity
+    }}>
       {children}
     </ProfileContext.Provider>
   );
