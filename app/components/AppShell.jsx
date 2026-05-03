@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Users, Briefcase, UserPlus, Ship, Moon, Sun, ChevronDown, Network } from 'lucide-react';
-import { createClient } from '@/lib/supabase';
 import { useRef } from 'react';
+import { useProfile } from '@/app/context/ProfileContext';
 
 const DEFAULT_PROFILE = {
   fullName: 'MarComn User',
@@ -20,30 +20,16 @@ const DEFAULT_PROFILE = {
 export default function AppShell({ children, userEmail, userId }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [darkMode, setDarkMode] = useState(false);
+  const { profile, setProfile } = useProfile();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mnetworkOpen, setMnetworkOpen] = useState(false);
   const mnetworkRef = useRef(null);
   const avatarRef = useRef(null);
 
-  const [profile, setProfile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('profileData');
-      if (saved) return JSON.parse(saved);
-    }
-    return { ...DEFAULT_PROFILE, fullName: userEmail?.split('@')[0] || 'User' };
-  });
-
   useEffect(() => {
-    if (darkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-  }, [darkMode]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('profileData', JSON.stringify(profile));
-    }
-  }, [profile]);
+    // Dark mode disabled as requested
+    document.documentElement.classList.remove('dark');
+  }, []);
 
   useEffect(() => {
     function handleOutside(e) {
@@ -93,19 +79,12 @@ export default function AppShell({ children, userEmail, userId }) {
             <div className="avatar-dropdown" onClick={() => setDropdownOpen(!dropdownOpen)}>
               <img src={profile.profilePic || '/profile_pic.png'} alt="Me" className="avatar-img" />
               <span className="hidden md:inline" style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                Me <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                {profile.fullName} <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
               </span>
 
               {dropdownOpen && (
                 <div className="dropdown-menu" onClick={() => setDropdownOpen(false)}>
                   <Link href="/profile" className="dropdown-item">View Profile</Link>
-                  <div
-                    className="dropdown-item"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDarkMode(!darkMode); }}
-                  >
-                    {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-                    {darkMode ? 'Light Mode' : 'Dark Mode'}
-                  </div>
                   <div className="dropdown-item" onClick={handleSignOut} style={{ color: '#cc0000', cursor: 'pointer' }}>
                     Sign out
                   </div>

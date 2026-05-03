@@ -2,14 +2,30 @@ import { Video, Image as ImageIcon, Newspaper } from 'lucide-react';
 import { useState } from 'react';
 import ArticleEditor from './ArticleEditor';
 import PostComposerModal from './PostComposerModal';
+import { createClient } from '@/lib/supabase';
+import { useProfile } from '@/app/context/ProfileContext';
 
-export default function CreatePost({ onPostSubmit, profile }) {
+export default function CreatePost({ profile }) {
   const [isArticleOpen, setIsArticleOpen] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const { userId } = useProfile();
+  const supabase = createClient();
 
-  const handlePostSubmit = (postData) => {
-    onPostSubmit(postData);
-    setIsArticleOpen(false);
+  const handlePostSubmit = async (postData) => {
+    const { error } = await supabase.from('posts').insert({
+      user_id: userId,
+      content: postData.content,
+      title: postData.title || null,
+      media_url: postData.media || null,
+      media_type: postData.mediaType || 'image'
+    });
+
+    if (!error) {
+      setIsArticleOpen(false);
+      setIsComposerOpen(false);
+    } else {
+      alert('Error posting: ' + error.message);
+    }
   };
 
   return (

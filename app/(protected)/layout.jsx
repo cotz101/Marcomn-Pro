@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import AppShell from '@/app/components/AppShell';
+import { ProfileProvider } from '@/app/context/ProfileContext';
 
 export default async function ProtectedLayout({ children }) {
   const supabase = await createClient();
@@ -9,8 +10,10 @@ export default async function ProtectedLayout({ children }) {
   if (!user) redirect('/');
 
   return (
-    <AppShell userEmail={user.email} userId={user.id}>
-      {children}
-    </AppShell>
+    <ProfileProvider userId={user.id} userEmail={user.email}>
+      <AppShell userEmail={user.email} userId={user.id}>
+        {children}
+      </AppShell>
+    </ProfileProvider>
   );
 }

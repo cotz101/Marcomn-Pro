@@ -3,7 +3,7 @@ import { X, Image as ImageIcon, Video as VideoIcon } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import 'react-quill/dist/quill.snow.css';
 
-import Quill from 'quill';
+
 
 export default function ArticleEditor({ onClose, onPost }) {
   const [title, setTitle] = useState('');
@@ -20,27 +20,32 @@ export default function ArticleEditor({ onClose, onPost }) {
   }, []);
 
   useEffect(() => {
-    if (mounted && editorRef.current && !quillInstance.current) {
-      quillInstance.current = new Quill(editorRef.current, {
-        theme: 'snow',
-        placeholder: 'Write here. You can also include @mentions.',
-        modules: {
-          toolbar: [
-            ['bold', 'italic'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            ['clean']
-          ]
+    const initQuill = async () => {
+      if (mounted && editorRef.current && !quillInstance.current) {
+        const Quill = (await import('quill')).default;
+        quillInstance.current = new Quill(editorRef.current, {
+          theme: 'snow',
+          placeholder: 'Write here. You can also include @mentions.',
+          modules: {
+            toolbar: [
+              ['bold', 'italic'],
+              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+              ['clean']
+            ]
+          }
+        });
+
+        quillInstance.current.on('text-change', () => {
+          setContent(quillInstance.current.root.innerHTML);
+        });
+
+        if (content) {
+          quillInstance.current.root.innerHTML = content;
         }
-      });
-
-      quillInstance.current.on('text-change', () => {
-        setContent(quillInstance.current.root.innerHTML);
-      });
-
-      if (content) {
-        quillInstance.current.root.innerHTML = content;
       }
-    }
+    };
+
+    initQuill();
   }, [mounted]);
 
   const handleMediaUpload = (e) => {

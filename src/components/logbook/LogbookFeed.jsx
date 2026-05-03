@@ -1,46 +1,58 @@
 'use client';
 import { ThumbsUp, MessageSquare, Share2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import CreatePost from './CreatePost';
+import { createClient } from '@/lib/supabase';
 
 export default function LogbookFeed({ profile }) {
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      author: 'Captain Jane Doe',
-      headline: 'Master Mariner at Global Shipping Co.',
-      time: '2h',
-      avatar: '/profile_pic.png',
-      content: 'Just successfully navigated the Suez Canal. Smooth sailing thanks to the amazing crew onboard! #MaritimeLife #Shipping',
-      type: 'standard'
-    },
-    {
-      id: 2,
-      author: 'Chief Engineer Bob',
-      headline: 'Marine Engineer specializing in sustainable propulsion',
-      time: '5h',
-      avatar: '/profile_pic.png',
-      content: 'Excited to announce our new transition to dual-fuel engines. A big step for reducing emissions in our fleet. 🚢🌱',
-      type: 'standard'
-    }
-  ]);
+  const [posts, setPosts] = useState([]);
+  const supabase = createClient();
 
-  const handleNewPost = (postData) => {
-    const newPost = {
-      id: Date.now(),
-      author: profile?.fullName || 'User',
-      headline: profile?.headline || 'Headline',
-      time: 'Just now',
-      avatar: profile?.profilePic || '/profile_pic.png',
-      content: postData.content,
-      type: postData.type,
-      media: postData.media,
-      mediaType: postData.mediaType,
-      title: postData.title,
-      youtubeLink: postData.youtubeLink
+  const fetchPosts = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        author:profiles(full_name, avatar_url, headline)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (data && !error) {
+      const formattedPosts = data.map(post => ({
+        id: post.id,
+        author: post.author?.full_name || 'Anonymous',
+        headline: post.author?.headline || 'Maritime Professional',
+        time: new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        avatar: post.author?.avatar_url || '/profile_pic.png',
+        content: post.content,
+        type: post.title ? 'article' : 'standard',
+        title: post.title,
+        media: post.media_url,
+        mediaType: post.media_type
+      }));
+      setPosts(formattedPosts);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchPosts();
+
+    const channel = supabase
+      .channel('public:posts')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => {
+        fetchPosts();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
     };
-    
-    setPosts([newPost, ...posts]);
+  }, [fetchPosts, supabase]);
+
+  const handleNewPost = async (postData) => {
+    // This is now just a placeholder if needed, 
+    // but the actual insertion should happen in the composer.
+    // However, to keep it simple, we can still call it here if we want.
   };
 
   const getYoutubeEmbedUrl = (url) => {
@@ -51,7 +63,7 @@ export default function LogbookFeed({ profile }) {
 
   return (
     <div className="feed-container">
-      <CreatePost onPostSubmit={handleNewPost} profile={profile} />
+      <CreatePost profile={profile} />
       
       {posts.map(post => (
         <div key={post.id} className="card post-card">
