@@ -1,1 +1,13 @@
 @import "tailwindcss";
+
+.main-app-container {
+  max-width: 1128px;
+  margin: 0 auto;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

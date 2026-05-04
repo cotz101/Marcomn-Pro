@@ -222,7 +222,6 @@ export default function AppShell({ children, userEmail, userId }) {
                   </div>
 
                   <div style={{ borderTop: '1px solid var(--border-color)', margin: '4px 0' }} />
-                  <Link href="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>View Profile</Link>
                   <div className="dropdown-item" onClick={handleSignOut} style={{ color: '#cc0000', cursor: 'pointer' }}>
                     Sign out
                   </div>

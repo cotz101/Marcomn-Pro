@@ -1,45 +1,69 @@
 'use client';
-import { ThumbsUp, MessageSquare, Share2 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import CreatePost from './CreatePost';
+import PostComposerModal from './PostComposerModal';
 import { createClient } from '@/lib/supabase';
+import { useProfile } from '@/app/context/ProfileContext';
+import PostCard from './PostCard';
 
 export default function LogbookFeed({ profile }) {
   const [posts, setPosts] = useState([]);
+  const [editingPost, setEditingPost] = useState(null);
+  const [isClient, setIsClient] = useState(false);
+  const { userId } = useProfile();
   const supabase = createClient();
 
-  const fetchPosts = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('posts')
-      .select(`
-        *,
-        author:profiles(full_name, avatar_url, headline),
-        company:companies(name, logo_url, industry)
-      `)
-      .order('created_at', { ascending: false });
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
-    if (data && !error) {
-      const formattedPosts = data.map(post => {
-        const isCompanyPost = !!post.posted_as_company_id;
-        const authorName = isCompanyPost ? post.company?.name : post.author?.full_name;
-        const authorAvatar = isCompanyPost ? post.company?.logo_url : post.author?.avatar_url;
-        const authorHeadline = isCompanyPost ? post.company?.industry : post.author?.headline;
-        
-        return {
-          id: post.id,
-          author: authorName || 'Anonymous',
-          headline: authorHeadline || (isCompanyPost ? 'Maritime Company' : 'Maritime Professional'),
-          time: new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          avatar: authorAvatar || (isCompanyPost ? '/favicon.svg' : '/profile_pic.png'),
-          isCompany: isCompanyPost,
-          content: post.content,
-          type: post.title ? 'article' : 'standard',
-          title: post.title,
-          media: post.media_url,
-          mediaType: post.media_type
-        };
-      });
-      setPosts(formattedPosts);
+  const fetchPosts = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          author:profiles(full_name, avatar_url, headline),
+          company:companies(name, logo_url, industry)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Supabase fetch error:', error);
+        return;
+      }
+
+      if (data) {
+        const formattedPosts = data.map(post => {
+          const isCompanyPost = !!post.posted_as_company_id;
+          const authorName = isCompanyPost ? post.company?.name : post.author?.full_name;
+          const authorAvatar = isCompanyPost ? post.company?.logo_url : post.author?.avatar_url;
+          const authorHeadline = isCompanyPost ? post.company?.industry : post.author?.headline;
+          
+          // Hydration-safe date formatting (handled on client or with stable format)
+          const dateObj = new Date(post.created_at);
+          const timeString = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+          return {
+            id: post.id,
+            authorId: post.user_id,
+            author: authorName || 'Anonymous',
+            headline: authorHeadline || (isCompanyPost ? 'Maritime Company' : 'Maritime Professional'),
+            time: timeString,
+            avatar: authorAvatar || (isCompanyPost ? '/favicon.svg' : '/profile_pic.png'),
+            isCompany: isCompanyPost,
+            content: post.content,
+            type: post.title ? 'article' : 'standard',
+            title: post.title,
+            media: post.media_url,
+            mediaType: post.media_type,
+            youtubeLink: post.youtube_link
+          };
+        });
+        setPosts(formattedPosts);
+      }
+    } catch (err) {
+      console.error('Fatal fetch error:', err);
     }
   }, [supabase]);
 
@@ -58,86 +82,58 @@ export default function LogbookFeed({ profile }) {
     };
   }, [fetchPosts, supabase]);
 
-  const handleNewPost = async (postData) => {
-    // This is now just a placeholder if needed, 
-    // but the actual insertion should happen in the composer.
-    // However, to keep it simple, we can still call it here if we want.
+  const handleUpdate = async (postData) => {
+    const { error } = await supabase
+      .from('posts')
+      .update({
+        title: postData.title,
+        content: postData.content,
+        media_url: postData.media,
+        media_type: postData.mediaType
+      })
+      .eq('id', postData.id);
+
+    if (error) {
+      console.error('Error updating post:', error);
+    } else {
+      setEditingPost(null);
+    }
   };
 
-  const getYoutubeEmbedUrl = (url) => {
-    if (!url) return null;
-    const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&]{11})/);
-    return videoIdMatch ? `https://www.youtube.com/embed/${videoIdMatch[1]}` : null;
-  };
+  // Prevent hydration mismatch by only rendering the dynamic content on the client
+  if (!isClient) {
+    return <div className="feed-container"><CreatePost profile={profile} /></div>;
+  }
 
   return (
     <div className="feed-container">
       <CreatePost profile={profile} />
       
-      {posts.map(post => (
-        <div key={post.id} className="card post-card">
-          <div className="post-header">
-            <img 
-              src={post.avatar} 
-              alt={post.author} 
-              className="post-avatar" 
-              style={{ borderRadius: post.isCompany ? '8px' : '50%' }}
-            />
-            <div>
-              <div className="post-author">{post.author}</div>
-              <div className="post-headline">{post.headline}</div>
-              <div className="post-time">{post.time}</div>
-            </div>
-          </div>
-          
-          {post.type === 'article' && (
-            <div style={{ marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>{post.title}</h2>
-              {post.youtubeLink && getYoutubeEmbedUrl(post.youtubeLink) ? (
-                <iframe 
-                  width="100%" 
-                  height="300" 
-                  src={getYoutubeEmbedUrl(post.youtubeLink)} 
-                  title="YouTube video" 
-                  frameBorder="0" 
-                  style={{ borderRadius: '8px', marginBottom: '16px' }}
-                  allowFullScreen>
-                </iframe>
-              ) : post.media && (
-                post.mediaType === 'video' ? (
-                  <video 
-                    src={post.media} 
-                    controls 
-                    style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', borderRadius: '8px', marginBottom: '16px', backgroundColor: 'black' }} 
-                  />
-                ) : (
-                  <img src={post.media} alt="Cover" style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', borderRadius: '8px', marginBottom: '16px' }} />
-                )
-              )}
-            </div>
-          )}
-          
-          {(post.type === 'standard' && post.media) && (
-            post.mediaType === 'video' ? (
-              <video src={post.media} controls style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', borderRadius: '8px', marginBottom: '16px', backgroundColor: 'black' }} />
-            ) : (
-              <img src={post.media} alt="Attached Media" style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', borderRadius: '8px', marginBottom: '16px' }} />
-            )
-          )}
-
-          {post.type === 'article' ? (
-            <div className="post-content ql-editor" dangerouslySetInnerHTML={{ __html: post.content }} style={{ padding: 0 }} />
-          ) : (
-            <div className="post-content">{post.content}</div>
-          )}
-          
-          <div className="post-actions">
-            <button className="action-btn"><ThumbsUp size={18} /> Like</button>
-            <button className="action-btn"><MessageSquare size={18} /> Comment</button>
-            <button className="action-btn"><Share2 size={18} /> Share</button>
-          </div>
+      {posts.length > 0 ? (
+        posts.map(post => (
+          <PostCard 
+            key={post.id} 
+            post={post} 
+            userId={userId} 
+            onEdit={setEditingPost} 
+            onDeleteSuccess={fetchPosts} 
+          />
+        ))
+      ) : (
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+          No posts in the logbook yet.
         </div>
-      ))}
+      )}
+
+      {editingPost && (
+        <PostComposerModal
+          isOpen={true}
+          onClose={() => setEditingPost(null)}
+          onPostSubmit={handleUpdate}
+          profile={profile}
+          initialData={editingPost}
+        />
+      )}
     </div>
   );
 }

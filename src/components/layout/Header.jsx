@@ -66,7 +66,6 @@ export default function Header({ darkMode, setDarkMode, profile }) {
             
             {dropdownOpen && (
               <div className="dropdown-menu" onClick={() => setDropdownOpen(false)}>
-                <Link to="/profile" className="dropdown-item">View Profile</Link>
                 <div className="dropdown-item" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDarkMode(!darkMode); }}>
                   {darkMode ? <Sun size={18} /> : <Moon size={18} />}
                   {darkMode ? 'Light Mode' : 'Dark Mode'}

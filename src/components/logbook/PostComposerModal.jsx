@@ -1,13 +1,73 @@
 import { X, Image as ImageIcon, Video as VideoIcon, ChevronDown } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useProfile } from '@/app/context/ProfileContext';
+import 'react-quill/dist/quill.snow.css';
 
-export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profile }) {
+export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profile, initialData = null }) {
   const { currentIdentity } = useProfile();
   const [content, setContent] = useState('');
+  const [title, setTitle] = useState('');
   const [media, setMedia] = useState(null);
   const [mediaType, setMediaType] = useState(null);
   const fileInputRef = useRef(null);
+  const editorRef = useRef(null);
+  const quillInstance = useRef(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (initialData && isOpen) {
+      setContent(initialData.content || '');
+      setTitle(initialData.title || '');
+      setMedia(initialData.media || null);
+      setMediaType(initialData.mediaType || null);
+    } else if (!initialData && isOpen) {
+      setContent('');
+      setTitle('');
+      setMedia(null);
+      setMediaType(null);
+    }
+  }, [initialData, isOpen]);
+
+  useEffect(() => {
+    const initQuill = async () => {
+      if (mounted && editorRef.current && !quillInstance.current) {
+        const Quill = (await import('quill')).default;
+        quillInstance.current = new Quill(editorRef.current, {
+          theme: 'snow',
+          placeholder: 'What do you want to talk about?',
+          modules: {
+            toolbar: [
+              ['bold', 'italic'],
+              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+              ['clean']
+            ]
+          }
+        });
+
+        quillInstance.current.on('text-change', () => {
+          setContent(quillInstance.current.root.innerHTML);
+        });
+      }
+      
+      // Update quill content when initialData changes or modal opens
+      if (quillInstance.current && content !== quillInstance.current.root.innerHTML) {
+        quillInstance.current.root.innerHTML = content;
+      }
+    };
+
+    if (isOpen) {
+      initQuill();
+    } else {
+      // Cleanup quill instance when modal closes to prevent duplicates
+      if (quillInstance.current) {
+        quillInstance.current = null;
+      }
+    }
+  }, [mounted, isOpen, initialData]);
 
   if (!isOpen) return null;
 
@@ -32,14 +92,19 @@ export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profi
 
   const handlePost = () => {
     onPostSubmit({
-      type: 'standard',
+      id: initialData?.id,
+      type: initialData?.title ? 'article' : 'standard',
+      title,
       content,
       media,
       mediaType,
     });
-    setContent('');
-    setMedia(null);
-    setMediaType(null);
+    if (!initialData) {
+      setContent('');
+      setTitle('');
+      setMedia(null);
+      setMediaType(null);
+    }
     onClose();
   };
 
@@ -66,12 +131,32 @@ export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profi
         </div>
 
         <div className="composer-body">
-          <textarea
-            className="composer-textarea"
-            placeholder="What do you want to talk about?"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          />
+          {initialData?.title && (
+            <input 
+              type="text" 
+              className="article-title-input" 
+              placeholder="Title"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              style={{ 
+                width: '100%', 
+                border: 'none', 
+                fontSize: '20px', 
+                fontWeight: 'bold', 
+                marginBottom: '12px',
+                outline: 'none',
+                background: 'transparent',
+                color: 'var(--text-primary)'
+              }}
+            />
+          )}
+          {!mounted ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading Editor...</div>
+          ) : (
+            <div className="quill-wrapper" style={{ minHeight: '150px', border: 'none' }}>
+              <div ref={editorRef} style={{ fontSize: '16px' }}></div>
+            </div>
+          )}
 
           {media && (
             <div className="media-preview-container">
@@ -103,7 +188,7 @@ export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profi
               disabled={isPostDisabled}
               onClick={handlePost}
             >
-              Post
+              {initialData ? 'Save Changes' : 'Post'}
             </button>
           </div>
         </div>
