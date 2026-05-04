@@ -944,18 +944,37 @@ html.dark .btn-primary {
 }
 .quill-wrapper .ql-container.ql-snow {
   border: none;
-  font-size: 18px;
+  font-size: 16px;
   font-family: var(--font-family);
   color: var(--text-primary);
 }
 .quill-wrapper .ql-editor {
   padding: 0;
-  min-height: 400px;
+  min-height: 150px;
 }
 .quill-wrapper .ql-editor.ql-blank::before {
   left: 0;
   font-style: normal;
   color: var(--text-secondary);
+}
+
+/* Global Quill viewer styles for PostCard */
+.ql-editor {
+  line-height: 1.6;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.ql-editor p {
+  margin-bottom: 12px;
+}
+.ql-editor ul, .ql-editor ol {
+  padding-left: 20px;
+  margin-bottom: 12px;
+}
+.ql-editor h3 {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-size: 18px;
 }
 
 .composer-user-info img {
