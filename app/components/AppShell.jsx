@@ -1,25 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Home, Users, Briefcase, UserPlus, Ship, Moon, Sun, ChevronDown, Network, Check, Building2 } from 'lucide-react';
-import { useRef } from 'react';
+import { 
+  Ship, 
+  LayoutGrid, 
+  Newspaper, 
+  MessageSquare, 
+  Bell, 
+  Briefcase, 
+  Plus, 
+  Menu, 
+  ChevronDown,
+  UserPlus,
+  Users,
+  Search,
+  Pencil
+} from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
 import CreateCompanyModal from '@/src/components/company/CreateCompanyModal';
 import PostJobModal from '@/src/components/jobs/PostJobModal';
+import IdentitySwitcher from '@/src/components/layout/IdentitySwitcher';
+import SidebarLeft from '@/src/components/layout/SidebarLeft';
+import SidebarRight from '@/src/components/layout/SidebarRight';
 import { createClient } from '@/lib/supabase';
-
-const DEFAULT_PROFILE = {
-  fullName: 'MarComn User',
-  headline: 'Maritime Professional',
-  about: '',
-  location: 'Global',
-  profilePic: '/profile_pic.png',
-  coverPhoto: '/cover_photo.png',
-};
 
 export default function AppShell({ children, userEmail, userId }) {
   const router = useRouter();
@@ -28,62 +34,54 @@ export default function AppShell({ children, userEmail, userId }) {
     profile, setProfile, onboardingCompleted, setOnboardingCompleted,
     companies, refreshCompanies, currentIdentity, setCurrentIdentity 
   } = useProfile();
+  
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mnetworkOpen, setMnetworkOpen] = useState(false);
   const [showCreateCompany, setShowCreateCompany] = useState(false);
   const [showPostJob, setShowPostJob] = useState(false);
-  const mnetworkRef = useRef(null);
+  
   const avatarRef = useRef(null);
 
   useEffect(() => {
-    // Dark mode disabled as requested
     document.documentElement.classList.remove('dark');
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
   }, []);
 
   useEffect(() => {
     function handleOutside(e) {
-      if (mnetworkRef.current && !mnetworkRef.current.contains(e.target)) setMnetworkOpen(false);
       if (avatarRef.current && !avatarRef.current.contains(e.target)) setDropdownOpen(false);
     }
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
 
-  const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/');
-  };
-
-  const handleOnboardingComplete = (data) => {
-    setProfile(data);
-    setOnboardingCompleted(true);
-  };
-
   const handleCompanyCreated = (company) => {
     refreshCompanies();
     setShowCreateCompany(false);
-    // Automatically switch to the new company context
     setCurrentIdentity({ type: 'company', id: company.id, data: company });
   };
 
-  const handleJobPosted = (job) => {
+  const handleJobPosted = () => {
     setShowPostJob(false);
     router.push('/jobs');
   };
 
-  // UI state based on current identity
-  const isCompany = currentIdentity.type === 'company';
-  const identityName = isCompany ? currentIdentity.data.name : profile.fullName;
-  const identityImage = isCompany ? (currentIdentity.data.logo_url || '/company_placeholder.png') : (profile.profilePic || '/profile_pic.png');
+  const isCompany = currentIdentity?.type === 'company';
+  const identityImage = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (profile?.profilePic || '/profile_pic.png');
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen bg-[#F4F4F4]">
       {!onboardingCompleted && (
         <OnboardingModal 
           userId={userId} 
           userEmail={userEmail} 
-          onComplete={handleOnboardingComplete} 
+          onComplete={(data) => { setProfile(data); setOnboardingCompleted(true); }} 
         />
       )}
 
@@ -103,184 +101,172 @@ export default function AppShell({ children, userEmail, userId }) {
         />
       )}
 
-      <header className="header" style={{
-        borderTop: isCompany ? '4px solid #00B4D8' : 'none' // Visual cue for company mode
-      }}>
-        <div className="header-container">
-          <Link href="/logbook" className="brand-logo">
-            <Ship size={28} />
-            Marcomn
-          </Link>
-
-          <nav className="nav-links hidden md:flex" style={{ position: 'relative' }} ref={mnetworkRef}>
-            <div
-              className="nav-link"
-              onClick={() => setMnetworkOpen(!mnetworkOpen)}
-              style={{ cursor: 'pointer' }}
-            >
-              <Network size={24} />
-              <span>MNetwork <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }} /></span>
+      <header className="header" style={{ borderTop: isCompany ? '4px solid var(--primary)' : 'none' }}>
+        <div className="app-container">
+          <div className="header-content">
+            <div className="header-left">
+              <Link href="/" className="logo">
+                Mar<span>Comn</span>
+              </Link>
             </div>
 
-            {mnetworkOpen && (
-              <div className="dropdown-menu" style={{ top: '48px', left: '-50px', right: 'auto', width: '200px' }} onClick={() => setMnetworkOpen(false)}>
-                <Link href="/logbook" className="dropdown-item"><Home size={18} /> Logbook</Link>
-                <Link href="/jobs" className="dropdown-item"><Briefcase size={18} /> Jobs</Link>
-                <Link href="/groups" className="dropdown-item"><Users size={18} /> Groups</Link>
-                <Link href="/talent" className="dropdown-item"><Users size={18} /> Talent</Link>
-                <Link href="/connections" className="dropdown-item"><UserPlus size={18} /> Connections</Link>
-              </div>
-            )}
-          </nav>
+            <div className="header-nav-center hidden lg:flex">
+              <Link href="/logbook" className={`nav-link ${pathname === '/logbook' ? 'active' : ''}`}>
+                <Ship size={24} />
+                <span>MNetwork</span>
+              </Link>
+              <Link href="/services" className={`nav-link ${pathname === '/services' ? 'active' : ''}`}>
+                <LayoutGrid size={24} />
+                <span>MServices</span>
+              </Link>
+              <Link href="/blog" className={`nav-link ${pathname === '/blog' ? 'active' : ''}`}>
+                <Newspaper size={24} />
+                <span>MBlog</span>
+              </Link>
+            </div>
 
-          <div className="header-right" ref={avatarRef}>
-            {onboardingCompleted && (
-              <button 
-                className="btn-post-job hidden md:flex" 
-                onClick={() => setShowPostJob(true)}
-              >
-                <Briefcase size={16} />
-                <span>Post a Job</span>
-              </button>
-            )}
-            
-            <div className="avatar-dropdown" onClick={() => setDropdownOpen(!dropdownOpen)}>
-              <div style={{ position: 'relative' }}>
-                {isCompany && !currentIdentity.data.logo_url ? (
-                  <div style={{ 
-                    width: 32, height: 32, borderRadius: '8px', background: '#0e2a4d', 
-                    color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 
-                  }}>
-                    {currentIdentity.data.name?.[0] || 'C'}
-                  </div>
-                ) : (
+            <div className="header-right" ref={avatarRef}>
+              {/* Desktop Actions (>1024px) */}
+              <div className="hidden lg:flex items-center gap-2">
+                <button className="header-icon-btn"><MessageSquare size={22} /></button>
+                <button className="header-icon-btn"><Bell size={22} /></button>
+                <button 
+                  className="btn-primary-pill px-4 py-1.5 ml-2"
+                  onClick={() => setShowPostJob(true)}
+                >
+                  <Plus size={16} className="mr-1" />
+                  <span className="font-bold text-sm">Post a Job</span>
+                </button>
+              </div>
+
+              {/* Tablet Actions (768px - 1023px) */}
+              <div className="hidden md:flex lg:hidden items-center gap-3">
+                <button className="header-icon-btn"><MessageSquare size={22} /></button>
+                <button className="header-icon-btn"><Bell size={22} /></button>
+                <button 
+                  className="header-icon-btn suitcase"
+                  onClick={() => router.push('/jobs')}
+                >
+                  <Briefcase size={22} />
+                </button>
+              </div>
+
+              {/* Mobile Actions (<767px) */}
+              <div className="flex md:hidden items-center gap-2">
+                <button className="header-icon-btn"><MessageSquare size={22} /></button>
+              </div>
+              
+              <div className="avatar-dropdown ml-2" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ position: 'relative', cursor: 'pointer' }}>
+                <div className="flex items-center gap-1">
                   <img 
                     src={identityImage} 
                     alt="Me" 
                     className="avatar-img" 
-                    style={{ borderRadius: isCompany ? '8px' : '50%' }}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = isCompany ? '/favicon.svg' : '/profile_pic.png';
-                    }}
+                    style={{ width: '34px', height: '34px', objectFit: 'cover', borderRadius: isCompany ? '8px' : '50%' }}
                   />
+                  <ChevronDown size={14} className="hidden md:block" />
+                </div>
+
+                {dropdownOpen && (
+                  <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 1000 }}>
+                    <IdentitySwitcher 
+                      onClose={() => setDropdownOpen(false)} 
+                      onCreateCompany={() => { setDropdownOpen(false); setShowCreateCompany(true); }}
+                    />
+                  </div>
                 )}
               </div>
-              <span className="hidden md:inline" style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                {identityName} {isCompany && <span style={{ color: '#00B4D8', marginLeft: 4 }}>[Company]</span>} <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
-              </span>
-
-              {dropdownOpen && (
-                <div className="dropdown-menu" onClick={(e) => e.stopPropagation()}>
-                  <div style={{ padding: '8px 16px', fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Switch Identity
-                  </div>
-                  
-                  {/* User Identity */}
-                  <div 
-                    className="dropdown-item" 
-                    style={{ background: !isCompany ? '#f1f5f9' : 'transparent', cursor: 'pointer' }}
-                    onClick={() => { 
-                      setCurrentIdentity({ type: 'user', id: userId }); 
-                      setDropdownOpen(false);
-                      router.push('/profile');
-                    }}
-                  >
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>U</div>
-                    <span>Personal: {profile.fullName}</span>
-                    {!isCompany && <Check size={14} style={{ marginLeft: 'auto', color: '#00B4D8' }} />}
-                  </div>
-
-                  {/* Company Identities */}
-                  {companies.map(company => (
-                    <div 
-                      key={company.id}
-                      className="dropdown-item" 
-                      style={{ background: isCompany && currentIdentity.id === company.id ? '#f1f5f9' : 'transparent', cursor: 'pointer' }}
-                      onClick={() => { 
-                        setCurrentIdentity({ type: 'company', id: company.id, data: company }); 
-                        setDropdownOpen(false);
-                        router.push(`/company/${company.id}`);
-                      }}
-                    >
-                      {company.logo_url ? (
-                        <img src={company.logo_url} style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover' }} alt="" />
-                      ) : (
-                        <div style={{ width: 24, height: 24, borderRadius: '4px', background: '#0e2a4d', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>
-                          {company.name?.[0] || 'C'}
-                        </div>
-                      )}
-                      <span>{company.name}</span>
-                      {isCompany && currentIdentity.id === company.id && <Check size={14} style={{ marginLeft: 'auto', color: '#00B4D8' }} />}
-                    </div>
-                  ))}
-
-                  <div style={{ borderTop: '1px solid var(--border-color)', margin: '4px 0' }} />
-                  
-                  <div className="dropdown-item" style={{ cursor: 'pointer', color: '#00B4D8' }} onClick={() => { setShowCreateCompany(true); setDropdownOpen(false); }}>
-                    <Building2 size={16} /> Create Company
-                  </div>
-
-                  <div style={{ borderTop: '1px solid var(--border-color)', margin: '4px 0' }} />
-                  <div className="dropdown-item" onClick={handleSignOut} style={{ color: '#cc0000', cursor: 'pointer' }}>
-                    Sign out
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile Bottom Tab Bar */}
-      <nav className="fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around items-center h-16 md:hidden z-50 dark:bg-[#1d2226] dark:border-gray-700">
-        <Link href="/logbook" className={`flex flex-col items-center gap-1 ${pathname === '/logbook' ? 'text-blue-600' : 'text-gray-500'} dark:text-gray-400`}>
-          <Home size={20} />
-          <span className="text-[10px] font-medium">Logbook</span>
-        </Link>
-        <Link href="/groups" className={`flex flex-col items-center gap-1 ${pathname === '/groups' ? 'text-blue-600' : 'text-gray-500'} dark:text-gray-400`}>
-          <Users size={20} />
-          <span className="text-[10px] font-medium">Groups</span>
-        </Link>
-        <Link href="/jobs" className={`flex flex-col items-center gap-1 ${pathname === '/jobs' ? 'text-blue-600' : 'text-gray-500'} dark:text-gray-400`}>
-          <Briefcase size={20} />
-          <span className="text-[10px] font-medium">Jobs</span>
-        </Link>
-        <Link href="/talent" className={`flex flex-col items-center gap-1 ${pathname === '/talent' ? 'text-blue-600' : 'text-gray-500'} dark:text-gray-400`}>
-          <Users size={20} />
-          <span className="text-[10px] font-medium">Talent</span>
-        </Link>
-        <Link href="/connections" className={`flex flex-col items-center gap-1 ${pathname === '/connections' ? 'text-blue-600' : 'text-gray-500'} dark:text-gray-400`}>
-          <UserPlus size={20} />
-          <span className="text-[10px] font-medium">Connect</span>
-        </Link>
+      {/* Row 2: Sub-Navigation for Tablet (768px - 1023px) */}
+      <nav className="hidden md:flex lg:hidden bg-white border-bottom border-[#efeded]">
+        <div className="app-container py-2">
+          <div className="flex justify-around items-center">
+            <Link href="/logbook" className={`px-3 py-2 text-sm font-semibold ${pathname === '/logbook' ? 'text-[#004173] border-b-2 border-[#004173]' : 'text-[#42474f]'}`}>Logbook</Link>
+            <Link href="/connections" className={`px-3 py-2 text-sm font-semibold ${pathname === '/connections' ? 'text-[#004173] border-b-2 border-[#004173]' : 'text-[#42474f]'}`}>Connections</Link>
+            <Link href="/groups" className={`px-3 py-2 text-sm font-semibold ${pathname === '/groups' ? 'text-[#004173] border-b-2 border-[#004173]' : 'text-[#42474f]'}`}>Groups</Link>
+            <Link href="/talent" className={`px-3 py-2 text-sm font-semibold ${pathname === '/talent' ? 'text-[#004173] border-b-2 border-[#004173]' : 'text-[#42474f]'}`}>Talent</Link>
+          </div>
+        </div>
       </nav>
 
-      <main className="app-layout">
-        {typeof children === 'function' ? children({ profile, setProfile, userId }) : children}
+      {/* Mobile Bottom Tab Bar (Fixed 5 Icons) */}
+      <nav className="bottom-nav-mobile md:hidden">
+        <Link href="/logbook" className={`bottom-nav-link ${pathname === '/logbook' ? 'active' : ''}`}>
+          <Ship size={24} />
+          <span>MNetwork</span>
+        </Link>
+        <Link href="/services" className={`bottom-nav-link ${pathname === '/services' ? 'active' : ''}`}>
+          <LayoutGrid size={24} />
+          <span>MServices</span>
+        </Link>
+        <Link href="/blog" className={`bottom-nav-link ${pathname === '/blog' ? 'active' : ''}`}>
+          <Newspaper size={24} />
+          <span>MBlog</span>
+        </Link>
+        <Link href="/notifications" className={`bottom-nav-link ${pathname === '/notifications' ? 'active' : ''}`}>
+          <Bell size={24} />
+          <span>Alerts</span>
+        </Link>
+        <div className="bottom-nav-link" onClick={() => setMnetworkOpen(true)}>
+          <Menu size={24} />
+          <span>Menu</span>
+        </div>
+      </nav>
+
+      {/* Mobile Bottom Sheet (High Fidelity) */}
+      {mnetworkOpen && (
+        <div className="bottom-sheet-overlay show" onClick={() => setMnetworkOpen(false)}>
+          <div className="bottom-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="bottom-sheet-handle"></div>
+            <div className="p-4">
+              <h3 className="font-bold text-lg mb-4 text-[#1b1c1c]">Navigation</h3>
+              <div className="grid grid-cols-1 gap-2">
+                <Link href="/logbook" className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100" onClick={() => setMnetworkOpen(false)}>
+                  <Ship size={20} className="text-[#004173]" />
+                  <span className="font-medium">Logbook</span>
+                </Link>
+                <Link href="/connections" className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100" onClick={() => setMnetworkOpen(false)}>
+                  <UserPlus size={20} className="text-[#004173]" />
+                  <span className="font-medium">Connections</span>
+                </Link>
+                <Link href="/groups" className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100" onClick={() => setMnetworkOpen(false)}>
+                  <Users size={20} className="text-[#004173]" />
+                  <span className="font-medium">Groups</span>
+                </Link>
+                <Link href="/talent" className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100" onClick={() => setMnetworkOpen(false)}>
+                  <Search size={20} className="text-[#004173]" />
+                  <span className="font-medium">Talent Search</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FAB for Mobile Post Creation */}
+      <button 
+        className="fab-btn md:hidden" 
+        onClick={() => router.push('/logbook?create=true')}
+        aria-label="Create Post"
+      >
+        <Pencil size={24} color="white" fill="white" />
+      </button>
+
+      <main className="flex-1">
+        <div className="app-container">
+          <div className="main-grid">
+            <SidebarLeft />
+            <div className="center-feed">
+              {children}
+            </div>
+            <SidebarRight />
+          </div>
+        </div>
       </main>
-      <style jsx>{`
-        .btn-post-job {
-          background: #e0f2fe;
-          color: #00B4D8;
-          border: none;
-          padding: 8px 16px;
-          border-radius: 20px;
-          font-size: 13px;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-          transition: all 0.2s;
-          margin-right: 12px;
-        }
-        .btn-post-job:hover {
-          background: #00B4D8;
-          color: white;
-          transform: translateY(-1px);
-        }
-      `}</style>
-    </>
+    </div>
   );
 }

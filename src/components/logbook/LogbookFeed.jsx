@@ -95,8 +95,10 @@ export default function LogbookFeed({ profile }) {
 
     if (error) {
       console.error('Error updating post:', error);
+      alert('Failed to save changes: ' + error.message);
     } else {
       setEditingPost(null);
+      await fetchPosts();
     }
   };
 

@@ -38,7 +38,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Header darkMode={darkMode} setDarkMode={setDarkMode} profile={profile} />
+      <Header />
       <main className="app-layout">
         <Routes>
           <Route path="/" element={<LogbookFeed profile={profile} />} />

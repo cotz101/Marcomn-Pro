@@ -1,9 +1,8 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { Anchor, Check, MapPin, Loader2 as Loader, ArrowRight, User, Briefcase } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
-import { MapPin, User, Briefcase, Check, Loader, Anchor } from 'lucide-react';
-
-const STEPS = ['welcome', 'form', 'success'];
+import BaseModal from '../layout/BaseModal';
 
 export default function OnboardingModal({ userId, userEmail, onComplete }) {
   const [step, setStep] = useState('welcome');
@@ -17,12 +16,10 @@ export default function OnboardingModal({ userId, userEmail, onComplete }) {
   const [errors, setErrors] = useState({});
   const nameRef = useRef(null);
 
-  // Auto-focus first field when form step opens
   useEffect(() => {
     if (step === 'form') setTimeout(() => nameRef.current?.focus(), 100);
   }, [step]);
 
-  // ── Geolocation auto-suggest ──────────────────────────────────────────────
   const suggestLocation = () => {
     if (!navigator.geolocation) return;
     setLocLoading(true);
@@ -37,7 +34,6 @@ export default function OnboardingModal({ userId, userEmail, onComplete }) {
           const country = data.address?.country || '';
           setForm(prev => ({ ...prev, location: [city, country].filter(Boolean).join(', ') }));
         } catch {
-          // silently fall through — user can type manually
         }
         setLocLoading(false);
       },
@@ -46,7 +42,6 @@ export default function OnboardingModal({ userId, userEmail, onComplete }) {
     );
   };
 
-  // ── Validation ─────────────────────────────────────────────────────────────
   const validate = () => {
     const errs = {};
     if (!form.fullName.trim()) errs.fullName = 'Your name is required.';
@@ -54,7 +49,6 @@ export default function OnboardingModal({ userId, userEmail, onComplete }) {
     return errs;
   };
 
-  // ── Save to Supabase ───────────────────────────────────────────────────────
   const handleComplete = async () => {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
@@ -90,218 +84,142 @@ export default function OnboardingModal({ userId, userEmail, onComplete }) {
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: undefined }));
   };
 
-  // ── Shared overlay styles ─────────────────────────────────────────────────
-  const overlayStyle = {
-    position: 'fixed', inset: 0, zIndex: 9999,
-    background: 'rgba(10, 20, 40, 0.75)',
-    backdropFilter: 'blur(6px)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: 20,
-  };
-
-  const cardStyle = {
-    background: 'var(--bg-primary, #fff)',
-    borderRadius: 20,
-    maxWidth: 480, width: '100%',
-    boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
-    overflow: 'hidden',
-    animation: 'fadeSlideUp 0.35s ease',
-  };
-
-  // ── STEP: Welcome ─────────────────────────────────────────────────────────
-  if (step === 'welcome') return (
-    <div style={overlayStyle}>
-      <style>{`
-        @keyframes fadeSlideUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse-anchor {
-          0%, 100% { transform: scale(1); }
-          50%       { transform: scale(1.08); }
-        }
-      `}</style>
-      <div style={cardStyle}>
-        {/* Header gradient */}
-        <div style={{
-          background: 'linear-gradient(135deg, #0e2a4d 0%, #00B4D8 100%)',
-          padding: '40px 40px 32px',
-          textAlign: 'center',
-        }}>
-          <div style={{
-            width: 72, height: 72, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 16px',
-            animation: 'pulse-anchor 2.5s ease-in-out infinite',
-          }}>
-            <Anchor size={36} color="white" />
-          </div>
-          <h1 style={{ color: 'white', fontSize: 26, fontWeight: 800, margin: 0 }}>
-            Welcome to MarComn!
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, marginTop: 10, lineHeight: 1.6 }}>
-            The professional network for maritime professionals.<br />
-            Let's set up your profile in under a minute.
-          </p>
-        </div>
-
-        <div style={{ padding: '28px 40px 36px' }}>
-          {/* Feature bullets */}
-          {[
-            ['🚢', 'Connect with mariners worldwide'],
-            ['📋', 'Share your sea-service experience'],
-            ['📡', 'Get discovered by shipping companies'],
-          ].map(([icon, text]) => (
-            <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <span style={{ fontSize: 20 }}>{icon}</span>
-              <span style={{ fontSize: 14, color: 'var(--text-primary, #1a2942)' }}>{text}</span>
+  return (
+    <BaseModal 
+      isOpen={true} 
+      onClose={() => {}} 
+      title="Welcome to MarComn"
+      hideCloseButton={true}
+    >
+      {step === 'welcome' && (
+        <div className="flex flex-col">
+          <div className="text-center mb-8">
+            <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-[#004173] flex items-center justify-center">
+              <Anchor size={32} color="white" />
             </div>
-          ))}
+            <h2 className="text-2xl font-bold text-[var(--on-surface)]">A Professional Network for Mariners</h2>
+            <p className="text-[var(--on-surface-variant)] text-sm mt-2">
+              Let's set up your profile in under a minute.
+            </p>
+          </div>
+
+          <div className="space-y-4 mb-8">
+            {[
+              ['🚢', 'Connect with mariners worldwide'],
+              ['📋', 'Share your sea-service experience'],
+              ['📡', 'Get discovered by shipping companies'],
+            ].map(([icon, text]) => (
+              <div key={text} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
+                <span className="text-xl">{icon}</span>
+                <span className="text-sm font-medium text-[var(--on-surface)]">{text}</span>
+              </div>
+            ))}
+          </div>
 
           <button
             onClick={() => setStep('form')}
-            style={{
-              width: '100%', marginTop: 8,
-              background: 'linear-gradient(135deg, #0e2a4d, #00B4D8)',
-              color: 'white', border: 'none', borderRadius: 12,
-              padding: '15px 0', fontSize: 16, fontWeight: 700,
-              cursor: 'pointer', letterSpacing: 0.3,
-            }}
+            className="btn-primary-pill h-12 w-full"
           >
-            Get Started →
+            Get Started <ArrowRight size={18} />
           </button>
         </div>
-      </div>
-    </div>
-  );
+      )}
 
-  // ── STEP: Form ────────────────────────────────────────────────────────────
-  if (step === 'form') return (
-    <div style={overlayStyle}>
-      <div style={cardStyle}>
-        {/* Progress bar */}
-        <div style={{ height: 4, background: '#e2e8f0' }}>
-          <div style={{ height: '100%', width: '60%', background: 'linear-gradient(90deg, #0e2a4d, #00B4D8)', borderRadius: 4, transition: 'width 0.4s' }} />
-        </div>
-
-        <div style={{ padding: '32px 36px 36px' }}>
-          <h2 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 6px', color: 'var(--text-primary, #1a2942)' }}>
-            Your professional identity
-          </h2>
-          <p style={{ fontSize: 14, color: 'var(--text-secondary, #64748b)', marginBottom: 24 }}>
-            This is how the maritime community will know you.
-          </p>
+      {step === 'form' && (
+        <div className="flex flex-col">
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-[var(--on-surface)]">Your professional identity</h2>
+            <p className="text-sm text-[var(--on-surface-variant)]">
+              This is how the maritime community will know you.
+            </p>
+          </div>
 
           {errors.global && (
-            <div style={{ background: '#fee2e2', color: '#cc0000', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 16 }}>
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs mb-4">
               {errors.global}
             </div>
           )}
 
-          {/* Full Name */}
-          <div style={{ marginBottom: 18 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: 'var(--text-secondary, #64748b)', marginBottom: 6 }}>
-              <User size={14} /> Full Name <span style={{ color: '#e53e3e' }}>*</span>
-            </label>
-            <input
-              ref={nameRef}
-              name="fullName"
-              value={form.fullName}
-              onChange={handleChange}
-              placeholder="e.g. Efren Jr. Tiangco Vergara"
-              className="form-input"
-              style={{ borderColor: errors.fullName ? '#e53e3e' : undefined }}
-            />
-            {errors.fullName && <p style={{ color: '#e53e3e', fontSize: 12, marginTop: 4 }}>{errors.fullName}</p>}
-          </div>
-
-          {/* Headline */}
-          <div style={{ marginBottom: 18 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: 'var(--text-secondary, #64748b)', marginBottom: 6 }}>
-              <Briefcase size={14} /> Professional Headline <span style={{ color: '#e53e3e' }}>*</span>
-            </label>
-            <input
-              name="headline"
-              value={form.headline}
-              onChange={handleChange}
-              placeholder="e.g. Chief Officer | Master Mariner"
-              className="form-input"
-              style={{ borderColor: errors.headline ? '#e53e3e' : undefined }}
-            />
-            {errors.headline && <p style={{ color: '#e53e3e', fontSize: 12, marginTop: 4 }}>{errors.headline}</p>}
-          </div>
-
-          {/* Location with auto-suggest */}
-          <div style={{ marginBottom: 28 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: 'var(--text-secondary, #64748b)', marginBottom: 6 }}>
-              <MapPin size={14} /> Location <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-secondary, #94a3b8)' }}>(optional)</span>
-            </label>
-            <div style={{ display: 'flex', gap: 8 }}>
+          <div className="space-y-4">
+            <div className="form-group">
+              <label className="block text-sm font-semibold mb-2">
+                <User size={14} className="inline mr-1" /> Full Name *
+              </label>
               <input
-                name="location"
-                value={form.location}
+                ref={nameRef}
+                name="fullName"
+                value={form.fullName}
                 onChange={handleChange}
-                placeholder="e.g. Singapore"
-                className="form-input"
-                style={{ flex: 1 }}
+                placeholder="e.g. Efren Jr. Tiangco Vergara"
+                className="w-full p-2.5 border rounded-lg outline-none focus:border-[var(--primary)]"
+                style={{ borderColor: errors.fullName ? 'var(--error)' : undefined }}
               />
-              <button
-                onClick={suggestLocation}
-                disabled={locLoading}
-                title="Detect my location"
-                style={{
-                  padding: '0 14px', borderRadius: 10, border: '1px solid var(--border, #e2e8f0)',
-                  background: 'var(--surface, #f8fafc)', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 6, fontSize: 13,
-                  color: 'var(--text-secondary, #64748b)', whiteSpace: 'nowrap', flexShrink: 0,
-                }}
-              >
-                {locLoading ? <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <MapPin size={14} />}
-                {locLoading ? 'Detecting…' : 'Auto-detect'}
-              </button>
+              {errors.fullName && <p className="text-red-500 text-[10px] mt-1">{errors.fullName}</p>}
+            </div>
+
+            <div className="form-group">
+              <label className="block text-sm font-semibold mb-2">
+                <Briefcase size={14} className="inline mr-1" /> Professional Headline *
+              </label>
+              <input
+                name="headline"
+                value={form.headline}
+                onChange={handleChange}
+                placeholder="e.g. Chief Officer | Master Mariner"
+                className="w-full p-2.5 border rounded-lg outline-none focus:border-[var(--primary)]"
+                style={{ borderColor: errors.headline ? 'var(--error)' : undefined }}
+              />
+              {errors.headline && <p className="text-red-500 text-[10px] mt-1">{errors.headline}</p>}
+            </div>
+
+            <div className="form-group">
+              <label className="block text-sm font-semibold mb-2">
+                <MapPin size={14} className="inline mr-1" /> Location (optional)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  name="location"
+                  value={form.location}
+                  onChange={handleChange}
+                  placeholder="e.g. Singapore"
+                  className="w-full p-2.5 border rounded-lg outline-none focus:border-[var(--primary)] flex-1"
+                />
+                <button
+                  onClick={suggestLocation}
+                  disabled={locLoading}
+                  className="px-4 rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] text-sm text-[var(--on-surface-variant)] flex items-center gap-2"
+                >
+                  {locLoading ? <Loader size={14} className="animate-spin" /> : <MapPin size={14} />}
+                  {locLoading ? '...' : 'Auto'}
+                </button>
+              </div>
             </div>
           </div>
 
           <button
             onClick={handleComplete}
             disabled={saving}
-            style={{
-              width: '100%',
-              background: saving ? '#94a3b8' : 'linear-gradient(135deg, #0e2a4d, #00B4D8)',
-              color: 'white', border: 'none', borderRadius: 12,
-              padding: '15px 0', fontSize: 16, fontWeight: 700,
-              cursor: saving ? 'not-allowed' : 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            }}
+            className="btn-primary-pill h-12 w-full mt-8"
           >
             {saving
-              ? <><Loader size={18} style={{ animation: 'spin 1s linear infinite' }} /> Saving…</>
+              ? <><Loader size={18} className="animate-spin" /> Saving…</>
               : <>Complete Profile <Check size={18} /></>}
           </button>
         </div>
-      </div>
-    </div>
-  );
+      )}
 
-  // ── STEP: Success ─────────────────────────────────────────────────────────
-  if (step === 'success') return (
-    <div style={overlayStyle}>
-      <div style={{ ...cardStyle, textAlign: 'center', padding: '52px 40px' }}>
-        <div style={{
-          width: 80, height: 80, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #0e2a4d, #00B4D8)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 20px',
-        }}>
-          <Check size={40} color="white" />
+      {step === 'success' && (
+        <div className="text-center py-12">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[var(--primary)] to-[#00B4D8] flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <Check size={40} color="white" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">You're all set!</h2>
+          <p className="text-[var(--on-surface-variant)] leading-relaxed">
+            Welcome aboard, <strong>{form.fullName}</strong>.<br />
+            Your profile is live. Taking you to the Logbook…
+          </p>
         </div>
-        <h2 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 10px' }}>You're all set!</h2>
-        <p style={{ fontSize: 15, color: 'var(--text-secondary, #64748b)', lineHeight: 1.7 }}>
-          Welcome aboard, <strong>{form.fullName}</strong>.<br />
-          Your profile is live. Taking you to the Logbook…
-        </p>
-      </div>
-    </div>
+      )}
+    </BaseModal>
   );
 }

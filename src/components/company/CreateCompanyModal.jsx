@@ -1,7 +1,7 @@
-'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase';
 import { X, Building2, Globe, MapPin, Briefcase, Check, Loader } from 'lucide-react';
+import BaseModal from '../layout/BaseModal';
 
 export default function CreateCompanyModal({ userId, onComplete, onClose }) {
   const [form, setForm] = useState({
@@ -64,107 +64,96 @@ export default function CreateCompanyModal({ userId, onComplete, onClose }) {
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: 500 }}>
-        <div className="modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ padding: 8, background: '#e0f2fe', borderRadius: 8, color: '#0369a1' }}>
-              <Building2 size={20} />
-            </div>
-            <h2 style={{ margin: 0 }}>Create Company Profile</h2>
+    <BaseModal 
+      isOpen={true} 
+      onClose={onClose} 
+      title="Create Company Profile"
+      maxWidth="500px"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm border border-red-100">
+            {error}
           </div>
-          <button className="btn-close" onClick={onClose}><X size={20} /></button>
+        )}
+
+        <div className="form-group">
+          <label className="block text-sm font-semibold mb-2">Company Name *</label>
+          <input 
+            name="name"
+            className="w-full p-2.5 border rounded-lg outline-none focus:border-[var(--primary)]" 
+            placeholder="e.g. Marcomn Shipping Ltd" 
+            value={form.name}
+            onChange={handleChange}
+            required
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-body">
-          {error && (
-            <div style={{ background: '#fee2e2', color: '#b91c1c', padding: 12, borderRadius: 8, fontSize: 13 }}>
-              {error}
-            </div>
-          )}
-
-          <div className="form-group">
-            <label>Company Name *</label>
+        <div className="form-group">
+          <label className="block text-sm font-semibold mb-2">Industry</label>
+          <div className="relative">
+            <Briefcase size={16} className="absolute left-3 top-3 text-slate-400" />
             <input 
-              name="name"
-              className="form-input" 
-              placeholder="e.g. Marcomn Shipping Ltd" 
-              value={form.name}
+              name="industry"
+              className="w-full p-2.5 pl-10 border rounded-lg outline-none focus:border-[var(--primary)]" 
+              placeholder="e.g. Logistics & Supply Chain" 
+              value={form.industry}
               onChange={handleChange}
-              required
             />
           </div>
+        </div>
 
+        <div className="grid grid-cols-2 gap-3">
           <div className="form-group">
-            <label>Industry</label>
-            <div style={{ position: 'relative' }}>
-              <Briefcase size={16} style={{ position: 'absolute', left: 12, top: 10, color: '#94a3b8' }} />
+            <label className="block text-sm font-semibold mb-2">Website</label>
+            <div className="relative">
+              <Globe size={16} className="absolute left-3 top-3 text-slate-400" />
               <input 
-                name="industry"
-                className="form-input" 
-                style={{ paddingLeft: 38 }}
-                placeholder="e.g. Logistics & Supply Chain" 
-                value={form.industry}
+                name="website"
+                className="w-full p-2.5 pl-10 border rounded-lg outline-none focus:border-[var(--primary)]" 
+                placeholder="https://..." 
+                value={form.website}
                 onChange={handleChange}
               />
             </div>
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div className="form-group">
-              <label>Website</label>
-              <div style={{ position: 'relative' }}>
-                <Globe size={16} style={{ position: 'absolute', left: 12, top: 10, color: '#94a3b8' }} />
-                <input 
-                  name="website"
-                  className="form-input" 
-                  style={{ paddingLeft: 38 }}
-                  placeholder="https://..." 
-                  value={form.website}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label>Location</label>
-              <div style={{ position: 'relative' }}>
-                <MapPin size={16} style={{ position: 'absolute', left: 12, top: 10, color: '#94a3b8' }} />
-                <input 
-                  name="location"
-                  className="form-input" 
-                  style={{ paddingLeft: 38 }}
-                  placeholder="e.g. London, UK" 
-                  value={form.location}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-          </div>
-
           <div className="form-group">
-            <label>About Company</label>
-            <textarea 
-              name="bio"
-              className="form-textarea" 
-              placeholder="Tell us about your company's mission and services..." 
-              value={form.bio}
-              onChange={handleChange}
-              rows={4}
-            />
+            <label className="block text-sm font-semibold mb-2">Location</label>
+            <div className="relative">
+              <MapPin size={16} className="absolute left-3 top-3 text-slate-400" />
+              <input 
+                name="location"
+                className="w-full p-2.5 pl-10 border rounded-lg outline-none focus:border-[var(--primary)]" 
+                placeholder="e.g. London, UK" 
+                value={form.location}
+                onChange={handleChange}
+              />
+            </div>
           </div>
+        </div>
 
-          <div style={{ marginTop: 8 }}>
-            <button 
-              type="submit" 
-              className="btn-primary" 
-              style={{ width: '100%', height: 44, borderRadius: 10 }}
-              disabled={saving}
-            >
-              {saving ? <Loader size={20} className="animate-spin" /> : 'Establish Company Profile'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="form-group">
+          <label className="block text-sm font-semibold mb-2">About Company</label>
+          <textarea 
+            name="bio"
+            className="w-full p-2.5 border rounded-lg outline-none focus:border-[var(--primary)]" 
+            placeholder="Tell us about your company's mission and services..." 
+            value={form.bio}
+            onChange={handleChange}
+            rows={4}
+          />
+        </div>
+
+        <div className="pt-4">
+          <button 
+            type="submit" 
+            className="btn-primary-pill w-full h-12 flex items-center justify-center" 
+            disabled={saving}
+          >
+            {saving ? <Loader size={20} className="animate-spin" /> : 'Establish Company Profile'}
+          </button>
+        </div>
+      </form>
+    </BaseModal>
   );
 }

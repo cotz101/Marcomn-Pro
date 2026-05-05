@@ -9,6 +9,7 @@ export default function ProfilePage() {
 
   return (
     <>
+
       <Profile profile={profile} setProfile={setProfile} userId={userId} />
       <ExperienceSection userId={userId} />
     </>

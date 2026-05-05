@@ -39,7 +39,12 @@ export default function CreatePost({ profile }) {
     <>
       <div className="card create-post-card">
         <div className="create-post-top">
-          <img src={identityImage} alt={identityName} className="post-avatar" style={{ width: '48px', height: '48px', borderRadius: isCompany ? '8px' : '50%' }} />
+          <img 
+            src={identityImage} 
+            alt={identityName || 'User'} 
+            className="post-avatar" 
+            style={{ borderRadius: isCompany ? '8px' : '50%' }} 
+          />
           <div 
             className="create-post-input"
             onClick={() => setIsComposerOpen(true)}

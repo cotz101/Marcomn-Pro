@@ -1,6 +1,8 @@
-'use client';
-import JobBoard from '@/src/components/jobs/JobBoard';
+import SidebarLeft from '@/src/components/layout/SidebarLeft';
+import SidebarRight from '@/src/components/layout/SidebarRight';
 
 export default function JobsPage() {
-  return <JobBoard />;
+  return (
+    <JobBoard />
+  );
 }

@@ -42,18 +42,9 @@ export default function PostActions({ postId, onEdit, onDeleteSuccess }) {
   };
 
   return (
-    <div className="post-menu-container" ref={menuRef} style={{ position: 'relative', display: 'inline-block' }}>
+    <div className="post-menu-container" ref={menuRef}>
       <button 
         className="post-menu-btn"
-        style={{ 
-          background: 'none', 
-          border: 'none', 
-          cursor: 'pointer', 
-          padding: '4px', 
-          color: 'var(--text-secondary)',
-          display: 'flex',
-          alignItems: 'center'
-        }}
         onClick={(e) => {
           e.stopPropagation();
           setIsOpen(!isOpen);
@@ -63,36 +54,9 @@ export default function PostActions({ postId, onEdit, onDeleteSuccess }) {
       </button>
       
       {isOpen && (
-        <div className="post-menu-dropdown" style={{ 
-          position: 'absolute', 
-          top: '100%', 
-          right: 0, 
-          backgroundColor: '#fff', 
-          border: '1px solid #ddd',
-          borderRadius: '4px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-          zIndex: 100,
-          width: '140px',
-          display: 'flex',
-          flexDirection: 'column',
-          padding: '4px 0'
-        }}>
+        <div className="post-menu-dropdown">
           <button 
             className="post-menu-item"
-            style={{
-              padding: '8px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'none',
-              border: 'none',
-              color: '#333',
-              cursor: 'pointer',
-              fontWeight: 500,
-              fontSize: '13px',
-              textAlign: 'left',
-              width: '100%'
-            }}
             onClick={(e) => {
               e.stopPropagation();
               onEdit();
@@ -103,20 +67,6 @@ export default function PostActions({ postId, onEdit, onDeleteSuccess }) {
           </button>
           <button 
             className="post-menu-item delete"
-            style={{
-              padding: '8px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'none',
-              border: 'none',
-              color: '#cc0000',
-              cursor: 'pointer',
-              fontWeight: 500,
-              fontSize: '13px',
-              textAlign: 'left',
-              width: '100%'
-            }}
             onClick={(e) => {
               e.stopPropagation();
               setIsDeleteModalOpen(true);

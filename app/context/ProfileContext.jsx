@@ -25,7 +25,31 @@ export function ProfileProvider({ children, userId, userEmail }) {
   const [loading, setLoading] = useState(true);
   const [onboardingCompleted, setOnboardingCompleted] = useState(true); // default true to avoid flash
   const [companies, setCompanies] = useState([]);
-  const [currentIdentity, setCurrentIdentity] = useState({ type: 'user', id: userId }); // { type: 'user' | 'company', id: string, data: object }
+  const [currentIdentity, setCurrentIdentityState] = useState({ type: 'user', id: userId }); // { type: 'user' | 'company', id: string, data: object }
+
+  // Initialize from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('marcomn_identity');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.id) {
+            setCurrentIdentityState(parsed);
+          }
+        } catch (e) {
+          console.error('Error parsing saved identity:', e);
+        }
+      }
+    }
+  }, []);
+
+  const setCurrentIdentity = (identity) => {
+    setCurrentIdentityState(identity);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('marcomn_identity', JSON.stringify(identity));
+    }
+  };
 
   const fetchProfile = useCallback(async () => {
     if (!userId) {
