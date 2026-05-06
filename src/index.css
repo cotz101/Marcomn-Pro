@@ -267,6 +267,7 @@ a {
   padding: 0 12px;
   transition: all 0.2s;
   min-width: 80px;
+  text-align: center;
 }
 
 .nav-link:hover {
@@ -280,6 +281,8 @@ a {
 
 .nav-link span {
   margin-top: 2px;
+  display: block;
+  width: 100%;
 }
 
 .header-icon-btn {
@@ -2110,4 +2113,35 @@ html.dark .btn-primary {
   .sidebar-right {
     display: block !important;
   }
+}
+
+/* Global Card Standard */
+.card {
+  background-color: #FFFFFF !important;
+  border: 1px solid #E0E0E0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+
+/* Sidebar Spacer Fix */
+.sidebar-spacer {
+  height: 16px;
+  background-color: #F4F4F4 !important; /* Matches body background exactly */
+}
+
+/* Header Action Group Refinement */
+.header-actions-mobile {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.avatar-img {
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.avatar-dropdown:hover .avatar-img {
+  border-color: var(--primary);
 }

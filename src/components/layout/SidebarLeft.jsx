@@ -23,7 +23,7 @@ export default function SidebarLeft() {
 
   return (
     <aside className="sidebar-left">
-      <div className="card mb-6 overflow-hidden">
+      <div className="card overflow-hidden">
         <div className="h-16 bg-[#002b4e]"></div>
         <div className="px-4 pb-4">
           <div className="flex justify-center -mt-8 mb-3">
@@ -49,6 +49,8 @@ export default function SidebarLeft() {
           </div>
         </div>
       </div>
+
+      <div className="sidebar-spacer"></div>
 
       <div className="card py-2">
         <nav className="flex flex-col">

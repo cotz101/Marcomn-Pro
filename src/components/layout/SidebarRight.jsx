@@ -18,7 +18,7 @@ export default function SidebarRight() {
 
   return (
     <aside className="sidebar-right">
-      <div className="card p-4 mb-6">
+      <div className="card p-4">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-sm text-[#1b1c1c]">Recent Blog</h3>
           <Info size={14} className="text-[#42474f] cursor-pointer" />
@@ -37,6 +37,8 @@ export default function SidebarRight() {
           </Link>
         </div>
       </div>
+
+      <div className="sidebar-spacer"></div>
 
       <div className="card p-4">
         <div className="flex justify-between items-center mb-4">
