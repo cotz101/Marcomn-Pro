@@ -2366,7 +2366,51 @@ html.dark .btn-primary {
   }
 
   .header {
+    height: auto !important;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+  
+  .header-content.hidden.md\:grid {
     display: none !important;
+  }
+
+  .mobile-header {
+    display: block !important;
+    padding-top: env(safe-area-inset-top);
+    background: #ffffff;
+    height: calc(56px + env(safe-area-inset-top));
+    width: 100%;
+  }
+
+  .mobile-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    height: 56px;
+    gap: 12px;
+  }
+
+  .mobile-avatar-img {
+    width: 34px;
+    height: 34px;
+    object-fit: cover;
+    border: 1px solid var(--border-color);
+  }
+
+  .mobile-search-bar {
+    flex: 1;
+    background: #f0f2f5;
+    border-radius: 4px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
   }
   
   .card, .post-card {

@@ -16,7 +16,15 @@ import {
   UserPlus,
   Users,
   Search,
-  Pencil
+  Pencil,
+  X,
+  Library,
+  Handshake,
+  FileText,
+  Send,
+  Zap,
+  Target,
+  Lightbulb
 } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
@@ -40,8 +48,16 @@ export default function AppShell({ children, userEmail, userId }) {
   const [showCreateCompany, setShowCreateCompany] = useState(false);
   const [showPostJob, setShowPostJob] = useState(false);
   const [isFabExpanded, setIsFabExpanded] = useState(false);
+  const [fabAnimating, setFabAnimating] = useState(false);
   
   const avatarRef = useRef(null);
+
+  // FAB Transition logic
+  useEffect(() => {
+    setFabAnimating(true);
+    const timer = setTimeout(() => setFabAnimating(false), 600);
+    return () => clearTimeout(timer);
+  }, [pathname]);
 
   useEffect(() => {
     document.documentElement.classList.remove('dark');
@@ -104,7 +120,8 @@ export default function AppShell({ children, userEmail, userId }) {
 
       <header className="header" style={{ borderTop: isCompany ? '4px solid var(--primary)' : 'none' }}>
         <div className="app-container">
-          <div className="header-content">
+          {/* Desktop Header Content */}
+          <div className="header-content hidden md:grid">
             <div className="header-left">
               <Link href="/" className="logo">
                 Mar<span>Comn</span>
@@ -127,52 +144,25 @@ export default function AppShell({ children, userEmail, userId }) {
             </div>
 
             <div className="header-right" ref={avatarRef}>
-              {/* Desktop Actions (>1024px) */}
               <div className="header-actions-desktop">
                 <button className="header-icon-btn"><MessageSquare size={22} /></button>
                 <button className="header-icon-btn"><Bell size={22} /></button>
                 <button 
-                  className="btn-primary-pill px-4 py-1.5 ml-2"
-                  onClick={() => setShowPostJob(true)}
+                   className="btn-primary-pill px-4 py-1.5 ml-2"
+                   onClick={() => setShowPostJob(true)}
                 >
                   <Plus size={16} className="mr-1" />
                   <span className="font-bold text-sm">Post a Job</span>
                 </button>
               </div>
 
-              {/* Tablet Actions (768px - 1023px) */}
-              <div className="header-actions-tablet">
-                <button className="header-icon-btn"><MessageSquare size={22} /></button>
-                <button className="header-icon-btn"><Bell size={22} /></button>
-                <button 
-                  className="header-icon-btn suitcase"
-                  onClick={() => router.push('/jobs')}
-                >
-                  <Briefcase size={22} />
-                </button>
-              </div>
-
-              {/* Mobile Actions (<768px) */}
-              <div className="header-actions-mobile md:hidden flex items-center gap-4">
-                <button className="header-icon-btn"><MessageSquare size={22} /></button>
-                <div className="avatar-dropdown" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ position: 'relative', cursor: 'pointer' }}>
-                  <img 
-                    src={identityImage} 
-                    alt="Me" 
-                    className="avatar-img" 
-                    style={{ width: '34px', height: '34px', objectFit: 'cover', borderRadius: isCompany ? '8px' : '50%' }}
-                  />
-                </div>
-              </div>
-
-              {/* Desktop Avatar Group */}
-              <div className="avatar-dropdown ml-2 hidden md:flex" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ position: 'relative', cursor: 'pointer' }}>
+              <div className="avatar-dropdown ml-2 flex" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ position: 'relative', cursor: 'pointer' }}>
                 <div className="flex items-center gap-1">
                   <img 
-                    src={identityImage} 
-                    alt="Me" 
-                    className="avatar-img" 
-                    style={{ width: '34px', height: '34px', objectFit: 'cover', borderRadius: isCompany ? '8px' : '50%' }}
+                     src={identityImage} 
+                     alt="Me" 
+                     className="avatar-img" 
+                     style={{ width: '34px', height: '34px', objectFit: 'cover', borderRadius: isCompany ? '8px' : '50%' }}
                   />
                   <ChevronDown size={14} />
                 </div>
@@ -199,6 +189,37 @@ export default function AppShell({ children, userEmail, userId }) {
               )}
             </div>
           </div>
+
+          {/* Mobile Notch-Safe Header */}
+          <div className="mobile-header md:hidden">
+            <div className="mobile-header-inner">
+              <div className="mobile-avatar" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ cursor: 'pointer', position: 'relative' }}>
+                <img 
+                  src={identityImage} 
+                  alt="Me" 
+                  className="mobile-avatar-img" 
+                  style={{ borderRadius: isCompany ? '4px' : '50%' }}
+                />
+                {dropdownOpen && (
+                  <div style={{ position: 'absolute', top: 'calc(100% + 12px)', left: 0, zIndex: 1000 }}>
+                    <div className="card shadow-xl p-2 min-w-[240px] bg-white">
+                      <IdentitySwitcher 
+                        onClose={() => setDropdownOpen(false)} 
+                        onCreateCompany={() => { setDropdownOpen(false); setShowCreateCompany(true); }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="mobile-search-bar" onClick={() => router.push('/search')}>
+                <Search size={18} />
+                <span>Search</span>
+              </div>
+              <button className="header-icon-btn" onClick={() => router.push('/messages')}>
+                <MessageSquare size={22} />
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -217,30 +238,38 @@ export default function AppShell({ children, userEmail, userId }) {
       </nav>
 
       {/* Luminous Bottom Navigation (Fixed 4 Icons) */}
-      <nav className="bottom-nav-mobile md:hidden">
-        <Link href="/logbook" className={`bottom-nav-link ${pathname === '/logbook' ? 'active' : ''}`}>
-          <div className="nav-icon-wrapper">
-            <Ship size={24} />
-          </div>
-          <span>MNetwork</span>
+      <nav className="mobile-bottom-nav md:hidden">
+        <Link 
+          href="/logbook" 
+          className={`mobile-nav-item ${pathname?.includes('/logbook') ? 'active' : ''}`}
+          style={{ '--active-color': 'var(--glow-network)' }}
+        >
+          <Ship size={24} className="mobile-nav-icon" />
+          <span className="mobile-nav-label">Network</span>
         </Link>
-        <Link href="/services" className={`bottom-nav-link ${pathname === '/services' ? 'active' : ''}`}>
-          <div className="nav-icon-wrapper">
-            <LayoutGrid size={24} />
-          </div>
-          <span>MServices</span>
+        <Link 
+          href="/services" 
+          className={`mobile-nav-item ${pathname?.includes('/services') ? 'active' : ''}`}
+          style={{ '--active-color': 'var(--glow-services)' }}
+        >
+          <LayoutGrid size={24} className="mobile-nav-icon" />
+          <span className="mobile-nav-label">Services</span>
         </Link>
-        <Link href="/blog" className={`bottom-nav-link ${pathname === '/blog' ? 'active' : ''}`}>
-          <div className="nav-icon-wrapper">
-            <Newspaper size={24} />
-          </div>
-          <span>MBlog</span>
+        <Link 
+          href="/blog" 
+          className={`mobile-nav-item ${pathname?.includes('/blog') ? 'active' : ''}`}
+          style={{ '--active-color': 'var(--primary)' }}
+        >
+          <Newspaper size={24} className="mobile-nav-icon" />
+          <span className="mobile-nav-label">Blog</span>
         </Link>
-        <Link href="/notifications" className={`bottom-nav-link ${pathname === '/notifications' ? 'active' : ''}`}>
-          <div className="nav-icon-wrapper">
-            <Bell size={24} />
-          </div>
-          <span>Alerts</span>
+        <Link 
+          href="/notifications" 
+          className={`mobile-nav-item ${pathname === '/notifications' ? 'active' : ''}`}
+          style={{ '--active-color': 'var(--primary)' }}
+        >
+          <Bell size={24} className="mobile-nav-icon" />
+          <span className="mobile-nav-label">Alerts</span>
         </Link>
       </nav>
 
@@ -282,47 +311,74 @@ export default function AppShell({ children, userEmail, userId }) {
         </div>
       )}
 
-      {/* Adaptive Speed Dial FAB */}
-      <div className={`fab-container md:hidden ${isFabExpanded ? 'is-open' : ''}`}>
+      {/* Contextual Speed Dial FAB */}
+      <div className={`mobile-fab-container md:hidden ${isFabExpanded ? 'open' : ''}`}>
         {isFabExpanded && (
-          <div className="speed-dial-wrapper">
+          <div className="speed-dial-menu">
             {/* Contextual Sub-Nav Shortcuts (Top Layer) */}
             <div className="speed-dial-shortcuts">
               {pathname?.includes('/logbook') && (
                 <>
-                  <button className="shortcut-btn" onClick={() => { setIsFabExpanded(false); router.push('/logbook'); }}>Logbook</button>
-                  <button className="shortcut-btn" onClick={() => { setIsFabExpanded(false); router.push('/groups'); }}>Groups</button>
-                  <button className="shortcut-btn" onClick={() => { setIsFabExpanded(false); router.push('/connections'); }}>Connections</button>
-                  <button className="shortcut-btn" onClick={() => { setIsFabExpanded(false); router.push('/talent'); }}>Talent</button>
+                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/logbook'); }}>
+                    <span className="shortcut-label">Logbook</span>
+                    <div className="shortcut-icon-wrapper"><Ship size={18} /></div>
+                  </div>
+                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/groups'); }}>
+                    <span className="shortcut-label">Groups</span>
+                    <div className="shortcut-icon-wrapper"><Users size={18} /></div>
+                  </div>
+                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/connections'); }}>
+                    <span className="shortcut-label">Connections</span>
+                    <div className="shortcut-icon-wrapper"><UserPlus size={18} /></div>
+                  </div>
+                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/talent'); }}>
+                    <span className="shortcut-label">Talents</span>
+                    <div className="shortcut-icon-wrapper"><Search size={18} /></div>
+                  </div>
                 </>
               )}
               {pathname?.includes('/services') && (
                 <>
-                  <button className="shortcut-btn" onClick={() => { setIsFabExpanded(false); router.push('/services'); }}>Opportunity</button>
-                  <button className="shortcut-btn" onClick={() => { setIsFabExpanded(false); router.push('/partners'); }}>Partners</button>
-                  <button className="shortcut-btn" onClick={() => { setIsFabExpanded(false); router.push('/jobs/my-postings'); }}>My Postings</button>
-                  <button className="shortcut-btn" onClick={() => { setIsFabExpanded(false); router.push('/jobs/my-applications'); }}>My Apps</button>
+                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/services'); }}>
+                    <span className="shortcut-label">Opportunity</span>
+                    <div className="shortcut-icon-wrapper"><Lightbulb size={18} /></div>
+                  </div>
+                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/partners'); }}>
+                    <span className="shortcut-label">Partners</span>
+                    <div className="shortcut-icon-wrapper"><Handshake size={18} /></div>
+                  </div>
+                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/jobs/my-postings'); }}>
+                    <span className="shortcut-label">My Job Posting</span>
+                    <div className="shortcut-icon-wrapper"><FileText size={18} /></div>
+                  </div>
+                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/jobs/my-applications'); }}>
+                    <span className="shortcut-label">My Job Application</span>
+                    <div className="shortcut-icon-wrapper"><Send size={18} /></div>
+                  </div>
                 </>
               )}
               {pathname?.includes('/blog') && (
-                <button className="shortcut-btn" onClick={() => { setIsFabExpanded(false); router.push('/blog/my-blogs'); }}>My Blog</button>
+                <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/blog/my-blogs'); }}>
+                  <span className="shortcut-label">My Blog</span>
+                  <div className="shortcut-icon-wrapper"><Library size={18} /></div>
+                </div>
               )}
             </div>
 
             {/* Primary Action (Navy Theme) */}
-            <div className="speed-dial-primary">
+            <div className="speed-dial-primary-btn" style={{ backgroundColor: 'var(--primary-container)', color: 'white' }}>
               {pathname?.includes('/logbook') && (
-                <button className="fab-action-btn primary" onClick={() => { setIsFabExpanded(false); router.push('/logbook?create=true'); }}>
+                <button className="w-full text-center" onClick={() => { setIsFabExpanded(false); router.push('/logbook?create=true'); }}>
                   Post to Logbook
                 </button>
               )}
               {pathname?.includes('/services') && (
-                <button className="fab-action-btn primary" onClick={() => { setIsFabExpanded(false); setShowPostJob(true); }}>
+                <button className="w-full text-center" onClick={() => { setIsFabExpanded(false); setShowPostJob(true); }}>
                   Post a Job
                 </button>
               )}
               {pathname?.includes('/blog') && (
-                <button className="fab-action-btn primary" onClick={() => { setIsFabExpanded(false); router.push('/blog/create'); }}>
+                <button className="w-full text-center" onClick={() => { setIsFabExpanded(false); router.push('/blog/create'); }}>
                   Post a Blog
                 </button>
               )}
@@ -331,11 +387,16 @@ export default function AppShell({ children, userEmail, userId }) {
         )}
         
         <button 
-          className={`fab-main-btn ${isFabExpanded ? 'expanded' : ''}`} 
+          className={`main-fab ${isFabExpanded ? 'active' : ''} ${fabAnimating ? 'animating' : ''}`} 
           onClick={() => setIsFabExpanded(!isFabExpanded)}
+          style={{ 
+            '--fab-color': pathname?.includes('/logbook') ? 'var(--glow-network)' : 
+                          pathname?.includes('/services') ? 'var(--glow-services)' : 
+                          'var(--primary)' 
+          }}
           aria-label="Speed Dial"
         >
-          <Plus size={32} color="white" className="plus-icon" />
+          {isFabExpanded ? <X size={28} /> : <Plus size={28} />}
         </button>
       </div>
 
