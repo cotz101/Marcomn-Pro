@@ -151,6 +151,11 @@ export default function AppShell({ children, userEmail, userId }) {
                   <Briefcase size={22} />
                 </button>
               </div>
+
+              {/* Mobile Actions (<768px) */}
+              <div className="header-actions-mobile md:hidden flex items-center gap-2">
+                <button className="header-icon-btn"><MessageSquare size={22} /></button>
+              </div>
               
               <div className="avatar-dropdown ml-2" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ position: 'relative', cursor: 'pointer' }}>
                 <div className="flex items-center gap-1">

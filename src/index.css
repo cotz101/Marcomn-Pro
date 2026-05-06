@@ -226,6 +226,7 @@ a {
 .header-right {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
 }
 
@@ -234,11 +235,20 @@ a {
 }
 
 .header-content {
-  display: grid;
-  grid-template-columns: 225px 1fr 300px;
-  gap: 24px;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   height: 64px;
+  padding: 0 16px;
+}
+
+@media (min-width: 1200px) {
+  .header-content {
+    display: grid;
+    grid-template-columns: 225px 1fr 300px;
+    gap: 24px;
+    padding: 0;
+  }
 }
 
 
@@ -1549,39 +1559,32 @@ html.dark .btn-primary {
   color: #002b4e;
 }
 
-/* Row 2: Sub-Navigation */
 .sub-nav {
-  background-color: var(--surface-container-lowest);
-  border-bottom: 1px solid var(--surface-container-highest);
   height: 48px;
-  display: none; /* Hidden by default on Mobile */
-}
-
-@media (min-width: 768px) {
-  .sub-nav {
-    display: block; /* Show on Tablet and Desktop */
-  }
+  background-color: white;
+  border-bottom: 1px solid var(--outline-variant);
+  position: sticky;
+  top: 64px;
+  z-index: 100;
 }
 
 .sub-nav-content {
-  display: grid;
-  grid-template-columns: 225px 1fr 300px;
-  gap: 24px;
+  display: flex;
+  align-items: center;
   height: 100%;
 }
 
-@media (max-width: 1023px) {
+@media (min-width: 768px) and (max-width: 1024px) {
   .sub-nav-content {
-    grid-template-columns: 1fr;
+    justify-content: center;
   }
 }
 
 .sub-nav-links-wrapper {
-  grid-column: 2;
-  justify-content: flex-start;
   display: flex;
   align-items: center;
   gap: 32px;
+  height: 100%;
 }
 
 /* Responsive Visibility rules are now handled in the MASTER RESPONSIVE ARCHITECTURE section at the top. */
@@ -1689,18 +1692,6 @@ html.dark .btn-primary {
   color: inherit;
 }
 
-/* Sub-nav Links */
-.sub-nav-link {
-  display: flex;
-  align-items: center;
-  color: var(--on-surface-variant);
-  font-size: 14px;
-  font-weight: 600;
-  height: 100%;
-  border-bottom: 3px solid transparent;
-  white-space: nowrap;
-  transition: all 0.2s;
-}
 
 .sub-nav-link:hover {
   color: var(--primary);
@@ -1860,6 +1851,136 @@ html.dark .btn-primary {
   color: #1b1c1c;
 }
 
+/* Identity Switcher Polish */
+.identity-switcher-dropdown {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+  border: 1px solid #e0e0e0;
+  width: 240px;
+  padding: 8px 0;
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.switcher-section-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #666;
+  padding: 0 16px 8px;
+  letter-spacing: 0.5px;
+}
+
+.identities-list {
+  max-height: 240px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+}
+
+.identity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.identity-item:hover {
+  background-color: #f3f2ef;
+}
+
+.identity-item.active {
+  background-color: #f0f7ff;
+}
+
+.identity-avatar-container {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.identity-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.company-initials {
+  font-weight: 700;
+  color: #004173;
+}
+
+.identity-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.identity-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #1b1c1c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.identity-role {
+  font-size: 12px;
+  color: #666;
+}
+
+.active-check {
+  color: #004173;
+}
+
+.switcher-links {
+  border-top: 1px solid #f0f0f0;
+  padding: 8px 0;
+}
+
+.switcher-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #444;
+  cursor: pointer;
+}
+
+.switcher-link:hover {
+  background-color: #f3f2ef;
+}
+
+.switcher-footer {
+  border-top: 1px solid #f0f0f0;
+  padding: 8px 0 0;
+}
+
+.sign-out-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.sign-out-link:hover {
+  background-color: #fff5f5;
+}
+
 
 /* ============================================================
    MASTER RESPONSIVE ARCHITECTURE (Unified & Hardened)
@@ -1881,6 +2002,25 @@ html.dark .btn-primary {
   align-items: start !important;
 }
 
+/* Header Safe Zones for Mobile */
+.header-content {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 16px !important;
+}
+
+.header-left {
+  flex: 0 0 auto !important;
+}
+
+.header-right {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
 /* Hide desktop/tablet elements by default */
 .header-nav-center, 
 .header-actions-desktop, 
@@ -1892,6 +2032,12 @@ html.dark .btn-primary {
 }
 
 /* Show mobile elements by default */
+.header-actions-mobile {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
 .bottom-nav-mobile {
   display: flex !important;
 }
@@ -1904,7 +2050,8 @@ html.dark .btn-primary {
 @media (min-width: 768px) {
   /* Hide mobile elements */
   .bottom-nav-mobile, 
-  .fab-container {
+  .fab-container,
+  .header-actions-mobile {
     display: none !important;
   }
   
@@ -1917,6 +2064,13 @@ html.dark .btn-primary {
   
   .sub-nav {
     display: flex !important;
+  }
+}
+
+/* 2.5 Desktop Sub-Nav Visibility Fix */
+@media (min-width: 1025px) {
+  .sub-nav {
+    display: none !important;
   }
 }
 
