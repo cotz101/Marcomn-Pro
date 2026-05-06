@@ -6,6 +6,9 @@ import GroupsGrid from './components/groups/GroupsGrid'
 import TalentDirectory from './components/talent/TalentDirectory'
 import ConnectionsHub from './components/connections/ConnectionsHub'
 import Profile from './components/profile/Profile'
+import ServicesFeed from './components/services/ServicesFeed'
+import BlogFeed from './components/blog/BlogFeed'
+import MobileShell from './components/layout/MobileShell'
 
 const DEFAULT_PROFILE = {
   fullName: 'Efren jr',
@@ -45,9 +48,12 @@ function App() {
           <Route path="/groups" element={<GroupsGrid />} />
           <Route path="/talent" element={<TalentDirectory />} />
           <Route path="/connections" element={<ConnectionsHub />} />
+          <Route path="/services" element={<ServicesFeed />} />
+          <Route path="/blog" element={<BlogFeed />} />
           <Route path="/profile" element={<Profile profile={profile} setProfile={setProfile} />} />
         </Routes>
       </main>
+      <MobileShell />
     </BrowserRouter>
   )
 }
