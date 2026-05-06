@@ -34,13 +34,13 @@ export default function ServicesFeed() {
   ];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <div className="card p-6 mb-2">
         <h2 className="text-xl font-bold text-[#004173] mb-2">MServices</h2>
         <p className="text-sm text-[#42474f]">Discover professional maritime services tailored to your operations.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {services.map((service) => {
           const Icon = service.icon;
           return (

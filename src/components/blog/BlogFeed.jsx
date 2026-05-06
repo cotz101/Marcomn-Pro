@@ -24,13 +24,13 @@ export default function BlogFeed() {
   ];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <div className="card p-6 mb-2">
         <h2 className="text-xl font-bold text-[#004173] mb-2">MBlog</h2>
         <p className="text-sm text-[#42474f]">Expert insights, industry news, and maritime thought leadership.</p>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         {posts.map((post) => (
           <article key={post.id} className="card overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
             <div className="flex flex-col md:flex-row">

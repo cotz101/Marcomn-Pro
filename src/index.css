@@ -37,7 +37,7 @@
 
   /* Grid & Spacing */
   --container-max: 1128px;
-  --gutter: 24px;
+  --gutter: 33px;
   --radius-default: 8px;
   
   /* Elevation */
@@ -106,6 +106,7 @@ a {
 .gap-2 { gap: 8px; }
 .gap-3 { gap: 12px; }
 .gap-4 { gap: 16px; }
+.gap-5 { gap: 20px; }
 
 .m-0 { margin: 0; }
 .mt-1 { margin-top: 4px; }
@@ -324,6 +325,7 @@ a {
   background-color: #FFFFFF !important;
   border: 1px solid #E0E0E0 !important;
   border-radius: 8px !important;
+  margin-bottom: 13px !important;
 }
 
 .sidebar-left, .sidebar-right {
@@ -334,7 +336,7 @@ a {
 
 .post-card {
   padding: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 13px !important;
   position: relative; /* Ensure absolute children like menu icons work correctly */
 }
 
@@ -867,6 +869,7 @@ html.dark .btn-primary {
 /* Create Post Card */
 .create-post-card {
   padding: 16px;
+  margin-bottom: 20px;
 }
 
 .create-post-top {
@@ -1995,12 +1998,19 @@ html.dark .btn-primary {
   margin: 0 auto !important;
   width: 100% !important;
   padding: 0 16px !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 767px) {
+  .app-container {
+    padding: 0 12px !important; /* iPhone 13 Symmetry Fix */
+  }
 }
 
 .main-grid {
   display: grid !important;
   grid-template-columns: 1fr !important;
-  gap: 24px !important;
+  gap: 33px !important;
   margin: 24px auto !important;
   align-items: start !important;
 }
@@ -2034,19 +2044,182 @@ html.dark .btn-primary {
   display: none !important;
 }
 
-/* Show mobile elements by default */
-.header-actions-mobile {
-  display: flex !important;
-  align-items: center !important;
-  gap: 16px !important;
+/* Hide mobile elements by default (Mobile-First definition for non-mobile) */
+.header-actions-mobile,
+.bottom-nav-mobile,
+.fab-container {
+  display: none !important;
 }
+
+@media (max-width: 767px) {
+  .header-actions-mobile {
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+  }
+
+  .bottom-nav-mobile {
+    display: flex !important;
+  }
+
+  .fab-container {
+    display: flex !important;
+  }
+}
+
+/* --- MOBILE INFRASTRUCTURE STYLES --- */
 
 .bottom-nav-mobile {
-  display: flex !important;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: #FFFFFF;
+  border-top: 1px solid #E0E0E0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
+.bottom-nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #666666;
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.bottom-nav-link.active {
+  color: var(--primary);
+}
+
+.nav-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  transition: all 0.3s ease;
+}
+
+/* Luminous Effect */
+.bottom-nav-link.active .nav-icon-wrapper {
+  filter: drop-shadow(0 0 8px rgba(0, 86, 179, 0.4)); /* Glow matching primary */
+}
+
+.bottom-nav-link.active svg {
+  stroke-width: 2.5px;
+}
+
+/* Adaptive Speed Dial FAB */
 .fab-container {
-  display: flex !important;
+  position: fixed;
+  bottom: 80px;
+  right: 16px;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.fab-main-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--primary-dark);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.fab-main-btn.expanded {
+  transform: rotate(180deg) scale(1.1);
+}
+
+.speed-dial-wrapper {
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.speed-dial-wrapper * {
+  pointer-events: auto;
+}
+
+.speed-dial-shortcuts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.shortcut-btn {
+  background: white;
+  border: 1px solid #E0E0E0;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transform: scale(0);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.fab-container.is-open .shortcut-btn {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.speed-dial-primary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.fab-action-btn.primary {
+  background: var(--primary-dark);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-weight: 700;
+  font-size: 14px;
+  border: 2px solid white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: scale(0);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.fab-container.is-open .fab-action-btn.primary {
+  transform: scale(1);
+  opacity: 1;
+  animation: pulse-scale 2s infinite;
+}
+
+@keyframes pulse-scale {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
 /* 2. Tablet & Above (>= 768px) */
@@ -2077,8 +2250,8 @@ html.dark .btn-primary {
   }
 }
 
-/* 3. Header Actions Logic (>= 768px) */
-@media (min-width: 768px) and (max-width: 1199px) {
+/* 3. Header Actions Logic */
+@media (min-width: 768px) and (max-width: 1024px) {
   .header-actions-tablet {
     display: flex !important;
     align-items: center !important;
@@ -2086,7 +2259,7 @@ html.dark .btn-primary {
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1025px) {
   .header-actions-desktop {
     display: flex !important;
     align-items: center !important;
@@ -2094,24 +2267,36 @@ html.dark .btn-primary {
   }
 }
 
-/* 4. Grid & Sidebar Logic (>= 1024px) */
-@media (min-width: 1024px) {
+/* 4. Grid & Sidebar Logic */
+@media (min-width: 1025px) {
+  .app-container {
+    max-width: 1128px !important;
+  }
+  
   .main-grid {
-    grid-template-columns: 225px 1fr !important;
+    grid-template-columns: 225px 1fr 300px !important;
+    gap: 33px !important;
+    justify-content: center !important;
+  }
+  
+  .sidebar-left, .sidebar-right {
+    display: block !important;
+  }
+}
+
+/* Tablet / Intermediate Logic (Dropping sidebars proportionally) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .main-grid {
+    grid-template-columns: minmax(200px, 297px) 1fr !important;
+    gap: 33px !important;
   }
   
   .sidebar-left {
     display: block !important;
   }
-}
-
-@media (min-width: 1200px) {
-  .main-grid {
-    grid-template-columns: 225px 1fr 300px !important;
-  }
   
   .sidebar-right {
-    display: block !important;
+    display: none !important;
   }
 }
 
@@ -2130,12 +2315,6 @@ html.dark .btn-primary {
   background-color: #F4F4F4 !important; /* Matches body background exactly */
 }
 
-/* Header Action Group Refinement */
-.header-actions-mobile {
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-}
 
 .avatar-img {
   border: 2px solid transparent;
