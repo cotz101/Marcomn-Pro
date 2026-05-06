@@ -25,6 +25,7 @@ export default function BaseModal({ isOpen, onClose, title, children, maxWidth =
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth }}
       >
+        <div className="bottom-sheet-handle md:hidden" style={{ marginTop: '12px', marginBottom: '4px' }}></div>
         <div className="modal-header-navy">
           <h2 className="modal-title-white">{title}</h2>
           <button className="modal-close-btn-white" onClick={onClose} aria-label="Close">

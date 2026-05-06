@@ -39,6 +39,7 @@ export default function AppShell({ children, userEmail, userId }) {
   const [mnetworkOpen, setMnetworkOpen] = useState(false);
   const [showCreateCompany, setShowCreateCompany] = useState(false);
   const [showPostJob, setShowPostJob] = useState(false);
+  const [isFabExpanded, setIsFabExpanded] = useState(false);
   
   const avatarRef = useRef(null);
 
@@ -110,7 +111,7 @@ export default function AppShell({ children, userEmail, userId }) {
               </Link>
             </div>
 
-            <div className="header-nav-center hidden lg:flex">
+            <div className="header-nav-center">
               <Link href="/logbook" className={`nav-link ${pathname === '/logbook' ? 'active' : ''}`}>
                 <Ship size={24} />
                 <span>MNetwork</span>
@@ -127,7 +128,7 @@ export default function AppShell({ children, userEmail, userId }) {
 
             <div className="header-right" ref={avatarRef}>
               {/* Desktop Actions (>1024px) */}
-              <div className="hidden lg:flex items-center gap-2">
+              <div className="header-actions-desktop">
                 <button className="header-icon-btn"><MessageSquare size={22} /></button>
                 <button className="header-icon-btn"><Bell size={22} /></button>
                 <button 
@@ -140,7 +141,7 @@ export default function AppShell({ children, userEmail, userId }) {
               </div>
 
               {/* Tablet Actions (768px - 1023px) */}
-              <div className="hidden md:flex lg:hidden items-center gap-3">
+              <div className="header-actions-tablet">
                 <button className="header-icon-btn"><MessageSquare size={22} /></button>
                 <button className="header-icon-btn"><Bell size={22} /></button>
                 <button 
@@ -149,11 +150,6 @@ export default function AppShell({ children, userEmail, userId }) {
                 >
                   <Briefcase size={22} />
                 </button>
-              </div>
-
-              {/* Mobile Actions (<767px) */}
-              <div className="flex md:hidden items-center gap-2">
-                <button className="header-icon-btn"><MessageSquare size={22} /></button>
               </div>
               
               <div className="avatar-dropdown ml-2" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ position: 'relative', cursor: 'pointer' }}>
@@ -181,14 +177,16 @@ export default function AppShell({ children, userEmail, userId }) {
         </div>
       </header>
 
-      {/* Row 2: Sub-Navigation for Tablet (768px - 1023px) */}
-      <nav className="hidden md:flex lg:hidden bg-white border-bottom border-[#efeded]">
-        <div className="app-container py-2">
-          <div className="flex justify-around items-center">
-            <Link href="/logbook" className={`px-3 py-2 text-sm font-semibold ${pathname === '/logbook' ? 'text-[#004173] border-b-2 border-[#004173]' : 'text-[#42474f]'}`}>Logbook</Link>
-            <Link href="/connections" className={`px-3 py-2 text-sm font-semibold ${pathname === '/connections' ? 'text-[#004173] border-b-2 border-[#004173]' : 'text-[#42474f]'}`}>Connections</Link>
-            <Link href="/groups" className={`px-3 py-2 text-sm font-semibold ${pathname === '/groups' ? 'text-[#004173] border-b-2 border-[#004173]' : 'text-[#42474f]'}`}>Groups</Link>
-            <Link href="/talent" className={`px-3 py-2 text-sm font-semibold ${pathname === '/talent' ? 'text-[#004173] border-b-2 border-[#004173]' : 'text-[#42474f]'}`}>Talent</Link>
+      {/* Row 2: Sub-Navigation (Tablet & Desktop) */}
+      <nav className="sub-nav">
+        <div className="app-container h-full">
+          <div className="sub-nav-content">
+            <div className="sub-nav-links-wrapper">
+              <Link href="/logbook" className={`sub-nav-link ${pathname === '/logbook' ? 'active' : ''}`}>Logbook</Link>
+              <Link href="/connections" className={`sub-nav-link ${pathname === '/connections' ? 'active' : ''}`}>Connections</Link>
+              <Link href="/groups" className={`sub-nav-link ${pathname === '/groups' ? 'active' : ''}`}>Groups</Link>
+              <Link href="/talent" className={`sub-nav-link ${pathname === '/talent' ? 'active' : ''}`}>Talent</Link>
+            </div>
           </div>
         </div>
       </nav>
@@ -224,22 +222,30 @@ export default function AppShell({ children, userEmail, userId }) {
             <div className="bottom-sheet-handle"></div>
             <div className="p-4">
               <h3 className="font-bold text-lg mb-4 text-[#1b1c1c]">Navigation</h3>
-              <div className="grid grid-cols-1 gap-2">
-                <Link href="/logbook" className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100" onClick={() => setMnetworkOpen(false)}>
-                  <Ship size={20} className="text-[#004173]" />
-                  <span className="font-medium">Logbook</span>
+              <div className="grid grid-cols-2 gap-4">
+                <Link href="/logbook" className="nav-grid-item" onClick={() => setMnetworkOpen(false)}>
+                  <div className="nav-grid-icon-box">
+                    <Ship size={24} />
+                  </div>
+                  <span className="nav-grid-label">Logbook</span>
                 </Link>
-                <Link href="/connections" className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100" onClick={() => setMnetworkOpen(false)}>
-                  <UserPlus size={20} className="text-[#004173]" />
-                  <span className="font-medium">Connections</span>
+                <Link href="/connections" className="nav-grid-item" onClick={() => setMnetworkOpen(false)}>
+                  <div className="nav-grid-icon-box">
+                    <UserPlus size={24} />
+                  </div>
+                  <span className="nav-grid-label">Connections</span>
                 </Link>
-                <Link href="/groups" className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100" onClick={() => setMnetworkOpen(false)}>
-                  <Users size={20} className="text-[#004173]" />
-                  <span className="font-medium">Groups</span>
+                <Link href="/groups" className="nav-grid-item" onClick={() => setMnetworkOpen(false)}>
+                  <div className="nav-grid-icon-box">
+                    <Users size={24} />
+                  </div>
+                  <span className="nav-grid-label">Groups</span>
                 </Link>
-                <Link href="/talent" className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100" onClick={() => setMnetworkOpen(false)}>
-                  <Search size={20} className="text-[#004173]" />
-                  <span className="font-medium">Talent Search</span>
+                <Link href="/talent" className="nav-grid-item" onClick={() => setMnetworkOpen(false)}>
+                  <div className="nav-grid-icon-box">
+                    <Search size={24} />
+                  </div>
+                  <span className="nav-grid-label">Talent</span>
                 </Link>
               </div>
             </div>
@@ -248,13 +254,39 @@ export default function AppShell({ children, userEmail, userId }) {
       )}
 
       {/* FAB for Mobile Post Creation */}
-      <button 
-        className="fab-btn md:hidden" 
-        onClick={() => router.push('/logbook?create=true')}
-        aria-label="Create Post"
-      >
-        <Pencil size={24} color="white" fill="white" />
-      </button>
+      <div className="fab-container md:hidden">
+        {isFabExpanded && (
+          <div className="fab-options">
+            <button 
+              className="fab-pill"
+              onClick={() => {
+                setIsFabExpanded(false);
+                setShowPostJob(true);
+              }}
+            >
+              <Briefcase size={18} />
+              Post a Job
+            </button>
+            <button 
+              className="fab-pill"
+              onClick={() => {
+                setIsFabExpanded(false);
+                router.push('/logbook?create=true');
+              }}
+            >
+              <Pencil size={18} />
+              Post on Logbook
+            </button>
+          </div>
+        )}
+        <button 
+          className={`fab-btn ${isFabExpanded ? 'expanded' : ''}`} 
+          onClick={() => setIsFabExpanded(!isFabExpanded)}
+          aria-label="Create Post"
+        >
+          <Plus size={32} color="white" />
+        </button>
+      </div>
 
       <main className="flex-1">
         <div className="app-container">

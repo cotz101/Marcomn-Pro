@@ -98,13 +98,12 @@ export default function PostCard({ post, userId, onEdit, onDeleteSuccess }) {
     <div className="card post-card" ref={cardRef}>
       {/* Absolute top-right menu */}
       <div style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10 }}>
-        {isAuthor && (
-          <PostActions 
-            postId={post.id} 
-            onEdit={() => onEdit && onEdit(post)} 
-            onDeleteSuccess={onDeleteSuccess} 
-          />
-        )}
+        <PostActions 
+          postId={post.id} 
+          isAuthor={isAuthor}
+          onEdit={() => onEdit && onEdit(post)} 
+          onDeleteSuccess={onDeleteSuccess} 
+        />
       </div>
 
       <div className="post-header" style={{ paddingRight: '40px' }}>

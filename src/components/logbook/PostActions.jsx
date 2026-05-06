@@ -5,7 +5,7 @@ import { MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import DeleteConfirmModal from './DeleteConfirmModal';
 
-export default function PostActions({ postId, onEdit, onDeleteSuccess }) {
+export default function PostActions({ postId, isAuthor, onEdit, onDeleteSuccess }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -55,25 +55,50 @@ export default function PostActions({ postId, onEdit, onDeleteSuccess }) {
       
       {isOpen && (
         <div className="post-menu-dropdown">
-          <button 
-            className="post-menu-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-              setIsOpen(false);
-            }}
-          >
-            <Edit2 size={14} /> Edit Post
-          </button>
-          <button 
-            className="post-menu-item delete"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsDeleteModalOpen(true);
-            }}
-          >
-            <Trash2 size={14} /> Delete Post
-          </button>
+          {isAuthor ? (
+            <>
+              <button 
+                className="post-menu-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                  setIsOpen(false);
+                }}
+              >
+                <Edit2 size={14} /> Edit Post
+              </button>
+              <button 
+                className="post-menu-item delete"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDeleteModalOpen(true);
+                }}
+              >
+                <Trash2 size={14} /> Delete Post
+              </button>
+            </>
+          ) : (
+            <>
+              <button 
+                className="post-menu-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                }}
+              >
+                Report Post
+              </button>
+              <button 
+                className="post-menu-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                }}
+              >
+                Copy Link
+              </button>
+            </>
+          )}
         </div>
       )}
 

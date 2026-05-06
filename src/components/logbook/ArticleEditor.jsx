@@ -72,68 +72,70 @@ export default function ArticleEditor({ onClose, onPost }) {
   };
 
   return (
-    <div className="article-editor-overlay">
-      <div className="article-editor-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button className="btn-close" onClick={onClose}><X size={24} /></button>
+    <div className="article-editor-overlay" onClick={onClose}>
+      <div className="article-editor-container" onClick={e => e.stopPropagation()}>
+        <div className="article-editor-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button className="header-icon-btn" onClick={onClose}><X size={24} /></button>
+            <h2 className="font-bold text-lg">Write Article</h2>
+          </div>
+
+          <div className="article-actions flex items-center gap-4">
+            <span style={{ fontSize: '14px', color: '#666' }}>Saved as draft</span>
+            <button 
+              className="btn-primary-pill px-6" 
+              onClick={handlePost}
+              disabled={!title.trim() || !content.trim()}
+            >
+              Post
+            </button>
+          </div>
         </div>
 
-        <div className="article-actions">
-          <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Saved as draft</span>
-          <button 
-            className="btn-primary" 
-            style={{ borderRadius: '24px' }}
-            onClick={handlePost}
-            disabled={!title.trim() || !content.trim()}
-          >
-            Post ➔
-          </button>
-        </div>
-      </div>
-
-      <div className="article-editor-content">
-        <div className="article-cover-upload" onClick={() => coverInputRef.current.click()}>
-          {coverMedia ? (
-            mediaType === 'video' ? (
-              <video src={coverMedia} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <div className="article-editor-content">
+          <div className="article-cover-upload" onClick={() => coverInputRef.current.click()}>
+            {coverMedia ? (
+              mediaType === 'video' ? (
+                <video src={coverMedia} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <img src={coverMedia} alt="Cover" />
+              )
             ) : (
-              <img src={coverMedia} alt="Cover" />
-            )
-          ) : (
-            <>
-              <div style={{ display: 'flex', gap: '16px', color: 'var(--text-secondary)' }}>
-                <ImageIcon size={48} />
-                <VideoIcon size={48} />
-              </div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Upload a cover photo or video</p>
-              <button className="btn-secondary" style={{ borderRadius: '24px' }}>
-                Select File
-              </button>
-            </>
-          )}
+              <>
+                <div style={{ display: 'flex', gap: '16px', color: '#666' }}>
+                  <ImageIcon size={48} />
+                  <VideoIcon size={48} />
+                </div>
+                <p style={{ color: '#666', fontSize: '14px', marginTop: '12px' }}>Upload a cover photo or video</p>
+                <button className="btn-secondary-pill mt-4">
+                  Select File
+                </button>
+              </>
+            )}
+            <input 
+              type="file" 
+              accept="image/*,video/*" 
+              ref={coverInputRef} 
+              style={{ display: 'none' }} 
+              onChange={handleMediaUpload} 
+            />
+          </div>
+
           <input 
-            type="file" 
-            accept="image/*,video/*" 
-            ref={coverInputRef} 
-            style={{ display: 'none' }} 
-            onChange={handleMediaUpload} 
+            type="text" 
+            className="article-title-input" 
+            placeholder="Title"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
           />
-        </div>
 
-        <input 
-          type="text" 
-          className="article-title-input" 
-          placeholder="Title"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-        />
-
-        <div className="quill-wrapper" style={{ minHeight: '500px' }}>
-          {!mounted ? (
-            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading Editor...</div>
-          ) : (
-            <div ref={editorRef} style={{ height: '100%', border: 'none' }}></div>
-          )}
+          <div className="quill-wrapper">
+            {!mounted ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>Loading Editor...</div>
+            ) : (
+              <div ref={editorRef}></div>
+            )}
+          </div>
         </div>
       </div>
     </div>
