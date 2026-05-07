@@ -491,14 +491,41 @@ a {
 
 .post-media-container {
   width: 100%;
-  aspect-ratio: 16 / 9;
-  background-color: #000;
+  background-color: #0d1117; /* Dark Slate / Black Background */
   border-radius: var(--radius-default);
   margin-bottom: 16px;
-  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  max-height: 350px; /* Collapsed state */
+}
+
+.post-media-container.expanded {
+  max-height: none !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.post-media-container img,
+.post-media-container video {
+  width: 100% !important;
+  height: auto !important;
+  max-height: 350px;
+  object-fit: contain !important;
+  display: block;
+}
+
+.post-media-container.expanded img,
+.post-media-container.expanded video {
+  max-height: none !important;
+}
+
+.post-media-container iframe {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  height: auto;
 }
 
 
@@ -2316,6 +2343,9 @@ html.dark .btn-primary {
   .sidebar-left {
     display: block !important;
     width: 225px !important;
+    position: sticky !important;
+    top: 80px !important;
+    align-self: start !important;
   }
   
   .sidebar-right {

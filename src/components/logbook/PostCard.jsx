@@ -184,10 +184,9 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
       {post.type === 'article' && (
         <div style={{ marginBottom: '16px' }}>
           {post.youtubeLink && getYoutubeEmbedUrl(post.youtubeLink) ? (
-            <div className="post-media-container">
+            <div className={`post-media-container ${isExpanded ? 'expanded' : ''}`}>
               <iframe 
                 width="100%" 
-                height="100%" 
                 src={getYoutubeEmbedUrl(post.youtubeLink)} 
                 title="YouTube video" 
                 frameBorder="0" 
@@ -195,7 +194,7 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
               </iframe>
             </div>
           ) : post.media && (
-            <div className="post-media-container">
+            <div className={`post-media-container ${isExpanded ? 'expanded' : ''}`}>
               {post.mediaType === 'video' ? (
                 <video src={post.media} controls />
               ) : (
@@ -207,7 +206,7 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
       )}
 
       {(post.type === 'standard' && post.media) && (
-        <div className="post-media-container">
+        <div className={`post-media-container ${isExpanded ? 'expanded' : ''}`}>
           {post.mediaType === 'video' ? (
             <video src={post.media} controls />
           ) : (
