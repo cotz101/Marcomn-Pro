@@ -5,12 +5,17 @@ import { Heart, MessageSquare, Share2 } from 'lucide-react';
 import PostActions from './PostActions';
 import DOMPurify from 'dompurify';
 import CommentSection from './CommentSection';
+import ReactionsModal from './ReactionsModal';
+import { createClient } from '@/lib/supabase';
 
 export default function PostCard({ post, userId, profile, onEdit, onDeleteSuccess }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
+  const [isLiked, setIsLiked] = useState(post.user_has_liked || false);
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comment_count || 0);
+  const [likeCount, setLikeCount] = useState(post.like_count || 0);
+  const [showReactions, setShowReactions] = useState(false);
+  const supabase = createClient();
   const cardRef = useRef(null);
   const isAuthor = post.user_id === userId || post.userId === userId || post.authorId === userId;
   
@@ -28,6 +33,38 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
     const txt = document.createElement('textarea');
     txt.innerHTML = html;
     return txt.value;
+  };
+
+  const toggleLike = async () => {
+    if (!userId) return;
+
+    // Optimistic UI
+    const newLikedState = !isLiked;
+    setIsLiked(newLikedState);
+    setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
+
+    try {
+      if (newLikedState) {
+        // Add like
+        const { error } = await supabase
+          .from('likes')
+          .insert({ post_id: post.id, user_id: userId });
+        if (error) throw error;
+      } else {
+        // Remove like
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('post_id', post.id)
+          .eq('user_id', userId);
+        if (error) throw error;
+      }
+    } catch (err) {
+      console.error('Error toggling like:', err);
+      // Revert optimistic UI on error
+      setIsLiked(!newLikedState);
+      setLikeCount(prev => !newLikedState ? prev + 1 : prev - 1);
+    }
   };
 
   const truncateHtmlWithTags = (html, limit) => {
@@ -218,11 +255,22 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
       <div className="post-actions">
         <button 
           className={`action-btn ${isLiked ? 'active' : ''}`}
-          onClick={() => setIsLiked(!isLiked)}
+          onClick={toggleLike}
           style={{ color: isLiked ? '#002b4e' : 'inherit' }}
         >
           <Heart size={18} fill={isLiked ? '#002b4e' : 'none'} /> 
-          <span>Like</span>
+          <span className="font-medium">Like</span>
+          {likeCount > 0 && (
+            <button 
+              className="like-count-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowReactions(true);
+              }}
+            >
+              {likeCount} {likeCount === 1 ? 'like' : 'likes'}
+            </button>
+          )}
         </button>
         <button 
           className={`action-btn ${showComments ? 'active' : ''}`}
@@ -247,6 +295,13 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
           onCommentDeleted={() => setCommentCount(prev => prev - 1)}
         />
       )}
+
+      <ReactionsModal 
+        isOpen={showReactions}
+        onClose={() => setShowReactions(false)}
+        postId={post.id}
+        currentUserId={userId}
+      />
     </div>
   );
 }

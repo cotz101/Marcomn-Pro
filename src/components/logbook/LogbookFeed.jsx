@@ -28,8 +28,11 @@ export default function LogbookFeed({ profile }) {
           *,
           author:profiles(full_name, avatar_url, headline),
           company:companies(name, logo_url, industry),
-          comments:comments(count)
+          comments:comments(count),
+          likes:likes(count),
+          user_liked:likes(id)
         `)
+        .eq('user_liked.user_id', userId || '00000000-0000-0000-0000-000000000000') // Check if current user liked
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -62,7 +65,9 @@ export default function LogbookFeed({ profile }) {
             media: post.media_url,
             mediaType: post.media_type,
             youtubeLink: post.youtube_link,
-            comment_count: post.comments?.[0]?.count || 0
+            comment_count: post.comments?.[0]?.count || 0,
+            like_count: post.likes?.[0]?.count || 0,
+            user_has_liked: post.user_liked?.length > 0
           };
         });
         setPosts(formattedPosts);
