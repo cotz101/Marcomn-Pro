@@ -2,14 +2,19 @@
 
 import { X, AlertTriangle } from 'lucide-react';
 
-export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, loading }) {
+export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, loading, type = 'post' }) {
   if (!isOpen) return null;
+
+  const title = type === 'post' ? 'Delete Post?' : 'Delete Comment?';
+  const description = type === 'post' 
+    ? 'Delete this post? This action cannot be undone.'
+    : 'Delete Comment? This action cannot be undone.';
 
   return (
     <div className="modal-overlay" style={{ zIndex: 1100 }}>
       <div className="modal-content" style={{ maxWidth: '400px' }}>
         <div className="modal-header">
-          <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Delete post?</h2>
+          <h2 style={{ fontSize: '18px', fontWeight: 600 }}>{title}</h2>
           <button className="btn-close" onClick={onClose} disabled={loading}>
             <X size={20} />
           </button>
@@ -30,7 +35,7 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, loading
             <AlertTriangle size={24} />
           </div>
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-            Are you sure you want to permanently delete this post? This action cannot be undone.
+            {description}
           </p>
         </div>
 
@@ -39,7 +44,14 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, loading
             className="btn-secondary" 
             onClick={onClose}
             disabled={loading}
-            style={{ borderRadius: '24px', border: '1px solid #ddd', color: '#666' }}
+            style={{ 
+              borderRadius: '24px', 
+              border: '1px solid #ddd', 
+              color: '#666',
+              padding: '8px 24px',
+              fontSize: '14px',
+              fontWeight: 600
+            }}
           >
             Cancel
           </button>
@@ -51,10 +63,13 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, loading
               borderRadius: '24px', 
               backgroundColor: '#dc3545', 
               border: 'none',
-              color: '#fff'
+              color: '#fff',
+              padding: '8px 24px',
+              fontSize: '14px',
+              fontWeight: 600
             }}
           >
-            {loading ? 'Deleting...' : 'Delete Post'}
+            {loading ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>

@@ -10,6 +10,7 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [commentCount, setCommentCount] = useState(post.comment_count || 0);
   const cardRef = useRef(null);
   const isAuthor = post.user_id === userId || post.userId === userId || post.authorId === userId;
   
@@ -36,6 +37,35 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
     
+    // Helper to find the first two sentences or hit a character limit
+    const getSmartBreakpoint = (text, charLimit) => {
+      // Find sentences (period/exclamation/question mark followed by space or end)
+      const sentenceRegex = /[^.!?]+[.!?](\s|$)/g;
+      let match;
+      let count = 0;
+      let lastIndex = 0;
+      
+      while ((match = sentenceRegex.exec(text)) !== null) {
+        count++;
+        lastIndex = sentenceRegex.lastIndex;
+        if (count === 2) break;
+      }
+      
+      // If we found 2 sentences and they are within a reasonable range (not too long)
+      if (count >= 2 && lastIndex <= charLimit * 1.5) {
+        return lastIndex;
+      }
+      
+      // Fallback: find nearest word break around charLimit
+      const beforeLimit = text.lastIndexOf(' ', charLimit);
+      return beforeLimit > 0 ? beforeLimit : charLimit;
+    };
+
+    const plainText = tempDiv.textContent || tempDiv.innerText || '';
+    const smartLimit = getSmartBreakpoint(plainText, limit);
+
+    if (plainText.length <= smartLimit) return html;
+
     let currentLength = 0;
     let resultHtml = '';
     let isTruncated = false;
@@ -44,10 +74,10 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
       if (isTruncated) return;
 
       if (node.nodeType === Node.TEXT_NODE) {
-        const remaining = limit - currentLength;
+        const remaining = smartLimit - currentLength;
         if (node.textContent.length > remaining) {
-          resultHtml += node.textContent.substring(0, remaining);
-          currentLength = limit;
+          resultHtml += node.textContent.substring(0, remaining).trim();
+          currentLength = smartLimit;
           isTruncated = true;
         } else {
           resultHtml += node.textContent;
@@ -74,7 +104,7 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
     return isTruncated ? resultHtml + '...' : resultHtml;
   };
 
-  const contentLimit = 300;
+  const contentLimit = 180; // Targeting roughly 150-200 chars for first two sentences
   
   const rawContent = post.content || '';
   // Only unescape if we see escaped tags like &lt; or &gt;
@@ -84,10 +114,12 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
   // Determine displayed content based on expansion state
   const displayedContent = isExpanded ? contentToProcess : truncateHtmlWithTags(contentToProcess, contentLimit);
   
-  // Calculate if it SHOULD truncate based on PLAIN TEXT length to be consistent
   const tempTextDiv = document.createElement('div');
   tempTextDiv.innerHTML = contentToProcess;
-  const shouldTruncate = (tempTextDiv.textContent || '').length > contentLimit;
+  const plainText = tempTextDiv.textContent || '';
+  
+  // Rule check: only truncate if we actually have more sentences/text than the smartLimit
+  const shouldTruncate = plainText.length > 200; // General threshold for "See more"
 
   return (
     <div className="card post-card" ref={cardRef}>
@@ -200,10 +232,9 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
         >
           <div className="flex items-center gap-1.5">
             <MessageSquare size={18} fill={showComments ? '#002b4e' : 'none'} /> 
-            <span className="font-medium">Comment</span>
-            {post.comment_count > 0 && (
-              <span className="comment-count-pill">{post.comment_count}</span>
-            )}
+            <span className="font-medium">
+              {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+            </span>
           </div>
         </button>
       </div>
@@ -213,6 +244,8 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
           postId={post.id} 
           userId={userId} 
           profile={profile} 
+          onCommentAdded={() => setCommentCount(prev => prev + 1)}
+          onCommentDeleted={() => setCommentCount(prev => prev - 1)}
         />
       )}
     </div>

@@ -89,6 +89,13 @@ export default function LogbookFeed({ profile }) {
     };
   }, [fetchPosts, supabase]);
 
+  const handlePostDelete = (deletedId) => {
+    // Optimistically update the list
+    setPosts(prevPosts => prevPosts.filter(p => p.id !== deletedId));
+    // Also trigger fetch to sync with DB state
+    fetchPosts();
+  };
+
   const handleUpdate = async (postData) => {
     const { error } = await supabase
       .from('posts')
@@ -148,7 +155,7 @@ export default function LogbookFeed({ profile }) {
             userId={userId} 
             profile={profile}
             onEdit={setEditingPost} 
-            onDeleteSuccess={fetchPosts} 
+            onDeleteSuccess={handlePostDelete} 
           />
         ))
       ) : (

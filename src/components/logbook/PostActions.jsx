@@ -24,20 +24,24 @@ export default function PostActions({ postId, isAuthor, onEdit, onDeleteSuccess 
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    const { error } = await supabase
-      .from('posts')
-      .delete()
-      .eq('id', postId);
-    
-    if (error) {
-      console.error('Error deleting post:', error);
-      alert('Failed to delete post');
-      setIsDeleting(false);
-    } else {
-      onDeleteSuccess();
-      setIsDeleting(false);
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId);
+      
+      if (error) throw error;
+      
+      if (onDeleteSuccess) {
+        onDeleteSuccess(postId); // Pass ID for optimistic filtering
+      }
       setIsDeleteModalOpen(false);
       setIsOpen(false);
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      alert('Failed to delete post: ' + error.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 

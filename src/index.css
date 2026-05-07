@@ -2098,7 +2098,9 @@ html.dark .btn-primary {
   justify-content: space-around;
   align-items: center;
   z-index: 1000;
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  height: calc(64px + env(safe-area-inset-bottom));
+  overscroll-behavior: none;
 }
 
 .bottom-nav-link {
@@ -2298,6 +2300,9 @@ html.dark .btn-primary {
   
   .sidebar-left, .sidebar-right {
     display: block !important;
+    position: sticky !important;
+    top: 80px !important;
+    align-self: start !important;
   }
 }
 
@@ -2483,7 +2488,9 @@ html.dark .btn-primary {
     justify-content: space-around;
     align-items: center;
     z-index: 1000;
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    height: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom));
+    overscroll-behavior: none;
   }
 
   .mobile-nav-item {
