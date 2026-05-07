@@ -21,78 +21,36 @@ export default function PostCard({ post, userId, onEdit, onDeleteSuccess }) {
 
   const unescapeHtml = (html) => {
     if (!html) return '';
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    return doc.documentElement.textContent || html;
+    const txt = document.createElement('textarea');
+    txt.innerHTML = html;
+    return txt.value;
   };
 
   const contentLimit = 300;
   
   const truncateHtml = (html, limit) => {
     if (!html) return '';
+    
+    // Create a temporary div to extract plain text
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
-    const text = tempDiv.textContent || tempDiv.innerText || '';
+    const plainText = tempDiv.textContent || tempDiv.innerText || '';
     
-    if (text.length <= limit) return html;
+    if (plainText.length <= limit) return html;
     
-    // Improved truncation: truncate text and close any open tags
-    let count = 0;
-    let result = '';
-    let inTag = false;
-    let tagBuffer = '';
-    const openTags = [];
-    
-    for (let i = 0; i < html.length; i++) {
-      const char = html[i];
-      if (char === '<') {
-        inTag = true;
-        tagBuffer = '<';
-      } else if (char === '>') {
-        inTag = false;
-        tagBuffer += '>';
-        result += tagBuffer;
-        
-        // Track open tags
-        if (tagBuffer.startsWith('</')) {
-          openTags.pop();
-        } else if (!tagBuffer.includes('/>') && !['<br>', '<hr>', '<img>'].includes(tagBuffer.toLowerCase())) {
-          const tagName = tagBuffer.match(/<([a-z0-9]+)/i)?.[1];
-          if (tagName) openTags.push(tagName);
-        }
-        tagBuffer = '';
-        continue;
-      }
-      
-      if (inTag) {
-        tagBuffer += char;
-      } else {
-        if (count < limit) {
-          result += char;
-          count++;
-        } else {
-          // Add ellipsis and close all open tags
-          result += '...';
-          while (openTags.length > 0) {
-            const tag = openTags.pop();
-            result += `</${tag}>`;
-          }
-          break;
-        }
-      }
-    }
-    
-    return result;
+    // For the truncated preview, we return clean text with an ellipsis
+    // This guarantees no "Ghost Brackets" or broken tags
+    return plainText.substring(0, limit).trim() + '...';
   };
 
   const rawContent = post.content || '';
-  // Check if content looks like escaped HTML (contains &lt;)
-  const needsUnescape = rawContent.includes('&lt;') || rawContent.includes('&gt;');
-  const processedContent = needsUnescape ? unescapeHtml(rawContent) : rawContent;
+  // Only unescape if we see escaped tags like &lt; or &gt;
+  const isEscaped = rawContent.includes('&lt;') || rawContent.includes('&gt;');
+  const contentToProcess = isEscaped ? unescapeHtml(rawContent) : rawContent;
 
-  const shouldTruncate = processedContent.length > contentLimit;
-  const displayedContent = (!isExpanded && shouldTruncate) 
-    ? truncateHtml(processedContent, contentLimit) 
-    : processedContent;
+  // Determine displayed content based on expansion state
+  const displayedContent = isExpanded ? contentToProcess : truncateHtml(contentToProcess, contentLimit);
+  const shouldTruncate = contentToProcess.length > contentLimit;
 
   return (
     <div className="card post-card" ref={cardRef}>
@@ -141,6 +99,7 @@ export default function PostCard({ post, userId, onEdit, onDeleteSuccess }) {
                 e.preventDefault();
                 e.stopPropagation();
                 if (isExpanded) {
+                  // If closing, scroll back to the top of the card
                   cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
                 setIsExpanded(!isExpanded);
