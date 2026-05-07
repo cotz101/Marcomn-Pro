@@ -121,7 +121,7 @@ export default function AppShell({ children, userEmail, userId }) {
       <header className="header" style={{ borderTop: isCompany ? '4px solid var(--primary)' : 'none' }}>
         <div className="app-container">
           {/* Desktop Header Content */}
-          <div className="header-content hidden md:grid">
+          <div className="header-content hidden sm:grid">
             <div className="header-left">
               <Link href="/" className="logo">
                 Mar<span>Comn</span>
@@ -144,14 +144,15 @@ export default function AppShell({ children, userEmail, userId }) {
             </div>
 
             <div className="header-right" ref={avatarRef}>
-              <div className="header-actions-desktop">
+              <div className="header-actions-desktop flex items-center">
                 <button className="header-icon-btn"><MessageSquare size={22} /></button>
                 <button className="header-icon-btn"><Bell size={22} /></button>
                 <button 
                    className="btn-primary-pill px-4 py-1.5 ml-2"
+                   style={{ backgroundColor: 'var(--primary-container)' }}
                    onClick={() => setShowPostJob(true)}
                 >
-                  <Plus size={16} className="mr-1" />
+                  <Briefcase size={16} className="mr-1" />
                   <span className="font-bold text-sm">Post a Job</span>
                 </button>
               </div>
@@ -182,54 +183,44 @@ export default function AppShell({ children, userEmail, userId }) {
           </div>
 
           {/* Mobile Notch-Safe Header */}
-          <div className="mobile-header md:hidden">
+          <div className="mobile-header sm:hidden">
             <div className="mobile-header-inner">
-              <div className="mobile-avatar" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ cursor: 'pointer', position: 'relative' }}>
-                <img 
-                  src={identityImage} 
-                  alt="Me" 
-                  className="mobile-avatar-img" 
-                  style={{ borderRadius: isCompany ? '4px' : '50%' }}
-                />
-                {dropdownOpen && (
-                  <div style={{ position: 'absolute', top: 'calc(100% + 12px)', left: 0, zIndex: 1000 }}>
-                    <div className="card shadow-xl p-2 min-w-[240px] bg-white">
-                      <IdentitySwitcher 
-                        onClose={() => setDropdownOpen(false)} 
-                        onCreateCompany={() => { setDropdownOpen(false); setShowCreateCompany(true); }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
               <div className="mobile-search-bar" onClick={() => router.push('/search')}>
                 <Search size={18} />
                 <span>Search</span>
               </div>
-              <button className="header-icon-btn" onClick={() => router.push('/messages')}>
-                <MessageSquare size={22} />
-              </button>
+              <div className="flex items-center gap-3">
+                <button className="header-icon-btn" onClick={() => router.push('/messages')}>
+                  <MessageSquare size={22} />
+                </button>
+                <div className="mobile-avatar" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ cursor: 'pointer', position: 'relative' }}>
+                  <img 
+                    src={identityImage} 
+                    alt="Me" 
+                    className="mobile-avatar-img" 
+                    style={{ borderRadius: isCompany ? '4px' : '50%' }}
+                  />
+                  {dropdownOpen && (
+                    <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, zIndex: 1000 }}>
+                      <div className="card shadow-xl p-2 min-w-[240px] bg-white">
+                        <IdentitySwitcher 
+                          onClose={() => setDropdownOpen(false)} 
+                          onCreateCompany={() => { setDropdownOpen(false); setShowCreateCompany(true); }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Row 2: Sub-Navigation (Tablet & Desktop) */}
-      <nav className="sub-nav">
-        <div className="app-container h-full">
-          <div className="sub-nav-content">
-            <div className="sub-nav-links-wrapper">
-              <Link href="/logbook" className={`sub-nav-link ${pathname === '/logbook' ? 'active' : ''}`}>Logbook</Link>
-              <Link href="/connections" className={`sub-nav-link ${pathname === '/connections' ? 'active' : ''}`}>Connections</Link>
-              <Link href="/groups" className={`sub-nav-link ${pathname === '/groups' ? 'active' : ''}`}>Groups</Link>
-              <Link href="/talent" className={`sub-nav-link ${pathname === '/talent' ? 'active' : ''}`}>Talent</Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      {/* Sub-Navigation removed for Shell Refinement Stage 1 */}
 
       {/* Luminous Bottom Navigation (Fixed 4 Icons) */}
-      <nav className="mobile-bottom-nav md:hidden">
+      <nav className="mobile-bottom-nav sm:hidden">
         <Link 
           href="/logbook" 
           className={`mobile-nav-item ${pathname?.includes('/logbook') ? 'active' : ''}`}
@@ -303,7 +294,7 @@ export default function AppShell({ children, userEmail, userId }) {
       )}
 
       {/* Contextual Speed Dial FAB */}
-      <div className={`mobile-fab-container md:hidden ${isFabExpanded ? 'open' : ''}`}>
+      <div className={`mobile-fab-container sm:hidden ${isFabExpanded ? 'open' : ''}`}>
         {isFabExpanded && (
           <div className="speed-dial-menu">
             {/* Contextual Sub-Nav Shortcuts (Top Layer) */}

@@ -86,6 +86,25 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
         </button>
       </div>
 
+      <div className="switcher-footer-links" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
+        <div className="footer-link-item" onClick={() => { router.push('/settings'); onClose(); }}>
+          <Settings size={18} />
+          <span>Settings</span>
+        </div>
+        <div className="footer-link-item" onClick={() => { router.push('/privacy'); onClose(); }}>
+          <ShieldCheck size={18} />
+          <span>Privacy</span>
+        </div>
+        <div className="footer-link-item" onClick={() => { router.push('/help'); onClose(); }}>
+          <HelpCircle size={18} />
+          <span>Help Center</span>
+        </div>
+        <div className="footer-link-item sign-out-item" onClick={handleSignOut} style={{ color: '#ff4d4f', fontWeight: '600' }}>
+          <LogOut size={18} />
+          <span>Sign Out</span>
+        </div>
+      </div>
+
     </div>
   );
 }
