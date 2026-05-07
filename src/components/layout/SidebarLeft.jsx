@@ -29,7 +29,7 @@ export default function SidebarLeft() {
   const headline = isCompany ? 'Maritime Enterprise' : (profile?.headline || 'Maritime Professional');
 
   let navLinks = [];
-  let sidebarTitle = "Manage my network";
+  let sidebarTitle = "Manage MNetwork";
   let showStats = true;
   let statsLabel1 = "Profile viewers";
   let statsValue1 = "42";
@@ -37,7 +37,7 @@ export default function SidebarLeft() {
   let statsValue2 = "1.2k";
 
   if (pathname?.includes('/services')) {
-    sidebarTitle = "Manage my services";
+    sidebarTitle = "Manage MServices";
     navLinks = [
       { name: 'Opportunity', href: '/services', icon: Lightbulb },
       { name: 'Partners', href: '/partners', icon: Handshake },

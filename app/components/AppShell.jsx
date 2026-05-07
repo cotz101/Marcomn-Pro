@@ -258,7 +258,7 @@ export default function AppShell({ children, userEmail, userId }) {
           style={{ '--active-color': '#002b4e' }}
         >
           <Ship size={24} className="mobile-nav-icon" />
-          <span className="mobile-nav-label">Network</span>
+          <span className="mobile-nav-label">MNetwork</span>
         </Link>
         <Link 
           href="/services" 
@@ -266,7 +266,7 @@ export default function AppShell({ children, userEmail, userId }) {
           style={{ '--active-color': '#002b4e' }}
         >
           <LayoutGrid size={24} className="mobile-nav-icon" />
-          <span className="mobile-nav-label">Services</span>
+          <span className="mobile-nav-label">MServices</span>
         </Link>
         <Link 
           href="/blog" 
@@ -274,7 +274,7 @@ export default function AppShell({ children, userEmail, userId }) {
           style={{ '--active-color': '#002b4e' }}
         >
           <Newspaper size={24} className="mobile-nav-icon" />
-          <span className="mobile-nav-label">Blog</span>
+          <span className="mobile-nav-label">MBlog</span>
         </Link>
         <Link 
           href="/notifications" 

@@ -1,4 +1,4 @@
-import { X, Image as ImageIcon, Video as VideoIcon, ChevronDown } from 'lucide-react';
+import { X, Image as MediaIcon, ChevronDown, Type } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import { useProfile } from '@/app/context/ProfileContext';
 import BaseModal from '../layout/BaseModal';
@@ -49,14 +49,27 @@ export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profi
           }
         });
 
+        // Replace the "Tx" button icon with Lucide Type
+        const cleanButton = document.querySelector('.ql-clean');
+        if (cleanButton) {
+          const Quill = (await import('quill')).default;
+          // We can't easily change the icon via Quill API for 'clean', so we inject it
+          const typeIconHtml = `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-type"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>`;
+          cleanButton.innerHTML = typeIconHtml;
+          cleanButton.title = "Remove Formatting";
+        }
+
         quillInstance.current.on('text-change', () => {
           setContent(quillInstance.current.root.innerHTML);
         });
       }
       
       // Update quill content when initialData changes or modal opens
-      if (quillInstance.current && content !== quillInstance.current.root.innerHTML) {
-        quillInstance.current.root.innerHTML = content;
+      if (quillInstance.current && isOpen) {
+        // Only update if current content in editor is different to avoid cursor jumps
+        if (content !== quillInstance.current.root.innerHTML) {
+          quillInstance.current.root.innerHTML = content;
+        }
       }
     };
 
@@ -94,12 +107,14 @@ export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profi
   const handlePost = () => {
     onPostSubmit({
       id: initialData?.id,
-      type: initialData?.title ? 'article' : 'standard',
+      type: (initialData?.title || title) ? 'article' : 'standard',
       title,
       content,
       media,
       mediaType,
     });
+    
+    // Clear local state if not editing
     if (!initialData) {
       setContent('');
       setTitle('');
@@ -165,13 +180,11 @@ export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profi
           )}
         </div>
 
-        <div className="composer-footer-actions flex justify-between items-center mt-6 pt-4 border-t border-[var(--outline)]">
-          <div className="composer-media-btns flex items-center gap-4">
-            <button onClick={() => fileInputRef.current.click()} className="text-[var(--on-surface-variant)] hover:text-[var(--primary)] transition-colors">
-              <ImageIcon size={22} />
-            </button>
-            <button onClick={() => fileInputRef.current.click()} className="text-[var(--on-surface-variant)] hover:text-[var(--primary)] transition-colors">
-              <VideoIcon size={22} />
+        <div className="m-composer-footer-actions flex justify-between items-center pt-4 border-t border-[var(--outline)]">
+          <div className="m-composer-media-btns flex items-center gap-4">
+            <button onClick={() => { setMediaType(null); fileInputRef.current.click(); }} className="flex items-center gap-2 text-[var(--on-surface-variant)] hover:text-[var(--primary)] transition-colors" title="Add Media">
+              <MediaIcon size={22} />
+              <span className="text-sm font-semibold">Media</span>
             </button>
           </div>
 
