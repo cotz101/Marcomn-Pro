@@ -2481,14 +2481,26 @@ html.dark .btn-primary {
     align-items: center;
     justify-content: center;
     gap: 4px;
-    color: var(--text-secondary);
+    color: #8E8E8E; /* Standard Gray */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     flex: 1;
     height: 100%;
   }
 
   .mobile-nav-item.active {
-    color: var(--active-color);
+    color: #002b4e !important; /* Solid Navy Blue */
+    position: relative;
+  }
+
+  .mobile-nav-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 10%;
+    right: 10%;
+    height: 3px;
+    background-color: #002b4e;
+    border-radius: 3px 3px 0 0;
   }
 
   .mobile-nav-icon {
@@ -2497,8 +2509,7 @@ html.dark .btn-primary {
 
   .mobile-nav-item.active .mobile-nav-icon {
     transform: translateY(-2px);
-    filter: drop-shadow(0 0 5px var(--active-color));
-    animation: glow-pulse 2s infinite ease-in-out;
+    filter: drop-shadow(0 0 2px rgba(0, 43, 78, 0.2));
   }
 
   .mobile-nav-label {
@@ -2525,7 +2536,7 @@ html.dark .btn-primary {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background-color: var(--inverse-surface);
+    background-color: #002b4e; /* Solid Navy Blue */
     color: white;
     border: none;
     display: flex;
@@ -2535,7 +2546,7 @@ html.dark .btn-primary {
     cursor: pointer;
     z-index: 1002;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    filter: drop-shadow(0 0 4px var(--fab-color));
+    filter: drop-shadow(0 0 8px rgba(0, 43, 78, 0.3));
   }
 
   .main-fab.animating {

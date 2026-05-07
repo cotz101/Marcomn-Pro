@@ -24,7 +24,8 @@ import {
   Send,
   Zap,
   Target,
-  Lightbulb
+  Lightbulb,
+  Settings as Wheel
 } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
@@ -223,16 +224,16 @@ export default function AppShell({ children, userEmail, userId }) {
       <nav className="mobile-bottom-nav sm:hidden">
         <Link 
           href="/logbook" 
-          className={`mobile-nav-item ${pathname?.includes('/logbook') ? 'active' : ''}`}
-          style={{ '--active-color': 'var(--glow-network)' }}
+          className={`mobile-nav-item ${(pathname?.includes('/logbook') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) ? 'active' : ''}`}
+          style={{ '--active-color': '#002b4e' }}
         >
           <Ship size={24} className="mobile-nav-icon" />
           <span className="mobile-nav-label">Network</span>
         </Link>
         <Link 
           href="/services" 
-          className={`mobile-nav-item ${pathname?.includes('/services') ? 'active' : ''}`}
-          style={{ '--active-color': 'var(--glow-services)' }}
+          className={`mobile-nav-item ${pathname?.includes('/services') || pathname?.includes('/partners') || pathname?.includes('/jobs') ? 'active' : ''}`}
+          style={{ '--active-color': '#002b4e' }}
         >
           <LayoutGrid size={24} className="mobile-nav-icon" />
           <span className="mobile-nav-label">Services</span>
@@ -240,7 +241,7 @@ export default function AppShell({ children, userEmail, userId }) {
         <Link 
           href="/blog" 
           className={`mobile-nav-item ${pathname?.includes('/blog') ? 'active' : ''}`}
-          style={{ '--active-color': 'var(--primary)' }}
+          style={{ '--active-color': '#002b4e' }}
         >
           <Newspaper size={24} className="mobile-nav-icon" />
           <span className="mobile-nav-label">Blog</span>
@@ -248,7 +249,7 @@ export default function AppShell({ children, userEmail, userId }) {
         <Link 
           href="/notifications" 
           className={`mobile-nav-item ${pathname === '/notifications' ? 'active' : ''}`}
-          style={{ '--active-color': 'var(--primary)' }}
+          style={{ '--active-color': '#002b4e' }}
         >
           <Bell size={24} className="mobile-nav-icon" />
           <span className="mobile-nav-label">Alerts</span>
@@ -299,7 +300,7 @@ export default function AppShell({ children, userEmail, userId }) {
           <div className="speed-dial-menu">
             {/* Contextual Sub-Nav Shortcuts (Top Layer) */}
             <div className="speed-dial-shortcuts">
-              {pathname?.includes('/logbook') && (
+              {(pathname?.includes('/logbook') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) && (
                 <>
                   <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/logbook'); }}>
                     <span className="shortcut-label">Logbook</span>
@@ -319,7 +320,7 @@ export default function AppShell({ children, userEmail, userId }) {
                   </div>
                 </>
               )}
-              {pathname?.includes('/services') && (
+              {(pathname?.includes('/services') || pathname?.includes('/partners') || pathname?.includes('/jobs')) && (
                 <>
                   <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/services'); }}>
                     <span className="shortcut-label">Opportunity</span>
@@ -349,12 +350,12 @@ export default function AppShell({ children, userEmail, userId }) {
 
             {/* Primary Action (Navy Theme) */}
             <div className="speed-dial-primary-btn" style={{ backgroundColor: 'var(--primary-container)', color: 'white' }}>
-              {pathname?.includes('/logbook') && (
+              {(pathname?.includes('/logbook') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) && (
                 <button className="w-full text-center" onClick={() => { setIsFabExpanded(false); router.push('/logbook?create=true'); }}>
                   Post to Logbook
                 </button>
               )}
-              {pathname?.includes('/services') && (
+              {(pathname?.includes('/services') || pathname?.includes('/partners') || pathname?.includes('/jobs')) && (
                 <button className="w-full text-center" onClick={() => { setIsFabExpanded(false); setShowPostJob(true); }}>
                   Post a Job
                 </button>
@@ -372,13 +373,11 @@ export default function AppShell({ children, userEmail, userId }) {
           className={`main-fab ${isFabExpanded ? 'active' : ''} ${fabAnimating ? 'animating' : ''}`} 
           onClick={() => setIsFabExpanded(!isFabExpanded)}
           style={{ 
-            '--fab-color': pathname?.includes('/logbook') ? 'var(--glow-network)' : 
-                          pathname?.includes('/services') ? 'var(--glow-services)' : 
-                          'var(--primary)' 
+            '--fab-color': '#002b4e' 
           }}
           aria-label="Speed Dial"
         >
-          {isFabExpanded ? <X size={28} /> : <Plus size={28} />}
+          {isFabExpanded ? <X size={28} /> : <Wheel size={28} />}
         </button>
       </div>
 
