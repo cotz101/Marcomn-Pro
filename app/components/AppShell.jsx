@@ -25,12 +25,13 @@ import {
   Zap,
   Target,
   Lightbulb,
-  Settings as Wheel
+  Anchor
 } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
 import CreateCompanyModal from '@/src/components/company/CreateCompanyModal';
 import PostJobModal from '@/src/components/jobs/PostJobModal';
+import PostComposerModal from '@/src/components/logbook/PostComposerModal';
 import IdentitySwitcher from '@/src/components/layout/IdentitySwitcher';
 import SidebarLeft from '@/src/components/layout/SidebarLeft';
 import SidebarRight from '@/src/components/layout/SidebarRight';
@@ -48,6 +49,7 @@ export default function AppShell({ children, userEmail, userId }) {
   const [mnetworkOpen, setMnetworkOpen] = useState(false);
   const [showCreateCompany, setShowCreateCompany] = useState(false);
   const [showPostJob, setShowPostJob] = useState(false);
+  const [showPostModal, setShowPostModal] = useState(false);
   const [isFabExpanded, setIsFabExpanded] = useState(false);
   const [fabAnimating, setFabAnimating] = useState(false);
   
@@ -56,6 +58,7 @@ export default function AppShell({ children, userEmail, userId }) {
   // FAB Transition logic
   useEffect(() => {
     setFabAnimating(true);
+    setIsFabExpanded(false); // Auto-close FAB on route/module change
     const timer = setTimeout(() => setFabAnimating(false), 600);
     return () => clearTimeout(timer);
   }, [pathname]);
@@ -90,6 +93,24 @@ export default function AppShell({ children, userEmail, userId }) {
     router.push('/jobs');
   };
 
+  const handlePostSubmit = async (postData) => {
+    const supabase = createClient();
+    const { error } = await supabase.from('posts').insert({
+      user_id: userId,
+      content: postData.content,
+      title: postData.title || null,
+      media_url: postData.media || null,
+      media_type: postData.mediaType || 'image',
+      posted_as_company_id: currentIdentity?.type === 'company' ? currentIdentity.id : null
+    });
+
+    if (!error) {
+      setShowPostModal(false);
+    } else {
+      alert('Error posting: ' + error.message);
+    }
+  };
+
   const isCompany = currentIdentity?.type === 'company';
   const identityImage = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (profile?.profilePic || '/profile_pic.png');
 
@@ -116,6 +137,15 @@ export default function AppShell({ children, userEmail, userId }) {
           isOpen={showPostJob}
           onClose={() => setShowPostJob(false)}
           onComplete={handleJobPosted}
+        />
+      )}
+
+      {showPostModal && (
+        <PostComposerModal
+          isOpen={showPostModal}
+          onClose={() => setShowPostModal(false)}
+          onPostSubmit={handlePostSubmit}
+          profile={profile}
         />
       )}
 
@@ -295,6 +325,9 @@ export default function AppShell({ children, userEmail, userId }) {
       )}
 
       {/* Contextual Speed Dial FAB */}
+      {isFabExpanded && (
+        <div className="fab-overlay show" onClick={() => setIsFabExpanded(false)}></div>
+      )}
       <div className={`mobile-fab-container sm:hidden ${isFabExpanded ? 'open' : ''}`}>
         {isFabExpanded && (
           <div className="speed-dial-menu">
@@ -348,20 +381,20 @@ export default function AppShell({ children, userEmail, userId }) {
               )}
             </div>
 
-            {/* Primary Action (Navy Theme) */}
-            <div className="speed-dial-primary-btn" style={{ backgroundColor: 'var(--primary-container)', color: 'white' }}>
+            {/* Primary Action (Navy Theme) - RESTORED SOLID NAVY BLUE */}
+            <div className="speed-dial-primary-btn" style={{ backgroundColor: '#002b4e', color: 'white', zIndex: 9999 }}>
               {(pathname?.includes('/logbook') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) && (
-                <button className="w-full text-center" onClick={() => { setIsFabExpanded(false); router.push('/logbook?create=true'); }}>
+                <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); setShowPostModal(true); }}>
                   Post to Logbook
                 </button>
               )}
               {(pathname?.includes('/services') || pathname?.includes('/partners') || pathname?.includes('/jobs')) && (
-                <button className="w-full text-center" onClick={() => { setIsFabExpanded(false); setShowPostJob(true); }}>
+                <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); setShowPostJob(true); }}>
                   Post a Job
                 </button>
               )}
               {pathname?.includes('/blog') && (
-                <button className="w-full text-center" onClick={() => { setIsFabExpanded(false); router.push('/blog/create'); }}>
+                <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); router.push('/blog/create'); }}>
                   Post a Blog
                 </button>
               )}
@@ -377,7 +410,8 @@ export default function AppShell({ children, userEmail, userId }) {
           }}
           aria-label="Speed Dial"
         >
-          {isFabExpanded ? <X size={28} /> : <Wheel size={28} />}
+          {/* Always Ship Anchor - White inside Navy Circle */}
+          <Anchor size={28} style={{ color: 'white' }} />
         </button>
       </div>
 

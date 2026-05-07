@@ -2293,13 +2293,13 @@ html.dark .btn-primary {
 /* Tablet / Intermediate Logic (Dropping sidebars proportionally) */
 @media (min-width: 768px) and (max-width: 1024px) {
   .main-grid {
-    grid-template-columns: 277px 1fr !important; /* Fixed width per request */
-    gap: 16px !important; /* Tightened gap */
+    grid-template-columns: 225px 1fr !important; /* Calibrated to 225px */
+    gap: 16px !important;
   }
   
   .sidebar-left {
     display: block !important;
-    width: 277px !important;
+    width: 225px !important;
   }
   
   .sidebar-right {
@@ -2568,9 +2568,21 @@ html.dark .btn-primary {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
-    z-index: 999;
+    background: transparent; /* Removed dimmed overlay */
+    backdrop-filter: none; /* Removed blur per request */
+    z-index: 9998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .mobile-fab-container.open .fab-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .fab-overlay.show {
+    opacity: 1;
   }
 
   .speed-dial-menu {
@@ -2590,17 +2602,26 @@ html.dark .btn-primary {
     opacity: 1;
     transform: translateY(0) scale(1);
     pointer-events: auto;
+    z-index: 9999 !important; /* Critical High Contrast Layering */
   }
 
   .speed-dial-primary-btn {
-    background-color: var(--primary); /* Navy Blue enforced */
-    color: white;
-    padding: 12px 24px;
+    background-color: #002b4e !important; /* Solid Navy Blue */
+    color: #FFFFFF !important; /* White text */
+    padding: 16px 32px;
     border-radius: 999px;
-    font-weight: 700;
-    font-size: 14px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    font-weight: 800;
+    font-size: 16px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     white-space: nowrap;
+    z-index: 9999;
+    backdrop-filter: none; /* No blur */
+  }
+  
+  .speed-dial-primary-btn button {
+    color: #002b4e;
+    font-weight: 800;
   }
 
   .speed-dial-shortcuts {
@@ -2617,25 +2638,30 @@ html.dark .btn-primary {
   }
 
   .shortcut-label {
-    background: white;
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--on-surface);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: #FFFFFF; /* Solid White for maximum contrast without blur */
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #002b4e;
+    border: 1px solid #002b4e; /* The "Border" Rule */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    backdrop-filter: none;
+    white-space: nowrap;
   }
 
   .shortcut-icon-wrapper {
-    width: 40px;
-    height: 40px;
-    background: white;
+    width: 44px;
+    height: 44px;
+    background: #FFFFFF; /* Solid White */
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--primary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    color: #002b4e;
+    border: 1px solid #002b4e; /* The "Border" Rule */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    backdrop-filter: none;
   }
 
 }
@@ -2654,4 +2680,64 @@ html.dark .btn-primary {
 
 .footer-link-item:hover {
   background-color: var(--surface-container-low);
+}
+
+/* Modal Z-Index Polish */
+.modal-overlay-glass {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000 !important; /* Higher than FAB stack (9999) */
+  padding: 16px;
+}
+
+.modal-content-standard {
+  background: white;
+  width: 100%;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  overflow: hidden;
+  z-index: 10001;
+}
+
+.modal-header-navy {
+  background-color: #002b4e;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+}
+
+.modal-title-white {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.modal-close-btn-white {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.modal-close-btn-white:hover {
+  opacity: 1;
+}
+
+.modal-body-standard {
+  padding: 20px;
+  max-height: 80vh;
+  overflow-y: auto;
 }
