@@ -46,6 +46,7 @@ export default function AppShell({ children, userEmail, userId }) {
   } = useProfile();
   
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
   const [mnetworkOpen, setMnetworkOpen] = useState(false);
   const [showCreateCompany, setShowCreateCompany] = useState(false);
   const [showPostJob, setShowPostJob] = useState(false);
@@ -173,8 +174,7 @@ export default function AppShell({ children, userEmail, userId }) {
                 <span>MBlog</span>
               </Link>
             </div>
-
-            <div className="header-right" ref={avatarRef}>
+            <div className="header-right">
               <div className="header-actions-desktop flex items-center">
                 <button className="header-icon-btn"><MessageSquare size={22} /></button>
                 <button className="header-icon-btn"><Bell size={22} /></button>
@@ -188,28 +188,30 @@ export default function AppShell({ children, userEmail, userId }) {
                 </button>
               </div>
 
-              <div className="avatar-dropdown ml-2 flex" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ position: 'relative', cursor: 'pointer' }}>
-                <div className="flex items-center gap-1">
-                  <img 
-                     src={identityImage} 
-                     alt="Me" 
-                     className="avatar-img" 
-                     style={{ width: '34px', height: '34px', objectFit: 'cover', borderRadius: isCompany ? '8px' : '50%' }}
-                  />
-                  <ChevronDown size={14} />
-                </div>
-              </div>
-
-              {dropdownOpen && (
-                <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 1000 }}>
-                  <div className="card shadow-xl p-2 min-w-[200px] bg-white">
-                    <IdentitySwitcher 
-                      onClose={() => setDropdownOpen(false)} 
-                      onCreateCompany={() => { setDropdownOpen(false); setShowCreateCompany(true); }}
+              <div className="avatar-dropdown-container ml-2" style={{ position: 'relative' }} ref={avatarRef}>
+                <div className="avatar-dropdown flex" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ cursor: 'pointer' }}>
+                  <div className="flex items-center gap-1">
+                    <img 
+                       src={identityImage} 
+                       alt="Me" 
+                       className="avatar-img" 
+                       style={{ width: '34px', height: '34px', objectFit: 'cover', borderRadius: isCompany ? '8px' : '50%' }}
                     />
+                    <ChevronDown size={14} />
                   </div>
                 </div>
-              )}
+
+                {dropdownOpen && (
+                  <div className="identity-dropdown-anchor" style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 1000 }}>
+                    <div className="card shadow-xl p-2 min-w-[200px] bg-white">
+                      <IdentitySwitcher 
+                        onClose={() => setDropdownOpen(false)} 
+                        onCreateCompany={() => { setDropdownOpen(false); setShowCreateCompany(true); }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -224,19 +226,28 @@ export default function AppShell({ children, userEmail, userId }) {
                 <button className="header-icon-btn" onClick={() => router.push('/messages')}>
                   <MessageSquare size={22} />
                 </button>
-                <div className="mobile-avatar" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ cursor: 'pointer', position: 'relative' }}>
-                  <img 
-                    src={identityImage} 
-                    alt="Me" 
-                    className="mobile-avatar-img" 
-                    style={{ borderRadius: isCompany ? '4px' : '50%' }}
-                  />
-                  {dropdownOpen && (
+                <div className="mobile-avatar-container" style={{ position: 'relative' }}>
+                  <button 
+                    className="mobile-avatar" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setMobileDropdownOpen(!mobileDropdownOpen);
+                    }}
+                    style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
+                  >
+                    <img 
+                      src={identityImage} 
+                      alt="Me" 
+                      className="mobile-avatar-img" 
+                      style={{ borderRadius: isCompany ? '4px' : '50%' }}
+                    />
+                  </button>
+                  {mobileDropdownOpen && (
                     <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, zIndex: 1000 }}>
                       <div className="card shadow-xl p-2 min-w-[240px] bg-white">
                         <IdentitySwitcher 
-                          onClose={() => setDropdownOpen(false)} 
-                          onCreateCompany={() => { setDropdownOpen(false); setShowCreateCompany(true); }}
+                          onClose={() => setMobileDropdownOpen(false)} 
+                          onCreateCompany={() => { setMobileDropdownOpen(false); setShowCreateCompany(true); }}
                         />
                       </div>
                     </div>
@@ -251,7 +262,7 @@ export default function AppShell({ children, userEmail, userId }) {
       {/* Sub-Navigation removed for Shell Refinement Stage 1 */}
 
       {/* Luminous Bottom Navigation (Fixed 4 Icons) */}
-      <nav className="mobile-bottom-nav sm:hidden">
+      <nav className="mobile-bottom-nav sm:hidden" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}>
         <Link 
           href="/logbook" 
           className={`mobile-nav-item ${(pathname?.includes('/logbook') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) ? 'active' : ''}`}

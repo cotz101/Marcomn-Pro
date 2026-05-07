@@ -1,4 +1,4 @@
-import { Video, Image as ImageIcon, Newspaper } from 'lucide-react';
+import { Image as MediaIcon, Newspaper } from 'lucide-react';
 import { useState } from 'react';
 import ArticleEditor from './ArticleEditor';
 import PostComposerModal from './PostComposerModal';
@@ -54,15 +54,11 @@ export default function CreatePost({ profile }) {
         </div>
         <div className="create-post-actions">
           <button className="create-action-btn" onClick={() => setIsComposerOpen(true)}>
-            <Video size={24} className="icon-video" />
-            <span>Video</span>
-          </button>
-          <button className="create-action-btn" onClick={() => setIsComposerOpen(true)}>
-            <ImageIcon size={24} className="icon-photo" />
-            <span>Photo</span>
+            <MediaIcon size={24} className="icon-media" style={{ color: '#004173' }} />
+            <span>Media</span>
           </button>
           <button className="create-action-btn" onClick={() => setIsArticleOpen(true)}>
-            <Newspaper size={24} className="icon-article" />
+            <Newspaper size={24} className="icon-article" style={{ color: '#004173' }} />
             <span>Write article</span>
           </button>
         </div>

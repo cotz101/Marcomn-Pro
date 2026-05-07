@@ -184,6 +184,16 @@ a {
   transform: translateY(0);
 }
 
+.comment-count-pill {
+  background-color: #f3f2ef;
+  color: #666;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
 .btn-secondary-pill {
   background-color: transparent;
   color: var(--primary);
@@ -2741,4 +2751,69 @@ html.dark .btn-primary {
   padding: 20px;
   max-height: 80vh;
   overflow-y: auto;
+}
+
+/* Loading Skeletons & Empty States */
+@keyframes skeleton-pulse {
+  0% { background-color: #e5e7eb; }
+  50% { background-color: #f3f4f6; }
+  100% { background-color: #e5e7eb; }
+}
+
+.skeleton {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+.skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.skeleton-text {
+  height: 12px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.skeleton-title {
+  height: 20px;
+  width: 60%;
+  margin-bottom: 12px;
+}
+
+.skeleton-media {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--on-surface-variant);
+  background: white;
+  border-radius: 8px;
+  border: 1px dashed var(--outline-variant);
+}
+
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  color: var(--primary);
+  opacity: 0.2;
+}
+
+.empty-state-text {
+  font-size: 16px;
+  font-weight: 500;
+  max-width: 300px;
+  line-height: 1.5;
 }

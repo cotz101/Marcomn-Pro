@@ -26,8 +26,15 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
+    
+    // Clear any local application state if necessary
+    // localStorage.clear(); // Optional: depend on if you use localStorage for app state
+    
     router.push('/');
     onClose();
+    
+    // Hard refresh to ensure all states are reset across the app
+    window.location.href = '/';
   };
 
   return (
@@ -99,7 +106,7 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
           <HelpCircle size={18} />
           <span>Help Center</span>
         </div>
-        <div className="footer-link-item sign-out-item" onClick={handleSignOut} style={{ color: '#ff4d4f', fontWeight: '600' }}>
+        <div className="footer-link-item sign-out-item" onClick={handleSignOut} style={{ color: '#ff4d4f', fontWeight: '600', cursor: 'pointer' }}>
           <LogOut size={18} />
           <span>Sign Out</span>
         </div>

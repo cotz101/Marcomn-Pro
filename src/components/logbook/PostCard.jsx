@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { ThumbsUp, MessageSquare, Share2, MoreHorizontal } from 'lucide-react';
+import { Heart, MessageSquare, Share2 } from 'lucide-react';
 import PostActions from './PostActions';
 import DOMPurify from 'dompurify';
+import CommentSection from './CommentSection';
 
-export default function PostCard({ post, userId, onEdit, onDeleteSuccess }) {
+export default function PostCard({ post, userId, profile, onEdit, onDeleteSuccess }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const cardRef = useRef(null);
   const isAuthor = post.user_id === userId || post.userId === userId || post.authorId === userId;
   
@@ -26,31 +29,65 @@ export default function PostCard({ post, userId, onEdit, onDeleteSuccess }) {
     return txt.value;
   };
 
-  const contentLimit = 300;
-  
-  const truncateHtml = (html, limit) => {
+  const truncateHtmlWithTags = (html, limit) => {
     if (!html) return '';
     
-    // Create a temporary div to extract plain text
+    // Create a temporary div to parse HTML
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
-    const plainText = tempDiv.textContent || tempDiv.innerText || '';
     
-    if (plainText.length <= limit) return html;
-    
-    // For the truncated preview, we return clean text with an ellipsis
-    // This guarantees no "Ghost Brackets" or broken tags
-    return plainText.substring(0, limit).trim() + '...';
+    let currentLength = 0;
+    let resultHtml = '';
+    let isTruncated = false;
+
+    const traverse = (node) => {
+      if (isTruncated) return;
+
+      if (node.nodeType === Node.TEXT_NODE) {
+        const remaining = limit - currentLength;
+        if (node.textContent.length > remaining) {
+          resultHtml += node.textContent.substring(0, remaining);
+          currentLength = limit;
+          isTruncated = true;
+        } else {
+          resultHtml += node.textContent;
+          currentLength += node.textContent.length;
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const tagName = node.tagName.toLowerCase();
+        resultHtml += `<${tagName}${Array.from(node.attributes).map(attr => ` ${attr.name}="${attr.value}"`).join('')}>`;
+        
+        for (const child of node.childNodes) {
+          traverse(child);
+          if (isTruncated) break;
+        }
+        
+        resultHtml += `</${tagName}>`;
+      }
+    };
+
+    for (const child of tempDiv.childNodes) {
+      traverse(child);
+      if (isTruncated) break;
+    }
+
+    return isTruncated ? resultHtml + '...' : resultHtml;
   };
 
+  const contentLimit = 300;
+  
   const rawContent = post.content || '';
   // Only unescape if we see escaped tags like &lt; or &gt;
   const isEscaped = rawContent.includes('&lt;') || rawContent.includes('&gt;');
   const contentToProcess = isEscaped ? unescapeHtml(rawContent) : rawContent;
 
   // Determine displayed content based on expansion state
-  const displayedContent = isExpanded ? contentToProcess : truncateHtml(contentToProcess, contentLimit);
-  const shouldTruncate = contentToProcess.length > contentLimit;
+  const displayedContent = isExpanded ? contentToProcess : truncateHtmlWithTags(contentToProcess, contentLimit);
+  
+  // Calculate if it SHOULD truncate based on PLAIN TEXT length to be consistent
+  const tempTextDiv = document.createElement('div');
+  tempTextDiv.innerHTML = contentToProcess;
+  const shouldTruncate = (tempTextDiv.textContent || '').length > contentLimit;
 
   return (
     <div className="card post-card" ref={cardRef}>
@@ -148,16 +185,36 @@ export default function PostCard({ post, userId, onEdit, onDeleteSuccess }) {
       )}
 
       <div className="post-actions">
-        <button className="action-btn">
-          <ThumbsUp size={18} /> Like
+        <button 
+          className={`action-btn ${isLiked ? 'active' : ''}`}
+          onClick={() => setIsLiked(!isLiked)}
+          style={{ color: isLiked ? '#002b4e' : 'inherit' }}
+        >
+          <Heart size={18} fill={isLiked ? '#002b4e' : 'none'} /> 
+          <span>Like</span>
         </button>
-        <button className="action-btn">
-          <MessageSquare size={18} /> Comment
-        </button>
-        <button className="action-btn">
-          <Share2 size={18} /> Share
+        <button 
+          className={`action-btn ${showComments ? 'active' : ''}`}
+          onClick={() => setShowComments(!showComments)}
+          style={{ color: showComments ? '#002b4e' : 'inherit' }}
+        >
+          <div className="flex items-center gap-1.5">
+            <MessageSquare size={18} fill={showComments ? '#002b4e' : 'none'} /> 
+            <span className="font-medium">Comment</span>
+            {post.comment_count > 0 && (
+              <span className="comment-count-pill">{post.comment_count}</span>
+            )}
+          </div>
         </button>
       </div>
+
+      {showComments && (
+        <CommentSection 
+          postId={post.id} 
+          userId={userId} 
+          profile={profile} 
+        />
+      )}
     </div>
   );
 }
