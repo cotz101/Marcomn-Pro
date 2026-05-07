@@ -2436,7 +2436,9 @@ html.dark .btn-primary {
   .mobile-bottom-nav, 
   .mobile-fab-container,
   .fab-overlay,
-  .mobile-header {
+  .mobile-header,
+  .sign-out-link,
+  .switcher-links {
     display: none !important;
   }
 }

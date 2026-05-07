@@ -86,27 +86,6 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
         </button>
       </div>
 
-      <div className="switcher-links">
-        <div className="switcher-link">
-          <Settings size={18} />
-          Settings
-        </div>
-        <div className="switcher-link">
-          <ShieldCheck size={18} />
-          Privacy
-        </div>
-        <div className="switcher-link">
-          <HelpCircle size={18} />
-          Help Center
-        </div>
-      </div>
-
-      <div className="switcher-footer">
-        <div className="sign-out-link" onClick={handleSignOut} style={{ color: 'var(--error)', fontWeight: 600 }}>
-          <LogOut size={18} />
-          Sign Out
-        </div>
-      </div>
     </div>
   );
 }
