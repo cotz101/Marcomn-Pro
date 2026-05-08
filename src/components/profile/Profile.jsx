@@ -1,11 +1,12 @@
 'use client';
-import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRef, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import ProfessionalCard from '../connections/ProfessionalCard';
 import { createClient } from '@/lib/supabase';
 import { Camera, Briefcase, MapPin, Edit3, X, Check, ArrowLeft, Ship } from 'lucide-react';
 
 export default function Profile({ profile, setProfile, userId }) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editForm, setEditForm] = useState(profile);
   const [toastMessage, setToastMessage] = useState('');
@@ -24,8 +25,20 @@ export default function Profile({ profile, setProfile, userId }) {
     setTimeout(() => setToastMessage(''), 3500);
   };
 
+  // Sync skills_input when editForm changes or modal opens
+  useEffect(() => {
+    if (profile.skills && Array.isArray(profile.skills)) {
+      setEditForm(prev => ({ ...prev, skills_input: profile.skills.join(', ') }));
+    }
+  }, [profile.skills]);
+
   const handleOpenModal = () => {
-    setEditForm(profile);
+    setEditForm({
+      ...profile,
+      headline: profile.headline || '',
+      bio: profile.bio || '',
+      skills_input: Array.isArray(profile.skills) ? profile.skills.join(', ') : ''
+    });
     setIsModalOpen(true);
   };
 
@@ -76,27 +89,47 @@ export default function Profile({ profile, setProfile, userId }) {
 
     setSaving(true);
     const supabase = createClient();
-    const { error } = await supabase.from('profiles').upsert({
+    
+    // Decouple data and ensure type safety
+    const profileUpdate = {
       id: userId,
-      full_name: editForm.fullName,
-      headline: editForm.headline,
-      location: editForm.location,
-      about: editForm.about,
-      bio: editForm.bio,
-      current_position: editForm.currentPosition,
-      current_company: editForm.currentCompany,
-      previous_role: editForm.previous_role,
-      skills: editForm.skills,
-      is_sailing: editForm.is_sailing,
-      vessel_name: editForm.vessel_name,
-      open_to_work: editForm.open_to_work,
-    });
+      full_name: editForm.fullName || profile.fullName,
+      headline: editForm.headline || '', // Distinct headline column
+      location: editForm.location || '',
+      about: editForm.about || '',
+      bio: editForm.bio || '',
+      current_position: editForm.currentPosition || '',
+      current_company: editForm.currentCompany || '',
+      previous_role: editForm.previous_role || '',
+      skills: editForm.skills_input ? getSkillsArray(editForm.skills_input) : (Array.isArray(editForm.skills) ? editForm.skills : []),
+      is_sailing: !!editForm.is_sailing,
+      vessel_name: editForm.is_sailing ? (editForm.vessel_name || '') : '', // Logic: vessel only if sailing
+      open_to_work: !!editForm.open_to_work,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from('profiles').upsert(profileUpdate);
 
     if (!error) {
-      setProfile(editForm);
+      const updatedProfile = {
+        ...editForm,
+        headline: profileUpdate.headline,
+        bio: profileUpdate.bio,
+        skills: profileUpdate.skills,
+        is_sailing: profileUpdate.is_sailing,
+        vessel_name: profileUpdate.vessel_name
+      };
+      setProfile(updatedProfile);
+      
+      // Dispatch event to refresh DiscoveryGrid
+      window.dispatchEvent(new CustomEvent('marcomn-profile-updated', { 
+        detail: updatedProfile 
+      }));
+
       setIsModalOpen(false);
       showToast('Profile updated successfully!');
     } else {
+      console.error('Update Error:', error);
       showToast('Error: ' + error.message, 'error');
     }
     setSaving(false);
@@ -111,9 +144,21 @@ export default function Profile({ profile, setProfile, userId }) {
   };
 
   const handleSkillsChange = (e) => {
-    const skillsArray = e.target.value.split(',').map(s => s.trim()).filter(s => s !== '');
-    setEditForm(prev => ({ ...prev, skills: skillsArray.slice(0, 5) }));
+    const val = e.target.value;
+    // Don't split on every character, just keep the string while typing
+    // We will parse it into an array on save or use a local string state
+    setEditForm(prev => ({ ...prev, skills_input: val }));
   };
+
+  // Helper to get skills as an array for the preview/save
+  const getSkillsArray = (input) => {
+    if (!input) return [];
+    return input.split(',').map(s => s.trim()).filter(s => s !== '').slice(0, 5);
+  };
+
+  const currentSkills = Array.isArray(editForm.skills) ? editForm.skills : (Array.isArray(profile.skills) ? profile.skills : []);
+  const currentIsSailing = editForm.is_sailing !== undefined ? editForm.is_sailing : profile.is_sailing;
+  const currentVessel = editForm.vessel_name !== undefined ? editForm.vessel_name : profile.vessel_name;
 
   const handleCoverUpload = (e) => {
     const file = e.target.files[0];
@@ -129,25 +174,6 @@ export default function Profile({ profile, setProfile, userId }) {
 
   return (
     <div className="profile-page-wrapper">
-      {/* ── Global Top Bar (Profile Restoration) ── */}
-      <header className="profile-top-bar">
-        <div className="profile-top-bar-container">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => navigate(-1)} 
-              className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-              title="Go Back"
-            >
-              <ArrowLeft size={22} className="text-[#002b4e]" />
-            </button>
-            <div className="flex items-center gap-2 text-[#002b4e] font-bold text-lg">
-              <Ship size={24} />
-              <span>MarComn</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div className="profile-layout-container">
         {/* ── Profile Card ── */}
         <section className="profile-card">
@@ -217,10 +243,11 @@ export default function Profile({ profile, setProfile, userId }) {
 
       {/* ── Edit Modal ── */}
       {isModalOpen && (
-        <div className="modal-overlay">
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                <h2>Edit profile</h2>
+                <h2 className="text-xl font-bold text-[#002b4e]">Edit profile</h2>
                 <button className="btn-close" onClick={handleCloseModal}><X size={20} /></button>
               </div>
               <div className="flex gap-4 mt-4 border-b">
@@ -239,196 +266,116 @@ export default function Profile({ profile, setProfile, userId }) {
               </div>
             </div>
 
-            <div className="modal-body">
+            <div className="modal-body" style={{ padding: '20px', textAlign: 'left', maxHeight: '70vh', overflowY: 'auto' }}>
               {activeTab === 'basic' ? (
-                <>
-                  {/* Avatar preview in modal */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-                    <img
-                      src={editForm.profilePic || '/profile_pic.png'}
-                      alt="Avatar preview"
-                      style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '3px solid #e2e8f0' }}
-                    />
-                    <div>
-                      <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6 }}>Profile photo</p>
-                      <button
-                        className="btn-secondary"
-                        style={{ fontSize: 13, padding: '6px 14px' }}
-                        onClick={() => avatarUploadRef.current.click()}
-                        disabled={uploading}
-                      >
-                        {uploading ? 'Uploading…' : 'Change photo'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {[
-                    { label: 'Full Name', name: 'fullName' },
-                    { label: 'Headline', name: 'headline' },
-                    { label: 'Current Position', name: 'currentPosition' },
-                    { label: 'Current Company', name: 'currentCompany' },
-                    { label: 'Location', name: 'location' },
-                  ].map(({ label, name }) => (
-                    <div className="form-group" key={name}>
-                      <label>{label}</label>
-                      <input
-                        type="text"
-                        name={name}
-                        className="form-input"
-                        value={editForm[name] || ''}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <>
+                <div className="flex flex-col gap-4">
                   <div className="form-group">
-                    <label>Professional Bio (Max 120 chars)</label>
+                    <label className="text-sm font-semibold mb-1 block">Full Name</label>
+                    <input
+                      type="text"
+                      name="fullName"
+                      className="form-input w-full p-2 border rounded"
+                      value={editForm.fullName || ''}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="text-sm font-semibold mb-1 block">Headline</label>
+                    <input
+                      type="text"
+                      name="headline"
+                      className="form-input w-full p-2 border rounded"
+                      value={editForm.headline || ''}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="text-sm font-semibold mb-1 block">Location</label>
+                    <input
+                      type="text"
+                      name="location"
+                      className="form-input w-full p-2 border rounded"
+                      value={editForm.location || ''}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  <div className="form-group">
+                    <label className="text-sm font-semibold mb-1 block">Professional Bio</label>
                     <textarea
                       name="bio"
-                      className="form-textarea"
+                      className="form-textarea w-full p-2 border rounded"
                       rows={3}
-                      maxLength={120}
-                      placeholder="Brief professional summary..."
                       value={editForm.bio || ''}
                       onChange={handleInputChange}
-                    />
-                    <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
-                      {(editForm.bio || '').length}/120 characters
-                    </p>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Previous Role</label>
-                    <input
-                      type="text"
-                      name="previous_role"
-                      className="form-input"
-                      placeholder="e.g. Second Officer"
-                      value={editForm.previous_role || ''}
-                      onChange={handleInputChange}
+                      placeholder="Brief summary of your professional background..."
                     />
                   </div>
 
                   <div className="form-group">
-                    <label>Skills (Comma separated, max 5)</label>
+                    <label className="text-sm font-semibold mb-1 block">Skills (Max 5, comma separated)</label>
                     <input
                       type="text"
-                      name="skills_input"
-                      className="form-input"
-                      placeholder="Navigation, Engineering, Safety..."
-                      defaultValue={(editForm.skills || []).join(', ')}
-                      onBlur={handleSkillsChange}
+                      className="form-input w-full p-2 border rounded"
+                      placeholder="e.g. Navigation, Safety, Marine Engineering"
+                      value={editForm.skills_input !== undefined ? editForm.skills_input : (Array.isArray(profile.skills) ? profile.skills.join(', ') : '')}
+                      onChange={handleSkillsChange}
                     />
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {(editForm.skills || []).map((skill, i) => (
-                        <span key={i} className="skill-pill" style={{ margin: 0 }}>{skill}</span>
+                      {(editForm.skills_input !== undefined ? getSkillsArray(editForm.skills_input) : (Array.isArray(profile.skills) ? profile.skills : [])).map((skill, i) => (
+                        <span key={i} className="px-2 py-1 bg-slate-100 text-xs rounded-full border border-slate-200 text-gray-700">
+                          {skill}
+                        </span>
                       ))}
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8 }}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label style={{ margin: 0, cursor: 'pointer' }} htmlFor="is_sailing">Are you currently sailing?</label>
-                        <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Toggle ON if you are active at sea</p>
-                      </div>
+                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <div>
+                      <p className="text-sm font-semibold">Are you currently sailing?</p>
+                      <p className="text-xs text-gray-500">Enable this if you are active at sea</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
                       <input 
-                        id="is_sailing"
                         type="checkbox" 
                         name="is_sailing" 
-                        checked={editForm.is_sailing || false}
+                        className="sr-only peer"
+                        checked={currentIsSailing || false}
                         onChange={handleInputChange}
-                        style={{ width: 20, height: 20, cursor: 'pointer' }}
                       />
-                    </div>
-
-                    {editForm.is_sailing && (
-                      <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label>Current Vessel Name</label>
-                        <input
-                          type="text"
-                          name="vessel_name"
-                          className="form-input"
-                          placeholder="e.g. MV Maersk Explorer"
-                          value={editForm.vessel_name || ''}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between border-t pt-4">
-                      <div>
-                        <label style={{ margin: 0, cursor: 'pointer' }} htmlFor="open_to_work">Open to New Opportunities?</label>
-                        <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Display "Available" status on your card</p>
-                      </div>
-                      <input 
-                        id="open_to_work"
-                        type="checkbox" 
-                        name="open_to_work" 
-                        checked={editForm.open_to_work || false}
-                        onChange={handleInputChange}
-                        style={{ width: 20, height: 20, cursor: 'pointer' }}
-                      />
-                    </div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#002b4e]"></div>
+                    </label>
                   </div>
-                </>
+
+                  {currentIsSailing && (
+                    <div className="form-group animate-in fade-in slide-in-from-top-2 duration-300">
+                      <label className="text-sm font-semibold mb-1 block">Current Vessel</label>
+                      <input
+                        type="text"
+                        name="vessel_name"
+                        className="form-input w-full p-2 border rounded"
+                        placeholder="e.g. MV MarComn Explorer"
+                        value={currentVessel || ''}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
             <div className="modal-footer">
-              <div className="form-group mb-0">
-                <textarea
-                  name="about"
-                  style={{ display: 'none' }}
-                  value={editForm.about || ''}
-                  readOnly
-                />
-              </div>
               <button className="btn-secondary" onClick={handleCloseModal}>Cancel</button>
               <button className="btn-primary" onClick={handleSaveModal} disabled={saving}>
-                {saving ? 'Saving…' : <><Check size={16} style={{ marginRight: 6 }} />Save</>}
+                {saving ? 'Saving...' : <><Check size={16} style={{ marginRight: 6 }} /> Save Changes</>}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      <style jsx>{`
-        .profile-page-wrapper {
-          min-height: 100vh;
-          background-color: #F4F4F4;
-        }
-        .profile-top-bar {
-          background-color: #FFFFFF;
-          height: 60px;
-          border-bottom: 1px solid #e2e8f0;
-          position: sticky;
-          top: 0;
-          z-index: 100;
-          display: flex;
-          align-items: center;
-        }
-        .profile-top-bar-container {
-          max-width: 1128px;
-          width: 100%;
-          margin: 0 auto;
-          padding: 0 16px;
-        }
-        .profile-layout-container {
-          max-width: 1128px;
-          width: 100%;
-          margin: 0 auto;
-          padding: 16px;
-          box-sizing: border-box;
-        }
-        @media (max-width: 767px) {
-          .profile-layout-container {
-            padding: 0;
-          }
-        }
-      `}</style>
       {/* ── Toast ── */}
       {toastMessage && (
         <div

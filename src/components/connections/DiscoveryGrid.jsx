@@ -21,47 +21,51 @@ export default function DiscoveryGrid() {
   useEffect(() => {
     async function fetchInitialProfiles() {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .range(0, PAGE_SIZE + 4) // Fetch extra to account for filtering self
-        .order('id', { ascending: true });
+        .range(0, PAGE_SIZE - 1)
+        .order('updated_at', { ascending: false });
       
       if (!error && data) {
-        const filtered = user ? data.filter(p => p.id !== user.id) : data;
-        const initial = filtered.slice(0, PAGE_SIZE);
-        setProfiles(initial);
-        setOffset(initial.length);
-        if (filtered.length <= PAGE_SIZE) setHasMore(false);
+        setProfiles(data);
+        setOffset(data.length);
+        if (data.length < PAGE_SIZE) setHasMore(false);
       }
       setLoading(false);
     }
 
     fetchInitialProfiles();
+
+    // Listen for profile updates from Profile.jsx
+    const handleProfileUpdate = (event) => {
+      const updatedProfile = event.detail;
+      setProfiles(prev => prev.map(p => 
+        p.id === updatedProfile.id ? { ...p, ...updatedProfile } : p
+      ));
+    };
+
+    window.addEventListener('marcomn-profile-updated', handleProfileUpdate);
+    return () => window.removeEventListener('marcomn-profile-updated', handleProfileUpdate);
   }, []);
 
   const handleShowMore = async () => {
     setLoadingMore(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    const nextLimit = offset + LOAD_MORE_SIZE + 2; // Fetch extra for filtering
+    const nextLimit = offset + LOAD_MORE_SIZE - 1;
     
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .range(offset, nextLimit)
-      .order('id', { ascending: true });
+      .order('updated_at', { ascending: false });
 
     if (!error && data) {
-      const filtered = user ? data.filter(p => p.id !== user.id && !profiles.find(existing => existing.id === p.id)) : data;
-      const nextBatch = filtered.slice(0, LOAD_MORE_SIZE);
-      
-      if (nextBatch.length > 0) {
-        setProfiles(prev => [...prev, ...nextBatch]);
-        setOffset(prev => prev + nextBatch.length);
+      if (data.length > 0) {
+        setProfiles(prev => [...prev, ...data]);
+        setOffset(prev => prev + data.length);
       }
       
-      if (nextBatch.length < LOAD_MORE_SIZE) {
+      if (data.length < LOAD_MORE_SIZE) {
         setHasMore(false);
       }
     }

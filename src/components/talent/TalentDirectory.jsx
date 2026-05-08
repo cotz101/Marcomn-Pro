@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase';
 import { Briefcase, MapPin, Search, User, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
-import ProfessionalCard from '@/components/connections/ProfessionalCard';
+import ProfessionalCard from '../connections/ProfessionalCard';
 
 export default function TalentDirectory() {
   const [profiles, setProfiles] = useState([]);

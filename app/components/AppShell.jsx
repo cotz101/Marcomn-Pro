@@ -25,7 +25,8 @@ import {
   Zap,
   Target,
   Lightbulb,
-  Anchor
+  Anchor,
+  ArrowLeft
 } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
@@ -154,25 +155,41 @@ export default function AppShell({ children, userEmail, userId }) {
         <div className="app-container">
           {/* Desktop Header Content */}
           <div className="header-content hidden sm:grid">
-            <div className="header-left">
-              <Link href="/" className="logo">
-                Mar<span>Comn</span>
-              </Link>
+            <div className="header-left flex items-center gap-3">
+              {pathname === '/profile' ? (
+                <button 
+                  onClick={() => router.push('/network/connections')}
+                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                  title="Back to Network"
+                >
+                  <ArrowLeft size={22} className="text-[#002b4e]" />
+                </button>
+              ) : (
+                <Link href="/" className="logo">
+                  Mar<span>Comn</span>
+                </Link>
+              )}
             </div>
 
-            <div className="header-nav-center">
-              <Link href="/logbook" className={`nav-link ${(pathname === '/logbook' || pathname?.includes('/network')) ? 'active' : ''}`}>
-                <Ship size={24} />
-                <span>MNetwork</span>
-              </Link>
-              <Link href="/services" className={`nav-link ${pathname === '/services' ? 'active' : ''}`}>
-                <LayoutGrid size={24} />
-                <span>MServices</span>
-              </Link>
-              <Link href="/blog" className={`nav-link ${pathname === '/blog' ? 'active' : ''}`}>
-                <Newspaper size={24} />
-                <span>MBlog</span>
-              </Link>
+            <div className="header-nav-center flex items-center justify-center">
+              {pathname === '/profile' ? (
+                <span className="font-bold text-xl text-[#002b4e]">Profile</span>
+              ) : (
+                <>
+                  <Link href="/logbook" className={`nav-link ${(pathname === '/logbook' || pathname?.includes('/network')) ? 'active' : ''}`}>
+                    <Ship size={24} />
+                    <span>MNetwork</span>
+                  </Link>
+                  <Link href="/services" className={`nav-link ${pathname === '/services' ? 'active' : ''}`}>
+                    <LayoutGrid size={24} />
+                    <span>MServices</span>
+                  </Link>
+                  <Link href="/blog" className={`nav-link ${pathname === '/blog' ? 'active' : ''}`}>
+                    <Newspaper size={24} />
+                    <span>MBlog</span>
+                  </Link>
+                </>
+              )}
             </div>
             <div className="header-right">
               <div className="header-actions-desktop flex items-center">
@@ -218,10 +235,24 @@ export default function AppShell({ children, userEmail, userId }) {
           {/* Mobile Notch-Safe Header */}
           <div className="mobile-header sm:hidden">
             <div className="mobile-header-inner">
-              <div className="mobile-search-bar" onClick={() => router.push('/search')}>
-                <Search size={18} />
-                <span>Search</span>
-              </div>
+              {pathname === '/profile' ? (
+                <div className="flex items-center gap-3 flex-1">
+                  <button 
+                    onClick={() => router.push('/network/connections')}
+                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                  >
+                    <ArrowLeft size={22} className="text-[#002b4e]" />
+                  </button>
+                  <div className="flex-1 flex justify-center mr-8">
+                    <span className="font-bold text-lg text-[#002b4e]">Profile</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="mobile-search-bar" onClick={() => router.push('/search')}>
+                  <Search size={18} />
+                  <span>Search</span>
+                </div>
+              )}
               <div className="flex items-center gap-3">
                 <button className="header-icon-btn" onClick={() => router.push('/messages')}>
                   <MessageSquare size={22} />

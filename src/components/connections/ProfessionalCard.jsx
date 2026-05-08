@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserPlus, UserCheck, Users, MoreHorizontal, MapPin } from 'lucide-react';
+import { UserPlus, UserCheck, Users, MoreHorizontal, MapPin, Anchor, Shield, Compass, Users2, Ship, ChevronRight, MessageSquare } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import BaseModal from '../layout/BaseModal';
 import ProfileDetailModal from '../profile/ProfileDetailModal';
@@ -93,21 +93,31 @@ export default function ProfessionalCard({ profile, onFollow }) {
         </div>
 
         <div className="professional-info-container">
+          {profile.is_sailing && (
+            <div className="engagement-banner mb-4">
+              <span className="engagement-tag">NOT SEEKING</span>
+              <span className="engagement-vessel">Engaged: {profile.vessel_name || 'Active Vessel'}</span>
+            </div>
+          )}
+
           <div className="hiring-status-top">
             <span className={`status-dot ${profile.open_to_work ? 'active' : 'inactive'}`}></span>
             <span className="professional-name">{profile.full_name}</span>
           </div>
 
-          <p className="professional-rank">{profile.position || 'Maritime Professional'}</p>
+          <p className="professional-rank">{profile.headline || profile.current_position || 'Maritime Professional'}</p>
           
           <div className="professional-location">
             <MapPin size={11} />
             <span>{profile.location || 'Global Operations'}</span>
           </div>
 
-          {profile.is_sailing && profile.vessel_name && (
-            <div className="vessel-status">
-              <span>{profile.vessel_name}</span>
+          {!profile.is_sailing && profile.open_to_work && (
+            <div className="hiring-status-badge mb-3">
+              <span className={`status-dot active`}></span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                Available for Deployment
+              </span>
             </div>
           )}
 
@@ -115,38 +125,48 @@ export default function ProfessionalCard({ profile, onFollow }) {
             <p className="professional-bio">{profile.bio.substring(0, 120)}</p>
           )}
 
-          {profile.skills && profile.skills.length > 0 && (
-            <div className="professional-skills">
-              {profile.skills.slice(0, 3).map((skill, idx) => (
-                <span key={idx} className="skill-pill">{skill}</span>
+          <div className="w-full h-[1px] bg-slate-100 mb-4"></div>
+
+          {profile.skills && (Array.isArray(profile.skills) ? profile.skills.length > 0 : typeof profile.skills === 'string' && profile.skills.length > 0) && (
+            <div className="flex flex-wrap gap-2 mb-4 justify-center px-2">
+              {(Array.isArray(profile.skills) ? profile.skills : profile.skills.split(',')).slice(0, 5).map((skill, i) => (
+                <span key={i} className="skill-pill">
+                  {typeof skill === 'string' ? skill.trim() : skill}
+                </span>
               ))}
             </div>
           )}
 
-          <div className="professional-actions">
-            <button 
-              className={`btn-follow-passport ${isFollowing ? 'following' : ''}`}
-              onClick={handleFollowClick}
-            >
-              {isFollowing ? (
-                <>
-                  <UserCheck size={14} />
-                  <span>Following</span>
-                </>
-              ) : (
-                <>
-                  <UserPlus size={14} />
-                  <span>Follow</span>
-                </>
+            <div className="flex items-center justify-center gap-6 mt-2">
+              {currentUser?.id !== profile.id && (
+                <button 
+                  className="flex flex-col items-center gap-1 text-[#004173] font-bold text-[10px] uppercase tracking-tighter hover:opacity-80 transition-opacity"
+                  onClick={handleFollowClick}
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#f8fafc] border border-slate-100 flex items-center justify-center text-[#004173] shadow-sm">
+                    {isFollowing ? <UserCheck size={18} /> : <UserPlus size={18} />}
+                  </div>
+                  <span>{isFollowing ? 'Following' : 'Follow'}</span>
+                </button>
               )}
-            </button>
-            <button 
-              className="btn-text-passport"
-              onClick={() => setShowDetails(true)}
-            >
-              View Profile
-            </button>
-          </div>
+              {currentUser?.id !== profile.id && (
+                <button className="flex flex-col items-center gap-1 text-[#004173] font-bold text-[10px] uppercase tracking-tighter hover:opacity-80 transition-opacity">
+                  <div className="w-10 h-10 rounded-full bg-[#f8fafc] border border-slate-100 flex items-center justify-center text-[#004173] shadow-sm">
+                    <MessageSquare size={18} />
+                  </div>
+                  <span>Message</span>
+                </button>
+              )}
+              <button 
+                className="flex flex-col items-center gap-1 text-[#004173] font-bold text-[10px] uppercase tracking-tighter hover:opacity-80 transition-opacity"
+                onClick={() => setShowDetails(true)}
+              >
+                <div className="w-10 h-10 rounded-full bg-[#f8fafc] border border-slate-100 flex items-center justify-center text-[#004173] shadow-sm">
+                  <Users size={18} />
+                </div>
+                <span>View ID</span>
+              </button>
+            </div>
         </div>
       </div>
 
@@ -155,6 +175,7 @@ export default function ProfessionalCard({ profile, onFollow }) {
           isOpen={showDetails}
           onClose={() => setShowDetails(false)}
           profile={profile}
+          isSelf={currentUser?.id === profile.id}
         />
       )}
 
