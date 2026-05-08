@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Heart, MessageSquare, Share2 } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { ThumbsUp, MessageSquare, Share2 } from 'lucide-react';
 import PostActions from './PostActions';
 import DOMPurify from 'dompurify';
 import CommentSection from './CommentSection';
@@ -29,6 +29,7 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
   };
 
   const unescapeHtml = (html) => {
+    if (typeof window === 'undefined') return html || '';
     if (!html) return '';
     const txt = document.createElement('textarea');
     txt.innerHTML = html;
@@ -69,6 +70,7 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
 
   const truncateHtmlWithTags = (html, limit) => {
     if (!html) return '';
+    if (typeof window === 'undefined') return html; // SSR Fallback
     
     // Create a temporary div to parse HTML
     const tempDiv = document.createElement('div');
@@ -141,22 +143,24 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
     return isTruncated ? resultHtml + '...' : resultHtml;
   };
 
-  const contentLimit = 180; // Targeting roughly 150-200 chars for first two sentences
-  
-  const rawContent = post.content || '';
-  // Only unescape if we see escaped tags like &lt; or &gt;
-  const isEscaped = rawContent.includes('&lt;') || rawContent.includes('&gt;');
-  const contentToProcess = isEscaped ? unescapeHtml(rawContent) : rawContent;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Determine displayed content based on expansion state
-  const displayedContent = isExpanded ? contentToProcess : truncateHtmlWithTags(contentToProcess, contentLimit);
+  const contentLimit = 180;
   
-  const tempTextDiv = document.createElement('div');
-  tempTextDiv.innerHTML = contentToProcess;
-  const plainText = tempTextDiv.textContent || '';
-  
-  // Rule check: only truncate if we actually have more sentences/text than the smartLimit
-  const shouldTruncate = plainText.length > 200; // General threshold for "See more"
+  const processedContent = useMemo(() => {
+    const rawContent = post.content || '';
+    const isEscaped = rawContent.includes('&lt;') || rawContent.includes('&gt;');
+    const unescaped = isEscaped && mounted ? unescapeHtml(rawContent) : rawContent;
+    
+    if (!mounted) return unescaped;
+    
+    return isExpanded ? unescaped : truncateHtmlWithTags(unescaped, contentLimit);
+  }, [post.content, mounted, isExpanded]);
+
+  const shouldTruncate = (post.content || '').length > 200;
 
   return (
     <div className="card post-card" ref={cardRef}>
@@ -196,7 +200,7 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
         <div className="post-content">
           <div 
             className="rich-text"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(displayedContent || '') }} 
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(processedContent || '') }} 
           />
           {shouldTruncate && (
             <button 
@@ -253,13 +257,15 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
       )}
 
       <div className="post-actions">
-        <button 
-          className={`action-btn ${isLiked ? 'active' : ''}`}
-          onClick={toggleLike}
-          style={{ color: isLiked ? '#002b4e' : 'inherit' }}
-        >
-          <Heart size={18} fill={isLiked ? '#002b4e' : 'none'} /> 
-          <span className="font-medium">Like</span>
+        <div className="action-group" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button 
+            className={`action-btn ${isLiked ? 'active' : ''}`}
+            onClick={toggleLike}
+            style={{ color: isLiked ? '#002b4e' : 'inherit', flex: likeCount > 0 ? 'none' : 1 }}
+          >
+            <ThumbsUp size={18} fill={isLiked ? '#002b4e' : 'none'} /> 
+            <span className="font-medium">Like</span>
+          </button>
           {likeCount > 0 && (
             <button 
               className="like-count-btn"
@@ -268,10 +274,10 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
                 setShowReactions(true);
               }}
             >
-              {likeCount} {likeCount === 1 ? 'like' : 'likes'}
+              {likeCount}
             </button>
           )}
-        </button>
+        </div>
         <button 
           className={`action-btn ${showComments ? 'active' : ''}`}
           onClick={() => setShowComments(!showComments)}

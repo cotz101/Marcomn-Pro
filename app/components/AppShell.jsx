@@ -161,7 +161,7 @@ export default function AppShell({ children, userEmail, userId }) {
             </div>
 
             <div className="header-nav-center">
-              <Link href="/logbook" className={`nav-link ${pathname === '/logbook' ? 'active' : ''}`}>
+              <Link href="/logbook" className={`nav-link ${(pathname === '/logbook' || pathname?.includes('/network')) ? 'active' : ''}`}>
                 <Ship size={24} />
                 <span>MNetwork</span>
               </Link>
@@ -265,7 +265,7 @@ export default function AppShell({ children, userEmail, userId }) {
       <nav className="mobile-bottom-nav sm:hidden" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}>
         <Link 
           href="/logbook" 
-          className={`mobile-nav-item ${(pathname?.includes('/logbook') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) ? 'active' : ''}`}
+          className={`mobile-nav-item ${(pathname?.includes('/logbook') || pathname?.includes('/network') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) ? 'active' : ''}`}
           style={{ '--active-color': '#002b4e' }}
         >
           <Ship size={24} className="mobile-nav-icon" />
@@ -311,7 +311,7 @@ export default function AppShell({ children, userEmail, userId }) {
                   </div>
                   <span className="nav-grid-label">Logbook</span>
                 </Link>
-                <Link href="/connections" className="nav-grid-item" onClick={() => setMnetworkOpen(false)}>
+                <Link href="/network/connections" className="nav-grid-item" onClick={() => setMnetworkOpen(false)}>
                   <div className="nav-grid-icon-box">
                     <UserPlus size={24} />
                   </div>
@@ -344,7 +344,7 @@ export default function AppShell({ children, userEmail, userId }) {
           <div className="speed-dial-menu">
             {/* Contextual Sub-Nav Shortcuts (Top Layer) */}
             <div className="speed-dial-shortcuts">
-              {(pathname?.includes('/logbook') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) && (
+              {(pathname?.includes('/logbook') || pathname?.includes('/network') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) && (
                 <>
                   <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/logbook'); }}>
                     <span className="shortcut-label">Logbook</span>
@@ -354,7 +354,7 @@ export default function AppShell({ children, userEmail, userId }) {
                     <span className="shortcut-label">Groups</span>
                     <div className="shortcut-icon-wrapper"><Users size={18} /></div>
                   </div>
-                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/connections'); }}>
+                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/network/connections'); }}>
                     <span className="shortcut-label">Connections</span>
                     <div className="shortcut-icon-wrapper"><UserPlus size={18} /></div>
                   </div>
@@ -394,7 +394,7 @@ export default function AppShell({ children, userEmail, userId }) {
 
             {/* Primary Action (Navy Theme) - RESTORED SOLID NAVY BLUE */}
             <div className="speed-dial-primary-btn" style={{ backgroundColor: '#002b4e', color: 'white', zIndex: 9999 }}>
-              {(pathname?.includes('/logbook') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) && (
+              {(pathname?.includes('/logbook') || pathname?.includes('/network') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) && (
                 <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); setShowPostModal(true); }}>
                   Post to Logbook
                 </button>
