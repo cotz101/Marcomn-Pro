@@ -100,11 +100,11 @@ export default function ProfileDetailModal({ isOpen, onClose, profile }) {
 
         {/* Footer Actions */}
         <div className="p-6 bg-slate-50 border-t flex gap-3">
-          <button className="btn-primary flex-1 py-3 text-sm flex items-center justify-center gap-2">
+          <button className="btn-follow-passport flex-1 py-3 text-sm flex items-center justify-center gap-2">
             <UserPlus size={18} />
             Connect
           </button>
-          <button className="btn-secondary flex-1 py-3 text-sm flex items-center justify-center gap-2">
+          <button className="btn-ghost-navy flex-1 py-3 text-sm flex items-center justify-center gap-2" style={{ borderRadius: '8px' }}>
             <MessageSquare size={18} />
             Message
           </button>

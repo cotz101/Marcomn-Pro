@@ -564,14 +564,14 @@ a {
 }
 
 /* Grids */
-.groups-grid, .talent-grid {
+.groups-grid, .discovery-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
 }
 
 @media (min-width: 768px) {
-  .groups-grid, .talent-grid {
+  .groups-grid, .discovery-grid {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
 }
@@ -1546,14 +1546,14 @@ html.dark .btn-primary {
 }
 
 .rich-text {
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.6;
   color: #1b1c1c;
   word-wrap: break-word;
 }
 
 .rich-text p {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .rich-text p:last-child {
@@ -1566,11 +1566,11 @@ html.dark .btn-primary {
 
 .rich-text ul, .rich-text ol {
   padding-left: 20px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .rich-text li {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 .bottom-nav-mobile {
   position: fixed;
@@ -2990,18 +2990,9 @@ html.dark .btn-primary {
   text-decoration: underline;
 }
 
-/* Discovery Grid & Professional Cards */
 .discovery-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
-  margin-top: 16px;
-}
-
-/* Centered Passport Grid & Card Design */
-.discovery-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); /* Strict 2 columns on mobile */
+  grid-template-columns: repeat(2, 1fr); /* Strict 2 columns on mobile/tablet */
   gap: 12px;
   width: 100%;
   padding-bottom: 32px;
@@ -3010,25 +3001,30 @@ html.dark .btn-primary {
 
 @media (min-width: 1024px) {
   .discovery-grid {
-    grid-template-columns: repeat(3, 1fr); /* 3 columns on desktop */
-    gap: 16px; /* Gutter Compression */
+    grid-template-columns: repeat(3, 1fr); /* Strict 3 columns on desktop */
+    gap: 16px;
   }
 }
 
 .professional-card {
   display: flex;
-  flex-direction: column; /* Centered Vertical Layout */
+  flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 20px 16px !important; /* Top/Bottom 20px, Left/Right 16px */
+  padding: 16px 12px !important; /* Compressed Padding */
   background-color: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 128, 0.1) !important; /* Subtle Navy Stroke */
+  border: 1px solid rgba(0, 43, 78, 0.1) !important;
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  /* Removed min-height to allow vertical shrinkage */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.professional-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .card-avatar-wrapper {
@@ -3111,15 +3107,16 @@ html.dark .btn-primary {
 }
 
 .professional-bio {
-  font-size: 12px;
-  color: #475569;
+  font-size: 11px;
+  color: #64748b;
   font-style: italic;
   line-height: 1.4;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2; /* Compressed to 2 lines */
   -webkit-box-orient: vertical;
   overflow: hidden;
+  min-height: 30.8px; /* Maintain alignment across cards */
 }
 
 .professional-skills {
@@ -3132,12 +3129,14 @@ html.dark .btn-primary {
 
 .skill-pill {
   font-size: 10px;
-  font-weight: 600;
-  color: #002b4e;
-  background-color: #f1f5f9;
-  padding: 2px 8px;
+  font-weight: 700;
+  color: #eab308; /* MarComn Gold */
+  background-color: #002b4e; /* MarComn Navy */
+  padding: 3px 10px;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border: 1px solid rgba(234, 179, 8, 0.3);
 }
 
 .professional-actions {
@@ -3266,17 +3265,6 @@ html.dark .btn-primary {
   padding: 0 10px;
 }
 
-.skill-pill {
-  background: #002b4e;
-  color: #eab308; /* MarComn Gold */
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  border: 1px solid rgba(234, 179, 8, 0.3);
-}
 
 /* Pagination Button Style */
 .btn-ghost-navy {

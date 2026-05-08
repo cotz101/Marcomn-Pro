@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase';
 import { Briefcase, MapPin, Search, User, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import ProfessionalCard from '@/components/connections/ProfessionalCard';
 
 export default function TalentDirectory() {
   const [profiles, setProfiles] = useState([]);
@@ -14,7 +15,7 @@ export default function TalentDirectory() {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, headline, avatar_url, current_position, current_company, location')
+      .select('id, full_name, avatar_url, position, location, bio, skills, is_sailing, vessel_name, open_to_work')
       .order('full_name', { ascending: true });
 
     if (data && !error) {
@@ -36,10 +37,10 @@ export default function TalentDirectory() {
     setFiltered(
       profiles.filter(p =>
         (p.full_name || '').toLowerCase().includes(q) ||
-        (p.headline || '').toLowerCase().includes(q) ||
-        (p.current_position || '').toLowerCase().includes(q) ||
-        (p.current_company || '').toLowerCase().includes(q) ||
-        (p.location || '').toLowerCase().includes(q)
+        (p.position || '').toLowerCase().includes(q) ||
+        (p.bio || '').toLowerCase().includes(q) ||
+        (p.location || '').toLowerCase().includes(q) ||
+        (p.skills || []).some(s => s.toLowerCase().includes(q))
       )
     );
   }, [query, profiles]);
@@ -68,73 +69,9 @@ export default function TalentDirectory() {
           {query ? `No results for "${query}"` : 'No professionals found.'}
         </div>
       ) : (
-        <div className="talent-grid">
+        <div className="discovery-grid">
           {filtered.map(profile => (
-            <div key={profile.id} className="card group-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 10 }}>
-              {/* Avatar */}
-              <div style={{ position: 'relative' }}>
-                {profile.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.full_name || 'User'}
-                    style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--border)' }}
-                  />
-                ) : (
-                  <div style={{
-                    width: 80, height: 80, borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #0e2a4d, #00B4D8)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                  }}>
-                    <User size={36} color="white" />
-                  </div>
-                )}
-              </div>
-
-              {/* Name & Headline */}
-              <div style={{ flex: 1, width: '100%' }}>
-                <div className="group-name" style={{ fontSize: 16, fontWeight: 700 }}>
-                  {profile.full_name || 'MarComn User'}
-                </div>
-                {profile.headline && (
-                  <div className="group-members" style={{ marginTop: 4, fontSize: 13, lineHeight: 1.4 }}>
-                    {profile.headline}
-                  </div>
-                )}
-                {(profile.current_position || profile.current_company) && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 6, fontSize: 12, color: 'var(--text-secondary)' }}>
-                    <Briefcase size={12} />
-                    <span>
-                      {profile.current_position}
-                      {profile.current_position && profile.current_company ? ' at ' : ''}
-                      {profile.current_company}
-                    </span>
-                  </div>
-                )}
-                {profile.location && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 4, fontSize: 12, color: 'var(--text-secondary)' }}>
-                    <MapPin size={12} />
-                    <span>{profile.location}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div style={{ display: 'flex', gap: 8, width: '100%', marginTop: 4 }}>
-                <button className="btn-secondary" style={{ flex: 1, fontSize: 13 }}>Connect</button>
-                <Link
-                  href={`/profile/${profile.id}`}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '0 12px', borderRadius: 8, border: '1px solid var(--border)',
-                    color: 'var(--text-secondary)', textDecoration: 'none',
-                    fontSize: 13, background: 'transparent', cursor: 'pointer'
-                  }}
-                  title="View profile"
-                >
-                  <ExternalLink size={15} />
-                </Link>
-              </div>
-            </div>
+            <ProfessionalCard key={profile.id} profile={profile} />
           ))}
         </div>
       )}

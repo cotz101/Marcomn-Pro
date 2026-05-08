@@ -25,7 +25,7 @@ export default function DiscoveryGrid() {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .range(0, PAGE_SIZE + 5) // Fetch extra to account for filtering self
+        .range(0, PAGE_SIZE + 4) // Fetch extra to account for filtering self
         .order('id', { ascending: true });
       
       if (!error && data) {
@@ -91,8 +91,8 @@ export default function DiscoveryGrid() {
   }
 
   return (
-    <div className="pb-24" style={{ paddingBottom: '100px' }}>
-      <div className="search-container">
+    <div className="pb-32">
+      <div className="search-container" style={{ paddingTop: '0' }}>
         <div className="search-bar-wrapper">
           <Search className="search-icon" size={20} />
           <input 

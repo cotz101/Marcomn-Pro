@@ -107,7 +107,7 @@ export default function ProfessionalCard({ profile, onFollow }) {
 
           {profile.is_sailing && profile.vessel_name && (
             <div className="vessel-status">
-              <span>Current Vessel: {profile.vessel_name}</span>
+              <span>{profile.vessel_name}</span>
             </div>
           )}
 
@@ -117,31 +117,31 @@ export default function ProfessionalCard({ profile, onFollow }) {
 
           {profile.skills && profile.skills.length > 0 && (
             <div className="professional-skills">
-              {profile.skills.slice(0, 5).map((skill, idx) => (
+              {profile.skills.slice(0, 3).map((skill, idx) => (
                 <span key={idx} className="skill-pill">{skill}</span>
               ))}
             </div>
           )}
 
-          <div className="professional-actions w-full">
+          <div className="professional-actions">
             <button 
               className={`btn-follow-passport ${isFollowing ? 'following' : ''}`}
               onClick={handleFollowClick}
             >
               {isFollowing ? (
                 <>
-                  <UserCheck size={16} />
+                  <UserCheck size={14} />
                   <span>Following</span>
                 </>
               ) : (
                 <>
-                  <UserPlus size={16} />
+                  <UserPlus size={14} />
                   <span>Follow</span>
                 </>
               )}
             </button>
             <button 
-              className="btn-text-passport mt-1"
+              className="btn-text-passport"
               onClick={() => setShowDetails(true)}
             >
               View Profile

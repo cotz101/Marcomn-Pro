@@ -1,9 +1,11 @@
 'use client';
 import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createClient } from '@/lib/supabase';
-import { Camera, Briefcase, MapPin, Edit3, X, Check } from 'lucide-react';
+import { Camera, Briefcase, MapPin, Edit3, X, Check, ArrowLeft, Ship } from 'lucide-react';
 
 export default function Profile({ profile, setProfile, userId }) {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editForm, setEditForm] = useState(profile);
   const [toastMessage, setToastMessage] = useState('');
@@ -27,7 +29,10 @@ export default function Profile({ profile, setProfile, userId }) {
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => setIsModalOpen(false);
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setActiveTab('basic');
+  };
 
   // Upload avatar to Supabase Storage and return the public URL
   const handleAvatarUpload = async (e) => {
@@ -123,71 +128,92 @@ export default function Profile({ profile, setProfile, userId }) {
   };
 
   return (
-    <>
-      {/* ── Profile Card ── */}
-      <section className="profile-card">
-        <div className="cover-photo-container" onClick={() => coverPhotoInputRef.current.click()}>
-          <img src={profile.coverPhoto || '/cover_photo.png'} alt="Cover" />
-          <div className="edit-overlay">Click to change cover</div>
-          <input type="file" accept="image/*" ref={coverPhotoInputRef} style={{ display: 'none' }} onChange={handleCoverUpload} />
+    <div className="profile-page-wrapper">
+      {/* ── Global Top Bar (Profile Restoration) ── */}
+      <header className="profile-top-bar">
+        <div className="profile-top-bar-container">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => navigate(-1)} 
+              className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+              title="Go Back"
+            >
+              <ArrowLeft size={22} className="text-[#002b4e]" />
+            </button>
+            <div className="flex items-center gap-2 text-[#002b4e] font-bold text-lg">
+              <Ship size={24} />
+              <span>MarComn</span>
+            </div>
+          </div>
         </div>
+      </header>
 
-        <div className="profile-info">
-          <div className="profile-header-top">
-            {/* Avatar with real upload */}
-            <div className="profile-pic-container" style={{ position: 'relative' }}>
-              <img src={profile.profilePic || '/profile_pic.png'} alt={profile.fullName} className="profile-pic" />
-              <button
-                onClick={() => avatarUploadRef.current.click()}
-                disabled={uploading}
-                style={{
-                  position: 'absolute', bottom: 4, right: 4,
-                  background: '#0e2a4d', border: '2px solid white', borderRadius: '50%',
-                  width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', color: 'white'
-                }}
-                title="Change avatar"
-              >
-                {uploading ? '…' : <Camera size={14} />}
+      <div className="profile-layout-container">
+        {/* ── Profile Card ── */}
+        <section className="profile-card">
+          <div className="cover-photo-container" onClick={() => coverPhotoInputRef.current.click()}>
+            <img src={profile.coverPhoto || '/cover_photo.png'} alt="Cover" />
+            <div className="edit-overlay">Click to change cover</div>
+            <input type="file" accept="image/*" ref={coverPhotoInputRef} style={{ display: 'none' }} onChange={handleCoverUpload} />
+          </div>
+
+          <div className="profile-info">
+            <div className="profile-header-top">
+              {/* Avatar with real upload */}
+              <div className="profile-pic-container" style={{ position: 'relative' }}>
+                <img src={profile.profilePic || '/profile_pic.png'} alt={profile.fullName} className="profile-pic" />
+                <button
+                  onClick={() => avatarUploadRef.current.click()}
+                  disabled={uploading}
+                  style={{
+                    position: 'absolute', bottom: 4, right: 4,
+                    background: '#0e2a4d', border: '2px solid white', borderRadius: '50%',
+                    width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', color: 'white'
+                  }}
+                  title="Change avatar"
+                >
+                  {uploading ? '…' : <Camera size={14} />}
+                </button>
+                <input type="file" accept="image/*" ref={avatarUploadRef} style={{ display: 'none' }} onChange={handleAvatarUpload} />
+              </div>
+
+              <button className="btn-edit-profile" onClick={handleOpenModal} aria-label="Edit Profile">
+                <Edit3 size={18} />
               </button>
-              <input type="file" accept="image/*" ref={avatarUploadRef} style={{ display: 'none' }} onChange={handleAvatarUpload} />
             </div>
 
-            <button className="btn-edit-profile" onClick={handleOpenModal} aria-label="Edit Profile">
-              <Edit3 size={18} />
-            </button>
+            <h1 className="profile-name">{profile.fullName}</h1>
+            <h2 className="profile-headline">{profile.headline}</h2>
+
+            {(profile.currentPosition || profile.currentCompany) && (
+              <p className="profile-location" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Briefcase size={14} />
+                {profile.currentPosition}{profile.currentPosition && profile.currentCompany ? ' at ' : ''}{profile.currentCompany}
+              </p>
+            )}
+
+            {profile.location && (
+              <p className="profile-location" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <MapPin size={14} /> {profile.location}
+              </p>
+            )}
+
+            <div className="action-buttons">
+              <button className="btn-primary">Connect</button>
+              <button className="btn-secondary">Message</button>
+            </div>
           </div>
-
-          <h1 className="profile-name">{profile.fullName}</h1>
-          <h2 className="profile-headline">{profile.headline}</h2>
-
-          {(profile.currentPosition || profile.currentCompany) && (
-            <p className="profile-location" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Briefcase size={14} />
-              {profile.currentPosition}{profile.currentPosition && profile.currentCompany ? ' at ' : ''}{profile.currentCompany}
-            </p>
-          )}
-
-          {profile.location && (
-            <p className="profile-location" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <MapPin size={14} /> {profile.location}
-            </p>
-          )}
-
-          <div className="action-buttons">
-            <button className="btn-primary">Connect</button>
-            <button className="btn-secondary">Message</button>
-          </div>
-        </div>
-      </section>
-
-      {/* ── About Card ── */}
-      {(profile.bio || profile.about) && (
-        <section className="profile-card about-card">
-          <h2 className="section-title">About</h2>
-          <p className="about-text">{profile.bio || profile.about}</p>
         </section>
-      )}
+
+        {/* ── About Card ── */}
+        {(profile.bio || profile.about) && (
+          <section className="profile-card about-card" style={{ marginTop: '16px' }}>
+            <h2 className="section-title">About</h2>
+            <p className="about-text">{profile.bio || profile.about}</p>
+          </section>
+        )}
+      </div>
 
       {/* ── Edit Modal ── */}
       {isModalOpen && (
@@ -369,6 +395,40 @@ export default function Profile({ profile, setProfile, userId }) {
         </div>
       )}
 
+      <style jsx>{`
+        .profile-page-wrapper {
+          min-height: 100vh;
+          background-color: #F4F4F4;
+        }
+        .profile-top-bar {
+          background-color: #FFFFFF;
+          height: 60px;
+          border-bottom: 1px solid #e2e8f0;
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          display: flex;
+          align-items: center;
+        }
+        .profile-top-bar-container {
+          max-width: 1128px;
+          width: 100%;
+          margin: 0 auto;
+          padding: 0 16px;
+        }
+        .profile-layout-container {
+          max-width: 1128px;
+          width: 100%;
+          margin: 0 auto;
+          padding: 16px;
+          box-sizing: border-box;
+        }
+        @media (max-width: 767px) {
+          .profile-layout-container {
+            padding: 0;
+          }
+        }
+      `}</style>
       {/* ── Toast ── */}
       {toastMessage && (
         <div
@@ -387,6 +447,6 @@ export default function Profile({ profile, setProfile, userId }) {
           {toastMessage}
         </div>
       )}
-    </>
+    </div>
   );
 }
