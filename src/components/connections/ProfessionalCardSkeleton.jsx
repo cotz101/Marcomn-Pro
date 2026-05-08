@@ -5,7 +5,7 @@ export default function ProfessionalCardSkeleton() {
     <div className="professional-card card">
       {/* Avatar Zone (Left) */}
       <div className="card-avatar-wrapper">
-        <div className="skeleton skeleton-avatar" style={{ width: '100%', height: '100%', borderRadius: '0' }}></div>
+        <div className="skeleton skeleton-avatar" style={{ width: '100%', height: '100%', borderRadius: '50%' }}></div>
       </div>
 
       {/* Info Zone (Right) */}

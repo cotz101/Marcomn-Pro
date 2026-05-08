@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { UserPlus, UserCheck, Users, MoreHorizontal, MapPin } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import BaseModal from '../layout/BaseModal';
+import ProfileDetailModal from '../profile/ProfileDetailModal';
 
 export default function ProfessionalCard({ profile, onFollow }) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const supabase = createClient();
 
@@ -80,70 +82,110 @@ export default function ProfessionalCard({ profile, onFollow }) {
   };
 
   return (
-    <div className="professional-card card">
-      {/* Avatar Zone (Left) */}
-      <div className="card-avatar-wrapper">
-        <img 
-          src={profile.avatar_url || '/profile_pic.png'} 
-          alt={profile.full_name} 
-          className="professional-avatar"
-        />
-      </div>
-
-      {/* Info Zone (Right) */}
-      <div className="professional-info-container">
-        <div className="hiring-status">
-          <span className={`status-dot ${profile.open_to_work ? 'active' : 'inactive'}`}></span>
-          <span className={profile.open_to_work ? 'text-green-600 font-bold' : 'text-slate-400'}>
-            {profile.open_to_work ? 'Hiring Now' : 'Passive'}
-          </span>
+    <>
+      <div className="professional-card card">
+        <div className="card-avatar-wrapper">
+          <img 
+            src={profile.avatar_url || '/profile_pic.png'} 
+            alt={profile.full_name} 
+            className="professional-avatar"
+          />
         </div>
 
-        <h3 className="professional-name">{profile.full_name}</h3>
-        <p className="professional-rank">{profile.position || 'Maritime Professional'}</p>
-        
-        <div className="professional-location">
-          <MapPin size={12} className="text-slate-400" />
-          <span>{profile.location || 'Global Operations'}</span>
-        </div>
+        <div className="professional-info-container">
+          <div className="hiring-status-top">
+            <span className={`status-dot ${profile.open_to_work ? 'active' : 'inactive'}`}></span>
+            <span className="professional-name">{profile.full_name}</span>
+          </div>
 
-        <div className="professional-actions pt-2">
-          <button className="btn-primary-passport">
-            Message
-          </button>
-          <button className="btn-secondary-passport">
-            View Profile
-          </button>
-        </div>
-      </div>
-    </div>
+          <p className="professional-rank">{profile.position || 'Maritime Professional'}</p>
+          
+          <div className="professional-location">
+            <MapPin size={11} />
+            <span>{profile.location || 'Global Operations'}</span>
+          </div>
 
-      <BaseModal 
-        isOpen={showConfirm} 
-        onClose={() => setShowConfirm(false)}
-        title="Unfollow?"
-      >
-        <div className="p-4 text-center">
-          <p className="mb-6 text-gray-600">
-            Are you sure you want to stop following <strong>{profile.full_name}</strong>?
-          </p>
-          <div className="flex gap-3">
+          {profile.is_sailing && profile.vessel_name && (
+            <div className="vessel-status">
+              <span>Current Vessel: {profile.vessel_name}</span>
+            </div>
+          )}
+
+          {profile.bio && (
+            <p className="professional-bio">{profile.bio.substring(0, 120)}</p>
+          )}
+
+          {profile.skills && profile.skills.length > 0 && (
+            <div className="professional-skills">
+              {profile.skills.slice(0, 5).map((skill, idx) => (
+                <span key={idx} className="skill-pill">{skill}</span>
+              ))}
+            </div>
+          )}
+
+          <div className="professional-actions w-full">
             <button 
-              className="btn-secondary flex-1" 
-              onClick={() => setShowConfirm(false)}
+              className={`btn-follow-passport ${isFollowing ? 'following' : ''}`}
+              onClick={handleFollowClick}
             >
-              Cancel
+              {isFollowing ? (
+                <>
+                  <UserCheck size={16} />
+                  <span>Following</span>
+                </>
+              ) : (
+                <>
+                  <UserPlus size={16} />
+                  <span>Follow</span>
+                </>
+              )}
             </button>
             <button 
-              className="btn-primary flex-1" 
-              style={{ backgroundColor: '#e11d48' }}
-              onClick={confirmUnfollow}
+              className="btn-text-passport mt-1"
+              onClick={() => setShowDetails(true)}
             >
-              Unfollow
+              View Profile
             </button>
           </div>
         </div>
-      </BaseModal>
-    </div>
+      </div>
+
+      {showDetails && (
+        <ProfileDetailModal 
+          isOpen={showDetails}
+          onClose={() => setShowDetails(false)}
+          profile={profile}
+        />
+      )}
+
+      {showConfirm && (
+        <BaseModal 
+          isOpen={showConfirm} 
+          onClose={() => setShowConfirm(false)}
+          title="Unfollow?"
+        >
+          <div className="p-4 text-center">
+            <p className="mb-6 text-gray-600">
+              Are you sure you want to stop following <strong>{profile.full_name}</strong>?
+            </p>
+            <div className="flex gap-3">
+              <button 
+                className="btn-secondary flex-1" 
+                onClick={() => setShowConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary flex-1" 
+                style={{ backgroundColor: '#e11d48' }}
+                onClick={confirmUnfollow}
+              >
+                Unfollow
+              </button>
+            </div>
+          </div>
+        </BaseModal>
+      )}
+    </>
   );
 }

@@ -10,6 +10,7 @@ export default function Profile({ profile, setProfile, userId }) {
   const [toastType, setToastType] = useState('success');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('basic'); // 'basic' or 'professional'
 
   const profilePicInputRef = useRef(null);
   const coverPhotoInputRef = useRef(null);
@@ -79,6 +80,11 @@ export default function Profile({ profile, setProfile, userId }) {
       bio: editForm.bio,
       current_position: editForm.currentPosition,
       current_company: editForm.currentCompany,
+      previous_role: editForm.previous_role,
+      skills: editForm.skills,
+      is_sailing: editForm.is_sailing,
+      vessel_name: editForm.vessel_name,
+      open_to_work: editForm.open_to_work,
     });
 
     if (!error) {
@@ -92,8 +98,16 @@ export default function Profile({ profile, setProfile, userId }) {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditForm(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setEditForm(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
+  };
+
+  const handleSkillsChange = (e) => {
+    const skillsArray = e.target.value.split(',').map(s => s.trim()).filter(s => s !== '');
+    setEditForm(prev => ({ ...prev, skills: skillsArray.slice(0, 5) }));
   };
 
   const handleCoverUpload = (e) => {
@@ -178,66 +192,174 @@ export default function Profile({ profile, setProfile, userId }) {
       {/* ── Edit Modal ── */}
       {isModalOpen && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ maxHeight: '90vh', overflowY: 'auto', maxWidth: 540, width: '100%' }}>
-            <div className="modal-header">
-              <h2>Edit profile</h2>
-              <button className="btn-close" onClick={handleCloseModal}><X size={20} /></button>
+            <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <h2>Edit profile</h2>
+                <button className="btn-close" onClick={handleCloseModal}><X size={20} /></button>
+              </div>
+              <div className="flex gap-4 mt-4 border-b">
+                <button 
+                  onClick={() => setActiveTab('basic')}
+                  className={`pb-2 px-1 text-sm font-medium transition-all ${activeTab === 'basic' ? 'border-b-2 border-[#002b4e] text-[#002b4e]' : 'text-gray-500 border-transparent'}`}
+                >
+                  Basic Info
+                </button>
+                <button 
+                  onClick={() => setActiveTab('professional')}
+                  className={`pb-2 px-1 text-sm font-medium transition-all ${activeTab === 'professional' ? 'border-b-2 border-[#002b4e] text-[#002b4e]' : 'text-gray-500 border-transparent'}`}
+                >
+                  Professional Details
+                </button>
+              </div>
             </div>
 
             <div className="modal-body">
-              {/* Avatar preview in modal */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-                <img
-                  src={editForm.profilePic || '/profile_pic.png'}
-                  alt="Avatar preview"
-                  style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '3px solid #e2e8f0' }}
-                />
-                <div>
-                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6 }}>Profile photo</p>
-                  <button
-                    className="btn-secondary"
-                    style={{ fontSize: 13, padding: '6px 14px' }}
-                    onClick={() => avatarUploadRef.current.click()}
-                    disabled={uploading}
-                  >
-                    {uploading ? 'Uploading…' : 'Change photo'}
-                  </button>
-                </div>
-              </div>
+              {activeTab === 'basic' ? (
+                <>
+                  {/* Avatar preview in modal */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                    <img
+                      src={editForm.profilePic || '/profile_pic.png'}
+                      alt="Avatar preview"
+                      style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '3px solid #e2e8f0' }}
+                    />
+                    <div>
+                      <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6 }}>Profile photo</p>
+                      <button
+                        className="btn-secondary"
+                        style={{ fontSize: 13, padding: '6px 14px' }}
+                        onClick={() => avatarUploadRef.current.click()}
+                        disabled={uploading}
+                      >
+                        {uploading ? 'Uploading…' : 'Change photo'}
+                      </button>
+                    </div>
+                  </div>
 
-              {[
-                { label: 'Full Name', name: 'fullName' },
-                { label: 'Headline', name: 'headline' },
-                { label: 'Current Position', name: 'currentPosition' },
-                { label: 'Current Company', name: 'currentCompany' },
-                { label: 'Location', name: 'location' },
-              ].map(({ label, name }) => (
-                <div className="form-group" key={name}>
-                  <label>{label}</label>
-                  <input
-                    type="text"
-                    name={name}
-                    className="form-input"
-                    value={editForm[name] || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              ))}
+                  {[
+                    { label: 'Full Name', name: 'fullName' },
+                    { label: 'Headline', name: 'headline' },
+                    { label: 'Current Position', name: 'currentPosition' },
+                    { label: 'Current Company', name: 'currentCompany' },
+                    { label: 'Location', name: 'location' },
+                  ].map(({ label, name }) => (
+                    <div className="form-group" key={name}>
+                      <label>{label}</label>
+                      <input
+                        type="text"
+                        name={name}
+                        className="form-input"
+                        value={editForm[name] || ''}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label>Professional Bio (Max 120 chars)</label>
+                    <textarea
+                      name="bio"
+                      className="form-textarea"
+                      rows={3}
+                      maxLength={120}
+                      placeholder="Brief professional summary..."
+                      value={editForm.bio || ''}
+                      onChange={handleInputChange}
+                    />
+                    <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
+                      {(editForm.bio || '').length}/120 characters
+                    </p>
+                  </div>
 
-              <div className="form-group">
-                <label>Bio / About</label>
-                <textarea
-                  name="bio"
-                  className="form-textarea"
-                  rows={4}
-                  placeholder="Tell the maritime world about yourself…"
-                  value={editForm.bio || ''}
-                  onChange={handleInputChange}
-                />
-              </div>
+                  <div className="form-group">
+                    <label>Previous Role</label>
+                    <input
+                      type="text"
+                      name="previous_role"
+                      className="form-input"
+                      placeholder="e.g. Second Officer"
+                      value={editForm.previous_role || ''}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Skills (Comma separated, max 5)</label>
+                    <input
+                      type="text"
+                      name="skills_input"
+                      className="form-input"
+                      placeholder="Navigation, Engineering, Safety..."
+                      defaultValue={(editForm.skills || []).join(', ')}
+                      onBlur={handleSkillsChange}
+                    />
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {(editForm.skills || []).map((skill, i) => (
+                        <span key={i} className="skill-pill" style={{ margin: 0 }}>{skill}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8 }}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label style={{ margin: 0, cursor: 'pointer' }} htmlFor="is_sailing">Are you currently sailing?</label>
+                        <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Toggle ON if you are active at sea</p>
+                      </div>
+                      <input 
+                        id="is_sailing"
+                        type="checkbox" 
+                        name="is_sailing" 
+                        checked={editForm.is_sailing || false}
+                        onChange={handleInputChange}
+                        style={{ width: 20, height: 20, cursor: 'pointer' }}
+                      />
+                    </div>
+
+                    {editForm.is_sailing && (
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label>Current Vessel Name</label>
+                        <input
+                          type="text"
+                          name="vessel_name"
+                          className="form-input"
+                          placeholder="e.g. MV Maersk Explorer"
+                          value={editForm.vessel_name || ''}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between border-t pt-4">
+                      <div>
+                        <label style={{ margin: 0, cursor: 'pointer' }} htmlFor="open_to_work">Open to New Opportunities?</label>
+                        <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Display "Available" status on your card</p>
+                      </div>
+                      <input 
+                        id="open_to_work"
+                        type="checkbox" 
+                        name="open_to_work" 
+                        checked={editForm.open_to_work || false}
+                        onChange={handleInputChange}
+                        style={{ width: 20, height: 20, cursor: 'pointer' }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="modal-footer">
+              <div className="form-group mb-0">
+                <textarea
+                  name="about"
+                  style={{ display: 'none' }}
+                  value={editForm.about || ''}
+                  readOnly
+                />
+              </div>
               <button className="btn-secondary" onClick={handleCloseModal}>Cancel</button>
               <button className="btn-primary" onClick={handleSaveModal} disabled={saving}>
                 {saving ? 'Saving…' : <><Check size={16} style={{ marginRight: 6 }} />Save</>}

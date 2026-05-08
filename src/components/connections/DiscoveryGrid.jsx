@@ -14,8 +14,8 @@ export default function DiscoveryGrid() {
   const [offset, setOffset] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   
-  const PAGE_SIZE = 8;
-  const LOAD_MORE_SIZE = 5;
+  const PAGE_SIZE = 6;
+  const LOAD_MORE_SIZE = 6;
   const supabase = createClient();
 
   useEffect(() => {

@@ -15,10 +15,10 @@ export default function ConnectionsHub() {
   ];
 
   return (
-    <div className="connections-hub" style={{ paddingBottom: '100px' }}>
-      <div className="connections-header card mb-6" style={{ padding: '0' }}>
-        <h1 className="text-xl font-bold px-4 md:px-6 pt-6">Professional Network</h1>
-        <div className="flex gap-6 px-4 md:px-6 py-4 border-b overflow-x-auto no-scrollbar">
+    <div className="connections-hub mx-auto w-full max-w-full px-4" style={{ paddingBottom: '100px' }}>
+      <div className="connections-header card mb-6" style={{ padding: '0', background: 'transparent', boxShadow: 'none', border: 'none' }}>
+        <h1 className="text-xl font-bold pt-6 pb-2" style={{ color: '#002b4e' }}>Professional Network</h1>
+        <div className="flex gap-6 py-4 border-b overflow-x-auto no-scrollbar">
           {tabs.map(tab => (
             <button
               key={tab.id}
