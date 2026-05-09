@@ -567,12 +567,12 @@ a {
 .groups-grid, .discovery-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: 24px;
 }
 
 @media (min-width: 768px) {
   .groups-grid, .discovery-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -3035,7 +3035,6 @@ html.dark .btn-primary {
   height: 100px;
   background: #f8fafc;
   border-radius: 50%; /* Perfect Circle */
-  overflow: hidden;
   border: 4px solid #f8fafc; /* Thick Border like in image */
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
   margin-bottom: 12px;
@@ -3045,6 +3044,7 @@ html.dark .btn-primary {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
+  border-radius: 50% !important; /* Enforce circle on image */
 }
 
 .professional-info-container {

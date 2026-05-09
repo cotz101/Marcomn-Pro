@@ -50,7 +50,7 @@ function App() {
           <Route path="/connections" element={<ConnectionsHub />} />
           <Route path="/services" element={<ServicesFeed />} />
           <Route path="/blog" element={<BlogFeed />} />
-          <Route path="/profile" element={<Profile profile={profile} setProfile={setProfile} />} />
+          <Route path="/profile/:id?" element={<Profile profile={profile} setProfile={setProfile} />} />
         </Routes>
       </main>
       <MobileShell />

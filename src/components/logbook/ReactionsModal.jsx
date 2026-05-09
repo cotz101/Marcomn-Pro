@@ -25,7 +25,7 @@ export default function ReactionsModal({ isOpen, onClose, postId, currentUserId 
           id,
           user:profiles (
             id,
-            full_name,
+            name,
             avatar_url,
             headline
           )
@@ -91,16 +91,22 @@ export default function ReactionsModal({ isOpen, onClose, postId, currentUserId 
               likes.map((like) => (
                 <div key={like.id} className="reaction-item">
                   <div className="reaction-user-info">
-                    <img 
-                      src={like.user?.avatar_url || '/profile_pic.png'} 
-                      alt={like.user?.full_name} 
-                      className="reaction-avatar"
-                    />
-                    <div className="reaction-details">
-                      <div className="reaction-name">
-                        {like.user?.full_name}
-                        {like.user?.id === currentUserId && <span className="user-tag">• You</span>}
+                    {like.user?.avatar_url ? (
+                      <img 
+                        src={like.user?.avatar_url} 
+                        alt={like.user?.name} 
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                        <User size={20} className="text-slate-400" />
                       </div>
+                    )}
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-900 leading-tight">
+                        {like.user?.name}
+                        {like.user?.id === currentUserId && <span className="user-tag">• You</span>}
+                      </span>
                       <div className="reaction-headline">{like.user?.headline || 'Maritime Professional'}</div>
                     </div>
                   </div>

@@ -78,7 +78,7 @@ function JobFormModal({ initial = EMPTY_JOB, onSave, onClose, saving, mode = 'ad
   );
 }
 
-export default function ExperienceSection({ userId }) {
+export default function ExperienceSection({ userId, isOwnProfile }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalMode, setModalMode] = useState(null); // null | 'add' | 'edit'
@@ -163,7 +163,7 @@ export default function ExperienceSection({ userId }) {
           <Briefcase size={18} style={{ display: 'inline', marginRight: 8, verticalAlign: 'middle' }} />
           Experience
         </h2>
-        {userId && (
+        {isOwnProfile && (
           <button
             onClick={() => { setEditTarget(null); setModalMode('add'); }}
             style={{
@@ -217,7 +217,7 @@ export default function ExperienceSection({ userId }) {
               </div>
 
               {/* Actions */}
-              {userId && (
+              {isOwnProfile && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignSelf: 'flex-start' }}>
                   <button
                     onClick={() => { setEditTarget(job); setModalMode('edit'); }}

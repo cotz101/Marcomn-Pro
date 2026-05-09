@@ -28,7 +28,7 @@ export default function CommentSection({ postId, userId, profile, onCommentAdded
         .select(`
           *,
           profiles (
-            full_name,
+            name,
             avatar_url
           )
         `)
@@ -55,12 +55,14 @@ export default function CommentSection({ postId, userId, profile, onCommentAdded
         .insert({
           post_id: postId,
           user_id: userId,
-          content: newComment.trim()
+          content: newComment.trim(),
+          authorName: profile?.name || profile?.fullName,
+          authorRole: profile?.currentRole
         })
         .select(`
           *,
           profiles (
-            full_name,
+            name,
             avatar_url
           )
         `)
@@ -121,7 +123,7 @@ export default function CommentSection({ postId, userId, profile, onCommentAdded
               <div key={comment.id} className="comment-item flex gap-3 mb-4 last:mb-0">
                 <img 
                   src={comment.profiles?.avatar_url || '/profile_pic.png'} 
-                  alt={comment.profiles?.full_name} 
+                  alt={comment.profiles?.name} 
                   className="comment-avatar"
                   style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
                 />
@@ -129,7 +131,7 @@ export default function CommentSection({ postId, userId, profile, onCommentAdded
                   <div className="comment-bubble" style={{ backgroundColor: '#f2f2f2', padding: '8px 12px', borderRadius: '12px' }}>
                     <div className="flex justify-between items-start">
                       <div className="comment-author" style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1b1c1c' }}>
-                        {comment.profiles?.full_name}
+                        {comment.profiles?.name || comment.authorName}
                       </div>
                       {(comment.user_id === userId || comment.userId === userId) && (
                         <button 

@@ -57,7 +57,7 @@ export default function OnboardingModal({ userId, userEmail, onComplete }) {
     const supabase = createClient();
     const { error } = await supabase.from('profiles').upsert({
       id: userId,
-      full_name: form.fullName.trim(),
+      name: form.fullName.trim(),
       headline: form.headline.trim(),
       location: form.location.trim() || null,
       onboarding_completed: true,

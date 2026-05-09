@@ -1,4 +1,4 @@
-import { Settings, ShieldCheck, HelpCircle, LogOut, Plus, Check, Building2 } from 'lucide-react';
+import { User, LogOut, Plus, Check } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
@@ -48,10 +48,10 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
           onClick={() => handleSwitch({ type: 'user', id: userId })}
         >
           <div className="identity-avatar-container" style={{ borderRadius: '50%' }}>
-            <img src={profile.profilePic || '/profile_pic.png'} alt={profile.fullName} className="identity-avatar" />
+            <img src={profile.profilePic || '/profile_pic.png'} alt={profile.name} className="identity-avatar" />
           </div>
           <div className="identity-info">
-            <div className="identity-name">{profile.fullName}</div>
+            <div className="identity-name">{profile.name}</div>
             <div className="identity-role">Personal Profile</div>
           </div>
           {currentIdentity.type === 'user' && (
@@ -94,17 +94,9 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
       </div>
 
       <div className="switcher-footer-links" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
-        <div className="footer-link-item" onClick={() => { router.push('/settings'); onClose(); }}>
-          <Settings size={18} />
-          <span>Settings</span>
-        </div>
-        <div className="footer-link-item" onClick={() => { router.push('/privacy'); onClose(); }}>
-          <ShieldCheck size={18} />
-          <span>Privacy</span>
-        </div>
-        <div className="footer-link-item" onClick={() => { router.push('/help'); onClose(); }}>
-          <HelpCircle size={18} />
-          <span>Help Center</span>
+        <div className="footer-link-item" onClick={() => { router.push('/profile'); onClose(); }}>
+          <User size={18} />
+          <span>View Profile</span>
         </div>
         <div className="footer-link-item sign-out-item" onClick={handleSignOut} style={{ color: '#ff4d4f', fontWeight: '600', cursor: 'pointer' }}>
           <LogOut size={18} />

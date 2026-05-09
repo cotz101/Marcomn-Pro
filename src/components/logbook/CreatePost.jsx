@@ -5,7 +5,7 @@ import PostComposerModal from './PostComposerModal';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 
-export default function CreatePost({ profile }) {
+export default function CreatePost({ profile, onPostCreated }) {
   const [isArticleOpen, setIsArticleOpen] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const { userId, currentIdentity } = useProfile();
@@ -18,20 +18,62 @@ export default function CreatePost({ profile }) {
     : (profile?.profilePic || '/profile_pic.png');
 
   const handlePostSubmit = async (postData) => {
-    const { error } = await supabase.from('posts').insert({
+    console.log('CreatePost: Attempting to create post:', postData);
+    
+    const postToInsert = {
       user_id: userId,
       content: postData.content,
       title: postData.title || null,
       media_url: postData.media || null,
       media_type: postData.mediaType || 'image',
       posted_as_company_id: isCompany ? currentIdentity.id : null
-    });
+    };
 
-    if (!error) {
+    const { data, error } = await supabase
+      .from('posts')
+      .insert(postToInsert)
+      .select(`
+        *,
+        author:profiles(name, avatar_url, headline),
+        company:companies(name, logo_url, industry)
+      `)
+      .single();
+
+    if (!error && data) {
+      console.log('CreatePost: Post created successfully:', data.id);
+      
+      // Format the post for immediate UI feedback
+      const authorName = isCompany ? data.company?.name : data.author?.name;
+      const authorAvatar = isCompany ? data.company?.logo_url : data.author?.avatar_url;
+      const authorHeadline = isCompany ? data.company?.industry : data.author?.headline;
+      
+      const formattedPost = {
+        id: data.id,
+        authorId: data.user_id,
+        author: authorName || identityName || 'Anonymous',
+        headline: authorHeadline || (isCompany ? 'Maritime Company' : 'Maritime Professional'),
+        time: 'Just now',
+        avatar: authorAvatar || identityImage,
+        isCompany: isCompany,
+        content: data.content,
+        type: data.title ? 'article' : 'standard',
+        title: data.title,
+        media: data.media_url,
+        mediaType: data.media_type,
+        comment_count: 0,
+        like_count: 0,
+        user_has_liked: false
+      };
+
+      if (onPostCreated) {
+        onPostCreated(formattedPost);
+      }
+
       setIsArticleOpen(false);
       setIsComposerOpen(false);
     } else {
-      alert('Error posting: ' + error.message);
+      console.error('CreatePost: Error posting:', error);
+      alert('Error posting: ' + (error?.message || 'Unknown error'));
     }
   };
 

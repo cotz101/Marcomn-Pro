@@ -15,8 +15,8 @@ export default function TalentDirectory() {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, avatar_url, position, location, bio, skills, is_sailing, vessel_name, open_to_work')
-      .order('full_name', { ascending: true });
+      .select('id, name, avatar_url, position, location, bio, skills, is_sailing, vessel_name, open_to_work')
+      .order('name', { ascending: true });
 
     if (data && !error) {
       setProfiles(data);
@@ -36,7 +36,7 @@ export default function TalentDirectory() {
     const q = query.toLowerCase();
     setFiltered(
       profiles.filter(p =>
-        (p.full_name || '').toLowerCase().includes(q) ||
+        (p.name || '').toLowerCase().includes(q) ||
         (p.position || '').toLowerCase().includes(q) ||
         (p.bio || '').toLowerCase().includes(q) ||
         (p.location || '').toLowerCase().includes(q) ||

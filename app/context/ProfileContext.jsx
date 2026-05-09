@@ -6,28 +6,31 @@ import { createClient } from '@/lib/supabase';
 const ProfileContext = createContext();
 
 export const DEFAULT_PROFILE = {
-  fullName: 'MarComn User',
-  headline: 'Maritime Professional',
+  name: 'MarComn User',
+  currentRole: '',
   bio: '',
-  about: '',
   location: 'Global',
-  currentPosition: '',
-  currentCompany: '',
   profilePic: '/profile_pic.png',
   coverPhoto: '/cover_photo.png',
+  isSailing: false,
+  vesselName: '',
+  skills: [],
+  previousRole: '',
+  yearsExperience: 0,
+  openToWork: 'Not Available',
 };
 
 export function ProfileProvider({ children, userId, userEmail }) {
   const [profile, setProfileState] = useState({ 
     ...DEFAULT_PROFILE, 
-    fullName: userEmail?.split('@')[0] || 'User' 
+    name: userEmail?.split('@')[0] || 'User' 
   });
   const [loading, setLoading] = useState(true);
   const [onboardingCompleted, setOnboardingCompleted] = useState(true); // default true to avoid flash
   const [companies, setCompanies] = useState([]);
   const [currentIdentity, setCurrentIdentityState] = useState({ type: 'user', id: userId }); // { type: 'user' | 'company', id: string, data: object }
 
-  // Initialize from localStorage on mount
+  // ... (localStorage logic kept) ...
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('marcomn_identity');
@@ -67,18 +70,20 @@ export function ProfileProvider({ children, userId, userEmail }) {
     if (data && !error) {
       setOnboardingCompleted(data.onboarding_completed ?? false);
       setProfileState({
-        fullName: data.full_name || userEmail?.split('@')[0] || 'User',
-        headline: data.headline || DEFAULT_PROFILE.headline,
+        name: data.name || userEmail?.split('@')[0] || 'User',
+        currentRole: data.currentRole || '',
         bio: data.bio || '',
-        about: data.about || '',
         location: data.location || '',
-        currentPosition: data.current_position || '',
-        currentCompany: data.current_company || '',
         profilePic: data.avatar_url || DEFAULT_PROFILE.profilePic,
         coverPhoto: data.cover_photo_url || DEFAULT_PROFILE.coverPhoto,
+        isSailing: data.isSailing || false,
+        vesselName: data.vesselName || '',
+        skills: data.skills || [],
+        previousRole: data.previousRole || '',
+        yearsExperience: data.yearsExperience || 0,
+        openToWork: data.openToWork || 'Not Available',
       });
     } else {
-      // New user with no profile row yet
       setOnboardingCompleted(false);
     }
     setLoading(false);

@@ -4,15 +4,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/lib/supabase';
 import ProfessionalCard from './ProfessionalCard';
 import ProfessionalCardSkeleton from './ProfessionalCardSkeleton';
-import { ChevronDown, Loader2, Search } from 'lucide-react';
+import { ChevronDown, Loader2, Search, Users } from 'lucide-react';
 
-export default function DiscoveryGrid() {
+export default function DiscoveryGrid({ activeTab = 'discovery' }) {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentUserId, setCurrentUserId] = useState(null);
   
   const PAGE_SIZE = 6;
   const LOAD_MORE_SIZE = 6;
@@ -21,23 +22,56 @@ export default function DiscoveryGrid() {
   useEffect(() => {
     async function fetchInitialProfiles() {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+      setCurrentUserId(userId);
+
+      let query = supabase.from('profiles').select('*');
+
+      if (activeTab === 'following') {
+        if (!userId) {
+          setProfiles([]);
+          setLoading(false);
+          return;
+        }
+
+        const { data: followData } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', userId);
+
+        const followingIds = followData?.map(f => f.following_id) || [];
+        
+        if (followingIds.length === 0) {
+          setProfiles([]);
+          setHasMore(false);
+          setLoading(false);
+          return;
+        }
+        
+        query = query.in('id', followingIds);
+      } else {
+        // Discovery mode: exclude current user
+        if (userId) {
+          query = query.neq('id', userId);
+        }
+      }
+
+      const { data, error } = await query
         .range(0, PAGE_SIZE - 1)
         .order('updated_at', { ascending: false });
       
       if (!error && data) {
         setProfiles(data);
         setOffset(data.length);
-        if (data.length < PAGE_SIZE) setHasMore(false);
+        setHasMore(data.length >= PAGE_SIZE);
       }
       setLoading(false);
     }
 
     fetchInitialProfiles();
 
-    // Listen for profile updates from Profile.jsx
+    // Listen for profile updates
     const handleProfileUpdate = (event) => {
       const updatedProfile = event.detail;
       setProfiles(prev => prev.map(p => 
@@ -47,15 +81,35 @@ export default function DiscoveryGrid() {
 
     window.addEventListener('marcomn-profile-updated', handleProfileUpdate);
     return () => window.removeEventListener('marcomn-profile-updated', handleProfileUpdate);
-  }, []);
+  }, [activeTab]);
+
+  const handleFollowState = (profileId, isNowFollowing) => {
+    if (activeTab === 'following' && !isNowFollowing) {
+      setProfiles(prev => prev.filter(p => p.id !== profileId));
+    }
+  };
 
   const handleShowMore = async () => {
     setLoadingMore(true);
     const nextLimit = offset + LOAD_MORE_SIZE - 1;
     
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
+    let query = supabase.from('profiles').select('*');
+
+    if (activeTab === 'following') {
+      const { data: followData } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', currentUserId);
+
+      const followingIds = followData?.map(f => f.following_id) || [];
+      query = query.in('id', followingIds);
+    } else {
+      if (currentUserId) {
+        query = query.neq('id', currentUserId);
+      }
+    }
+
+    const { data, error } = await query
       .range(offset, nextLimit)
       .order('updated_at', { ascending: false });
 
@@ -76,11 +130,10 @@ export default function DiscoveryGrid() {
     if (!searchQuery.trim()) return profiles;
     const query = searchQuery.toLowerCase();
     return profiles.filter(p => 
-      (p.full_name?.toLowerCase().includes(query)) || 
-      (p.headline?.toLowerCase().includes(query)) ||
+      (p.name?.toLowerCase().includes(query)) || 
+      (p.currentRole?.toLowerCase().includes(query)) ||
       (p.bio?.toLowerCase().includes(query)) ||
-      (p.skills?.some(skill => skill.toLowerCase().includes(query))) ||
-      (p.current_position?.toLowerCase().includes(query))
+      (p.skills?.some(skill => skill.toLowerCase().includes(query)))
     );
   }, [profiles, searchQuery]);
 
@@ -111,7 +164,11 @@ export default function DiscoveryGrid() {
 
       <div className="discovery-grid">
         {filteredProfiles.map(profile => (
-          <ProfessionalCard key={profile.id} profile={profile} />
+          <ProfessionalCard 
+            key={profile.id} 
+            profile={profile} 
+            onFollow={handleFollowState}
+          />
         ))}
       </div>
       
@@ -141,6 +198,16 @@ export default function DiscoveryGrid() {
         <div className="card p-12 text-center text-gray-500 mt-8">
           <Search size={48} className="text-gray-300 mx-auto mb-4" />
           <p>No maritime professionals found matching "{searchQuery}"</p>
+        </div>
+      )}
+
+      {activeTab === 'following' && !loading && profiles.length === 0 && !searchQuery && (
+        <div className="card p-16 text-center text-gray-500 mt-8 border-dashed border-2 border-slate-100 bg-slate-50/50">
+          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <Users size={32} className="text-slate-300" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-800 mb-2">Following</h3>
+          <p className="max-w-xs mx-auto text-slate-500">You aren't following anyone yet. People you follow will appear here.</p>
         </div>
       )}
 
