@@ -12,8 +12,9 @@ export default function DiscoveryGrid({ activeTab = 'discovery' }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   
   const PAGE_SIZE = 6;
   const LOAD_MORE_SIZE = 6;
@@ -25,6 +26,7 @@ export default function DiscoveryGrid({ activeTab = 'discovery' }) {
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
       setCurrentUserId(userId);
+      setCurrentUser(user);
 
       let query = supabase.from('profiles').select('*');
 
@@ -127,15 +129,14 @@ export default function DiscoveryGrid({ activeTab = 'discovery' }) {
   };
 
   const filteredProfiles = useMemo(() => {
-    if (!searchQuery.trim()) return profiles;
-    const query = searchQuery.toLowerCase();
-    return profiles.filter(p => 
-      (p.name?.toLowerCase().includes(query)) || 
-      (p.currentRole?.toLowerCase().includes(query)) ||
-      (p.bio?.toLowerCase().includes(query)) ||
-      (p.skills?.some(skill => skill.toLowerCase().includes(query)))
-    );
-  }, [profiles, searchQuery]);
+    if (!searchTerm.trim()) return profiles;
+    return profiles.filter(profile => {
+      const searchLower = searchTerm.toLowerCase();
+      const nameMatch = (profile.name || profile.full_name || '').toLowerCase().includes(searchLower);
+      const roleMatch = (profile.currentRole || profile.role || '').toLowerCase().includes(searchLower);
+      return nameMatch || roleMatch;
+    });
+  }, [profiles, searchTerm]);
 
   if (loading) {
     return (
@@ -147,6 +148,8 @@ export default function DiscoveryGrid({ activeTab = 'discovery' }) {
     );
   }
 
+  console.log('Search:', searchTerm, 'Results:', filteredProfiles.length);
+
   return (
     <div className="pb-32">
       <div className="search-container" style={{ paddingTop: '0' }}>
@@ -156,8 +159,8 @@ export default function DiscoveryGrid({ activeTab = 'discovery' }) {
             type="text" 
             placeholder="Search by name, rank, or specialty..." 
             className="search-input"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
@@ -167,12 +170,13 @@ export default function DiscoveryGrid({ activeTab = 'discovery' }) {
           <ProfessionalCard 
             key={profile.id} 
             profile={profile} 
+            currentUser={currentUser}
             onFollow={handleFollowState}
           />
         ))}
       </div>
       
-      {hasMore && !searchQuery && (
+      {hasMore && !searchTerm && (
         <div className="flex justify-center" style={{ marginTop: '32px', marginBottom: '32px' }}>
           <button 
             className="btn-ghost-navy" 
@@ -194,14 +198,14 @@ export default function DiscoveryGrid({ activeTab = 'discovery' }) {
         </div>
       )}
 
-      {searchQuery && filteredProfiles.length === 0 && (
+      {searchTerm && filteredProfiles.length === 0 && (
         <div className="card p-12 text-center text-gray-500 mt-8">
           <Search size={48} className="text-gray-300 mx-auto mb-4" />
-          <p>No maritime professionals found matching "{searchQuery}"</p>
+          <p>No maritime professionals found matching "{searchTerm}"</p>
         </div>
       )}
 
-      {activeTab === 'following' && !loading && profiles.length === 0 && !searchQuery && (
+      {activeTab === 'following' && !loading && profiles.length === 0 && !searchTerm && (
         <div className="card p-16 text-center text-gray-500 mt-8 border-dashed border-2 border-slate-100 bg-slate-50/50">
           <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
             <Users size={32} className="text-slate-300" />
@@ -211,7 +215,7 @@ export default function DiscoveryGrid({ activeTab = 'discovery' }) {
         </div>
       )}
 
-      {!hasMore && !searchQuery && profiles.length > 0 && (
+      {!hasMore && !searchTerm && profiles.length > 0 && (
         <p className="text-center text-gray-500 mt-8 mb-12">No more professionals to discover.</p>
       )}
     </div>

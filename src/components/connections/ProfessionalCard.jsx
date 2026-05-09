@@ -7,27 +7,24 @@ import { createClient } from '@/lib/supabase';
 import BaseModal from '../layout/BaseModal';
 import ProfileDetailModal from '../profile/ProfileDetailModal';
 
-export default function ProfessionalCard({ profile, onFollow }) {
+export default function ProfessionalCard({ profile, currentUser, onFollow }) {
   const router = useRouter();
   const [isFollowing, setIsFollowing] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
   const isOnline = profile.isOnline ?? (profile.id.charCodeAt(0) % 2 === 0); // Mock logic for demo
   const supabase = createClient();
 
   useEffect(() => {
     async function checkFollowStatus() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setCurrentUser(user);
+      if (!currentUser) return;
 
       // Don't show follow button for self
-      if (user.id === profile.id) return;
+      if (currentUser.id === profile.id) return;
 
       const { data, error } = await supabase
         .from('follows')
         .select('*')
-        .eq('follower_id', user.id)
+        .eq('follower_id', currentUser.id)
         .eq('following_id', profile.id)
         .single();
       
@@ -35,7 +32,7 @@ export default function ProfessionalCard({ profile, onFollow }) {
     }
 
     checkFollowStatus();
-  }, [profile.id]);
+  }, [profile.id, currentUser]);
 
   const handleFollowClick = async () => {
     if (!currentUser) return;
@@ -88,7 +85,7 @@ export default function ProfessionalCard({ profile, onFollow }) {
       <div className="professional-card card w-full">
         <div className="card-avatar-wrapper relative">
           <img 
-            src={profile.avatar_url || '/profile_pic.png'} 
+            src={profile.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
             alt={profile.name} 
             className="professional-avatar"
           />

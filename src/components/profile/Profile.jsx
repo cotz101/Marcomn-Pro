@@ -285,7 +285,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
             <div className="profile-header-top">
               {/* Avatar with real upload */}
               <div className="profile-pic-container" style={{ position: 'relative' }}>
-                <img src={profile.profilePic || '/profile_pic.png'} alt={profile.name} className="profile-pic" />
+                <img src={profile.profilePic || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} alt={profile.name} className="profile-pic" />
                 {isOwnProfile && (
                   <>
                     <button
@@ -417,7 +417,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
                   <div className="media-section flex flex-col items-center justify-center p-6 bg-slate-50 rounded-xl border border-dashed border-slate-300">
                     <div className="relative group">
                       <img 
-                        src={profile.profilePic || '/profile_pic.png'} 
+                        src={profile.profilePic || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
                         alt="Preview" 
                         className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg" 
                       />
