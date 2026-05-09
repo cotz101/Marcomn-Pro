@@ -85,7 +85,7 @@ export default function ProfessionalCard({ profile, onFollow }) {
 
   return (
     <>
-      <div className="professional-card card">
+      <div className="professional-card card w-full">
         <div className="card-avatar-wrapper relative">
           <img 
             src={profile.avatar_url || '/profile_pic.png'} 

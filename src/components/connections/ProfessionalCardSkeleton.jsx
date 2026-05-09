@@ -2,7 +2,7 @@
 
 export default function ProfessionalCardSkeleton() {
   return (
-    <div className="professional-card card">
+    <div className="professional-card card w-full">
       <div className="card-avatar-wrapper">
         <div className="skeleton skeleton-avatar" style={{ width: '100%', height: '100%', borderRadius: '50%' }}></div>
       </div>

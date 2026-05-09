@@ -139,7 +139,7 @@ export default function DiscoveryGrid({ activeTab = 'discovery' }) {
 
   if (loading) {
     return (
-      <div className="discovery-grid mb-24" style={{ paddingBottom: '100px' }}>
+      <div className="grid grid-cols-1 min-[471px]:grid-cols-2 lg:grid-cols-2 gap-4 mb-24" style={{ paddingBottom: '100px' }}>
         {[1, 2, 3, 4, 5, 6].map(i => (
           <ProfessionalCardSkeleton key={i} />
         ))}
@@ -162,7 +162,7 @@ export default function DiscoveryGrid({ activeTab = 'discovery' }) {
         </div>
       </div>
 
-      <div className="discovery-grid">
+      <div className="grid grid-cols-1 min-[471px]:grid-cols-2 lg:grid-cols-2 gap-4">
         {filteredProfiles.map(profile => (
           <ProfessionalCard 
             key={profile.id} 
