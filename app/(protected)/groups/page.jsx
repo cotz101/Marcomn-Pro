@@ -1,9 +1,12 @@
 import SidebarLeft from '@/src/components/layout/SidebarLeft';
 import SidebarRight from '@/src/components/layout/SidebarRight';
-import GroupsGrid from '@/src/components/groups/GroupsGrid';
+import GroupsDirectory from '@/src/components/groups/GroupsDirectory';
 
 export default function GroupsPage() {
   return (
-    <GroupsGrid />
+    <div className="max-w-7xl mx-auto px-4 overflow-hidden">
+      <GroupsDirectory />
+    </div>
   );
 }
+
