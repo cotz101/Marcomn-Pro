@@ -1,13 +1,24 @@
 'use client';
 
-import { Users, Globe, Lock, ChevronRight } from 'lucide-react';
-import Link from 'next/link';
+import { useState } from 'react';
+import { Users, Globe, Lock, ChevronRight, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function GroupCard({ group, onAction }) {
   const isPublic = group.privacy_type === 'public';
-  
+  const router = useRouter();
+  const [isEntering, setIsEntering] = useState(false);
+
+  const handleEnterGroup = () => {
+    setIsEntering(true);
+    // Brief loading state before navigation
+    setTimeout(() => {
+      router.push(`/groups/${group.id}`);
+    }, 400);
+  };
+
   return (
-    <div className="w-full bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow p-4">
+    <div className={`w-full bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 p-4 ${isEntering ? 'opacity-60 scale-[0.98]' : ''}`}>
       <div className="flex gap-4">
         {/* Group Image/Icon */}
         <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -46,14 +57,23 @@ export default function GroupCard({ group, onAction }) {
 
       <div className="flex justify-end w-full mt-4">
         {group.isMember ? (
-          <Link href={`/groups/${group.id}`}>
-            <button 
-              className="w-fit px-8 py-2.5 bg-white text-[#002b4e] border border-[#002b4e] rounded-lg font-bold text-sm hover:bg-gray-50 transition-all shadow-sm whitespace-nowrap inline-flex items-center justify-center gap-2"
-            >
-              Enter Group
-              <ChevronRight size={16} />
-            </button>
-          </Link>
+          <button 
+            onClick={handleEnterGroup}
+            disabled={isEntering}
+            className={`w-fit px-8 py-2.5 bg-white text-[#002b4e] border border-[#002b4e] rounded-lg font-bold text-sm hover:bg-gray-50 transition-all shadow-sm whitespace-nowrap inline-flex items-center justify-center gap-2 ${isEntering ? 'animate-btn-loading' : ''}`}
+          >
+            {isEntering ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                <span>{"\u00A0"}Entering...{"\u00A0"}</span>
+              </>
+            ) : (
+              <>
+                <span>{"\u00A0"}Enter Group{"\u00A0"}</span>
+                <ChevronRight size={16} />
+              </>
+            )}
+          </button>
         ) : (
           <button 
             onClick={() => onAction(group.id, isPublic ? 'join' : 'request')}

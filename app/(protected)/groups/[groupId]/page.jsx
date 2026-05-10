@@ -25,7 +25,7 @@ export default function GroupDiscussionPage({ params }) {
   const isPublic = group.privacy_type === 'public';
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden px-[14.5px] sm:px-4 md:px-0">
+    <div className="w-full max-w-full overflow-x-hidden px-[14.5px] sm:px-4 md:px-0 animate-page-enter">
       {/* Group Header Card */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-5">
         {/* Banner */}
