@@ -1,28 +1,64 @@
 'use client';
 
+import { useState, useEffect, use } from 'react';
 import { ArrowLeft, Users, Globe, Lock } from 'lucide-react';
 import Link from 'next/link';
-import { use } from 'react';
+import { createClient } from '@/lib/supabase';
+import { useProfile } from '@/app/context/ProfileContext';
 import GroupDiscussionFeed from '@/src/components/groups/GroupDiscussionFeed';
-
-// Mock group data — in production this would be fetched from Supabase
-const MOCK_GROUPS = {
-  '1': { name: 'Deck Officers Association', privacy_type: 'public', member_count: '12,405', description: 'The global community for Bridge Officers.' },
-  '2': { name: 'Maritime Green Tech Forum', privacy_type: 'public', member_count: '8,112', description: 'Dedicated to the future of sustainable shipping.' },
-  '3': { name: 'Offshore Wind Operations', privacy_type: 'private', member_count: '3,450', description: 'A technical group for crew and engineers working on SOVs.' },
-  '4': { name: 'Chartering & Broking Network', privacy_type: 'private', member_count: '5,920', description: 'Commercial maritime professionals.' },
-  '5': { name: 'Maritime Safety & Compliance', privacy_type: 'public', member_count: '15,200', description: 'A critical hub for discussing vetting and inspections.' },
-};
+import GroupPostFeed from '@/src/components/groups/GroupPostFeed';
+import PendingRequests from '@/src/components/groups/PendingRequests';
 
 export default function GroupDiscussionPage({ params }) {
   const { groupId } = use(params);
-  const group = MOCK_GROUPS[groupId] || {
-    name: `Group #${groupId}`,
-    privacy_type: 'public',
-    member_count: '—',
-    description: 'Maritime community group.',
-  };
-  const isPublic = group.privacy_type === 'public';
+  const [group, setGroup] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const { userId } = useProfile();
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!groupId) return;
+      setLoading(true);
+      try {
+        // Fetch group details
+        const { data: groupData, error: groupError } = await supabase
+          .from('groups')
+          .select('*')
+          .eq('id', groupId)
+          .single();
+
+        if (groupError) throw groupError;
+        setGroup(groupData);
+
+        // Fetch current user's role/membership
+        if (userId) {
+          const { data: memberData } = await supabase
+            .from('group_members')
+            .select('role')
+            .match({ group_id: groupId, user_id: userId, status: 'member' })
+            .maybeSingle();
+          
+          if (memberData) {
+            setUserRole(memberData.role);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching group page data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [groupId, userId, supabase]);
+
+  if (loading) return <div className="p-20 text-center text-slate-500 font-medium">Loading group...</div>;
+  if (!group) return <div className="p-20 text-center text-slate-500 font-medium">Group not found.</div>;
+
+  const isPublic = group.type === 'public';
+  const isAdminOrMod = userRole === 'admin' || userRole === 'moderator';
 
   return (
     <div className="w-full max-w-full overflow-x-hidden px-[14.5px] sm:px-4 md:px-0">
@@ -61,14 +97,28 @@ export default function GroupDiscussionPage({ params }) {
           {/* Member Count */}
           <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
             <Users size={13} />
-            <span>{group.member_count} Members</span>
+            <span>{group.member_count || '0'} Members</span>
           </div>
         </div>
       </div>
 
+      {/* Admin Section - Pending Requests */}
+      {isAdminOrMod && (
+        <PendingRequests groupId={groupId} />
+      )}
+
       {/* Discussion Feed — mt-10 gap from header */}
       <div className="mt-10">
         <GroupDiscussionFeed groupId={groupId} />
+      </div>
+
+      {/* Live Activity Feed — Surgically injected below golden setup */}
+      <div className="mt-10 pt-10 border-t border-slate-200">
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-[#002b4e]">Live Activity</h2>
+          <p className="text-xs text-slate-500 font-medium">Real-time discussion and member updates</p>
+        </div>
+        <GroupPostFeed groupId={groupId} />
       </div>
     </div>
   );

@@ -4,7 +4,9 @@ import { Users, Globe, Lock, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function GroupCard({ group, onAction }) {
-  const isPublic = group.privacy_type === 'public';
+  const isPrivate = group.type?.toLowerCase() === 'private';
+  const isPublic = !isPrivate;
+  const isPending = group.membershipStatus === 'pending';
   
   return (
     <div className="w-full bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow p-4">
@@ -54,16 +56,23 @@ export default function GroupCard({ group, onAction }) {
               <ChevronRight size={16} />
             </button>
           </Link>
+        ) : isPending ? (
+          <button 
+            disabled
+            className="w-fit px-8 py-2.5 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg font-bold text-sm cursor-not-allowed whitespace-nowrap inline-flex items-center justify-center gap-2"
+          >
+            Request Sent
+          </button>
         ) : (
           <button 
-            onClick={() => onAction(group.id, isPublic ? 'join' : 'request')}
+            onClick={() => onAction(group)}
             className={`w-fit px-8 py-2.5 rounded-lg font-bold text-sm whitespace-nowrap inline-flex items-center justify-center gap-2 transition-all shadow-sm ${
               isPublic 
                 ? 'bg-white text-[#002b4e] border border-[#002b4e] hover:bg-gray-50' 
                 : 'bg-[#002b4e] text-white border border-transparent hover:bg-[#001f38]'
             }`}
           >
-            {isPublic ? 'Join Group' : 'Request Access'}
+            {isPrivate ? 'Request to Join' : 'Join Group'}
           </button>
         )}
       </div>
