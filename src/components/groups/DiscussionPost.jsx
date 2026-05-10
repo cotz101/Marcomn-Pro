@@ -1,35 +1,185 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { 
   MessageSquare, ThumbsUp, 
-  ChevronDown, ChevronUp, Send, MoreHorizontal,
+  Send, MoreHorizontal,
   FileText, Paperclip
 } from 'lucide-react';
 
-function CommentItem({ comment }) {
+/* ═══ Level 2 Sub-Reply (rendered inline — hook drawn by parent) ═══ */
+function SubReplyBubble({ reply, postAuthor }) {
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(reply.likes || 0);
+  const isAuthor = reply.author === postAuthor;
+
+  const toggleLike = () => {
+    setLiked(prev => !prev);
+    setLikeCount(prev => liked ? prev - 1 : prev + 1);
+  };
+
   return (
-    <div className="flex gap-3 py-3">
-      {/* Avatar */}
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-[#002b4e] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-        {comment.author.charAt(0)}
+    <div className="flex gap-2.5 py-2">
+      {/* Level 2 avatar — 28px */}
+      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-sky-400 to-[#002b4e] flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0 relative z-10">
+        {reply.author.charAt(0)}
       </div>
-      {/* Comment Bubble */}
       <div className="flex-1 min-w-0">
-        <div className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
-          <p className="text-xs font-bold text-[#002b4e]">{comment.author}</p>
-          <p className="text-xs text-gray-500 mb-1">{comment.role} · {comment.timestamp}</p>
-          <p className="text-sm text-gray-700 leading-relaxed">{comment.text}</p>
+        <div className="bg-white rounded-lg px-3 py-2 border border-gray-100">
+          <p className="text-[11px] font-bold text-[#002b4e] flex items-center gap-1.5">
+            {reply.author}
+            {isAuthor && (
+              <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-md font-bold">Author</span>
+            )}
+          </p>
+          <p className="text-[10px] text-gray-400">{reply.role} · {reply.timestamp}</p>
+          <p className="text-xs text-gray-700 leading-relaxed mt-0.5">{reply.text}</p>
         </div>
-        <div className="flex gap-4 mt-1.5 pl-2">
-          <button className="text-[11px] font-semibold text-gray-400 hover:text-blue-600 transition-colors">Like</button>
-          <button className="text-[11px] font-semibold text-gray-400 hover:text-blue-600 transition-colors">Reply</button>
+        <div className="flex gap-3 mt-0.5 pl-1">
+          <button
+            onClick={toggleLike}
+            className={`text-[10px] font-semibold transition-colors flex items-center gap-1 ${
+              liked ? 'text-blue-600' : 'text-gray-400 hover:text-blue-600'
+            }`}
+          >
+            <ThumbsUp size={10} className={liked ? 'fill-blue-600' : ''} />
+            {likeCount > 0 ? likeCount : 'Like'}
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
+/* ═══ Level 1 Comment ═══ */
+function CommentItem({ comment, onAddSubReply, postAuthor }) {
+  const isAuthor = comment.author === postAuthor;
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(comment.likes || 0);
+  const [showReplyInput, setShowReplyInput] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const replyInputRef = useRef(null);
+
+  const toggleLike = () => {
+    setLiked(prev => !prev);
+    setLikeCount(prev => liked ? prev - 1 : prev + 1);
+  };
+
+  const handleReply = () => {
+    if (!replyText.trim()) return;
+    onAddSubReply(comment.id, replyText.trim());
+    setReplyText('');
+    setShowReplyInput(false);
+  };
+
+  const handleShowReply = () => {
+    setShowReplyInput(true);
+  };
+
+  // Auto-focus the reply input when it becomes visible
+  useEffect(() => {
+    if (showReplyInput && replyInputRef.current) {
+      replyInputRef.current.focus();
+    }
+  }, [showReplyInput]);
+
+  const hasReplies = comment.replies && comment.replies.length > 0;
+
+  return (
+    <div className="py-2.5">
+      {/* L1 Comment — flat layout, no thread line to parent */}
+      <div className="flex gap-2.5">
+        {/* Avatar */}
+        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-[#002b4e] flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
+          {comment.author.charAt(0)}
+        </div>
+        {/* Right column: bubble + actions + sub-replies */}
+        <div className="flex-1 min-w-0">
+          <div className="bg-white rounded-xl px-4 py-3 border border-gray-100">
+            <p className="text-xs font-bold text-[#002b4e] flex items-center gap-1.5">
+              {comment.author}
+              {isAuthor && (
+                <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-md font-bold">Author</span>
+              )}
+            </p>
+            <p className="text-[11px] text-gray-400 mb-1">{comment.role} · {comment.timestamp}</p>
+            <p className="text-[13px] text-gray-700 leading-relaxed">{comment.text}</p>
+          </div>
+          {/* Like + Reply */}
+          <div className="flex gap-4 mt-1 pl-2">
+            <button
+              onClick={toggleLike}
+              className={`text-[11px] font-semibold transition-colors flex items-center gap-1 ${
+                liked ? 'text-blue-600' : 'text-gray-400 hover:text-blue-600'
+              }`}
+            >
+              <ThumbsUp size={12} className={liked ? 'fill-blue-600' : ''} />
+              {likeCount > 0 ? likeCount : 'Like'}
+            </button>
+            <button
+              onClick={handleShowReply}
+              className="text-[11px] font-semibold text-gray-400 hover:text-blue-600 transition-colors"
+            >
+              Reply
+            </button>
+          </div>
+
+          {/* Level 2 Sub-Replies — standalone branch hooks */}
+          {hasReplies && (
+            <div className="mt-1 ml-2">
+              {comment.replies.map(reply => (
+                <div key={reply.id} className="flex items-start gap-3 py-1.5">
+                  {/* Branch hook: L-shaped connector */}
+                  <div
+                    className="flex-shrink-0 border-l-2 border-b-2 border-slate-500 rounded-bl-xl mt-1"
+                    style={{ width: '14px', height: '14px' }}
+                  />
+                  <SubReplyBubble reply={reply} postAuthor={postAuthor} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Inline reply input with branch hook */}
+          {showReplyInput && (
+            <div className="flex items-start gap-3 mt-1 ml-2 py-1.5">
+              {/* Branch hook */}
+              <div
+                className="flex-shrink-0 border-l-2 border-b-2 border-slate-500 rounded-bl-xl mt-3"
+                style={{ width: '14px', height: '14px' }}
+              />
+              <div className="flex gap-2.5 items-center flex-1">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-[#002b4e] flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
+                  Y
+                </div>
+                <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-full px-3 py-1.5 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                  <input
+                    ref={replyInputRef}
+                    type="text"
+                    placeholder={`Reply to ${comment.author.split(' ').pop()}...`}
+                    value={replyText}
+                    onChange={e => setReplyText(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleReply()}
+                    className="flex-1 text-xs outline-none bg-transparent text-gray-700 placeholder-gray-400"
+                  />
+                  <button
+                    onClick={handleReply}
+                    disabled={!replyText.trim()}
+                    className="text-blue-500 disabled:text-gray-300 hover:text-blue-700 transition-colors"
+                  >
+                    <Send size={13} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══ Media Renderer ═══ */
 function MediaRenderer({ media }) {
   if (!media) return null;
 
@@ -77,16 +227,34 @@ function MediaRenderer({ media }) {
   return null;
 }
 
+/* ═══ Main Post Component ═══ */
 export default function DiscussionPost({ post }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes || 0);
-  const [comments, setComments] = useState(post.comments || []);
+  const [comments, setComments] = useState(
+    (post.comments || []).map(c => ({ ...c, replies: c.replies || [] }))
+  );
+  const mainInputRef = useRef(null);
 
   const handleLike = () => {
     setLiked(prev => !prev);
     setLikeCount(prev => liked ? prev - 1 : prev + 1);
+  };
+
+  // Count all comments + sub-replies for the action bar
+  const totalCommentCount = comments.reduce(
+    (acc, c) => acc + 1 + (c.replies?.length || 0), 0
+  );
+
+  const handleToggleComments = () => {
+    const nextState = !showComments;
+    setShowComments(nextState);
+    if (nextState) {
+      // Focus the main input after the section renders
+      setTimeout(() => mainInputRef.current?.focus(), 50);
+    }
   };
 
   const handleAddComment = () => {
@@ -97,10 +265,28 @@ export default function DiscussionPost({ post }) {
       role: 'Maritime Professional',
       timestamp: 'Just now',
       text: commentText.trim(),
+      replies: [],
     };
     setComments(prev => [...prev, newComment]);
     setCommentText('');
     setShowComments(true);
+  };
+
+  const handleAddSubReply = (parentCommentId, text) => {
+    const newReply = {
+      id: Date.now(),
+      author: 'You',
+      role: 'Maritime Professional',
+      timestamp: 'Just now',
+      text,
+    };
+    setComments(prev =>
+      prev.map(c =>
+        c.id === parentCommentId
+          ? { ...c, replies: [...(c.replies || []), newReply] }
+          : c
+      )
+    );
   };
 
   return (
@@ -140,7 +326,7 @@ export default function DiscussionPost({ post }) {
           <span className={`text-sm ${liked ? 'text-blue-500' : 'text-gray-400'}`}>{likeCount}</span>
         </button>
         <button
-          onClick={() => setShowComments(v => !v)}
+          onClick={handleToggleComments}
           className={`flex items-center gap-2 px-4 py-1 rounded-lg text-sm font-semibold transition-all ${
             showComments
               ? 'text-[#002b4e] hover:bg-gray-100'
@@ -148,31 +334,37 @@ export default function DiscussionPost({ post }) {
           }`}
         >
           <MessageSquare size={18} />
-          <span>{comments.length} {comments.length === 1 ? 'comment' : 'comments'}</span>
+          <span>{totalCommentCount} {totalCommentCount === 1 ? 'comment' : 'comments'}</span>
         </button>
       </div>
 
-      {/* Comment Section — 1 level deep only */}
+      {/* Comment Section — 2 levels deep max */}
       {showComments && (
-        <div className="bg-gray-50/70 border-t border-gray-100 px-4 pt-2 pb-3">
-          {/* Existing Comments */}
+        <div className="bg-gray-50/70 border-t border-gray-100 px-4 pt-3 pb-6">
+          {/* Level 1 Comments — flat layout, no vertical line (LinkedIn style) */}
           {comments.length > 0 && (
-            <div className="divide-y divide-gray-100/80">
+            <div className="divide-y divide-gray-100/60">
               {comments.map(comment => (
-                <CommentItem key={comment.id} comment={comment} />
+                <CommentItem
+                  key={comment.id}
+                  comment={comment}
+                  onAddSubReply={handleAddSubReply}
+                  postAuthor={post.author}
+                />
               ))}
             </div>
           )}
 
-          {/* Add Comment Input */}
+          {/* Main reply input — always at the bottom */}
           <div className="flex gap-2 mt-3 items-center">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-[#002b4e] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
               Y
             </div>
             <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
               <input
+                ref={mainInputRef}
                 type="text"
-                placeholder="Add a comment..."
+                placeholder="Write a reply..."
                 value={commentText}
                 onChange={e => setCommentText(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleAddComment()}
