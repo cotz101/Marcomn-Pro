@@ -3,12 +3,34 @@ import { Ship, ChevronDown, Search, MessageSquare, Bell, Plus } from 'lucide-rea
 import { useState, useRef, useEffect } from 'react';
 import { useIdentity } from './IdentityContext';
 import IdentitySwitcher from './IdentitySwitcher';
+import { createClient } from '@/lib/supabase';
 
 export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const location = useLocation();
   const { activeIdentity } = useIdentity();
   const dropdownRef = useRef(null);
+  const supabase = createClient();
+  const [groupName, setGroupName] = useState('');
+
+  const groupIdMatch = location.pathname.match(/\/groups\/([^\/]+)/);
+  const groupId = groupIdMatch ? groupIdMatch[1] : null;
+
+  useEffect(() => {
+    if (groupId) {
+      const fetchGroupName = async () => {
+        const { data } = await supabase
+          .from('groups')
+          .select('name')
+          .eq('id', groupId)
+          .single();
+        if (data) setGroupName(data.name);
+      };
+      fetchGroupName();
+    } else {
+      setGroupName('');
+    }
+  }, [groupId, supabase]);
 
   // Close dropdown if clicked outside
   useEffect(() => {
@@ -33,7 +55,7 @@ export default function Header() {
         <div className="header-left">
           <Link to="/" className="brand-logo">
             <Ship size={28} />
-            MarComn
+            {groupName || 'MarComn'}
           </Link>
           <div className="search-bar">
             <Search size={18} className="search-icon" />

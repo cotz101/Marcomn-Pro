@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
-import CreatePost from '../logbook/CreatePost';
+import GroupPostInput from './GroupPostInput';
 import DiscussionPost from './DiscussionPost';
 
 export default function GroupPostFeed({ groupId }) {
@@ -73,21 +73,14 @@ export default function GroupPostFeed({ groupId }) {
   };
 
   const handlePostCreated = (newPost) => {
-    // If the newPost from CreatePost is formatted for global posts, we might need to adapt it
-    // But since fetchPosts does a lot of formatting, it's safer to just re-fetch or manually prepend
-    fetchPosts();
+    // Instant Local State Update: Prepend the new post to the local state
+    setPosts(prevPosts => [newPost, ...prevPosts]);
   };
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
-      {/* Integrated Post Composer */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-        <CreatePost 
-          profile={profile} 
-          groupId={groupId} 
-          onPostCreated={handlePostCreated} 
-        />
-      </div>
+      {/* Integrated Post Input - Clean Slate Rebuild */}
+      <GroupPostInput onPostCreated={handlePostCreated} />
 
       {/* Posts List */}
       <div className="space-y-4 pb-20">
