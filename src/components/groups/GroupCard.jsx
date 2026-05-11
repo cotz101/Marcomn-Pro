@@ -19,9 +19,9 @@ export default function GroupCard({ group, onAction }) {
     }, 400);
   };
 
-  // Final UX Logic for Avatar Stack - Bulletproof Update
-  // 1. Safe Extraction: Support both flattened and nested member data
-  const membersList = group.members || group.group_members || [];
+  // Final UX Logic for Avatar Stack - Deep Fetch Update
+  // 1. Safe Extraction: Prioritize the 'members' array built by the Deep Fetch query
+  const membersList = group.members || [];
   
   // 2. Max 3 Constraint & Dynamic Randomization
   // If 2+, randomize and slice to 3 for the display stack
@@ -37,12 +37,12 @@ export default function GroupCard({ group, onAction }) {
           {membersList.length >= 2 ? (
             <div className="flex items-center -space-x-3">
               {displayMembers.map((member, i) => {
-                // Safe Image Targeting: Support member.avatar_url or member.profiles.avatar_url
-                const avatarUrl = member.avatar_url || member.profiles?.avatar_url;
-                const name = member.name || member.profiles?.name || "Member";
+                // With Deep Fetch, member is already a profile object (avatar_url, name)
+                const avatarUrl = member.avatar_url;
+                const name = member.name || "Member";
                 
                 return (
-                  <div key={member.id || i} className="relative z-10">
+                  <div key={member.user_id || i} className="relative z-10">
                     {avatarUrl ? (
                       <img 
                         src={avatarUrl}

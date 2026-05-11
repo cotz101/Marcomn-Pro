@@ -27,10 +27,17 @@ export default function GroupsDirectory() {
       const start = isInitial ? 0 : 6 + (page * 6);
       const end = start + limit - 1;
 
-      // Step 1: Fetch groups first
+      // Step 1: Fetch groups with member counts (Safe Query)
       const { data: fetchedGroups, error: groupsError } = await supabase
         .from('groups')
-        .select('id, name, description, type, owner_id, group_members(count)')
+        .select(`
+          id, 
+          name, 
+          description, 
+          type, 
+          owner_id, 
+          group_members(count)
+        `)
         .order('created_at', { ascending: false })
         .range(start, end);
 
@@ -39,7 +46,7 @@ export default function GroupsDirectory() {
 
       // Step 2: Fetch memberships for the current user
       let userMemberships = [];
-      if (currentUser.id) {
+      if (currentUser?.id) {
         const { data: memberships } = await supabase
           .from('group_members')
           .select('group_id, status, role')
@@ -47,26 +54,42 @@ export default function GroupsDirectory() {
         userMemberships = memberships || [];
       }
 
-      // Step 3: Fetch group members' profiles for the avatar stack
+      // Step 3: Fetch group members' profiles for the avatar stack (Bulletproof Strategy)
+      // This avoids the "Relationship not found" schema error by fetching profiles independently
       const groupIds = fetchedGroups.map(g => g.id);
       const { data: membersData } = await supabase
         .from('group_members')
         .select(`
           group_id,
-          profiles:user_id (
-            id,
-            name,
-            avatar_url
-          )
+          user_id
         `)
         .in('group_id', groupIds)
         .eq('status', 'member');
 
+      // Batch fetch profiles based on the user_ids found in memberships
+      const uniqueUserIds = [...new Set((membersData || []).map(m => m.user_id))];
+      let profilesMap = {};
+      if (uniqueUserIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, name, avatar_url')
+          .in('id', uniqueUserIds);
+        
+        profilesMap = (profiles || []).reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
+      }
+
       const membersByGroup = (membersData || []).reduce((acc, curr) => {
         if (!acc[curr.group_id]) acc[curr.group_id] = [];
-        if (curr.profiles) acc[curr.group_id].push(curr.profiles);
+        const profile = profilesMap[curr.user_id];
+        if (profile) {
+          acc[curr.group_id].push({
+            ...profile,
+            user_id: curr.user_id
+          });
+        }
         return acc;
       }, {});
+
 
       // Step 4: Merge everything
       const groupsWithMembership = fetchedGroups.map(group => {
