@@ -38,11 +38,11 @@ function WhoLikedModal({ postId, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in">
       <div className="bg-white w-full max-w-sm rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="px-6 pt-5 pb-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-          <span className="text-[12px] font-medium text-blue-950 uppercase tracking-[0.1em]">People who liked</span>
-          <button onClick={onClose} className="text-gray-400 hover:text-red-500 transition-colors"><X size={20} /></button>
+        <div className="px-6 pt-6 pb-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <span className="text-[12px] font-medium text-blue-950 uppercase tracking-[0.1em] ml-2">People who liked</span>
+          <button onClick={onClose} className="text-gray-400 hover:text-red-500 transition-colors pr-2"><X size={20} /></button>
         </div>
-        <div className="max-h-[300px] overflow-y-auto p-4 space-y-4">
+        <div className="max-h-[300px] overflow-y-auto p-6 space-y-4 pt-4">
           {loading ? <div className="py-10 text-center text-xs font-bold text-gray-400 uppercase animate-pulse">Loading...</div> :
             likers.length === 0 ? <div className="py-10 text-center text-xs font-bold text-gray-400 uppercase italic">No likes yet</div> :
             likers.map((l, i) => (
