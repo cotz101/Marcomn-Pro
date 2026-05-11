@@ -10,6 +10,7 @@ import ConnectionsHub from './components/connections/ConnectionsHub'
 import Profile from './components/profile/Profile'
 import ServicesFeed from './components/services/ServicesFeed'
 import BlogFeed from './components/blog/BlogFeed'
+import GroupPage from './components/groups/GroupPage'
 import MobileShell from './components/layout/MobileShell'
 
 const DEFAULT_PROFILE = {
@@ -57,6 +58,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<LogbookFeed profile={profile} />} />
                 <Route path="/groups" element={<GroupsDirectory />} />
+                <Route path="/groups/:id" element={<GroupPage />} />
                 <Route path="/talent" element={<TalentDirectory />} />
                 <Route path="/connections" element={<ConnectionsHub />} />
                 <Route path="/services" element={<ServicesFeed />} />

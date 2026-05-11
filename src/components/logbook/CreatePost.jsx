@@ -5,7 +5,7 @@ import PostComposerModal from './PostComposerModal';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 
-export default function CreatePost({ profile, onPostCreated }) {
+export default function CreatePost({ profile, onPostCreated, groupId }) {
   const [isArticleOpen, setIsArticleOpen] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const { userId, currentIdentity } = useProfile();
@@ -29,10 +29,16 @@ export default function CreatePost({ profile, onPostCreated }) {
       posted_as_company_id: isCompany ? currentIdentity.id : null
     };
 
+    if (groupId) {
+      postToInsert.group_id = groupId;
+    }
+
+    const targetTable = groupId ? 'group_posts' : 'posts';
+
     const { data, error } = await supabase
-      .from('posts')
+      .from(targetTable)
       .insert(postToInsert)
-      .select(`
+      .select(groupId ? '*' : `
         *,
         author:profiles(name, avatar_url, headline),
         company:companies(name, logo_url, industry)
