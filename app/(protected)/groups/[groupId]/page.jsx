@@ -17,6 +17,47 @@ function formatRelativeTime(dateString) {
   return date.toLocaleDateString();
 }
 
+function WhoLikedModal({ postId, onClose }) {
+  const [likers, setLikers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function fetchLikers() {
+      const { data: likes } = await supabase.from('group_post_likes').select('user_id').eq('post_id', postId);
+      if (likes && likes.length > 0) {
+        const uids = likes.map(l => l.user_id);
+        const { data: profiles } = await supabase.from('profiles').select('name, avatar_url').in('id', uids);
+        setLikers(profiles || []);
+      }
+      setLoading(false);
+    }
+    fetchLikers();
+  }, [postId]);
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in">
+      <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <span className="text-[12px] font-black text-blue-950 uppercase tracking-widest">People who liked</span>
+          <button onClick={onClose} className="text-gray-400 hover:text-red-500 transition-colors"><X size={20} /></button>
+        </div>
+        <div className="max-h-[300px] overflow-y-auto p-4 space-y-3">
+          {loading ? <div className="py-10 text-center text-xs font-bold text-gray-400 uppercase animate-pulse">Loading...</div> :
+            likers.length === 0 ? <div className="py-10 text-center text-xs font-bold text-gray-400 uppercase italic">No likes yet</div> :
+            likers.map((l, i) => (
+              <div key={i} className="flex items-center gap-3 p-2 hover:bg-blue-50 rounded-xl transition-all">
+                <img src={l.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md" />
+                <span className="text-sm font-bold text-gray-900">{l.name}</span>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -33,6 +74,11 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
   const [editCommentText, setEditCommentText] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null); // 'post' or 'commentId'
 
+  // Social Stats State
+  const [likesCount, setLikesCount] = useState(0);
+  const [userHasLiked, setUserHasLiked] = useState(false);
+  const [showLikers, setShowLikers] = useState(false);
+
   const editMediaRef = useRef(null);
   const editDocRef = useRef(null);
   const supabase = createClient();
@@ -41,7 +87,38 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
 
   useEffect(() => {
     fetchComments();
+    fetchLikes();
   }, []);
+
+  const fetchLikes = async () => {
+    const { data: likes, count } = await supabase.from('group_post_likes').select('*', { count: 'exact' }).eq('post_id', post.id);
+    setLikesCount(count || 0);
+    if (currentUserId) {
+      setUserHasLiked(likes?.some(l => l.user_id === currentUserId) || false);
+    }
+  };
+
+  const handleLikeToggle = async () => {
+    if (!currentUserId) return;
+    
+    // Optimistic Update
+    const wasLiked = userHasLiked;
+    setUserHasLiked(!wasLiked);
+    setLikesCount(prev => wasLiked ? prev - 1 : prev + 1);
+
+    try {
+      if (wasLiked) {
+        await supabase.from('group_post_likes').delete().eq('post_id', post.id).eq('user_id', currentUserId);
+      } else {
+        await supabase.from('group_post_likes').insert([{ post_id: post.id, user_id: currentUserId }]);
+      }
+    } catch (e) {
+      // Revert on error
+      setUserHasLiked(wasLiked);
+      setLikesCount(prev => wasLiked ? prev + 1 : prev - 1);
+      alert("Social action failed. Please try again.");
+    }
+  };
 
   const fetchComments = async () => {
     setIsLoadingComments(true);
@@ -183,11 +260,16 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
         </div>
       )}
 
-      {/* Post Stats & Actions (Eager Loaded) */}
+      {/* Post Stats & Actions */}
       <div className="mt-4 pt-3 border-t border-gray-50 flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <button className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-red-500 transition-colors"><Heart size={14} /> <span>Like</span></button>
-          <button onClick={() => setIsExpanded(!isExpanded)} className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${isExpanded ? 'text-blue-600' : 'text-gray-400'}`}><MessageSquare size={14} /> <span>{comments.length} Comments</span></button>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-1.5">
+            <button onClick={handleLikeToggle} className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-all ${userHasLiked ? 'text-orange-600 scale-110' : 'text-gray-400 hover:text-orange-500'}`}>
+              <Heart size={16} fill={userHasLiked ? "currentColor" : "none"} />
+            </button>
+            <button onClick={() => setShowLikers(true)} className="text-xs font-black text-gray-400 hover:text-gray-600">{likesCount}</button>
+          </div>
+          <button onClick={() => setIsExpanded(!isExpanded)} className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${isExpanded ? 'text-blue-600' : 'text-gray-400 hover:text-blue-500'}`}><MessageSquare size={16} /> <span>{comments.length}</span></button>
         </div>
         <div className="flex flex-row items-center -space-x-2">
           {[...new Set(comments.map(c => c.profiles?.avatar_url))].filter(Boolean).slice(0, 3).map((url, i) => (
@@ -195,6 +277,9 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
           ))}
         </div>
       </div>
+
+      {/* 'Who Liked' Discovery Modal */}
+      {showLikers && <WhoLikedModal postId={post.id} onClose={() => setShowLikers(false)} />}
 
       {/* Comments Section */}
       {isExpanded && (
@@ -451,7 +536,7 @@ export default function GroupPage({ params: paramsPromise }) {
                       <img src={r.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md group-hover:border-blue-200 transition-all" />
                       <span className="text-xs font-bold text-gray-900 truncate max-w-[110px]">{r.name}</span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 pr-4">
                       <button onClick={() => handleMemberAction(r.id, 'approve')} title="Approve Member" className="px-3.5 py-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white border border-green-100 transition-all shadow-sm"><Check size={18} /></button>
                       <button onClick={() => handleMemberAction(r.id, 'decline')} title="Decline Request" className="px-3.5 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white border border-red-100 transition-all shadow-sm"><X size={18} /></button>
                     </div>
