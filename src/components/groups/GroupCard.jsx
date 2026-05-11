@@ -19,36 +19,47 @@ export default function GroupCard({ group, onAction }) {
     }, 400);
   };
 
-  // Final UX Logic for Avatar Stack
-  // 1. Cascade Threshold: Trigger if 2+ members
-  // 2. Universal Shuffle: If 2+, randomize and slice to 3
-  const members = group.members || [];
-  const displayMembers = members.length >= 2
-    ? [...members].sort(() => 0.5 - Math.random()).slice(0, 3) 
-    : members;
+  // Final UX Logic for Avatar Stack - Bulletproof Update
+  // 1. Safe Extraction: Support both flattened and nested member data
+  const membersList = group.members || group.group_members || [];
+  
+  // 2. Max 3 Constraint & Dynamic Randomization
+  // If 2+, randomize and slice to 3 for the display stack
+  const displayMembers = membersList.length >= 2
+    ? [...membersList].sort(() => 0.5 - Math.random()).slice(0, 3) 
+    : membersList;
 
   return (
     <div className={`w-full max-w-full bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 p-4 ${isEntering ? 'opacity-60 scale-[0.98]' : ''}`}>
       <div className="flex gap-4">
         {/* Group Avatar Stack - Refined UX Logic */}
         <div className="flex-shrink-0 pt-1">
-          {members.length > 1 ? (
+          {membersList.length >= 2 ? (
             <div className="flex items-center -space-x-3">
-              {displayMembers.map((member, i) => (
-                <div key={member.id || i} className="relative z-10">
-                  {member.avatar_url ? (
-                    <img 
-                      src={member.avatar_url}
-                      className="w-8 h-8 rounded-full border-2 border-white object-cover shadow-sm"
-                      alt={member.name || "Member"}
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-white bg-slate-50 text-slate-400 shadow-sm">
-                      <Users size={16} />
-                    </div>
-                  )}
-                </div>
-              ))}
+              {displayMembers.map((member, i) => {
+                // Safe Image Targeting: Support member.avatar_url or member.profiles.avatar_url
+                const avatarUrl = member.avatar_url || member.profiles?.avatar_url;
+                const name = member.name || member.profiles?.name || "Member";
+                
+                return (
+                  <div key={member.id || i} className="relative z-10">
+                    {avatarUrl ? (
+                      <img 
+                        src={avatarUrl}
+                        className="w-8 h-8 rounded-full border-2 border-white object-cover shadow-sm"
+                        alt={name}
+                      />
+                    ) : (
+                      /* Fallback Colored Circle (Staggered Colors) */
+                      <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 border-white text-[10px] font-bold text-white shadow-sm ${
+                        i % 3 === 0 ? 'bg-blue-400' : i % 3 === 1 ? 'bg-orange-400' : 'bg-emerald-400'
+                      }`}>
+                        {name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               {group.member_count > 3 && (
                 <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-white bg-gray-100 text-[10px] font-semibold text-gray-600 relative z-0 shadow-sm">
                   +{group.member_count - 3}
@@ -56,7 +67,7 @@ export default function GroupCard({ group, onAction }) {
               )}
             </div>
           ) : (
-            /* Generic Fallback for Single/Zero Member */
+            /* Generic Fallback for Single/Zero Member or Data Load Fail */
             <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-slate-200 bg-slate-50 text-slate-400 shadow-sm">
               <Users size={16} />
             </div>
