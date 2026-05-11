@@ -175,7 +175,7 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
   const getCommentById = (id) => comments.find(c => c.id === id);
 
   return (
-    <div key={post.id} className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-300 relative">
+    <div key={post.id} className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-300 relative text-left">
       {/* Post Action Menu */}
       {isOwner && !isEditing && (
         <div className="absolute top-4 right-4 z-10">
@@ -252,7 +252,7 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
       {showDeleteConfirm === 'post' && (
         <div className="absolute inset-0 bg-white/95 rounded-xl flex flex-col items-center justify-center p-6 z-40 animate-in fade-in backdrop-blur-sm">
           <AlertTriangle size={24} className="text-red-500 mb-2" />
-          <span className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Delete this discussion?</span>
+          <span className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider text-center">Delete this discussion?</span>
           <div className="flex gap-4">
             <button onClick={() => setShowDeleteConfirm(null)} className="px-5 py-2 text-xs font-bold text-gray-500 uppercase bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
             <button onClick={() => onDelete(post.id)} className="px-5 py-2 text-xs font-bold text-white bg-red-600 rounded-lg uppercase shadow-md hover:bg-red-700">Confirm</button>
@@ -399,9 +399,11 @@ export default function GroupPage({ params: paramsPromise }) {
   const [postText, setPostText] = useState('');
   const [groupData, setGroupData] = useState({ name: '', description: '', memberCount: 0, members: [], isAdmin: false });
   const [pendingRequests, setPendingRequests] = useState([]);
-  const [showRequests, setShowRequests] = useState(false);
+  const [currentMembers, setCurrentMembers] = useState([]);
+  const [showManageModal, setShowManageModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [userToKick, setUserToKick] = useState(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -413,26 +415,32 @@ export default function GroupPage({ params: paramsPromise }) {
       
       const { data: group } = await supabase.from('groups').select('name, description').eq('id', groupId).single();
       
-      const { data: membersData, count } = await supabase.from('group_members').select('user_id, role', { count: 'exact' }).eq('group_id', groupId);
+      const { data: membersData, count } = await supabase.from('group_members').select('user_id, role, status').eq('group_id', groupId);
       const isAdmin = membersData?.some(m => m.user_id === user?.id && m.role === 'admin');
       
       let memberAvatars = [];
       if (membersData && membersData.length > 0) {
-        const uids = membersData.slice(0, 5).map(m => m.user_id);
+        const uids = membersData.filter(m => m.status === 'joined').slice(0, 5).map(m => m.user_id);
         const { data: profs } = await supabase.from('profiles').select('avatar_url').in('id', uids);
         memberAvatars = profs?.map(p => p.avatar_url).filter(Boolean) || [];
       }
 
-      if (group) setGroupData({ name: group.name, description: group.description, memberCount: count || 1, members: memberAvatars, isAdmin });
+      if (group) setGroupData({ name: group.name, description: group.description, memberCount: membersData?.filter(m => m.status === 'joined').length || 0, members: memberAvatars, isAdmin });
       
-      // Fetch pending requests for admins
+      // Fetch Detailed Member Info for Modal
       if (isAdmin) {
-        const { data: pending } = await supabase.from('group_members').select('user_id').eq('group_id', groupId).eq('status', 'pending');
-        if (pending && pending.length > 0) {
-          const uids = pending.map(p => p.user_id);
-          const { data: pProfs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', uids);
+        const pendingUids = membersData?.filter(m => m.status === 'pending').map(m => m.user_id) || [];
+        const joinedUids = membersData?.filter(m => m.status === 'joined').map(m => m.user_id) || [];
+        
+        if (pendingUids.length > 0) {
+          const { data: pProfs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', pendingUids);
           setPendingRequests(pProfs || []);
-        }
+        } else { setPendingRequests([]); }
+
+        if (joinedUids.length > 0) {
+          const { data: jProfs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', joinedUids);
+          setCurrentMembers(jProfs?.map(p => ({ ...p, role: membersData.find(m => m.user_id === p.id)?.role })) || []);
+        } else { setCurrentMembers([]); }
       }
 
       const { data: postsData } = await supabase.from('group_posts').select('*').eq('group_id', groupId).order('created_at', { ascending: false });
@@ -450,10 +458,20 @@ export default function GroupPage({ params: paramsPromise }) {
   const handleMemberAction = async (userId, action) => {
     if (action === 'approve') {
       await supabase.from('group_members').update({ status: 'joined' }).eq('group_id', groupId).eq('user_id', userId);
-    } else {
+      const user = pendingRequests.find(r => r.id === userId);
+      setCurrentMembers([...currentMembers, { ...user, role: 'member' }]);
+      setPendingRequests(pendingRequests.filter(r => r.id !== userId));
+      setGroupData(prev => ({ ...prev, memberCount: prev.memberCount + 1 }));
+    } else if (action === 'decline' || action === 'kick') {
       await supabase.from('group_members').delete().eq('group_id', groupId).eq('user_id', userId);
+      if (action === 'decline') {
+        setPendingRequests(pendingRequests.filter(r => r.id !== userId));
+      } else {
+        setCurrentMembers(currentMembers.filter(m => m.id !== userId));
+        setGroupData(prev => ({ ...prev, memberCount: Math.max(0, prev.memberCount - 1) }));
+        setUserToKick(null);
+      }
     }
-    setPendingRequests(pendingRequests.filter(r => r.id !== userId));
   };
 
   const uploadFile = async (f) => {
@@ -491,7 +509,7 @@ export default function GroupPage({ params: paramsPromise }) {
     setPosts(posts.filter(p => p.id !== pid));
   };
 
-  if (isLoading) return <div className="w-full max-w-2xl mx-auto px-6 py-20 bg-white">Loading...</div>;
+  if (isLoading) return <div className="w-full max-w-2xl mx-auto px-6 py-20 bg-white text-center font-bold text-blue-950 uppercase tracking-widest animate-pulse">Loading Environment...</div>;
 
   return (
     <div className="w-full max-w-2xl mx-auto pb-10">
@@ -509,50 +527,107 @@ export default function GroupPage({ params: paramsPromise }) {
               {groupData.memberCount > 5 && <div className="w-8 h-8 rounded-full bg-gray-50 border-2 border-white shadow-sm flex items-center justify-center text-[10px] font-bold text-gray-400">+{groupData.memberCount - 5}</div>}
             </div>
             <div className="flex items-center gap-4">
-              {groupData.isAdmin && pendingRequests.length > 0 && (
-                <button onClick={() => setShowRequests(!showRequests)} className="relative p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all border border-blue-200 shadow-md">
-                  <UserPlus size={22} />
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white text-[12px] font-black rounded-lg flex items-center justify-center border-2 border-white shadow-lg animate-bounce">
-                    {pendingRequests.length}
-                  </div>
+              {groupData.isAdmin && (
+                <button onClick={() => setShowManageModal(true)} className="relative p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all border border-blue-200 shadow-md">
+                  <Users size={22} />
+                  {pendingRequests.length > 0 && (
+                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white text-[12px] font-black rounded-lg flex items-center justify-center border-2 border-white shadow-lg animate-bounce">
+                      {pendingRequests.length}
+                    </div>
+                  )}
                 </button>
               )}
               <span className="text-xs font-medium text-gray-500 uppercase tracking-widest">{groupData.memberCount} Members</span>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Pending Requests Dropdown */}
-          {showRequests && (
-            <div className="absolute top-full right-6 mt-4 w-80 bg-white border border-gray-100 shadow-2xl rounded-2xl p-6 z-50 animate-in fade-in slide-in-from-top-4 border-t-blue-500 border-t-4">
-              <div className="flex justify-between items-center mb-6 border-b border-gray-50 pb-3">
-                <div className="flex items-center gap-2">
-                  <Users size={16} className="text-blue-600" />
-                  <span className="text-[12px] font-black text-blue-950 uppercase tracking-widest">Waiting Room</span>
+      {/* Smart Hybrid Admin Modal */}
+      {showManageModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border-t-4 border-blue-600">
+            <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h2 className="text-lg font-medium text-blue-950 pl-6">Manage Group Members</h2>
+              <button onClick={() => setShowManageModal(false)} className="text-gray-400 hover:text-red-500 transition-colors pr-4"><X size={24} /></button>
+            </div>
+            
+            <div className="max-h-[70vh] overflow-y-auto">
+              {/* Pinned: Pending Requests */}
+              <div className="p-6 pb-2 border-b border-gray-50 bg-blue-50/20">
+                <div className="flex items-center gap-2 mb-4 pl-6">
+                  <UserPlus size={16} className="text-blue-600" />
+                  <h3 className="text-[11px] font-black text-blue-900 uppercase tracking-[0.2em]">Pending Requests ({pendingRequests.length})</h3>
                 </div>
-                <button onClick={() => setShowRequests(false)} className="text-gray-300 hover:text-red-500 transition-colors"><X size={20} /></button>
+                <div className="space-y-4">
+                  {pendingRequests.length === 0 ? (
+                    <p className="text-[10px] text-gray-400 italic pl-6 pb-2">No pending requests</p>
+                  ) : (
+                    pendingRequests.map(r => (
+                      <div key={r.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-blue-100 shadow-sm">
+                        <div className="flex items-center gap-3 pl-6">
+                          <img src={r.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md" />
+                          <span className="text-sm font-bold text-gray-900">{r.name}</span>
+                        </div>
+                        <div className="flex gap-2 pr-4 mr-4">
+                          <button onClick={() => handleMemberAction(r.id, 'approve')} className="px-4 py-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white border border-green-100 transition-all shadow-sm"><Check size={20} /></button>
+                          <button onClick={() => handleMemberAction(r.id, 'decline')} className="px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white border border-red-100 transition-all shadow-sm"><X size={20} /></button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
-              <div className="space-y-6">
-                {pendingRequests.map(r => (
-                  <div key={r.id} className="flex items-center justify-between group p-2 hover:bg-gray-50 rounded-xl transition-all">
-                    <div className="flex items-center gap-3">
-                      <img src={r.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md group-hover:border-blue-200 transition-all" />
-                      <span className="text-xs font-bold text-gray-900 truncate max-w-[110px]">{r.name}</span>
+
+              {/* Scrollable: Current Members */}
+              <div className="p-6">
+                <div className="flex items-center gap-2 mb-4 pl-6">
+                  <Users size={16} className="text-gray-400" />
+                  <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em]">Current Members ({currentMembers.length})</h3>
+                </div>
+                <div className="space-y-4">
+                  {currentMembers.map(m => (
+                    <div key={m.id} className="flex items-center justify-between group p-3 hover:bg-gray-50 rounded-xl transition-all border border-transparent hover:border-gray-100">
+                      <div className="flex items-center gap-3 pl-6">
+                        <img src={m.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-gray-900">{m.name} {m.id === currentUserId && <span className="text-[10px] text-blue-500">(You)</span>}</span>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{m.role}</span>
+                        </div>
+                      </div>
+                      {m.id !== currentUserId && m.role !== 'admin' && (
+                        <div className="pr-4 mr-4">
+                          <button onClick={() => setUserToKick(m)} className="text-[11px] font-bold text-red-500 uppercase tracking-widest bg-red-50 px-4 py-2 rounded-xl hover:bg-red-600 hover:text-white transition-all">Kick</button>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex gap-2 pr-4 mr-4">
-                      <button onClick={() => handleMemberAction(r.id, 'approve')} title="Approve Member" className="px-3.5 py-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white border border-green-100 transition-all shadow-sm"><Check size={18} /></button>
-                      <button onClick={() => handleMemberAction(r.id, 'decline')} title="Decline Request" className="px-3.5 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white border border-red-100 transition-all shadow-sm"><X size={18} /></button>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Custom Kick Confirmation Modal */}
+          {userToKick && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[110] flex items-center justify-center p-4">
+              <div className="bg-white w-full max-w-sm rounded-2xl p-8 text-center shadow-2xl animate-in zoom-in-95">
+                <AlertTriangle size={32} className="text-red-500 mx-auto mb-4" />
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Remove Member?</h3>
+                <p className="text-sm text-gray-600 mb-6 leading-relaxed px-2">Remove <span className="font-bold text-gray-900">{userToKick.name}</span> from the group? They can still request to join again later.</p>
+                <div className="flex gap-4">
+                  <button onClick={() => setUserToKick(null)} className="flex-1 px-4 py-2.5 text-xs font-bold text-gray-500 uppercase bg-gray-100 rounded-xl hover:bg-gray-200 transition-all">Cancel</button>
+                  <button onClick={() => handleMemberAction(userToKick.id, 'kick')} className="flex-1 px-4 py-2.5 text-xs font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 shadow-lg shadow-red-200 transition-all">Confirm Kick</button>
+                </div>
               </div>
             </div>
           )}
         </div>
-      </div>
+      )}
+
       <div className="px-[22px] mt-6 space-y-8">
         {/* Composer */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <textarea value={postText} onChange={(e) => setPostText(e.target.value)} placeholder="Share an update..." className="w-full min-h-[100px] bg-gray-50 rounded-lg p-4 text-sm focus:outline-none resize-none leading-relaxed" />
+          <textarea value={postText} onChange={(e) => setPostText(e.target.value)} placeholder="Share an update..." className="w-full min-h-[100px] bg-gray-50 rounded-lg p-4 text-sm focus:outline-none resize-none leading-relaxed text-left" />
           
           {attachments.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3 p-2 bg-blue-50/50 rounded-lg border border-blue-100">

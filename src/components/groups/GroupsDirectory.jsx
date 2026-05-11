@@ -91,7 +91,23 @@ export default function GroupsDirectory() {
       }, {});
 
 
-      // Step 4: Merge everything
+      // Step 4: Fetch pending counts for admin groups
+      const adminGroupIds = userMemberships.filter(m => m.role === 'admin').map(m => m.group_id);
+      let pendingCounts = {};
+      if (adminGroupIds.length > 0) {
+        const { data: pCounts } = await supabase
+          .from('group_members')
+          .select('group_id')
+          .in('group_id', adminGroupIds)
+          .eq('status', 'pending');
+        
+        pendingCounts = (pCounts || []).reduce((acc, curr) => {
+          acc[curr.group_id] = (acc[curr.group_id] || 0) + 1;
+          return acc;
+        }, {});
+      }
+
+      // Step 5: Merge everything
       const groupsWithMembership = fetchedGroups.map(group => {
         const membership = userMemberships.find(m => m.group_id === group.id);
         const isAccepted = !!membership && (
@@ -106,7 +122,8 @@ export default function GroupsDirectory() {
           membershipStatus: membership?.status,
           membershipRole: membership?.role,
           member_count: group.group_members?.[0]?.count || 0,
-          members: membersByGroup[group.id] || []
+          members: membersByGroup[group.id] || [],
+          pendingCount: pendingCounts[group.id] || 0
         };
       });
 

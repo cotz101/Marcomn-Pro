@@ -30,7 +30,13 @@ export default function GroupCard({ group, onAction }) {
     : membersList;
 
   return (
-    <div className={`w-full max-w-full bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 p-4 ${isEntering ? 'opacity-60 scale-[0.98]' : ''}`}>
+    <div className={`w-full max-w-full bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 p-4 relative ${isEntering ? 'opacity-60 scale-[0.98]' : ''}`}>
+      {/* Admin Pending Badge */}
+      {group.membershipRole === 'admin' && group.pendingCount > 0 && (
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 bg-red-600 text-white rounded-lg shadow-lg animate-bounce z-20">
+          <span className="text-[10px] font-black uppercase tracking-wider">{group.pendingCount} Request{group.pendingCount > 1 ? 's' : ''}</span>
+        </div>
+      )}
       <div className="flex gap-4">
         {/* Group Avatar Stack - Refined UX Logic */}
         <div className="flex-shrink-0 pt-1">
