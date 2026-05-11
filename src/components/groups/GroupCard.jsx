@@ -31,12 +31,6 @@ export default function GroupCard({ group, onAction }) {
 
   return (
     <div className={`w-full max-w-full bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 p-4 relative ${isEntering ? 'opacity-60 scale-[0.98]' : ''}`}>
-      {/* Admin Pending Badge */}
-      {group.membershipRole === 'admin' && group.pendingCount > 0 && (
-        <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 bg-red-600 text-white rounded-lg shadow-lg animate-bounce z-20">
-          <span className="text-[10px] font-black uppercase tracking-wider">{group.pendingCount} Request{group.pendingCount > 1 ? 's' : ''}</span>
-        </div>
-      )}
       <div className="flex gap-4">
         {/* Group Avatar Stack - Refined UX Logic */}
         <div className="flex-shrink-0 pt-1">
@@ -110,47 +104,58 @@ export default function GroupCard({ group, onAction }) {
         </div>
       </div>
 
-      <div className="flex justify-end mt-6">
-        {group.isMember ? (
-          <button 
-            onClick={handleEnterGroup}
-            disabled={isEntering}
-            className={`inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-white text-gray-900 border border-gray-200 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all shadow-sm whitespace-nowrap gap-2 ${isEntering ? 'animate-btn-loading' : ''}`}
-          >
-            {isEntering ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                <span>{"\u00A0"}Entering...{"\u00A0"}</span>
-              </>
-            ) : (
-              <>
-                <span>{"\u00A0"}Enter Group{"\u00A0"}</span>
-                <ChevronRight size={16} />
-              </>
-            )}
-          </button>
-        ) : isPending ? (
-          <button 
-            disabled
-            className="inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg font-medium text-sm cursor-not-allowed whitespace-nowrap gap-2"
-          >
-            Request Sent
-          </button>
-        ) : isPublic ? (
-          <button 
-            onClick={() => onAction(group)}
-            className="inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-blue-950 text-white rounded-lg font-medium text-sm hover:bg-blue-900 transition-all shadow-sm whitespace-nowrap"
-          >
-            Join Group
-          </button>
-        ) : (
-          <button 
-            onClick={() => onAction(group)}
-            className="inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-[#FAEADB] text-orange-900 hover:brightness-95 border border-transparent rounded-lg font-medium text-sm transition-all shadow-sm whitespace-nowrap"
-          >
-            Ask to Join
-          </button>
-        )}
+      <div className="flex justify-between items-end mt-6">
+        <div className="flex items-center">
+          {/* Admin Pending Badge - Bottom Left */}
+          {group.membershipRole === 'admin' && group.pendingCount > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-100 text-sky-700 border border-sky-200 rounded-lg shadow-sm animate-bounce z-10">
+              <span className="text-[10px] font-black uppercase tracking-wider">{group.pendingCount} Request{group.pendingCount > 1 ? 's' : ''}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          {group.isMember ? (
+            <button 
+              onClick={handleEnterGroup}
+              disabled={isEntering}
+              className={`inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-white text-gray-900 border border-gray-200 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all shadow-sm whitespace-nowrap gap-2 ${isEntering ? 'animate-btn-loading' : ''}`}
+            >
+              {isEntering ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>{"\u00A0"}Entering...{"\u00A0"}</span>
+                </>
+              ) : (
+                <>
+                  <span>{"\u00A0"}Enter Group{"\u00A0"}</span>
+                  <ChevronRight size={16} />
+                </>
+              )}
+            </button>
+          ) : isPending ? (
+            <button 
+              disabled
+              className="inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg font-medium text-sm cursor-not-allowed whitespace-nowrap gap-2"
+            >
+              Request Sent
+            </button>
+          ) : isPublic ? (
+            <button 
+              onClick={() => onAction(group)}
+              className="inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-blue-950 text-white rounded-lg font-medium text-sm hover:bg-blue-900 transition-all shadow-sm whitespace-nowrap"
+            >
+              Join Group
+            </button>
+          ) : (
+            <button 
+              onClick={() => onAction(group)}
+              className="inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-[#FAEADB] text-orange-900 hover:brightness-95 border border-transparent rounded-lg font-medium text-sm transition-all shadow-sm whitespace-nowrap"
+            >
+              Ask to Join
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

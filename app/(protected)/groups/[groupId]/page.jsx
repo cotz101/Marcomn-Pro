@@ -62,6 +62,7 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
   const [isExpanded, setIsExpanded] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([]);
+  const [visibleCommentsCount, setVisibleCommentsCount] = useState(3);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(post.content);
@@ -123,7 +124,8 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
   const fetchComments = async () => {
     setIsLoadingComments(true);
     try {
-      const { data: commentsData } = await supabase.from('group_comments').select('*').eq('post_id', post.id).order('created_at', { ascending: true });
+      // FIX: Sorting by created_at descending (newest first)
+      const { data: commentsData } = await supabase.from('group_comments').select('*').eq('post_id', post.id).order('created_at', { ascending: false });
       if (commentsData && commentsData.length > 0) {
         const userIds = [...new Set(commentsData.map(c => c.user_id))];
         const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url').in('id', userIds);
@@ -141,7 +143,7 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
       const { data: newComment, error } = await supabase.from('group_comments').insert([{ post_id: post.id, user_id: user.id, content: commentText, parent_id: parentId }]).select('*').single();
       if (error) throw error;
       const { data: profile } = await supabase.from('profiles').select('name, avatar_url').eq('id', user.id).single();
-      setComments([...comments, { ...newComment, profiles: profile }]);
+      setComments([{ ...newComment, profiles: profile }, ...comments]); // Prepend since we sort desc
       setCommentText(''); setReplyingToId(null);
     } catch (e) { alert(e.message); }
   };
@@ -291,71 +293,78 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
               comments.length === 0 ? (
                 <div className="text-center py-6 text-xs font-bold text-gray-400 uppercase tracking-widest italic">No comments yet. Share your thoughts!</div>
               ) : (
-                comments.map((comment) => {
-                  const isReply = !!comment.parent_id;
-                  const parent = isReply ? getCommentById(comment.parent_id) : null;
-                  const isCommentOwner = currentUserId === comment.user_id;
+                <>
+                  {/* FIX: Slicing to show only top 3 comments initially */}
+                  {comments.slice(0, visibleCommentsCount).map((comment) => {
+                    const isReply = !!comment.parent_id;
+                    const parent = isReply ? getCommentById(comment.parent_id) : null;
+                    const isCommentOwner = currentUserId === comment.user_id;
 
-                  return (
-                    <div key={comment.id} className={`${isReply ? 'ml-4 pl-4 border-l-2 border-gray-200 mt-2 relative' : ''}`}>
-                      {isReply && parent && (
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-tight mb-1 ml-1">
-                          <CornerDownRight size={12} className="text-gray-400" />
-                          <span>Replying to {parent.profiles?.name}: "{parent.content.slice(0, 20)}..."</span>
-                        </div>
-                      )}
-                      
-                      <div className="bg-slate-50/80 rounded-2xl p-3 border border-gray-100/50 shadow-sm relative">
-                        <div className="flex items-start gap-2">
-                          <img src={comment.profiles?.avatar_url} className="w-7 h-7 rounded-full object-cover border border-white shadow-sm" />
-                          <div className="flex-1">
-                            <div className="flex justify-between items-center mb-0.5">
-                              <span className="text-[12px] font-bold text-gray-900">{comment.profiles?.name || 'Member'}</span>
-                              <span className="text-[9px] text-gray-400 font-bold uppercase">{formatRelativeTime(comment.created_at)}</span>
-                            </div>
-                            
-                            {editingCommentId === comment.id ? (
-                              <div className="space-y-2 mt-2">
-                                <textarea value={editCommentText} onChange={(e) => setEditCommentText(e.target.value)} className="w-full bg-white border border-blue-100 rounded-xl p-3 text-xs focus:outline-none shadow-sm min-h-[80px] leading-relaxed" />
-                                <div className="flex justify-end gap-2">
-                                  <button onClick={() => setEditingCommentId(null)} className="text-[10px] font-bold text-gray-400 uppercase px-2 py-1">Cancel</button>
-                                  <button onClick={() => handleCommentUpdate(comment.id)} className="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-3 py-1 rounded-lg">Save Changes</button>
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                <p className="text-xs text-gray-700 leading-relaxed font-medium">{comment.content}</p>
-                                <div className="flex gap-4 mt-2 items-center justify-start">
-                                  {!isReply && (
-                                    <button onClick={() => setReplyingToId(comment.id)} className="text-[10px] font-bold text-blue-600 uppercase tracking-wider hover:underline">Reply</button>
-                                  )}
-                                  {isCommentOwner && (
-                                    <>
-                                      <button onClick={() => { setEditingCommentId(comment.id); setEditCommentText(comment.content); }} className="text-[10px] font-bold text-amber-600 uppercase tracking-wider hover:underline">Edit</button>
-                                      <button onClick={() => setShowDeleteConfirm(comment.id)} className="text-[10px] font-bold text-red-600 uppercase tracking-wider hover:underline">Delete</button>
-                                    </>
-                                  )}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Comment Custom Delete Confirmation Modal */}
-                        {showDeleteConfirm === comment.id && (
-                          <div className="absolute inset-0 bg-white/95 rounded-2xl flex flex-col items-center justify-center p-3 z-30 animate-in fade-in backdrop-blur-sm">
-                            <AlertTriangle size={16} className="text-red-500 mb-1" />
-                            <span className="text-[11px] font-bold text-gray-900 mb-2 uppercase">Delete comment?</span>
-                            <div className="flex gap-3">
-                              <button onClick={() => setShowDeleteConfirm(null)} className="px-3 py-1 text-[10px] font-bold text-gray-500 uppercase bg-gray-100 rounded-lg">Cancel</button>
-                              <button onClick={() => handleCommentDelete(comment.id)} className="px-3 py-1 text-[10px] font-bold text-white bg-red-600 rounded-lg uppercase">Confirm</button>
-                            </div>
+                    return (
+                      <div key={comment.id} className={`${isReply ? 'ml-4 pl-4 border-l-2 border-gray-200 mt-2 relative' : ''}`}>
+                        {isReply && parent && (
+                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-tight mb-1 ml-1">
+                            <CornerDownRight size={12} className="text-gray-400" />
+                            <span>Replying to {parent.profiles?.name}: "{parent.content.slice(0, 20)}..."</span>
                           </div>
                         )}
+                        
+                        <div className="bg-slate-50/80 rounded-2xl p-3 border border-gray-100/50 shadow-sm relative">
+                          <div className="flex items-start gap-2">
+                            <img src={comment.profiles?.avatar_url} className="w-7 h-7 rounded-full object-cover border border-white shadow-sm" />
+                            <div className="flex-1">
+                              <div className="flex justify-between items-center mb-0.5">
+                                <span className="text-[12px] font-bold text-gray-900">{comment.profiles?.name || 'Member'}</span>
+                                <span className="text-[9px] text-gray-400 font-bold uppercase">{formatRelativeTime(comment.created_at)}</span>
+                              </div>
+                              
+                              {editingCommentId === comment.id ? (
+                                <div className="space-y-2 mt-2">
+                                  <textarea value={editCommentText} onChange={(e) => setEditCommentText(e.target.value)} className="w-full bg-white border border-blue-100 rounded-xl p-3 text-xs focus:outline-none shadow-sm min-h-[80px] leading-relaxed" />
+                                  <div className="flex justify-end gap-2">
+                                    <button onClick={() => setEditingCommentId(null)} className="text-[10px] font-bold text-gray-400 uppercase px-2 py-1">Cancel</button>
+                                    <button onClick={() => handleCommentUpdate(comment.id)} className="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-3 py-1 rounded-lg">Save Changes</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <p className="text-xs text-gray-700 leading-relaxed font-medium">{comment.content}</p>
+                                  <div className="flex gap-4 mt-2 items-center justify-start">
+                                    {!isReply && (
+                                      <button onClick={() => setReplyingToId(comment.id)} className="text-[10px] font-bold text-blue-600 uppercase tracking-wider hover:underline">Reply</button>
+                                    )}
+                                    {isCommentOwner && (
+                                      <>
+                                        <button onClick={() => { setEditingCommentId(comment.id); setEditCommentText(comment.content); }} className="text-[10px] font-bold text-amber-600 uppercase tracking-wider hover:underline">Edit</button>
+                                        <button onClick={() => setShowDeleteConfirm(comment.id)} className="text-[10px] font-bold text-red-600 uppercase tracking-wider hover:underline">Delete</button>
+                                      </>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Comment Custom Delete Confirmation Modal */}
+                          {showDeleteConfirm === comment.id && (
+                            <div className="absolute inset-0 bg-white/95 rounded-2xl flex flex-col items-center justify-center p-3 z-30 animate-in fade-in backdrop-blur-sm">
+                              <AlertTriangle size={16} className="text-red-500 mb-1" />
+                              <span className="text-[11px] font-bold text-gray-900 mb-2 uppercase">Delete comment?</span>
+                              <div className="flex gap-3">
+                                <button onClick={() => setShowDeleteConfirm(null)} className="px-3 py-1 text-[10px] font-bold text-gray-500 uppercase bg-gray-100 rounded-lg">Cancel</button>
+                                <button onClick={() => handleCommentDelete(comment.id)} className="px-3 py-1 text-[10px] font-bold text-white bg-red-600 rounded-lg uppercase">Confirm</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  })}
+                  {/* Load More Comments Link */}
+                  {comments.length > visibleCommentsCount && (
+                    <button onClick={() => setVisibleCommentsCount(prev => prev + 3)} className="text-[10px] font-bold text-blue-600 uppercase tracking-widest pl-4 hover:underline">View more comments...</button>
+                  )}
+                </>
               )
             }
           </div>
@@ -396,6 +405,8 @@ export default function GroupPage({ params: paramsPromise }) {
   const documentInputRef = useRef(null);
 
   const [posts, setPosts] = useState([]);
+  const [postLimit, setPostLimit] = useState(5);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
   const [postText, setPostText] = useState('');
   const [groupData, setGroupData] = useState({ name: '', description: '', memberCount: 0, members: [], isAdmin: false });
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -407,53 +418,55 @@ export default function GroupPage({ params: paramsPromise }) {
   const supabase = createClient();
 
   useEffect(() => {
-    async function fetchData() {
-      if (!groupId) return;
-      setIsLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) setCurrentUserId(user.id);
-      
-      const { data: group } = await supabase.from('groups').select('name, description').eq('id', groupId).single();
-      
-      const { data: membersData, count } = await supabase.from('group_members').select('user_id, role, status').eq('group_id', groupId);
-      const isAdmin = membersData?.some(m => m.user_id === user?.id && m.role === 'admin');
-      
-      let memberAvatars = [];
-      if (membersData && membersData.length > 0) {
-        const uids = membersData.filter(m => m.status === 'joined').slice(0, 5).map(m => m.user_id);
-        const { data: profs } = await supabase.from('profiles').select('avatar_url').in('id', uids);
-        memberAvatars = profs?.map(p => p.avatar_url).filter(Boolean) || [];
-      }
-
-      if (group) setGroupData({ name: group.name, description: group.description, memberCount: membersData?.filter(m => m.status === 'joined').length || 0, members: memberAvatars, isAdmin });
-      
-      // Fetch Detailed Member Info for Modal
-      if (isAdmin) {
-        const pendingUids = membersData?.filter(m => m.status === 'pending').map(m => m.user_id) || [];
-        const joinedUids = membersData?.filter(m => m.status === 'joined').map(m => m.user_id) || [];
-        
-        if (pendingUids.length > 0) {
-          const { data: pProfs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', pendingUids);
-          setPendingRequests(pProfs || []);
-        } else { setPendingRequests([]); }
-
-        if (joinedUids.length > 0) {
-          const { data: jProfs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', joinedUids);
-          setCurrentMembers(jProfs?.map(p => ({ ...p, role: membersData.find(m => m.user_id === p.id)?.role })) || []);
-        } else { setCurrentMembers([]); }
-      }
-
-      const { data: postsData } = await supabase.from('group_posts').select('*').eq('group_id', groupId).order('created_at', { ascending: false });
-      if (postsData && postsData.length > 0) {
-        const uids = [...new Set(postsData.map(p => p.user_id))];
-        const { data: profs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', uids);
-        const pMap = {}; profs?.forEach(p => pMap[p.id] = p);
-        setPosts(postsData.map(p => ({ ...p, authorName: pMap[p.user_id]?.name || 'MNetwork Member', authorAvatar: pMap[p.user_id]?.avatar_url })));
-      } else { setPosts(postsData || []); }
-      setIsLoading(false);
-    }
     fetchData();
-  }, [groupId, supabase]);
+  }, [groupId, supabase, postLimit]);
+
+  const fetchData = async () => {
+    if (!groupId) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) setCurrentUserId(user.id);
+    
+    const { data: group } = await supabase.from('groups').select('name, description').eq('id', groupId).single();
+    
+    const { data: membersData } = await supabase.from('group_members').select('user_id, role, status').eq('group_id', groupId);
+    const isAdmin = membersData?.some(m => m.user_id === user?.id && m.role === 'admin');
+    
+    let memberAvatars = [];
+    if (membersData && membersData.length > 0) {
+      const uids = membersData.filter(m => m.status === 'joined').slice(0, 5).map(m => m.user_id);
+      const { data: profs } = await supabase.from('profiles').select('avatar_url').in('id', uids);
+      memberAvatars = profs?.map(p => p.avatar_url).filter(Boolean) || [];
+    }
+
+    if (group) setGroupData({ name: group.name, description: group.description, memberCount: membersData?.filter(m => m.status === 'joined').length || 0, members: memberAvatars, isAdmin });
+    
+    // Fetch Detailed Member Info for Modal
+    if (isAdmin) {
+      const pendingUids = membersData?.filter(m => m.status === 'pending').map(m => m.user_id) || [];
+      const joinedUids = membersData?.filter(m => m.status === 'joined').map(m => m.user_id) || [];
+      
+      if (pendingUids.length > 0) {
+        const { data: pProfs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', pendingUids);
+        setPendingRequests(pProfs || []);
+      } else { setPendingRequests([]); }
+
+      if (joinedUids.length > 0) {
+        const { data: jProfs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', joinedUids);
+        setCurrentMembers(jProfs?.map(p => ({ ...p, role: membersData.find(m => m.user_id === p.id)?.role })) || []);
+      } else { setCurrentMembers([]); }
+    }
+
+    // FIX: Force Topic Pagination (Initial limit 5)
+    const { data: postsData } = await supabase.from('group_posts').select('*').eq('group_id', groupId).order('created_at', { ascending: false }).limit(postLimit);
+    if (postsData && postsData.length > 0) {
+      const uids = [...new Set(postsData.map(p => p.user_id))];
+      const { data: profs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', uids);
+      const pMap = {}; profs?.forEach(p => pMap[p.id] = p);
+      setPosts(postsData.map(p => ({ ...p, authorName: pMap[p.user_id]?.name || 'MNetwork Member', authorAvatar: pMap[p.user_id]?.avatar_url })));
+      setHasMorePosts(postsData.length === postLimit);
+    } else { setPosts([]); setHasMorePosts(false); }
+    setIsLoading(false);
+  };
 
   const handleMemberAction = async (userId, action) => {
     if (action === 'approve') {
@@ -511,8 +524,12 @@ export default function GroupPage({ params: paramsPromise }) {
 
   if (isLoading) return <div className="w-full max-w-2xl mx-auto px-6 py-20 bg-white text-center font-bold text-blue-950 uppercase tracking-widest animate-pulse">Loading Environment...</div>;
 
+  // FIX: Absolute Floor Logic for Member Counter
+  const otherMembersCount = Math.max(0, currentMembers.filter(m => m.id !== currentUserId).length);
+
   return (
-    <div className="w-full max-w-2xl mx-auto pb-10">
+    // FIX: Scroll Fix and Vertical Padding (pb-32)
+    <div className="w-full max-w-2xl mx-auto pb-32 overflow-y-auto">
       <div className="bg-white border-b border-gray-100">
         <div className="px-6 py-8 flex justify-between items-start w-full relative">
           <div className="flex flex-col items-start text-left ml-8 pl-4">
@@ -583,19 +600,20 @@ export default function GroupPage({ params: paramsPromise }) {
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-4 pl-6">
                   <Users size={16} className="text-gray-400" />
-                  <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em]">Current Members ({currentMembers.length})</h3>
+                  {/* FIX: Absolute Floor for display count */}
+                  <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em]">Current Members ({otherMembersCount > 0 ? otherMembersCount : '0'})</h3>
                 </div>
                 <div className="space-y-4">
-                  {currentMembers.map(m => (
+                  {currentMembers.filter(m => m.id !== currentUserId).map(m => (
                     <div key={m.id} className="flex items-center justify-between group p-3 hover:bg-gray-50 rounded-xl transition-all border border-transparent hover:border-gray-100">
                       <div className="flex items-center gap-3 pl-6">
                         <img src={m.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-gray-900">{m.name} {m.id === currentUserId && <span className="text-[10px] text-blue-500">(You)</span>}</span>
+                          <span className="text-sm font-bold text-gray-900">{m.name}</span>
                           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{m.role}</span>
                         </div>
                       </div>
-                      {m.id !== currentUserId && m.role !== 'admin' && (
+                      {m.role !== 'admin' && (
                         <div className="pr-4 mr-4">
                           <button onClick={() => setUserToKick(m)} className="text-[11px] font-bold text-red-500 uppercase tracking-widest bg-red-50 px-4 py-2 rounded-xl hover:bg-red-600 hover:text-white transition-all">Kick</button>
                         </div>
@@ -613,7 +631,7 @@ export default function GroupPage({ params: paramsPromise }) {
               <div className="bg-white w-full max-w-sm rounded-2xl p-8 text-center shadow-2xl animate-in zoom-in-95">
                 <AlertTriangle size={32} className="text-red-500 mx-auto mb-4" />
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Remove Member?</h3>
-                <p className="text-sm text-gray-600 mb-6 leading-relaxed px-2">Remove <span className="font-bold text-gray-900">{userToKick.name}</span> from the group? They can still request to join again later.</p>
+                <p className="text-sm text-gray-600 mb-6 leading-relaxed px-2 text-center">Remove <span className="font-bold text-gray-900">{userToKick.name}</span> from the group? They can still request to join again later.</p>
                 <div className="flex gap-4">
                   <button onClick={() => setUserToKick(null)} className="flex-1 px-4 py-2.5 text-xs font-bold text-gray-500 uppercase bg-gray-100 rounded-xl hover:bg-gray-200 transition-all">Cancel</button>
                   <button onClick={() => handleMemberAction(userToKick.id, 'kick')} className="flex-1 px-4 py-2.5 text-xs font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 shadow-lg shadow-red-200 transition-all">Confirm Kick</button>
@@ -651,6 +669,7 @@ export default function GroupPage({ params: paramsPromise }) {
             </div>
             <div className="flex items-center">
               <Link href="/groups"><button className="text-gray-500 px-4 text-sm font-medium hover:text-blue-950 transition-colors">Back</button></Link>
+              {/* FIX: Locked Post Button Geometry 110x38px */}
               <button onClick={handlePost} disabled={uploading} className="bg-blue-950 text-white w-[110px] h-[38px] rounded-lg font-bold text-sm shadow-md hover:bg-blue-900 transition-all">{uploading ? 'Posting...' : 'Post'}</button>
             </div>
           </div>
@@ -664,16 +683,22 @@ export default function GroupPage({ params: paramsPromise }) {
               <p className="text-sm font-bold text-gray-400 uppercase tracking-widest italic">No discussions yet. Be the first to start the conversation!</p>
             </div>
           ) : (
-            posts.map(p => (
-              <DiscussionThread 
-                key={p.id} 
-                post={p} 
-                currentUserId={currentUserId} 
-                onDelete={handleDelete} 
-                onUpdate={handleUpdate} 
-                uploadFile={uploadFile}
-              />
-            ))
+            <>
+              {posts.map(p => (
+                <DiscussionThread 
+                  key={p.id} 
+                  post={p} 
+                  currentUserId={currentUserId} 
+                  onDelete={handleDelete} 
+                  onUpdate={handleUpdate} 
+                  uploadFile={uploadFile}
+                />
+              ))}
+              {/* FIX: Topic Pagination Show More Button */}
+              {hasMorePosts && (
+                <button onClick={() => setPostLimit(prev => prev + 5)} className="w-full py-4 text-blue-600 font-bold hover:bg-blue-50 transition-all rounded-xl border-2 border-dashed border-blue-100 mt-4 uppercase text-xs tracking-widest">Show More Topics</button>
+              )}
+            </>
           )}
         </div>
       </div>
