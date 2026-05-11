@@ -37,12 +37,12 @@ function WhoLikedModal({ postId, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-          <span className="text-[12px] font-black text-blue-950 uppercase tracking-widest">People who liked</span>
+      <div className="bg-white w-full max-w-sm rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="px-6 pt-5 pb-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <span className="text-[12px] font-medium text-blue-950 uppercase tracking-[0.1em]">People who liked</span>
           <button onClick={onClose} className="text-gray-400 hover:text-red-500 transition-colors"><X size={20} /></button>
         </div>
-        <div className="max-h-[300px] overflow-y-auto p-4 space-y-3">
+        <div className="max-h-[300px] overflow-y-auto p-4 space-y-4">
           {loading ? <div className="py-10 text-center text-xs font-bold text-gray-400 uppercase animate-pulse">Loading...</div> :
             likers.length === 0 ? <div className="py-10 text-center text-xs font-bold text-gray-400 uppercase italic">No likes yet</div> :
             likers.map((l, i) => (
@@ -267,9 +267,11 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
             <button onClick={handleLikeToggle} className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-all ${userHasLiked ? 'text-orange-600 scale-110' : 'text-gray-400 hover:text-orange-500'}`}>
               <Heart size={16} fill={userHasLiked ? "currentColor" : "none"} />
             </button>
-            <button onClick={() => setShowLikers(true)} className="text-xs font-black text-gray-400 hover:text-gray-600">{likesCount}</button>
+            {likesCount > 0 && (
+              <button onClick={() => setShowLikers(true)} className="text-xs font-black text-gray-400 hover:text-gray-600">{likesCount}</button>
+            )}
           </div>
-          <button onClick={() => setIsExpanded(!isExpanded)} className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${isExpanded ? 'text-blue-600' : 'text-gray-400 hover:text-blue-500'}`}><MessageSquare size={16} /> <span>{comments.length}</span></button>
+          <button onClick={() => setIsExpanded(!isExpanded)} className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${isExpanded ? 'text-blue-600' : 'text-gray-400 hover:text-blue-500'}`}><MessageSquare size={16} /> <span>{comments.length > 0 ? comments.length : ''}</span></button>
         </div>
         <div className="flex flex-row items-center -space-x-2">
           {[...new Set(comments.map(c => c.profiles?.avatar_url))].filter(Boolean).slice(0, 3).map((url, i) => (
@@ -536,7 +538,7 @@ export default function GroupPage({ params: paramsPromise }) {
                       <img src={r.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md group-hover:border-blue-200 transition-all" />
                       <span className="text-xs font-bold text-gray-900 truncate max-w-[110px]">{r.name}</span>
                     </div>
-                    <div className="flex gap-2 pr-4">
+                    <div className="flex gap-2 pr-4 mr-4">
                       <button onClick={() => handleMemberAction(r.id, 'approve')} title="Approve Member" className="px-3.5 py-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white border border-green-100 transition-all shadow-sm"><Check size={18} /></button>
                       <button onClick={() => handleMemberAction(r.id, 'decline')} title="Decline Request" className="px-3.5 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white border border-red-100 transition-all shadow-sm"><X size={18} /></button>
                     </div>
