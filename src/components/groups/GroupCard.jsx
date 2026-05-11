@@ -20,10 +20,10 @@ export default function GroupCard({ group, onAction }) {
   };
 
   // Final UX Logic for Avatar Stack
-  // 1. Real Data Only: Map over group.members (fetched in directory)
-  // 2. Max 3 Constraint & Dynamic Randomization: Shuffle if 4+, then slice to 3
+  // 1. Cascade Threshold: Trigger if 2+ members
+  // 2. Universal Shuffle: If 2+, randomize and slice to 3
   const members = group.members || [];
-  const displayMembers = members.length > 3 
+  const displayMembers = members.length >= 2
     ? [...members].sort(() => 0.5 - Math.random()).slice(0, 3) 
     : members;
 
