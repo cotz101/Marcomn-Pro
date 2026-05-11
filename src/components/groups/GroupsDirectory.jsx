@@ -11,7 +11,8 @@ import CreateGroupModal from './CreateGroupModal';
 export default function GroupsDirectory() {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [displayLimit, setDisplayLimit] = useState(5);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const router = useRouter();
@@ -19,14 +20,19 @@ export default function GroupsDirectory() {
   const { userId } = useProfile();
   const currentUser = { id: userId };
 
-  const fetchGroups = async () => {
+  const fetchGroups = async (isInitial = true) => {
     setLoading(true);
     try {
-      // Fetch all groups with real member count
-      const { data: allGroups, error: groupsError } = await supabase
+      const limit = 6;
+      const start = isInitial ? 0 : 6 + (page * 6);
+      const end = start + limit - 1;
+
+      // Fetch groups with pagination and newest first
+      const { data: fetchedGroups, error: groupsError } = await supabase
         .from('groups')
         .select('id, name, description, type, owner_id, group_members(count)')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(start, end);
 
       if (groupsError) throw groupsError;
 
@@ -39,7 +45,7 @@ export default function GroupsDirectory() {
         userMemberships = memberships || [];
       }
 
-      const groupsWithMembership = allGroups.map(group => {
+      const groupsWithMembership = fetchedGroups.map(group => {
         const membership = userMemberships.find(m => m.group_id === group.id);
         const isAccepted = !!membership && (
           membership.status === 'member' || 
@@ -56,12 +62,24 @@ export default function GroupsDirectory() {
         };
       });
 
-      setGroups(groupsWithMembership);
+      if (isInitial) {
+        setGroups(groupsWithMembership);
+        setPage(0);
+      } else {
+        setGroups(prev => [...prev, ...groupsWithMembership]);
+        setPage(prev => prev + 1);
+      }
+
+      setHasMore(fetchedGroups.length === limit);
     } catch (err) {
       console.error('Error fetching groups:', err.message || JSON.stringify(err));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLoadMore = () => {
+    fetchGroups(false);
   };
 
   useEffect(() => {
@@ -115,12 +133,30 @@ export default function GroupsDirectory() {
     );
   });
 
-  const visibleGroups = filteredGroups.slice(0, displayLimit);
+  const GroupSkeleton = () => (
+    <div className="w-full bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
+      <div className="flex gap-4">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-lg flex-shrink-0" />
+        <div className="flex-1 space-y-3 py-1">
+          <div className="h-4 bg-gray-200 rounded w-1/3" />
+          <div className="space-y-2">
+            <div className="h-3 bg-gray-200 rounded w-full" />
+            <div className="h-3 bg-gray-200 rounded w-5/6" />
+          </div>
+          <div className="h-3 bg-gray-200 rounded w-1/4" />
+        </div>
+      </div>
+      <div className="flex justify-end mt-4">
+        <div className="h-10 bg-gray-200 rounded-lg w-32" />
+      </div>
+    </div>
+  );
 
   return (
-    <div className="flex flex-col w-full max-w-full overflow-x-hidden px-4 md:px-0">
-        {/* Header Area */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start w-full mb-6 gap-4">
+    <div className="relative w-full max-w-full h-screen overflow-x-hidden flex flex-col">
+      {/* Fixed Header & Search Area */}
+      <div className="w-full max-w-full pt-4 pb-2 bg-white flex-shrink-0">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start w-full mb-4 gap-4">
           <div className="flex flex-col">
             <h1 className="text-2xl font-bold text-[#0e2a4d]">Maritime Groups</h1>
             <p className="text-sm text-gray-500">Connect with specialized maritime communities</p>
@@ -135,7 +171,7 @@ export default function GroupsDirectory() {
         </div>
 
         {/* Search Bar */}
-        <div className="search-container mb-6" style={{ paddingTop: '0' }}>
+        <div className="search-container mb-2" style={{ paddingTop: '0' }}>
           <div className="search-bar-wrapper relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input 
@@ -147,11 +183,21 @@ export default function GroupsDirectory() {
             />
           </div>
         </div>
+      </div>
 
-        {/* Group Feed */}
+      {/* Scrollable Zone */}
+      <div className="flex-1 w-full overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="space-y-4 w-full">
-          {visibleGroups.length > 0 ? (
-            visibleGroups.map(group => (
+          {loading && groups.length === 0 ? (
+            // Skeletal Loading state (4 cards)
+            <>
+              <GroupSkeleton />
+              <GroupSkeleton />
+              <GroupSkeleton />
+              <GroupSkeleton />
+            </>
+          ) : filteredGroups.length > 0 ? (
+            filteredGroups.map(group => (
               <GroupCard 
                 key={group.id} 
                 group={group} 
@@ -170,17 +216,20 @@ export default function GroupsDirectory() {
             </div>
           )}
           
-          {displayLimit < filteredGroups.length && (
-            <div className="pt-2 pb-20">
+          {hasMore && !searchTerm && (
+            <div className="pt-2 flex justify-center w-full">
               <button 
-                onClick={() => setDisplayLimit(prev => prev + 5)} 
-                className="w-full py-4 mt-4 border border-gray-200 rounded-lg text-gray-600 font-medium hover:bg-gray-50 transition-all flex items-center justify-center"
+                onClick={handleLoadMore} 
+                className="w-full py-4 mt-4 border border-gray-200 rounded-lg text-gray-600 font-medium hover:bg-gray-50 transition-all flex items-center justify-center bg-white"
               >
-                Show More
+                Show more groups
               </button>
             </div>
           )}
         </div>
+
+        {/* Force-Up Spacer */}
+        <div className="h-[100px] w-full" aria-hidden="true" />
 
         <CreateGroupModal 
           isOpen={isCreateModalOpen} 
@@ -190,6 +239,7 @@ export default function GroupsDirectory() {
             fetchGroups();
           }}
         />
+      </div>
     </div>
   );
 }

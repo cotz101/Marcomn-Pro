@@ -20,11 +20,33 @@ export default function GroupCard({ group, onAction }) {
   };
 
   return (
-    <div className={`w-full bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 p-4 ${isEntering ? 'opacity-60 scale-[0.98]' : ''}`}>
+    <div className={`w-full max-w-full bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 p-4 ${isEntering ? 'opacity-60 scale-[0.98]' : ''}`}>
       <div className="flex gap-4">
-        {/* Group Image/Icon */}
-        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-          <Users size={32} className="text-blue-600" />
+        {/* Group Avatar Stack */}
+        <div className="flex-shrink-0 pt-1">
+          {group.member_count > 1 ? (
+            <div className="flex items-center -space-x-2">
+              {[...Array(Math.min(group.member_count, 3))].map((_, i) => (
+                <img 
+                  key={i}
+                  src={`https://i.pravatar.cc/100?u=${group.id}-${i}`}
+                  className="w-8 h-8 rounded-full border-2 border-white object-cover relative z-10 shadow-sm"
+                  alt="Member"
+                />
+              ))}
+              {group.member_count > 3 && (
+                <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-white bg-gray-100 text-[10px] font-semibold text-gray-600 relative z-0 shadow-sm">
+                  +{group.member_count - 3}
+                </div>
+              )}
+            </div>
+          ) : (
+            <img 
+              src={`https://i.pravatar.cc/100?u=${group.id}`}
+              className="w-8 h-8 rounded-full border-2 border-white object-cover shadow-sm"
+              alt="Member"
+            />
+          )}
         </div>
 
         {/* Group Info */}
@@ -57,12 +79,12 @@ export default function GroupCard({ group, onAction }) {
         </div>
       </div>
 
-      <div className="flex justify-end w-full mt-4">
+      <div className="flex justify-end mt-6">
         {group.isMember ? (
           <button 
             onClick={handleEnterGroup}
             disabled={isEntering}
-            className={`w-fit px-8 py-2.5 bg-white text-[#002b4e] border border-[#002b4e] rounded-lg font-bold text-sm hover:bg-gray-50 transition-all shadow-sm whitespace-nowrap inline-flex items-center justify-center gap-2 ${isEntering ? 'animate-btn-loading' : ''}`}
+            className={`inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-white text-gray-900 border border-gray-200 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all shadow-sm whitespace-nowrap gap-2 ${isEntering ? 'animate-btn-loading' : ''}`}
           >
             {isEntering ? (
               <>
@@ -79,21 +101,21 @@ export default function GroupCard({ group, onAction }) {
         ) : isPending ? (
           <button 
             disabled
-            className="w-fit px-8 py-2.5 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg font-bold text-sm cursor-not-allowed whitespace-nowrap inline-flex items-center justify-center gap-2"
+            className="inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg font-medium text-sm cursor-not-allowed whitespace-nowrap gap-2"
           >
             Request Sent
           </button>
         ) : isPublic ? (
           <button 
-            onClick={() => onAction(group.id, 'join')}
-            className="w-fit px-8 py-2.5 bg-[#002b4e] text-white rounded-lg font-bold text-sm hover:bg-[#003d70] transition-all shadow-sm whitespace-nowrap inline-flex items-center justify-center"
+            onClick={() => onAction(group)}
+            className="inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-blue-950 text-white rounded-lg font-medium text-sm hover:bg-blue-900 transition-all shadow-sm whitespace-nowrap"
           >
             Join Group
           </button>
         ) : (
           <button 
-            onClick={() => onAction(group.id, 'request')}
-            className="w-fit px-8 py-2.5 bg-[#002b4e] text-white rounded-lg font-bold text-sm hover:bg-[#003d70] transition-all shadow-sm whitespace-nowrap inline-flex items-center justify-center"
+            onClick={() => onAction(group)}
+            className="inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-[#FAEADB] text-orange-900 hover:brightness-95 border border-transparent rounded-lg font-medium text-sm transition-all shadow-sm whitespace-nowrap"
           >
             Ask to Join
           </button>
