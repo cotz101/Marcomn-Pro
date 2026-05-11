@@ -5,7 +5,7 @@ import 'react-quill/dist/quill.snow.css';
 
 
 
-export default function ArticleEditor({ onClose, onPost }) {
+export default function ArticleEditor({ onClose, onPost, groupId = null }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [coverMedia, setCoverMedia] = useState(null);
@@ -77,7 +77,7 @@ export default function ArticleEditor({ onClose, onPost }) {
         <div className="article-editor-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button className="header-icon-btn" onClick={onClose}><X size={24} /></button>
-            <h2 className="font-bold text-lg">Write Article</h2>
+            <h2 className="font-bold text-lg">{groupId ? 'Write Group Article' : 'Write Article'}</h2>
           </div>
 
           <div className="article-actions flex items-center gap-4">

@@ -6,6 +6,8 @@ import {
   Send, MoreHorizontal,
   FileText, Paperclip
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase';
+import { useProfile } from '@/app/context/ProfileContext';
 
 /* ═══ Level 2 Sub-Reply (rendered inline — hook drawn by parent) ═══ */
 function SubReplyBubble({ reply, postAuthor }) {
@@ -228,15 +230,51 @@ function MediaRenderer({ media }) {
 }
 
 /* ═══ Main Post Component ═══ */
-export default function DiscussionPost({ post }) {
+export default function DiscussionPost({ post, groupId }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes || 0);
-  const [comments, setComments] = useState(
-    (post.comments || []).map(c => ({ ...c, replies: c.replies || [] }))
-  );
+  const [comments, setComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(false);
   const mainInputRef = useRef(null);
+  const { userId, profile } = useProfile();
+  const supabase = createClient();
+
+  useEffect(() => {
+    if (showComments && groupId) {
+      fetchComments();
+    }
+  }, [showComments, groupId]);
+
+  const fetchComments = async () => {
+    setLoadingComments(true);
+    try {
+      const { data, error } = await supabase
+        .from('group_comments')
+        .select('*')
+        .eq('post_id', post.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      
+      // Map to expected UI format
+      const formattedComments = (data || []).map(c => ({
+        id: c.id,
+        author: c.author_name || 'Anonymous',
+        role: c.author_role || 'Member',
+        text: c.content,
+        timestamp: new Date(c.created_at).toLocaleDateString(),
+        replies: [] // Sub-replies logic can be added later if needed
+      }));
+      
+      setComments(formattedComments);
+    } catch (err) {
+      console.error('Error fetching group comments:', err);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
 
   const handleLike = () => {
     setLiked(prev => !prev);
@@ -257,19 +295,41 @@ export default function DiscussionPost({ post }) {
     }
   };
 
-  const handleAddComment = () => {
-    if (!commentText.trim()) return;
+  const handleAddComment = async () => {
+    if (!commentText.trim() || !userId) return;
+
     const newComment = {
-      id: Date.now(),
-      author: 'You',
-      role: 'Maritime Professional',
-      timestamp: 'Just now',
-      text: commentText.trim(),
-      replies: [],
+      post_id: post.id,
+      user_id: userId,
+      content: commentText.trim(),
+      author_name: profile?.fullName || 'Anonymous',
+      author_role: profile?.currentRole || 'Member'
     };
-    setComments(prev => [...prev, newComment]);
-    setCommentText('');
-    setShowComments(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('group_comments')
+        .insert(newComment)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      const formatted = {
+        id: data.id,
+        author: data.author_name,
+        role: data.author_role,
+        text: data.content,
+        timestamp: 'Just now',
+        replies: []
+      };
+
+      setComments(prev => [...prev, formatted]);
+      setCommentText('');
+    } catch (err) {
+      console.error('Error adding comment:', err);
+      alert('Failed to post comment.');
+    }
   };
 
   const handleAddSubReply = (parentCommentId, text) => {

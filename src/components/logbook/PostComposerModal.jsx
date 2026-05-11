@@ -4,7 +4,7 @@ import { useProfile } from '@/app/context/ProfileContext';
 import BaseModal from '../layout/BaseModal';
 import 'react-quill/dist/quill.snow.css';
 
-export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profile, initialData = null }) {
+export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profile, initialData = null, groupId = null }) {
   const { currentIdentity } = useProfile();
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
@@ -144,7 +144,9 @@ export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profi
             <span className="composer-name font-semibold text-base flex items-center gap-1 text-[var(--on-surface)]">
               {identityName} <ChevronDown size={14} className="text-[var(--on-surface-variant)]" />
             </span>
-            <span className="composer-visibility text-xs text-[var(--on-surface-variant)]">Post to Anyone</span>
+            <span className="composer-visibility text-xs text-[var(--on-surface-variant)]">
+              {groupId ? 'Post to Group' : 'Post to Anyone'}
+            </span>
           </div>
         </div>
 

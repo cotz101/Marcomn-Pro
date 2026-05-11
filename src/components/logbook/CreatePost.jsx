@@ -117,12 +117,14 @@ export default function CreatePost({ profile, onPostCreated, groupId }) {
         onClose={() => setIsComposerOpen(false)} 
         onPostSubmit={handlePostSubmit} 
         profile={profile} 
+        groupId={groupId}
       />
 
       {isArticleOpen && (
         <ArticleEditor 
           onClose={() => setIsArticleOpen(false)} 
           onPost={handlePostSubmit} 
+          groupId={groupId}
         />
       )}
     </>

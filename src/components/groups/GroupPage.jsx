@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useRouter } from 'next/navigation';
 import { 
   ChevronLeft, Users, Globe, Lock, 
   Settings, MoreHorizontal, Info
@@ -11,7 +11,7 @@ import GroupPostFeed from './GroupPostFeed';
 
 export default function GroupPage() {
   const { id: groupId } = useParams();
-  const navigate = useNavigate();
+  const router = useRouter();
   const supabase = createClient();
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -54,7 +54,7 @@ export default function GroupPage() {
       <div className="text-center py-20">
         <h2 className="text-xl font-bold text-slate-900">Group not found</h2>
         <button 
-          onClick={() => navigate('/groups')}
+          onClick={() => router.push('/groups')}
           className="mt-4 text-blue-600 hover:underline flex items-center gap-1 mx-auto"
         >
           <ChevronLeft size={16} /> Back to Directory
@@ -70,7 +70,7 @@ export default function GroupPage() {
         <div className="px-[22px] py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => navigate('/groups')}
+              onClick={() => router.push('/groups')}
               className="p-2 -ml-2 rounded-full hover:bg-slate-50 text-slate-600 transition-colors"
             >
               <ChevronLeft size={20} />
@@ -165,6 +165,12 @@ export default function GroupPage() {
           </div>
         )}
       </div>
+      <button 
+        onClick={() => router.push('/groups')}
+        className="fixed top-24 left-4 z-40 bg-white p-2 rounded-full border border-gray-200 shadow-sm hover:bg-gray-50 md:hidden"
+      >
+        <ChevronLeft size={20} className="text-gray-600" />
+      </button>
     </div>
   );
 }
