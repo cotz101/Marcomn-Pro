@@ -19,20 +19,35 @@ export default function GroupCard({ group, onAction }) {
     }, 400);
   };
 
+  // Final UX Logic for Avatar Stack
+  // 1. Real Data Only: Map over group.members (fetched in directory)
+  // 2. Max 3 Constraint & Dynamic Randomization: Shuffle if 4+, then slice to 3
+  const members = group.members || [];
+  const displayMembers = members.length > 3 
+    ? [...members].sort(() => 0.5 - Math.random()).slice(0, 3) 
+    : members;
+
   return (
     <div className={`w-full max-w-full bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 p-4 ${isEntering ? 'opacity-60 scale-[0.98]' : ''}`}>
       <div className="flex gap-4">
-        {/* Group Avatar Stack */}
+        {/* Group Avatar Stack - Refined UX Logic */}
         <div className="flex-shrink-0 pt-1">
-          {group.member_count > 1 ? (
-            <div className="flex items-center -space-x-2">
-              {[...Array(Math.min(group.member_count, 3))].map((_, i) => (
-                <img 
-                  key={i}
-                  src={`https://i.pravatar.cc/100?u=${group.id}-${i}`}
-                  className="w-8 h-8 rounded-full border-2 border-white object-cover relative z-10 shadow-sm"
-                  alt="Member"
-                />
+          {members.length > 1 ? (
+            <div className="flex items-center -space-x-3">
+              {displayMembers.map((member, i) => (
+                <div key={member.id || i} className="relative z-10">
+                  {member.avatar_url ? (
+                    <img 
+                      src={member.avatar_url}
+                      className="w-8 h-8 rounded-full border-2 border-white object-cover shadow-sm"
+                      alt={member.name || "Member"}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-white bg-slate-50 text-slate-400 shadow-sm">
+                      <Users size={16} />
+                    </div>
+                  )}
+                </div>
               ))}
               {group.member_count > 3 && (
                 <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-white bg-gray-100 text-[10px] font-semibold text-gray-600 relative z-0 shadow-sm">
@@ -41,11 +56,10 @@ export default function GroupCard({ group, onAction }) {
               )}
             </div>
           ) : (
-            <img 
-              src={`https://i.pravatar.cc/100?u=${group.id}`}
-              className="w-8 h-8 rounded-full border-2 border-white object-cover shadow-sm"
-              alt="Member"
-            />
+            /* Generic Fallback for Single/Zero Member */
+            <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-slate-200 bg-slate-50 text-slate-400 shadow-sm">
+              <Users size={16} />
+            </div>
           )}
         </div>
 

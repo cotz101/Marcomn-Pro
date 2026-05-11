@@ -27,7 +27,7 @@ export default function GroupsDirectory() {
       const start = isInitial ? 0 : 6 + (page * 6);
       const end = start + limit - 1;
 
-      // Fetch groups with pagination and newest first
+      // Step 1: Fetch groups first
       const { data: fetchedGroups, error: groupsError } = await supabase
         .from('groups')
         .select('id, name, description, type, owner_id, group_members(count)')
@@ -35,7 +35,9 @@ export default function GroupsDirectory() {
         .range(start, end);
 
       if (groupsError) throw groupsError;
+      if (!fetchedGroups) return;
 
+      // Step 2: Fetch memberships for the current user
       let userMemberships = [];
       if (currentUser.id) {
         const { data: memberships } = await supabase
@@ -45,6 +47,28 @@ export default function GroupsDirectory() {
         userMemberships = memberships || [];
       }
 
+      // Step 3: Fetch group members' profiles for the avatar stack
+      const groupIds = fetchedGroups.map(g => g.id);
+      const { data: membersData } = await supabase
+        .from('group_members')
+        .select(`
+          group_id,
+          profiles:user_id (
+            id,
+            name,
+            avatar_url
+          )
+        `)
+        .in('group_id', groupIds)
+        .eq('status', 'member');
+
+      const membersByGroup = (membersData || []).reduce((acc, curr) => {
+        if (!acc[curr.group_id]) acc[curr.group_id] = [];
+        if (curr.profiles) acc[curr.group_id].push(curr.profiles);
+        return acc;
+      }, {});
+
+      // Step 4: Merge everything
       const groupsWithMembership = fetchedGroups.map(group => {
         const membership = userMemberships.find(m => m.group_id === group.id);
         const isAccepted = !!membership && (
@@ -58,7 +82,8 @@ export default function GroupsDirectory() {
           isMember: isAccepted,
           membershipStatus: membership?.status,
           membershipRole: membership?.role,
-          member_count: group.group_members?.[0]?.count || 0
+          member_count: group.group_members?.[0]?.count || 0,
+          members: membersByGroup[group.id] || []
         };
       });
 
