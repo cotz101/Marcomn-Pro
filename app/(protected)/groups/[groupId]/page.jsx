@@ -4,6 +4,8 @@ import { useState, useEffect, use, useRef } from 'react';
 import { createClient } from '@/lib/supabase';
 import { MessageSquare, Send, Image as ImageIcon, FileText, Heart, Users, X, FileIcon, ExternalLink, Download, Paperclip, MoreVertical, Edit2, Trash2, Plus, CornerDownRight, AlertTriangle, UserPlus, Check, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Settings, LogOut } from 'lucide-react';
 
 // Helper for relative timestamps
 function formatRelativeTime(dateString) {
@@ -19,6 +21,7 @@ function formatRelativeTime(dateString) {
 
 function WhoLikedModal({ postId, onClose }) {
   const [likers, setLikers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
@@ -35,22 +38,42 @@ function WhoLikedModal({ postId, onClose }) {
     fetchLikers();
   }, [postId]);
 
+  const displayedLikers = searchQuery.trim() 
+    ? likers.filter(l => l.name?.toLowerCase().includes(searchQuery.toLowerCase()))
+    : likers.slice(0, 5);
+
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in">
       <div className="bg-white w-full max-w-sm rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="px-6 pt-6 pb-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-          <span className="text-[12px] font-medium text-blue-950 uppercase tracking-[0.1em] ml-2">People who liked</span>
-          <button onClick={onClose} className="text-gray-400 hover:text-red-500 transition-colors pr-2"><X size={20} /></button>
+        <div className="px-6 pt-6 pb-4 border-b border-gray-100 flex items-center bg-gray-50/50 relative">
+          <h3 className="w-full text-center text-lg font-bold uppercase text-blue-950">{likers.length} PEOPLE WHO LIKED IT</h3>
+          <button onClick={onClose} className="absolute right-4 text-gray-400 hover:text-red-500 transition-colors"><X size={20} /></button>
         </div>
+        
+        <div className="px-6 mt-4 mb-2">
+          <input 
+            type="text" 
+            placeholder="Search name..." 
+            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900" 
+            value={searchQuery} 
+            onChange={(e) => setSearchQuery(e.target.value)} 
+          />
+        </div>
+
         <div className="max-h-[300px] overflow-y-auto p-6 space-y-4 pt-4">
           {loading ? <div className="py-10 text-center text-xs font-bold text-gray-400 uppercase animate-pulse">Loading...</div> :
             likers.length === 0 ? <div className="py-10 text-center text-xs font-bold text-gray-400 uppercase italic">No likes yet</div> :
-            likers.map((l, i) => (
-              <div key={i} className="flex items-center gap-3 p-2 hover:bg-blue-50 rounded-xl transition-all">
-                <img src={l.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md" />
-                <span className="text-sm font-bold text-gray-900">{l.name}</span>
-              </div>
-            ))
+            <>
+              {displayedLikers.map((l, i) => (
+                <div key={i} className="flex items-center gap-3 p-2 hover:bg-blue-50 rounded-xl transition-all">
+                  <img src={l.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md" />
+                  <span className="text-sm font-bold text-gray-900">{l.name}</span>
+                </div>
+              ))}
+              {!searchQuery && likers.length > 5 && (
+                <p className="text-xs text-center text-gray-400 mt-2 italic">Search to see more...</p>
+              )}
+            </>
           }
         </div>
       </div>
@@ -58,7 +81,7 @@ function WhoLikedModal({ postId, onClose }) {
   );
 }
 
-function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile }) {
+function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, uploadFile }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([]);
@@ -70,7 +93,6 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
   const [newEditFiles, setNewEditFiles] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
-  const [replyingToId, setReplyingToId] = useState(null);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editCommentText, setEditCommentText] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null); // 'post' or 'commentId'
@@ -79,11 +101,14 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
   const [likesCount, setLikesCount] = useState(0);
   const [userHasLiked, setUserHasLiked] = useState(false);
   const [showLikers, setShowLikers] = useState(false);
+  const [activeThread, setActiveThread] = useState(null);
+  const [modalCommentText, setModalCommentText] = useState('');
+  const [visibleBatchCount, setVisibleBatchCount] = useState(2);
 
   const editMediaRef = useRef(null);
   const editDocRef = useRef(null);
   const supabase = createClient();
-  const isOwner = currentUserId === post.user_id;
+  const isPostAuthor = currentUserId === post.user_id;
   const fileUrls = Array.isArray(post.file_urls) ? post.file_urls : [];
 
   useEffect(() => {
@@ -101,12 +126,9 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
 
   const handleLikeToggle = async () => {
     if (!currentUserId) return;
-    
-    // Optimistic Update
     const wasLiked = userHasLiked;
     setUserHasLiked(!wasLiked);
     setLikesCount(prev => wasLiked ? prev - 1 : prev + 1);
-
     try {
       if (wasLiked) {
         await supabase.from('group_post_likes').delete().eq('post_id', post.id).eq('user_id', currentUserId);
@@ -114,17 +136,15 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
         await supabase.from('group_post_likes').insert([{ post_id: post.id, user_id: currentUserId }]);
       }
     } catch (e) {
-      // Revert on error
       setUserHasLiked(wasLiked);
       setLikesCount(prev => wasLiked ? prev + 1 : prev - 1);
-      alert("Social action failed. Please try again.");
+      alert("Social action failed.");
     }
   };
 
   const fetchComments = async () => {
     setIsLoadingComments(true);
     try {
-      // FIX: Sorting by created_at descending (newest first)
       const { data: commentsData } = await supabase.from('group_comments').select('*').eq('post_id', post.id).order('created_at', { ascending: false });
       if (commentsData && commentsData.length > 0) {
         const userIds = [...new Set(commentsData.map(c => c.user_id))];
@@ -136,15 +156,18 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
   };
 
   const handleCommentSubmit = async (parentId = null) => {
-    if (!commentText.trim()) return;
+    const text = parentId ? modalCommentText : commentText;
+    if (!text.trim()) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     try {
-      const { data: newComment, error } = await supabase.from('group_comments').insert([{ post_id: post.id, user_id: user.id, content: commentText, parent_id: parentId }]).select('*').single();
+      const { data: newComment, error } = await supabase.from('group_comments').insert([
+        { post_id: post.id, user_id: user.id, content: text, parent_id: parentId }
+      ]).select('*').single();
       if (error) throw error;
       const { data: profile } = await supabase.from('profiles').select('name, avatar_url').eq('id', user.id).single();
-      setComments([{ ...newComment, profiles: profile }, ...comments]); // Prepend since we sort desc
-      setCommentText(''); setReplyingToId(null);
+      setComments([{ ...newComment, profiles: profile }, ...comments]);
+      if (parentId) setModalCommentText(''); else setCommentText('');
     } catch (e) { alert(e.message); }
   };
 
@@ -165,70 +188,54 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
   const handleSaveEdit = async () => {
     setIsProcessing(true);
     try {
-      const uploadedUrls = await Promise.all(newEditFiles.map(f => uploadFile(f)));
-      const cleanNewUrls = uploadedUrls.filter(Boolean);
-      const finalUrls = [...editFileUrls, ...cleanNewUrls];
-      await onUpdate(post.id, editText, finalUrls);
-      setNewEditFiles([]);
+      await onUpdate(post.id, editText, editFileUrls);
       setIsEditing(false);
     } catch (e) { alert(e.message); } finally { setIsProcessing(false); }
   };
 
-  const getCommentById = (id) => comments.find(c => c.id === id);
+  const handleReplyClick = (comment) => {
+    setActiveThread(comment);
+  };
+
+  const getReplyCount = (cid) => comments.filter(c => c.parent_id === cid).length;
+  const handleDiveIntoLevel2 = (comment) => {
+    setVisibleBatchCount(2);
+    setActiveThread(comment);
+  };
+  const setEditingComment = (comment) => {
+    setEditingCommentId(comment.id);
+    setEditCommentText(comment.content);
+  };
+  const handleDeleteComment = (cid) => setShowDeleteConfirm(cid);
 
   return (
     <div key={post.id} className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-300 relative text-left">
-      {/* Post Action Menu */}
-      {isOwner && !isEditing && (
+      {/* Post Header */}
+      {!isEditing && (isPostAuthor || isAdmin) && (
         <div className="absolute top-4 right-4 z-10">
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-all"><MoreVertical size={16} /></button>
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg"><MoreVertical size={16} /></button>
           {isMenuOpen && (
             <div className="absolute right-0 mt-1 w-32 bg-white border border-gray-100 shadow-xl rounded-xl py-1 z-20">
-              <button onClick={() => { setIsEditing(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-blue-50 flex items-center gap-2"><Edit2 size={14} /> Edit</button>
+              {isPostAuthor && <button onClick={() => { setIsEditing(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-blue-50 flex items-center gap-2"><Edit2 size={14} /> Edit</button>}
               <button onClick={() => { setShowDeleteConfirm('post'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 flex items-center gap-2"><Trash2 size={14} /> Delete</button>
             </div>
           )}
         </div>
       )}
 
-      {/* Author Info */}
       <div className="flex items-center gap-3 mb-3">
         {post.authorAvatar ? <img src={post.authorAvatar} className="w-9 h-9 rounded-full object-cover border border-gray-200" /> : <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center"><div className="w-5 h-5 bg-gray-300 rounded-full"></div></div>}
-        <div className="text-left">
+        <div>
           <div className="text-sm font-bold text-gray-900 leading-none">{post.authorName || 'MNetwork Member'}</div>
-          <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-1">{formatRelativeTime(post.created_at)}</div>
+          <div className="text-[10px] text-gray-400 font-medium uppercase mt-1 tracking-wider">{formatRelativeTime(post.created_at)}</div>
         </div>
       </div>
-      
-      {/* Post Content */}
+
+      {/* Post Body */}
       <div className="space-y-3">
         {isEditing ? (
           <div className="space-y-4">
-            <textarea value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full min-h-[120px] p-4 text-[15px] bg-gray-50 border border-blue-100 rounded-xl focus:outline-none leading-relaxed" />
-            
-            <div className="flex flex-wrap gap-2">
-              {editFileUrls.map((url, i) => (
-                <div key={i} className="relative group">
-                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200 shadow-sm">
-                    {url.toLowerCase().includes('.pdf') ? <FileText size={20} className="text-yellow-600" /> : <ImageIcon size={20} className="text-blue-500" />}
-                  </div>
-                  <button onClick={() => setEditFileUrls(editFileUrls.filter((_, idx) => idx !== i))} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 shadow-sm"><X size={10} /></button>
-                </div>
-              ))}
-              {newEditFiles.map((f, i) => (
-                <div key={i} className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-200 relative shadow-sm">
-                  {f.name.toLowerCase().endsWith('.pdf') ? <FileText size={20} className="text-yellow-600" /> : <ImageIcon size={20} className="text-blue-500" />}
-                  <button onClick={() => setNewEditFiles(newEditFiles.filter((_, idx) => idx !== i))} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 shadow-sm"><X size={10} /></button>
-                </div>
-              ))}
-              <div className="flex gap-2">
-                <button onClick={() => editMediaRef.current.click()} className="w-12 h-12 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-400 transition-all"><ImageIcon size={20} /></button>
-                <button onClick={() => editDocRef.current.click()} className="w-12 h-12 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:border-yellow-400 hover:text-yellow-500 transition-all"><FileText size={20} /></button>
-                <input type="file" ref={editMediaRef} className="hidden" onChange={(e) => setNewEditFiles([...newEditFiles, ...Array.from(e.target.files)])} multiple />
-                <input type="file" ref={editDocRef} className="hidden" onChange={(e) => setNewEditFiles([...newEditFiles, ...Array.from(e.target.files)])} multiple />
-              </div>
-            </div>
-
+            <textarea value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full min-h-[120px] p-4 text-[15px] bg-gray-50 border border-blue-100 rounded-xl focus:outline-none" />
             <div className="flex justify-end gap-2">
               <button onClick={() => setIsEditing(false)} className="px-4 py-1.5 text-xs font-bold text-gray-500">Cancel</button>
               <button onClick={handleSaveEdit} disabled={isProcessing} className="px-4 py-1.5 text-xs font-bold bg-blue-950 text-white rounded-lg shadow-md">{isProcessing ? 'Saving...' : 'Save Changes'}</button>
@@ -236,11 +243,11 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
           </div>
         ) : (
           <>
-            <p className="text-gray-700 text-[15px] leading-relaxed text-left pr-8">{post.content}</p>
+            <p className="text-gray-700 text-[15px] leading-relaxed pr-8">{post.content}</p>
             {fileUrls.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {fileUrls.map((url, idx) => (
-                  <button key={idx} onClick={() => window.open(url, '_blank')} className="w-12 h-12 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all shadow-sm">
+                  <button key={idx} onClick={() => window.open(url, '_blank')} className="w-12 h-12 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-xl hover:bg-blue-50 transition-all shadow-sm">
                     {url.toLowerCase().includes('.pdf') ? <FileText size={20} className="text-yellow-600" /> : <ImageIcon size={20} className="text-blue-500" />}
                   </button>
                 ))}
@@ -250,7 +257,115 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
         )}
       </div>
 
-      {/* Post Custom Delete Confirmation Modal */}
+      {/* Post Actions */}
+      <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-1.5">
+            <button onClick={handleLikeToggle} className={`p-1.5 rounded-full transition-all ${userHasLiked ? 'text-red-500 bg-red-50' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}><Heart size={18} fill={userHasLiked ? "currentColor" : "none"} /></button>
+            {likesCount > 0 && <button onClick={() => setShowLikers(true)} className="text-xs font-black text-gray-400 hover:text-gray-600">{likesCount}</button>}
+          </div>
+          <button onClick={() => setIsExpanded(!isExpanded)} className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${isExpanded ? 'text-blue-600' : 'text-gray-400 hover:text-blue-500'}`}><MessageSquare size={16} /> <span>{comments.length > 0 ? comments.length : ''}</span></button>
+        </div>
+        <div className="flex flex-row items-center -space-x-2">
+          {[...new Set(comments.map(c => c.profiles?.avatar_url))].filter(Boolean).slice(0, 3).map((url, i) => (
+            <img key={i} src={url} className="w-6 h-6 rounded-full border-2 border-white shadow-sm object-cover" />
+          ))}
+        </div>
+      </div>
+
+      {showLikers && <WhoLikedModal postId={post.id} onClose={() => setShowLikers(false)} />}
+
+      {/* STABILIZED LOGBOOK COMMENTS */}
+      {isExpanded && (
+        <div className="mt-4 border-t border-gray-100 pt-4 space-y-4 animate-in fade-in slide-in-from-top-2">
+          <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+            {isLoadingComments && comments.length === 0 ? (
+              <div className="flex justify-center py-4">
+                <div className="w-5 h-5 border-2 border-blue-950/20 border-t-blue-950 rounded-full animate-spin"></div>
+              </div>
+            ) : comments.length === 0 ? (
+              <div className="text-center py-6 text-xs font-bold text-gray-400 uppercase tracking-widest italic">No comments yet.</div>
+            ) : (
+              <div className="space-y-4">
+                {comments.filter(c => !c.parent_id).slice(0, visibleCommentsCount).map((comment) => (
+                  <div key={comment.id} className="flex gap-3 items-start w-full group">
+                    <img src={comment.profiles?.avatar_url || '/default-avatar.png'} className="w-8 h-8 rounded-full object-cover border border-white shadow-sm mt-1 shrink-0" />
+                    <div className="flex-1 flex flex-col items-start min-w-0">
+                      {/* Text Bubble */}
+                      <div className="bg-gray-50 rounded-2xl px-4 py-2 relative border border-gray-100/50 h-auto w-fit max-w-[85%]">
+                        <div className="flex justify-between items-center gap-4 mb-0.5">
+                          <span className="text-xs font-bold text-blue-950 truncate">{comment.profiles?.name}</span>
+                          <span className="text-[9px] text-gray-400 font-bold uppercase shrink-0">{formatRelativeTime(comment.created_at)}</span>
+                        </div>
+                        
+                        {editingCommentId === comment.id ? (
+                          <div className="space-y-2 mt-2 min-w-[200px]">
+                            <textarea value={editCommentText} onChange={(e) => setEditCommentText(e.target.value)} className="w-full bg-white border border-blue-100 rounded-xl p-2 text-xs focus:outline-none min-h-[60px]" />
+                            <div className="flex justify-end gap-2">
+                              <button onClick={() => setEditingCommentId(null)} className="text-[9px] font-bold text-gray-400 uppercase">Cancel</button>
+                              <button onClick={() => handleCommentUpdate(comment.id)} className="text-[9px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded-lg">Save</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-800 leading-relaxed break-words">{comment.content}</p>
+                        )}
+
+                        {showDeleteConfirm === comment.id && (
+                          <div className="absolute inset-0 bg-white/95 rounded-2xl flex flex-col items-center justify-center z-10">
+                            <span className="text-[10px] font-bold text-gray-900 mb-2 uppercase">Delete?</span>
+                            <div className="flex gap-3">
+                              <button onClick={() => setShowDeleteConfirm(null)} className="px-2 py-0.5 text-[9px] font-bold text-gray-500 uppercase bg-gray-100 rounded">No</button>
+                              <button onClick={() => handleCommentDelete(comment.id)} className="px-2 py-0.5 text-[9px] font-bold text-white bg-red-600 rounded">Yes</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Unified Action Bar (Verbatim) */}
+                      <div className="flex items-center gap-4 mt-1 ml-2">
+                        <button 
+                          onClick={() => handleDiveIntoLevel2(comment)} 
+                          className={`flex items-center gap-1 text-[11px] transition-colors ${
+                            getReplyCount(comment.id) > 0 ? 'text-orange-500 font-bold' : 'text-gray-400'
+                          }`}
+                        >
+                          <MessageSquare size={12} fill={getReplyCount(comment.id) > 0 ? "currentColor" : "none"} />
+                          <span>{getReplyCount(comment.id) > 0 ? getReplyCount(comment.id) : 'Reply'}</span>
+                        </button>
+
+                        {currentUserId === comment.user_id && !editingCommentId && (
+                          <>
+                            <button onClick={() => setEditingComment(comment)} className="text-gray-400 text-[11px] hover:text-blue-900 font-bold uppercase">Edit</button>
+                            <button onClick={() => handleDeleteComment(comment.id)} className="text-gray-400 text-[11px] hover:text-red-600 font-bold uppercase">Delete</button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {comments.filter(c => !c.parent_id).length > visibleCommentsCount && (
+                  <button onClick={() => setVisibleCommentsCount(prev => prev + 3)} className="text-[10px] font-bold text-blue-600 uppercase tracking-widest pl-11 hover:underline">View more comments...</button>
+                )}
+              </div>
+            )
+          }
+        </div>
+
+          {/* Stabilized Input Box */}
+          <div className="pt-4 border-t border-gray-100">
+            <div className="relative">
+              <textarea 
+                value={commentText} 
+                onChange={(e) => setCommentText(e.target.value)} 
+                placeholder="Write a comment..." 
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 px-4 pr-12 text-xs text-gray-700 focus:outline-none focus:border-blue-200 transition-all min-h-[60px] resize-none shadow-inner" 
+              />
+              <button onClick={() => handleCommentSubmit()} className="absolute right-3 bottom-3 p-1.5 text-blue-600 hover:text-blue-700 bg-white rounded-full shadow-sm border border-gray-100"><Send size={16} /></button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showDeleteConfirm === 'post' && (
         <div className="absolute inset-0 bg-white/95 rounded-xl flex flex-col items-center justify-center p-6 z-40 animate-in fade-in backdrop-blur-sm">
           <AlertTriangle size={24} className="text-red-500 mb-2" />
@@ -262,131 +377,129 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
         </div>
       )}
 
-      {/* Post Stats & Actions */}
-      <div className="mt-4 pt-3 border-t border-gray-50 flex justify-between items-center">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-1.5">
-            <button onClick={handleLikeToggle} className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-all ${userHasLiked ? 'text-orange-600 scale-110' : 'text-gray-400 hover:text-orange-500'}`}>
-              <Heart size={16} fill={userHasLiked ? "currentColor" : "none"} />
-            </button>
-            {likesCount > 0 && (
-              <button onClick={() => setShowLikers(true)} className="text-xs font-black text-gray-400 hover:text-gray-600">{likesCount}</button>
-            )}
-          </div>
-          <button onClick={() => setIsExpanded(!isExpanded)} className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${isExpanded ? 'text-blue-600' : 'text-gray-400 hover:text-blue-500'}`}><MessageSquare size={16} /> <span>{comments.length > 0 ? comments.length : ''}</span></button>
-        </div>
-        <div className="flex flex-row items-center -space-x-2">
-          {[...new Set(comments.map(c => c.profiles?.avatar_url))].filter(Boolean).slice(0, 3).map((url, i) => (
-            <img key={i} src={url} className="w-6 h-6 rounded-full border-2 border-white shadow-sm object-cover" />
-          ))}
-        </div>
-      </div>
-
-      {/* 'Who Liked' Discovery Modal */}
-      {showLikers && <WhoLikedModal postId={post.id} onClose={() => setShowLikers(false)} />}
-
-      {/* Comments Section */}
-      {isExpanded && (
-        <div className="mt-4 pl-3 border-l-[1px] border-gray-100 space-y-4 animate-in fade-in slide-in-from-top-2">
-          <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-            {isLoadingComments && comments.length === 0 ? <div className="flex justify-center py-4"><div className="w-5 h-5 border-2 border-blue-950/20 border-t-blue-950 rounded-full animate-spin"></div></div> : 
-              comments.length === 0 ? (
-                <div className="text-center py-6 text-xs font-bold text-gray-400 uppercase tracking-widest italic">No comments yet. Share your thoughts!</div>
-              ) : (
-                <>
-                  {/* FIX: Slicing to show only top 3 comments initially */}
-                  {comments.slice(0, visibleCommentsCount).map((comment) => {
-                    const isReply = !!comment.parent_id;
-                    const parent = isReply ? getCommentById(comment.parent_id) : null;
-                    const isCommentOwner = currentUserId === comment.user_id;
-
-                    return (
-                      <div key={comment.id} className={`${isReply ? 'ml-4 pl-4 border-l-2 border-gray-200 mt-2 relative' : ''}`}>
-                        {isReply && parent && (
-                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-tight mb-1 ml-1">
-                            <CornerDownRight size={12} className="text-gray-400" />
-                            <span>Replying to {parent.profiles?.name}: "{parent.content.slice(0, 20)}..."</span>
-                          </div>
-                        )}
-                        
-                        <div className="bg-slate-50/80 rounded-2xl p-3 border border-gray-100/50 shadow-sm relative">
-                          <div className="flex items-start gap-2">
-                            <img src={comment.profiles?.avatar_url} className="w-7 h-7 rounded-full object-cover border border-white shadow-sm" />
-                            <div className="flex-1">
-                              <div className="flex justify-between items-center mb-0.5">
-                                <span className="text-[12px] font-bold text-gray-900">{comment.profiles?.name || 'Member'}</span>
-                                <span className="text-[9px] text-gray-400 font-bold uppercase">{formatRelativeTime(comment.created_at)}</span>
-                              </div>
-                              
-                              {editingCommentId === comment.id ? (
-                                <div className="space-y-2 mt-2">
-                                  <textarea value={editCommentText} onChange={(e) => setEditCommentText(e.target.value)} className="w-full bg-white border border-blue-100 rounded-xl p-3 text-xs focus:outline-none shadow-sm min-h-[80px] leading-relaxed" />
-                                  <div className="flex justify-end gap-2">
-                                    <button onClick={() => setEditingCommentId(null)} className="text-[10px] font-bold text-gray-400 uppercase px-2 py-1">Cancel</button>
-                                    <button onClick={() => handleCommentUpdate(comment.id)} className="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-3 py-1 rounded-lg">Save Changes</button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <>
-                                  <p className="text-xs text-gray-700 leading-relaxed font-medium">{comment.content}</p>
-                                  <div className="flex gap-4 mt-2 items-center justify-start">
-                                    {!isReply && (
-                                      <button onClick={() => setReplyingToId(comment.id)} className="text-[10px] font-bold text-blue-600 uppercase tracking-wider hover:underline">Reply</button>
-                                    )}
-                                    {isCommentOwner && (
-                                      <>
-                                        <button onClick={() => { setEditingCommentId(comment.id); setEditCommentText(comment.content); }} className="text-[10px] font-bold text-amber-600 uppercase tracking-wider hover:underline">Edit</button>
-                                        <button onClick={() => setShowDeleteConfirm(comment.id)} className="text-[10px] font-bold text-red-600 uppercase tracking-wider hover:underline">Delete</button>
-                                      </>
-                                    )}
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Comment Custom Delete Confirmation Modal */}
-                          {showDeleteConfirm === comment.id && (
-                            <div className="absolute inset-0 bg-white/95 rounded-2xl flex flex-col items-center justify-center p-3 z-30 animate-in fade-in backdrop-blur-sm">
-                              <AlertTriangle size={16} className="text-red-500 mb-1" />
-                              <span className="text-[11px] font-bold text-gray-900 mb-2 uppercase">Delete comment?</span>
-                              <div className="flex gap-3">
-                                <button onClick={() => setShowDeleteConfirm(null)} className="px-3 py-1 text-[10px] font-bold text-gray-500 uppercase bg-gray-100 rounded-lg">Cancel</button>
-                                <button onClick={() => handleCommentDelete(comment.id)} className="px-3 py-1 text-[10px] font-bold text-white bg-red-600 rounded-lg uppercase">Confirm</button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {/* Load More Comments Link */}
-                  {comments.length > visibleCommentsCount && (
-                    <button onClick={() => setVisibleCommentsCount(prev => prev + 3)} className="text-[10px] font-bold text-blue-600 uppercase tracking-widest pl-4 hover:underline">View more comments...</button>
-                  )}
-                </>
-              )
+      {/* CONVERSATION DRILL-DOWN MODAL */}
+      {activeThread && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in overflow-hidden">
+          <style dangerouslySetInnerHTML={{ __html: `
+            .no-scrollbar::-webkit-scrollbar { display: none !important; }
+            .modal-scroll-area { 
+              scrollbar-width: none !important; 
+              -ms-overflow-style: none !important; 
             }
-          </div>
+          `}} />
+          <div 
+            className="bg-white w-full max-w-xl max-w-full rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            {/* Header */}
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <div className="w-10"></div>
+              <h3 className="text-sm font-black text-gray-900 tracking-widest uppercase text-center">Conversation</h3>
+              <button onClick={() => { setActiveThread(null); setVisibleBatchCount(2); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} /></button>
+            </div>
 
-          {/* Comment Input */}
-          <div className="pt-4 border-t border-gray-100 space-y-3">
-            {replyingToId && (
-              <div className="flex items-center justify-between bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 animate-in slide-in-from-bottom-2">
-                <span className="text-[10px] font-bold text-blue-700 uppercase tracking-tighter flex items-center gap-2">
-                  <CornerDownRight size={12} /> Replying to {getCommentById(replyingToId)?.profiles?.name}
-                </span>
-                <button onClick={() => setReplyingToId(null)} className="text-blue-400 hover:text-red-500 p-1"><X size={14} /></button>
+            {/* Main Topic (Parent) */}
+            <div className="p-4 bg-blue-50 border-b border-blue-100 shrink-0">
+              <div className="flex gap-3 items-start">
+                <img src={activeThread.profiles?.avatar_url || '/default-avatar.png'} className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm mt-1" />
+                <div className="flex-1">
+                   <div className="text-xs font-bold text-blue-900 uppercase mb-1">{activeThread.profiles?.name}</div>
+                   <p className="text-sm text-gray-800 leading-relaxed font-medium">{activeThread.content}</p>
+                </div>
               </div>
-            )}
-            <div className="relative flex-1">
-              <textarea 
-                value={commentText} 
-                onChange={(e) => setCommentText(e.target.value)} 
-                placeholder={replyingToId ? "Write a reply..." : "Write a comment..."} 
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-4 pr-12 text-xs text-gray-700 focus:outline-none focus:border-blue-200 transition-all min-h-[80px] resize-none leading-relaxed" 
-              />
-              <button onClick={() => handleCommentSubmit(replyingToId)} className="absolute right-3 bottom-3 p-1.5 text-blue-600 hover:text-blue-700 bg-white rounded-full shadow-sm border border-gray-100"><Send size={16} /></button>
+            </div>
+
+            {/* Replies List */}
+            <div 
+              className="flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4 pb-20 space-y-4 bg-slate-50/30 no-scrollbar modal-scroll-area" 
+              style={{ 
+                msOverflowStyle: 'none', 
+                scrollbarWidth: 'none', 
+                WebkitOverflowScrolling: 'touch',
+                overflowX: 'hidden'
+              }}
+            >
+              {comments.filter(c => c.parent_id === activeThread.id).length === 0 ? (
+                <div className="text-center py-10 text-xs font-bold text-gray-400 uppercase tracking-widest italic">No replies yet. Start the conversation!</div>
+              ) : (
+                comments.filter(c => c.parent_id === activeThread.id).reverse().slice(0, visibleBatchCount).map((comment) => (
+                  <div key={comment.id} className="flex gap-3 items-start w-full animate-in slide-in-from-left-2">
+                    <img src={comment.profiles?.avatar_url || '/default-avatar.png'} className="w-8 h-8 rounded-full object-cover shadow-sm border border-white mt-1 shrink-0" />
+                    <div className="flex-1 flex flex-col items-start min-w-0">
+                      {/* Text Bubble */}
+                      <div className="bg-gray-50 rounded-2xl px-4 py-2 border border-gray-100 shadow-sm relative h-auto w-fit max-w-[85%]">
+                         <div className="flex justify-between items-center gap-4 mb-0.5">
+                           <span className="text-xs font-bold text-gray-900 truncate">{comment.profiles?.name}</span>
+                           <span className="text-[9px] text-gray-400 font-bold uppercase shrink-0">{formatRelativeTime(comment.created_at)}</span>
+                         </div>
+                         
+                         {editingCommentId === comment.id ? (
+                           <div className="space-y-2 mt-2 min-w-[200px]">
+                             <textarea value={editCommentText} onChange={(e) => setEditCommentText(e.target.value)} className="w-full bg-white border border-blue-100 rounded-xl p-2 text-xs focus:outline-none min-h-[60px]" />
+                             <div className="flex justify-end gap-2">
+                               <button onClick={() => setEditingCommentId(null)} className="text-[9px] font-bold text-gray-400 uppercase">Cancel</button>
+                               <button onClick={() => handleCommentUpdate(comment.id)} className="text-[9px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded-lg">Save</button>
+                             </div>
+                           </div>
+                         ) : (
+                           <p className="text-sm text-gray-700 leading-relaxed break-words">{comment.content}</p>
+                         )}
+
+                         {showDeleteConfirm === comment.id && (
+                           <div className="absolute inset-0 bg-white/95 rounded-2xl flex flex-col items-center justify-center z-10">
+                             <span className="text-[10px] font-bold text-gray-900 mb-2 uppercase">Delete?</span>
+                             <div className="flex gap-3">
+                               <button onClick={() => setShowDeleteConfirm(null)} className="px-2 py-0.5 text-[9px] font-bold text-gray-500 uppercase bg-gray-100 rounded">No</button>
+                               <button onClick={() => handleCommentDelete(comment.id)} className="px-2 py-0.5 text-[9px] font-bold text-white bg-red-600 rounded">Yes</button>
+                             </div>
+                           </div>
+                         )}
+                      </div>
+
+                      {/* Unified Action Bar (Verbatim) */}
+                      <div className="flex items-center gap-4 mt-1 ml-2">
+                        <button 
+                          onClick={() => handleDiveIntoLevel2(comment)} 
+                          className={`flex items-center gap-1 text-[11px] transition-colors ${
+                            getReplyCount(comment.id) > 0 ? 'text-orange-500 font-bold' : 'text-gray-400'
+                          }`}
+                        >
+                          <MessageSquare size={12} fill={getReplyCount(comment.id) > 0 ? "currentColor" : "none"} />
+                          <span>{getReplyCount(comment.id) > 0 ? getReplyCount(comment.id) : 'Reply'}</span>
+                        </button>
+
+                        {currentUserId === comment.user_id && !editingCommentId && (
+                          <>
+                            <button onClick={() => setEditingComment(comment)} className="text-gray-400 text-[11px] hover:text-blue-900 font-bold uppercase">Edit</button>
+                            <button onClick={() => handleDeleteComment(comment.id)} className="text-gray-400 text-[11px] hover:text-red-600 font-bold uppercase">Delete</button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+              {comments.filter(c => c.parent_id === activeThread.id).length > visibleBatchCount && (
+                <button onClick={() => setVisibleBatchCount(prev => prev + 2)} className="w-full py-2 text-xs text-blue-900 font-semibold italic">Show more replies...</button>
+              )}
+            </div>
+
+            {/* Modal Input Section */}
+            <div className="p-4 border-t border-gray-100 bg-white shrink-0">
+              <div className="relative">
+                <textarea 
+                  value={modalCommentText} 
+                  onChange={(e) => setModalCommentText(e.target.value)}
+                  placeholder="Reply to this conversation..."
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 px-4 pr-12 text-xs text-gray-700 focus:outline-none focus:border-blue-200 transition-all min-h-[60px] resize-none"
+                />
+                <button 
+                  onClick={() => handleCommentSubmit(activeThread.id)}
+                  className="absolute right-3 bottom-3 p-1.5 text-blue-600 hover:text-blue-700 bg-white rounded-full shadow-sm border border-gray-100"
+                >
+                  <Send size={16} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -396,8 +509,11 @@ function DiscussionThread({ post, currentUserId, onDelete, onUpdate, uploadFile 
 }
 
 export default function GroupPage({ params: paramsPromise }) {
+  // 1. TOP-LEVEL HOOKS ONLY (No early returns before these)
   const params = use(paramsPromise);
   const groupId = params?.groupId;
+  const router = useRouter();
+  const supabase = createClient();
 
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -408,42 +524,67 @@ export default function GroupPage({ params: paramsPromise }) {
   const [postLimit, setPostLimit] = useState(5);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [postText, setPostText] = useState('');
-  const [groupData, setGroupData] = useState({ name: '', description: '', memberCount: 0, members: [], isAdmin: false });
+  const [groupData, setGroupData] = useState({ name: '', description: '', memberCount: 0, members: [], owner_id: null });
+  const [isMember, setIsMember] = useState(false);
+  const [isAdminState, setIsAdminState] = useState(false);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [currentMembers, setCurrentMembers] = useState([]);
   const [showManageModal, setShowManageModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [userToKick, setUserToKick] = useState(null);
-  const supabase = createClient();
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, [groupId, supabase, postLimit]);
+
+  // Derived State (Ownership)
+  const isAdmin = String(currentUserId) === String(groupData?.owner_id);
+
 
   const fetchData = async () => {
     if (!groupId) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (user) setCurrentUserId(user.id);
     
-    const { data: group } = await supabase.from('groups').select('name, description').eq('id', groupId).single();
+    const { data: group } = await supabase.from('groups').select('name, description, owner_id').eq('id', groupId).single();
     
     const { data: membersData } = await supabase.from('group_members').select('user_id, role, status').eq('group_id', groupId);
-    const isAdmin = membersData?.some(m => m.user_id === user?.id && m.role === 'admin');
+    
+    const membership = membersData?.find(m => m.user_id === user?.id);
+    const isApprovedMember = membership?.status === 'member';
+    const isAdminCheck = user?.id === group?.owner_id;
+
+    // RBAC SECURITY: No Guest Access
+    if (!isApprovedMember && user?.id !== group?.owner_id) {
+      console.warn("Unauthorized access attempt. Redirecting to directory.");
+      router.replace('/groups');
+      return;
+    }
+
+    setIsMember(isApprovedMember);
+    setIsAdminState(isAdminCheck);
     
     let memberAvatars = [];
     if (membersData && membersData.length > 0) {
-      const uids = membersData.filter(m => m.status === 'joined').slice(0, 5).map(m => m.user_id);
+      const uids = membersData.filter(m => m.status === 'member').slice(0, 5).map(m => m.user_id);
       const { data: profs } = await supabase.from('profiles').select('avatar_url').in('id', uids);
       memberAvatars = profs?.map(p => p.avatar_url).filter(Boolean) || [];
     }
 
-    if (group) setGroupData({ name: group.name, description: group.description, memberCount: membersData?.filter(m => m.status === 'joined').length || 0, members: memberAvatars, isAdmin });
+    if (group) setGroupData({ 
+      name: group.name, 
+      description: group.description, 
+      memberCount: membersData?.filter(m => m.status === 'member').length || 0, 
+      members: memberAvatars, 
+      owner_id: group.owner_id 
+    });
     
     // Fetch Detailed Member Info for Modal
-    if (isAdmin) {
+    if (isAdminCheck) {
       const pendingUids = membersData?.filter(m => m.status === 'pending').map(m => m.user_id) || [];
-      const joinedUids = membersData?.filter(m => m.status === 'joined').map(m => m.user_id) || [];
+      const joinedUids = membersData?.filter(m => m.status === 'member').map(m => m.user_id) || [];
       
       if (pendingUids.length > 0) {
         const { data: pProfs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', pendingUids);
@@ -468,22 +609,53 @@ export default function GroupPage({ params: paramsPromise }) {
     setIsLoading(false);
   };
 
-  const handleMemberAction = async (userId, action) => {
-    if (action === 'approve') {
-      await supabase.from('group_members').update({ status: 'joined' }).eq('group_id', groupId).eq('user_id', userId);
-      const user = pendingRequests.find(r => r.id === userId);
-      setCurrentMembers([...currentMembers, { ...user, role: 'member' }]);
-      setPendingRequests(pendingRequests.filter(r => r.id !== userId));
-      setGroupData(prev => ({ ...prev, memberCount: prev.memberCount + 1 }));
-    } else if (action === 'decline' || action === 'kick') {
-      await supabase.from('group_members').delete().eq('group_id', groupId).eq('user_id', userId);
-      if (action === 'decline') {
-        setPendingRequests(pendingRequests.filter(r => r.id !== userId));
-      } else {
-        setCurrentMembers(currentMembers.filter(m => m.id !== userId));
-        setGroupData(prev => ({ ...prev, memberCount: Math.max(0, prev.memberCount - 1) }));
-        setUserToKick(null);
+  const fetchRequests = async () => {
+    const { data: membersData } = await supabase.from('group_members').select('user_id, role, status').eq('group_id', groupId);
+    const pendingUids = membersData?.filter(m => m.status === 'pending').map(m => m.user_id) || [];
+    const joinedUids = membersData?.filter(m => m.status === 'member').map(m => m.user_id) || [];
+    
+    if (pendingUids.length > 0) {
+      const { data: pProfs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', pendingUids);
+      setPendingRequests(pProfs || []);
+    } else { setPendingRequests([]); }
+
+    if (joinedUids.length > 0) {
+      const { data: jProfs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', joinedUids);
+      setCurrentMembers(jProfs?.map(p => ({ ...p, role: membersData.find(m => m.user_id === p.id)?.role })) || []);
+    } else { setCurrentMembers([]); }
+  };
+
+  const handleMemberAction = async (targetId, action) => {
+    if (!isAdmin) {
+      alert("Unauthorized: Only admins can manage members.");
+      return;
+    }
+    
+    try {
+      if (action === 'approve') {
+        const { error } = await supabase
+          .from('group_members')
+          .update({ status: 'member' })
+          .match({ group_id: groupId, user_id: targetId });
+        
+        if (error) throw error;
+        alert('Member approved successfully!');
+      } else if (action === 'decline' || action === 'kick') {
+        const { error } = await supabase
+          .from('group_members')
+          .delete()
+          .match({ group_id: groupId, user_id: targetId });
+        
+        if (error) throw error;
+        alert(action === 'decline' ? 'Request declined.' : 'Member removed.');
       }
+      
+      // Revalidate
+      await Promise.all([fetchData(), fetchRequests()]);
+      if (action === 'kick') setUserToKick(null);
+    } catch (err) {
+      console.error(`Error performing ${action}:`, err.message);
+      alert(`Action failed: ${err.message}`);
     }
   };
 
@@ -518,8 +690,39 @@ export default function GroupPage({ params: paramsPromise }) {
   };
 
   const handleDelete = async (pid) => {
-    await supabase.from('group_posts').delete().eq('id', pid);
-    setPosts(posts.filter(p => p.id !== pid));
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Fetch post to check ownership
+      const { data: post } = await supabase.from('group_posts').select('user_id').eq('id', pid).single();
+      
+      // RBAC Check: Author or Admin
+      if (post?.user_id !== user?.id && !isAdmin) {
+        alert("Unauthorized: Only the author or an admin can delete this post.");
+        return;
+      }
+
+      await supabase.from('group_posts').delete().eq('id', pid);
+      setPosts(posts.filter(p => p.id !== pid));
+    } catch (error) {
+      console.error('Error deleting post:', error);
+    }
+  };
+
+
+
+
+  const confirmLeaveGroup = async () => {
+    const { error } = await supabase
+      .from('group_members')
+      .delete()
+      .eq('group_id', groupId)
+      .eq('user_id', currentUserId);
+    if (error) {
+      alert("Failed to leave group.");
+    } else {
+      window.location.href = '/groups';
+    }
   };
 
   if (isLoading) return <div className="w-full max-w-2xl mx-auto px-6 py-20 bg-white text-center font-bold text-blue-950 uppercase tracking-widest animate-pulse">Loading Environment...</div>;
@@ -527,35 +730,55 @@ export default function GroupPage({ params: paramsPromise }) {
   // FIX: Absolute Floor Logic for Member Counter
   const otherMembersCount = Math.max(0, currentMembers.filter(m => m.id !== currentUserId).length);
 
+  // DEBUG: Verify Ownership Match
+  console.log("Current User:", currentUserId, "Owner ID:", groupData?.owner_id);
+
   return (
     // FIX: Scroll Fix and Vertical Padding (pb-32)
     <div className="w-full max-w-2xl mx-auto pb-32 overflow-y-auto">
       <div className="bg-white border-b border-gray-100">
-        <div className="px-6 py-8 flex justify-between items-start w-full relative">
-          <div className="flex flex-col items-start text-left ml-8 pl-4">
-            <h1 className="text-2xl font-bold text-blue-950 tracking-tight">{groupData.name}</h1>
-            <p className="text-sm text-gray-600 mt-1 max-w-md">{groupData.description}</p>
+
+        <div className="px-6 py-8 flex justify-between items-start w-full">
+          <div className="flex flex-col items-start text-left pl-4">
+            <h1 className="text-lg font-bold text-blue-950 tracking-tight pl-2">{groupData?.name}</h1>
+            <p className="text-sm text-gray-600 mt-1 max-w-md pl-2">{groupData?.description}</p>
+            
+            {/* Goldilocks Admin Action Group */}
+            {isAdmin && (
+              <div className="flex flex-row items-center gap-2 mt-4 pl-2">
+                <button 
+                  onClick={() => setShowManageModal(true)} 
+                  className="py-2 px-4 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.1em] border border-blue-200 shadow-sm"
+                >
+                  <Settings size={14} strokeWidth={2.5} /> Manage Group
+                </button>
+              </div>
+            )}
+
+            {/* Non-Admin Actions: Relocated for visibility */}
+            {!isAdmin && isMember && (
+              <div className="flex flex-wrap gap-2 mt-4 pl-2">
+                <button 
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLeaveModal(true); }}
+                  className="px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-red-500 border-2 border-red-100 rounded-full hover:bg-red-50 hover:border-red-200 transition-all flex items-center gap-2 relative z-[9999] pointer-events-auto cursor-pointer"
+                >
+                  <LogOut size={12} /> Leave Group
+                </button>
+              </div>
+            )}
           </div>
-          <div className="flex flex-col items-end gap-2 pr-6">
+
+          <div className="hidden min-[472px]:flex flex-col items-end gap-2 pr-6">
             <div className="flex flex-row items-center -space-x-3">
-              {groupData.members.map((url, i) => (
+              {groupData?.members?.map((url, i) => (
                 <img key={i} src={url} className="w-8 h-8 rounded-full border-2 border-white shadow-sm object-cover" />
               ))}
-              {groupData.memberCount > 5 && <div className="w-8 h-8 rounded-full bg-gray-50 border-2 border-white shadow-sm flex items-center justify-center text-[10px] font-bold text-gray-400">+{groupData.memberCount - 5}</div>}
+              {(groupData?.memberCount || 0) > 5 && <div className="w-8 h-8 rounded-full bg-gray-50 border-2 border-white shadow-sm flex items-center justify-center text-[10px] font-bold text-gray-400">+{(groupData?.memberCount || 0) - 5}</div>}
             </div>
             <div className="flex items-center gap-4">
-              {groupData.isAdmin && (
-                <button onClick={() => setShowManageModal(true)} className="relative p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all border border-blue-200 shadow-md">
-                  <Users size={22} />
-                  {pendingRequests.length > 0 && (
-                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white text-[12px] font-black rounded-lg flex items-center justify-center border-2 border-white shadow-lg animate-bounce">
-                      {pendingRequests.length}
-                    </div>
-                  )}
-                </button>
-              )}
-              <span className="text-xs font-medium text-gray-500 uppercase tracking-widest">{groupData.memberCount} Members</span>
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-widest">{(groupData?.memberCount || 0)} Members</span>
             </div>
+
           </div>
         </div>
       </div>
@@ -622,6 +845,8 @@ export default function GroupPage({ params: paramsPromise }) {
                   ))}
                 </div>
               </div>
+
+
             </div>
           </div>
 
@@ -642,7 +867,7 @@ export default function GroupPage({ params: paramsPromise }) {
         </div>
       )}
 
-      <div className="px-[22px] mt-6 space-y-8">
+      <div className="px-[22px] mt-10 space-y-8">
         {/* Composer */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <textarea value={postText} onChange={(e) => setPostText(e.target.value)} placeholder="Share an update..." className="w-full min-h-[100px] bg-gray-50 rounded-lg p-4 text-sm focus:outline-none resize-none leading-relaxed text-left" />
@@ -667,8 +892,12 @@ export default function GroupPage({ params: paramsPromise }) {
               <input type="file" ref={mediaInputRef} onChange={(e) => setAttachments([...attachments, ...Array.from(e.target.files)])} multiple className="hidden" />
               <input type="file" ref={documentInputRef} onChange={(e) => setAttachments([...attachments, ...Array.from(e.target.files)])} multiple className="hidden" />
             </div>
-            <div className="flex items-center">
-              <Link href="/groups"><button className="text-gray-500 px-4 text-sm font-medium hover:text-blue-950 transition-colors">Back</button></Link>
+            <div className="flex items-center gap-4">
+              <Link href="/groups">
+                <button className="text-blue-600 px-6 h-[38px] text-sm font-bold hover:text-blue-800 transition-colors flex items-center">
+                  Back
+                </button>
+              </Link>
               {/* FIX: Locked Post Button Geometry 110x38px */}
               <button onClick={handlePost} disabled={uploading} className="bg-blue-950 text-white w-[110px] h-[38px] rounded-lg font-bold text-sm shadow-md hover:bg-blue-900 transition-all">{uploading ? 'Posting...' : 'Post'}</button>
             </div>
@@ -686,13 +915,14 @@ export default function GroupPage({ params: paramsPromise }) {
             <>
               {posts.map(p => (
                 <DiscussionThread 
-                  key={p.id} 
-                  post={p} 
-                  currentUserId={currentUserId} 
-                  onDelete={handleDelete} 
-                  onUpdate={handleUpdate} 
-                  uploadFile={uploadFile}
-                />
+                key={p.id} 
+                post={p} 
+                currentUserId={currentUserId}
+                isAdmin={isAdmin}
+                onDelete={handleDelete}
+                onUpdate={handleUpdate}
+                uploadFile={uploadFile}
+              />
               ))}
               {/* FIX: Topic Pagination Show More Button */}
               {hasMorePosts && (
@@ -702,6 +932,19 @@ export default function GroupPage({ params: paramsPromise }) {
           )}
         </div>
       </div>
+      {/* Leave Group Confirmation Modal */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold mb-2 text-center">Leave Group?</h3>
+            <p className="text-gray-600 mb-6 px-2 text-sm text-center">Are you sure you want to leave this group? You will lose access to all posts and discussions.</p>
+            <div className="flex justify-center gap-4 w-full">
+              <button onClick={() => setShowLeaveModal(false)} className="px-6 py-2 text-gray-500 font-medium hover:bg-gray-100 rounded-lg text-sm transition-colors">Cancel</button>
+              <button onClick={confirmLeaveGroup} className="px-6 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 text-sm transition-colors">Leave</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
