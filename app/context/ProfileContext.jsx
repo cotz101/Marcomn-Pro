@@ -29,6 +29,7 @@ export function ProfileProvider({ children, userId, userEmail }) {
   const [onboardingCompleted, setOnboardingCompleted] = useState(true); // default true to avoid flash
   const [companies, setCompanies] = useState([]);
   const [currentIdentity, setCurrentIdentityState] = useState({ type: 'user', id: userId }); // { type: 'user' | 'company', id: string, data: object }
+  const [toast, setToast] = useState(null);
 
   // ... (localStorage logic kept) ...
   useEffect(() => {
@@ -127,7 +128,12 @@ export function ProfileProvider({ children, userId, userEmail }) {
       profile, setProfile, loading, refreshProfile: fetchProfile, userId, 
       onboardingCompleted, setOnboardingCompleted,
       companies, setCompanies, refreshCompanies: fetchCompanies,
-      currentIdentity, setCurrentIdentity
+      currentIdentity, setCurrentIdentity,
+      toast, setToast,
+      showToast: (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+      }
     }}>
       {children}
     </ProfileContext.Provider>

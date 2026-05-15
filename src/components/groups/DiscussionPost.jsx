@@ -8,107 +8,47 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
+import DOMPurify from 'dompurify';
 
-/* ═══ Level 2 Sub-Reply (rendered inline — hook drawn by parent) ═══ */
-function SubReplyBubble({ reply, postAuthor }) {
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(reply.likes || 0);
-  const isAuthor = reply.author === postAuthor;
-
-  const toggleLike = () => {
-    setLiked(prev => !prev);
-    setLikeCount(prev => liked ? prev - 1 : prev + 1);
-  };
-
-  return (
-    <div className="flex gap-2.5 py-2">
-      {/* Level 2 avatar — 28px */}
-      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-sky-400 to-[#002b4e] flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0 relative z-10">
-        {reply.author.charAt(0)}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="bg-white rounded-lg px-3 py-2 border border-gray-100">
-          <p className="text-[11px] font-bold text-[#002b4e] flex items-center gap-1.5">
-            {reply.author}
-            {isAuthor && (
-              <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-md font-bold">Author</span>
-            )}
-          </p>
-          <p className="text-[10px] text-gray-400">{reply.role} · {reply.timestamp}</p>
-          <p className="text-xs text-gray-700 leading-relaxed mt-0.5">{reply.text}</p>
-        </div>
-        <div className="flex gap-3 mt-0.5 pl-1">
-          <button
-            onClick={toggleLike}
-            className={`text-[10px] font-semibold transition-colors flex items-center gap-1 ${
-              liked ? 'text-blue-600' : 'text-gray-400 hover:text-blue-600'
-            }`}
-          >
-            <ThumbsUp size={10} className={liked ? 'fill-blue-600' : ''} />
-            {likeCount > 0 ? likeCount : 'Like'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══ Level 1 Comment ═══ */
-function CommentItem({ comment, onAddSubReply, postAuthor }) {
+/* ═══ Comment Component (Handles both Top-level and Replies) ═══ */
+function CommentItem({ comment, isReply, onAddComment, postAuthor, onReplyAction }) {
   const isAuthor = comment.author === postAuthor;
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(comment.likes || 0);
-  const [showReplyInput, setShowReplyInput] = useState(false);
-  const [replyText, setReplyText] = useState('');
-  const replyInputRef = useRef(null);
+  const avatarSize = isReply ? "w-8 h-8" : "w-10 h-10";
+  const textSize = isReply ? "text-[13px]" : "text-[14px]";
 
   const toggleLike = () => {
     setLiked(prev => !prev);
     setLikeCount(prev => liked ? prev - 1 : prev + 1);
   };
 
-  const handleReply = () => {
-    if (!replyText.trim()) return;
-    onAddSubReply(comment.id, replyText.trim());
-    setReplyText('');
-    setShowReplyInput(false);
+  const handleReplyClick = () => {
+    // If this is a reply, we reply to the original parent to keep it 2-layer
+    const targetId = isReply ? comment.parent_id : comment.id;
+    onReplyAction(targetId, comment.author);
   };
-
-  const handleShowReply = () => {
-    setShowReplyInput(true);
-  };
-
-  // Auto-focus the reply input when it becomes visible
-  useEffect(() => {
-    if (showReplyInput && replyInputRef.current) {
-      replyInputRef.current.focus();
-    }
-  }, [showReplyInput]);
-
-  const hasReplies = comment.replies && comment.replies.length > 0;
 
   return (
-    <div className="py-2.5">
-      {/* L1 Comment — flat layout, no thread line to parent */}
-      <div className="flex gap-2.5">
+    <div className={`py-3 ${isReply ? 'mt-2' : 'mt-4'}`}>
+      <div className="flex gap-3">
         {/* Avatar */}
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-[#002b4e] flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
+        <div className={`${avatarSize} rounded-full bg-gradient-to-br from-blue-400 to-[#002b4e] flex items-center justify-center text-white font-bold ${isReply ? 'text-[10px]' : 'text-sm'} flex-shrink-0 shadow-sm`}>
           {comment.author.charAt(0)}
         </div>
-        {/* Right column: bubble + actions + sub-replies */}
         <div className="flex-1 min-w-0">
-          <div className="bg-white rounded-xl px-4 py-3 border border-gray-100">
+          <div className={`bg-white rounded-xl px-4 py-3 border border-gray-100 shadow-sm ${isReply ? 'bg-gray-50/30' : ''}`}>
             <p className="text-xs font-bold text-[#002b4e] flex items-center gap-1.5">
               {comment.author}
               {isAuthor && (
-                <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-md font-bold">Author</span>
+                <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">Author</span>
               )}
             </p>
             <p className="text-[11px] text-gray-400 mb-1">{comment.role} · {comment.timestamp}</p>
-            <p className="text-[13px] text-gray-700 leading-relaxed">{comment.text}</p>
+            <p className={`${textSize} text-gray-700 leading-relaxed`}>{comment.text}</p>
           </div>
-          {/* Like + Reply */}
-          <div className="flex gap-4 mt-1 pl-2">
+          {/* Actions */}
+          <div className="flex gap-4 mt-1.5 pl-2">
             <button
               onClick={toggleLike}
               className={`text-[11px] font-semibold transition-colors flex items-center gap-1 ${
@@ -119,62 +59,12 @@ function CommentItem({ comment, onAddSubReply, postAuthor }) {
               {likeCount > 0 ? likeCount : 'Like'}
             </button>
             <button
-              onClick={handleShowReply}
+              onClick={handleReplyClick}
               className="text-[11px] font-semibold text-gray-400 hover:text-blue-600 transition-colors"
             >
               Reply
             </button>
           </div>
-
-          {/* Level 2 Sub-Replies — standalone branch hooks */}
-          {hasReplies && (
-            <div className="mt-1 ml-2">
-              {comment.replies.map(reply => (
-                <div key={reply.id} className="flex items-start gap-3 py-1.5">
-                  {/* Branch hook: L-shaped connector */}
-                  <div
-                    className="flex-shrink-0 border-l-2 border-b-2 border-slate-500 rounded-bl-xl mt-1"
-                    style={{ width: '14px', height: '14px' }}
-                  />
-                  <SubReplyBubble reply={reply} postAuthor={postAuthor} />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Inline reply input with branch hook */}
-          {showReplyInput && (
-            <div className="flex items-start gap-3 mt-1 ml-2 py-1.5">
-              {/* Branch hook */}
-              <div
-                className="flex-shrink-0 border-l-2 border-b-2 border-slate-500 rounded-bl-xl mt-3"
-                style={{ width: '14px', height: '14px' }}
-              />
-              <div className="flex gap-2.5 items-center flex-1">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-[#002b4e] flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
-                  Y
-                </div>
-                <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-full px-3 py-1.5 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-                  <input
-                    ref={replyInputRef}
-                    type="text"
-                    placeholder={`Reply to ${comment.author.split(' ').pop()}...`}
-                    value={replyText}
-                    onChange={e => setReplyText(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleReply()}
-                    className="flex-1 text-xs outline-none bg-transparent text-gray-700 placeholder-gray-400"
-                  />
-                  <button
-                    onClick={handleReply}
-                    disabled={!replyText.trim()}
-                    className="text-blue-500 disabled:text-gray-300 hover:text-blue-700 transition-colors"
-                  >
-                    <Send size={13} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -237,71 +127,67 @@ export default function DiscussionPost({ post, groupId }) {
   const [likeCount, setLikeCount] = useState(post.likes || 0);
   const [comments, setComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [activeParentId, setActiveParentId] = useState(null);
   const mainInputRef = useRef(null);
   const { userId, profile } = useProfile();
   const supabase = createClient();
 
   useEffect(() => {
     if (showComments && groupId) {
+      const fetchComments = async () => {
+        setLoadingComments(true);
+        try {
+          const { data, error } = await supabase
+            .from('group_comments')
+            .select('*')
+            .eq('post_id', post.id)
+            .order('created_at', { ascending: true });
+
+          if (error) throw error;
+          
+          const formattedComments = (data || []).map(c => ({
+            id: c.id,
+            parent_id: c.parent_id,
+            author: c.author_name || 'Anonymous',
+            role: c.author_role || 'Member',
+            text: c.content,
+            timestamp: new Date(c.created_at).toLocaleDateString()
+          }));
+          
+          setComments(formattedComments);
+        } catch (err) {
+          console.error('Error fetching group comments:', err);
+        } finally {
+          setLoadingComments(false);
+        }
+      };
       fetchComments();
     }
-  }, [showComments, groupId]);
-
-  const fetchComments = async () => {
-    setLoadingComments(true);
-    try {
-      const { data, error } = await supabase
-        .from('group_comments')
-        .select('*')
-        .eq('post_id', post.id)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      
-      // Map to expected UI format
-      const formattedComments = (data || []).map(c => ({
-        id: c.id,
-        author: c.author_name || 'Anonymous',
-        role: c.author_role || 'Member',
-        text: c.content,
-        timestamp: new Date(c.created_at).toLocaleDateString(),
-        replies: [] // Sub-replies logic can be added later if needed
-      }));
-      
-      setComments(formattedComments);
-    } catch (err) {
-      console.error('Error fetching group comments:', err);
-    } finally {
-      setLoadingComments(false);
-    }
-  };
+  }, [showComments, groupId, post.id, supabase]);
 
   const handleLike = () => {
     setLiked(prev => !prev);
     setLikeCount(prev => liked ? prev - 1 : prev + 1);
   };
 
-  // Count all comments + sub-replies for the action bar
-  const totalCommentCount = comments.reduce(
-    (acc, c) => acc + 1 + (c.replies?.length || 0), 0
-  );
-
   const handleToggleComments = () => {
     const nextState = !showComments;
     setShowComments(nextState);
     if (nextState) {
-      // Focus the main input after the section renders
       setTimeout(() => mainInputRef.current?.focus(), 50);
     }
   };
 
-  const handleAddComment = async () => {
-    if (!commentText.trim() || !userId) return;
+  const handleAddComment = async (text, parentId = null) => {
+    const content = text || commentText;
+    const finalParentId = parentId || activeParentId;
+    if (!content.trim() || !userId) return;
 
     const newComment = {
       post_id: post.id,
       user_id: userId,
-      content: commentText.trim(),
+      parent_id: finalParentId,
+      content: content.trim(),
       author_name: profile?.fullName || 'Anonymous',
       author_role: profile?.currentRole || 'Member'
     };
@@ -317,43 +203,39 @@ export default function DiscussionPost({ post, groupId }) {
 
       const formatted = {
         id: data.id,
+        parent_id: data.parent_id,
         author: data.author_name,
         role: data.author_role,
         text: data.content,
-        timestamp: 'Just now',
-        replies: []
+        timestamp: 'Just now'
       };
 
       setComments(prev => [...prev, formatted]);
       setCommentText('');
+      setActiveParentId(null);
     } catch (err) {
       console.error('Error adding comment:', err);
       alert('Failed to post comment.');
     }
   };
 
-  const handleAddSubReply = (parentCommentId, text) => {
-    const newReply = {
-      id: Date.now(),
-      author: 'You',
-      role: 'Maritime Professional',
-      timestamp: 'Just now',
-      text,
-    };
-    setComments(prev =>
-      prev.map(c =>
-        c.id === parentCommentId
-          ? { ...c, replies: [...(c.replies || []), newReply] }
-          : c
-      )
-    );
+  const handleReplyAction = (parentId, authorName) => {
+    setActiveParentId(parentId);
+    setCommentText(`@${authorName.split(' ').pop()} `);
+    setTimeout(() => mainInputRef.current?.focus(), 50);
   };
+
+  // ═══ Diagnostic Trap & Layer Logic ═══
+  const topLevelComments = comments?.filter(c => !c.parent_id) || [];
+  const getReplies = (parentId) => comments?.filter(c => c.parent_id === parentId) || [];
+
+  console.log("Discussion Thread Status -> Top Level:", topLevelComments.length, "Total Comments:", comments?.length);
 
   return (
     <article className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
       {/* Post Header */}
       <div className="flex items-start gap-3 p-4 pb-0">
-        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#0a4b8a] to-[#002b4e] flex items-center justify-center text-white font-bold text-base flex-shrink-0">
+        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#0a4b8a] to-[#002b4e] flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm">
           {post.author.charAt(0)}
         </div>
         <div className="flex-1 min-w-0">
@@ -367,7 +249,10 @@ export default function DiscussionPost({ post, groupId }) {
 
       {/* Post Body */}
       <div className="px-4 pt-3 pb-2">
-        <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">{post.content}</p>
+        <div 
+          className="text-sm text-gray-800 leading-relaxed rich-text"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content || '') }}
+        />
         <MediaRenderer media={post.media} />
       </div>
 
@@ -394,44 +279,60 @@ export default function DiscussionPost({ post, groupId }) {
           }`}
         >
           <MessageSquare size={18} />
-          <span>{totalCommentCount} {totalCommentCount === 1 ? 'comment' : 'comments'}</span>
+          <span>{comments.length} {comments.length === 1 ? 'comment' : 'comments'}</span>
         </button>
       </div>
 
-      {/* Comment Section — 2 levels deep max */}
+      {/* Comment Section — Strict 2-layer Mapping Loop */}
       {showComments && (
         <div className="bg-gray-50/70 border-t border-gray-100 px-4 pt-3 pb-6">
-          {/* Level 1 Comments — flat layout, no vertical line (LinkedIn style) */}
-          {comments.length > 0 && (
-            <div className="divide-y divide-gray-100/60">
-              {comments.map(comment => (
-                <CommentItem
-                  key={comment.id}
-                  comment={comment}
-                  onAddSubReply={handleAddSubReply}
-                  postAuthor={post.author}
-                />
-              ))}
-            </div>
-          )}
+          <div className="space-y-6">
+            {topLevelComments.map((comment) => (
+              <div key={comment.id} className="relative">
+                {/* Main Top-Level Comment */}
+                <CommentItem 
+                  comment={comment} 
+                  postAuthor={post.author} 
+                  onReplyAction={handleReplyAction}
+                  onAddComment={handleAddComment}
+                /> 
+
+                {/* Nested Replies Loop */}
+                {getReplies(comment.id).length > 0 && (
+                  <div className="ml-8 md:ml-12 mt-1 space-y-2 border-l-2 border-gray-200 pl-4 relative">
+                    {getReplies(comment.id).map((reply) => (
+                      <CommentItem 
+                        key={reply.id} 
+                        comment={reply} 
+                        isReply={true} 
+                        postAuthor={post.author}
+                        onReplyAction={handleReplyAction}
+                        onAddComment={handleAddComment}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
 
           {/* Main reply input — always at the bottom */}
-          <div className="flex gap-2 mt-3 items-center">
+          <div className="flex gap-2 mt-4 items-center">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-[#002b4e] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-              Y
+              {profile?.fullName?.charAt(0) || 'Y'}
             </div>
-            <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+            <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all shadow-sm">
               <input
                 ref={mainInputRef}
                 type="text"
-                placeholder="Write a reply..."
+                placeholder={activeParentId ? "Replying..." : "Write a comment..."}
                 value={commentText}
                 onChange={e => setCommentText(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleAddComment()}
                 className="flex-1 text-sm outline-none bg-transparent text-gray-700 placeholder-gray-400"
               />
               <button
-                onClick={handleAddComment}
+                onClick={() => handleAddComment()}
                 disabled={!commentText.trim()}
                 className="text-blue-500 disabled:text-gray-300 hover:text-blue-700 transition-colors"
               >

@@ -6,6 +6,94 @@ import { MessageSquare, Send, Image as ImageIcon, FileText, Heart, Users, X, Fil
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Settings, LogOut } from 'lucide-react';
+import DOMPurify from 'dompurify';
+const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
+  const containerRef = useRef(null);
+  const quillRef = useRef(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && containerRef.current && !quillRef.current) {
+      const initQuill = async () => {
+        const Quill = (await import('quill')).default;
+        quillRef.current = new Quill(containerRef.current, {
+          theme: 'snow',
+          placeholder: placeholder || 'Type here...',
+          modules: {
+            toolbar: [
+              ['bold', 'italic'],
+              [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            ],
+          },
+        });
+
+        quillRef.current.on('text-change', () => {
+          const html = quillRef.current.root.innerHTML;
+          if (html === '<p><br></p>') {
+            onChange('');
+          } else {
+            onChange(html);
+          }
+        });
+
+        if (value) {
+          quillRef.current.root.innerHTML = value;
+        }
+      };
+      initQuill();
+    }
+  }, [mounted]);
+
+  useEffect(() => {
+    if (quillRef.current && value !== quillRef.current.root.innerHTML) {
+      if (value === '' && quillRef.current.root.innerHTML === '<p><br></p>') return;
+      quillRef.current.root.innerHTML = value || '';
+    }
+  }, [value]);
+
+  return (
+    <div className={`rich-text-editor-container ${className}`}>
+      <div ref={containerRef} />
+    </div>
+  );
+};
+
+import 'react-quill/dist/quill.snow.css';
+
+const QUILL_STYLE = `
+  .quill-composer .ql-container {
+    font-family: inherit;
+    font-size: 14px;
+    border: none !important;
+  }
+  .quill-composer .ql-editor {
+    min-height: 40px;
+    max-height: 120px;
+    padding: 10px 16px;
+    line-height: 1.6;
+    background: #f9fafb;
+    border-radius: 8px;
+  }
+  .quill-composer .ql-editor.ql-blank::before {
+    left: 16px;
+    color: #9ca3af;
+    font-style: normal;
+  }
+  .quill-composer .ql-toolbar {
+    border: none !important;
+    padding: 8px 0 0 0 !important;
+    display: flex;
+    align-items: center;
+  }
+  .quill-composer .ql-formats {
+    margin-right: 8px !important;
+  }
+`;
+
 
 // Helper for relative timestamps
 function formatRelativeTime(dateString) {
@@ -186,6 +274,10 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
   };
 
   const handleSaveEdit = async () => {
+    if (!editText.replace(/<[^>]*>/g, '').trim() && editFileUrls.length === 0) {
+      alert("Post cannot be empty");
+      return;
+    }
     setIsProcessing(true);
     try {
       await onUpdate(post.id, editText, editFileUrls);
@@ -234,8 +326,13 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
       {/* Post Body */}
       <div className="space-y-3">
         {isEditing ? (
-          <div className="space-y-4">
-            <textarea value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full min-h-[120px] p-4 text-[15px] bg-gray-50 border border-blue-100 rounded-xl focus:outline-none" />
+          <div className="space-y-4 quill-composer">
+            <RichTextEditor 
+              value={editText}
+              onChange={setEditText}
+              className="bg-gray-50 border border-blue-100 rounded-xl overflow-hidden"
+              placeholder="Edit your post..."
+            />
             <div className="flex justify-end gap-2">
               <button onClick={() => setIsEditing(false)} className="px-4 py-1.5 text-xs font-bold text-gray-500">Cancel</button>
               <button onClick={handleSaveEdit} disabled={isProcessing} className="px-4 py-1.5 text-xs font-bold bg-blue-950 text-white rounded-lg shadow-md">{isProcessing ? 'Saving...' : 'Save Changes'}</button>
@@ -243,7 +340,10 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
           </div>
         ) : (
           <>
-            <p className="text-gray-700 text-[15px] leading-relaxed pr-8">{post.content}</p>
+            <div 
+              className="text-gray-700 text-[15px] leading-relaxed pr-8 rich-text"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content || '') }}
+            />
             {fileUrls.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {fileUrls.map((url, idx) => (
@@ -519,6 +619,7 @@ export default function GroupPage({ params: paramsPromise }) {
   const [uploading, setUploading] = useState(false);
   const mediaInputRef = useRef(null);
   const documentInputRef = useRef(null);
+  const postComposerRef = useRef(null);
 
   const [posts, setPosts] = useState([]);
   const [postLimit, setPostLimit] = useState(5);
@@ -666,7 +767,8 @@ export default function GroupPage({ params: paramsPromise }) {
   };
 
   const handlePost = async () => {
-    if (!postText.trim() && attachments.length === 0) return;
+    const isTextEmpty = !postText.replace(/<[^>]*>/g, '').trim();
+    if (isTextEmpty && attachments.length === 0) return;
     setUploading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -869,8 +971,13 @@ export default function GroupPage({ params: paramsPromise }) {
 
       <div className="px-[22px] mt-10 space-y-8">
         {/* Composer */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <textarea value={postText} onChange={(e) => setPostText(e.target.value)} placeholder="Share an update..." className="w-full min-h-[100px] bg-gray-50 rounded-lg p-4 text-sm focus:outline-none resize-none leading-relaxed text-left" />
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 quill-composer">
+          <style>{QUILL_STYLE}</style>
+          <RichTextEditor 
+            value={postText}
+            onChange={setPostText}
+            placeholder="Share an update..."
+          />
           
           {attachments.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3 p-2 bg-blue-50/50 rounded-lg border border-blue-100">
@@ -899,7 +1006,13 @@ export default function GroupPage({ params: paramsPromise }) {
                 </button>
               </Link>
               {/* FIX: Locked Post Button Geometry 110x38px */}
-              <button onClick={handlePost} disabled={uploading} className="bg-blue-950 text-white w-[110px] h-[38px] rounded-lg font-bold text-sm shadow-md hover:bg-blue-900 transition-all">{uploading ? 'Posting...' : 'Post'}</button>
+              <button 
+                onClick={handlePost} 
+                disabled={uploading || (!postText.replace(/<[^>]*>/g, '').trim() && attachments.length === 0)} 
+                className="bg-blue-950 text-white w-[110px] h-[38px] rounded-lg font-bold text-sm shadow-md hover:bg-blue-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {uploading ? 'Posting...' : 'Post'}
+              </button>
             </div>
           </div>
         </div>

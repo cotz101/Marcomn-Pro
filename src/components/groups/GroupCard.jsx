@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Globe, Lock, ChevronRight, Loader2 } from 'lucide-react';
+import { Users, Globe, Lock, ChevronRight, Loader2, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function GroupCard({ group, onAction }) {
@@ -10,6 +10,10 @@ export default function GroupCard({ group, onAction }) {
   const isPending = group.membershipStatus === 'pending';
   const router = useRouter();
   const [isEntering, setIsEntering] = useState(false);
+
+
+  const isAdmin = group.membershipRole === 'admin';
+  const isMember = group.isMember;
 
   const handleEnterGroup = () => {
     setIsEntering(true);
@@ -30,54 +34,12 @@ export default function GroupCard({ group, onAction }) {
     : membersList;
 
   return (
-    <div className={`w-full max-w-full bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 p-4 relative ${isEntering ? 'opacity-60 scale-[0.98]' : ''}`}>
-      <div className="flex gap-4">
-        {/* Group Avatar Stack - Refined UX Logic */}
-        <div className="flex-shrink-0 pt-1">
-          {membersList.length >= 2 ? (
-            <div className="flex items-center -space-x-3">
-              {displayMembers.map((member, i) => {
-                // With Deep Fetch, member is already a profile object (avatar_url, name)
-                const avatarUrl = member.avatar_url;
-                const name = member.name || "Member";
-                
-                return (
-                  <div key={member.user_id || i} className="relative z-10">
-                    {avatarUrl ? (
-                      <img 
-                        src={avatarUrl}
-                        className="w-8 h-8 rounded-full border-2 border-white object-cover shadow-sm"
-                        alt={name}
-                      />
-                    ) : (
-                      /* Fallback Colored Circle (Staggered Colors) */
-                      <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 border-white text-[10px] font-bold text-white shadow-sm ${
-                        i % 3 === 0 ? 'bg-blue-400' : i % 3 === 1 ? 'bg-orange-400' : 'bg-emerald-400'
-                      }`}>
-                        {name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-              {group.member_count > 3 && (
-                <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-white bg-gray-100 text-[10px] font-semibold text-gray-600 relative z-0 shadow-sm">
-                  +{group.member_count - 3}
-                </div>
-              )}
-            </div>
-          ) : (
-            /* Generic Fallback for Single/Zero Member or Data Load Fail */
-            <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-slate-200 bg-slate-50 text-slate-400 shadow-sm">
-              <Users size={16} />
-            </div>
-          )}
-        </div>
-
-        {/* Group Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-bold text-lg text-[#0e2a4d] truncate">{group.name}</h3>
+    <div className={`w-full max-w-full bg-white border-y border-x-0 sm:border-x border-gray-200 rounded-none sm:rounded-lg overflow-hidden hover:shadow-md transition-all duration-300 p-4 relative ${isEntering ? 'opacity-60 scale-[0.98]' : ''}`}>
+      <div className="flex justify-between gap-4 w-full">
+        {/* Left Column: Group Title & Badge */}
+        <div className="flex-1 min-w-0 flex flex-col items-start text-left">
+          <h3 className="font-bold text-lg text-[#0e2a4d] truncate w-full leading-tight">{group.name}</h3>
+          <div className="mt-1">
             {isPublic ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider border border-green-200">
                 <Globe size={10} />
@@ -90,16 +52,50 @@ export default function GroupCard({ group, onAction }) {
               </span>
             )}
           </div>
-          
-          <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-            {group.description}
-          </p>
-          
-          <div className="flex items-center gap-4 text-xs text-gray-500 font-medium">
-            <div className="flex items-center gap-1">
-              <Users size={14} />
-              <span>{group.member_count} Members</span>
+        </div>
+
+        {/* Right Column: Avatar Cluster & Member Count */}
+        <div className="flex flex-col items-end text-right flex-shrink-0 pt-1">
+          {membersList.length >= 2 ? (
+            <div className="flex items-center -space-x-4 mb-1 flex-row-reverse">
+              {/* Using flex-row-reverse for natural right-anchor cascade overlap */}
+              {group.member_count > 3 && (
+                <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-white bg-gray-100 text-[10px] font-semibold text-gray-600 relative z-0 shadow-sm first:ml-0 -ml-4">
+                  +{group.member_count - 3}
+                </div>
+              )}
+              {[...displayMembers].reverse().map((member, i) => {
+                const avatarUrl = member.avatar_url;
+                const name = member.name || "Member";
+                
+                return (
+                  <div key={member.user_id || i} className="relative z-10 first:ml-0 -ml-4">
+                    {avatarUrl ? (
+                      <img 
+                        src={avatarUrl}
+                        className="w-8 h-8 rounded-full border-2 border-white object-cover shadow-sm"
+                        alt={name}
+                      />
+                    ) : (
+                      <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 border-white text-[10px] font-bold text-white shadow-sm ${
+                        i % 3 === 0 ? 'bg-blue-400' : i % 3 === 1 ? 'bg-orange-400' : 'bg-emerald-400'
+                      }`}>
+                        {name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
+          ) : (
+            <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-slate-200 bg-slate-50 text-slate-400 shadow-sm mb-1">
+              <Users size={16} />
+            </div>
+          )}
+
+          {/* Member Count Label aligned right */}
+          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight mt-1 whitespace-nowrap">
+            {group.member_count} Members
           </div>
         </div>
       </div>
@@ -116,23 +112,25 @@ export default function GroupCard({ group, onAction }) {
 
         <div className="flex gap-2">
           {group.isMember ? (
-            <button 
-              onClick={handleEnterGroup}
-              disabled={isEntering}
-              className={`inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-white text-gray-900 border border-gray-200 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all shadow-sm whitespace-nowrap gap-2 ${isEntering ? 'animate-btn-loading' : ''}`}
-            >
-              {isEntering ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  <span>{"\u00A0"}Entering...{"\u00A0"}</span>
-                </>
-              ) : (
-                <>
-                  <span>{"\u00A0"}Enter Group{"\u00A0"}</span>
-                  <ChevronRight size={16} />
-                </>
-              )}
-            </button>
+            <div className="flex gap-1.5">
+              <button 
+                onClick={handleEnterGroup}
+                disabled={isEntering}
+                className={`inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-white text-gray-900 border border-gray-200 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all shadow-sm whitespace-nowrap gap-2 ${isEntering ? 'animate-btn-loading' : ''}`}
+              >
+                {isEntering ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>{"\u00A0"}Entering...{"\u00A0"}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{"\u00A0"}Enter{"\u00A0"}</span>
+                    <ChevronRight size={16} />
+                  </>
+                )}
+              </button>
+            </div>
           ) : isPending ? (
             <button 
               disabled
@@ -157,6 +155,8 @@ export default function GroupCard({ group, onAction }) {
           )}
         </div>
       </div>
+
+
     </div>
   );
 }

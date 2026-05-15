@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MarComn - Job Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#f4f3f7",
+                    "outline-variant": "#c4c6cf",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "primary-fixed-dim": "#adc8f6",
+                    "on-primary-fixed": "#001b3c",
+                    "tertiary-container": "#cca830",
+                    "surface-container-high": "#e9e7eb",
+                    "on-secondary-fixed": "#0b1c30",
+                    "tertiary-fixed-dim": "#e9c349",
+                    "surface": "#faf9fd",
+                    "on-secondary-container": "#54647a",
+                    "surface-dim": "#dad9dd",
+                    "outline": "#74777f",
+                    "surface-container-lowest": "#ffffff",
+                    "primary": "#000d22",
+                    "on-tertiary-fixed": "#241a00",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "inverse-on-surface": "#f1f0f4",
+                    "on-secondary": "#ffffff",
+                    "on-background": "#1a1c1e",
+                    "on-tertiary-fixed-variant": "#574500",
+                    "secondary-container": "#d0e1fb",
+                    "inverse-surface": "#2f3033",
+                    "error-container": "#ffdad6",
+                    "on-tertiary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "surface-bright": "#faf9fd",
+                    "on-surface-variant": "#43474e",
+                    "tertiary-fixed": "#ffe088",
+                    "secondary-fixed": "#d3e4fe",
+                    "surface-container-highest": "#e3e2e6",
+                    "error": "#ba1a1a",
+                    "on-tertiary-container": "#4f3e00",
+                    "on-surface": "#1a1c1e",
+                    "surface-container": "#eeedf1",
+                    "tertiary": "#735c00",
+                    "primary-container": "#002349",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#e3e2e6",
+                    "inverse-primary": "#adc8f6",
+                    "surface-tint": "#455f88",
+                    "on-primary-container": "#718bb7",
+                    "on-primary": "#ffffff",
+                    "background": "#faf9fd",
+                    "secondary": "#505f76",
+                    "primary-fixed": "#d5e3ff",
+                    "on-primary-fixed-variant": "#2c476f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin-desktop": "32px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "margin-mobile": "16px",
+                    "base": "4px",
+                    "gutter": "16px",
+                    "xs": "4px",
+                    "xl": "40px",
+                    "sm": "8px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Public Sans"],
+                    "body-md": ["Public Sans"],
+                    "headline-sm": ["Public Sans"],
+                    "body-lg": ["Public Sans"],
+                    "body-sm": ["Public Sans"],
+                    "label-sm": ["Public Sans"],
+                    "headline-md": ["Public Sans"],
+                    "label-md": ["Public Sans"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
+                    "label-sm": ["11px", {"lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body { font-family: 'Public Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface flex min-h-screen">
+<!-- TopNavBar -->
+<header class="docked full-width top-0 z-50 flex justify-between items-center w-full px-6 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 font-public-sans text-sm antialiased text-blue-900 dark:text-blue-400 fixed">
+<div class="flex items-center gap-sm">
+<span class="text-xl font-bold tracking-tight text-blue-900 dark:text-blue-100">MarComn</span>
+</div>
+<div class="flex items-center gap-md">
+<button class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer active:opacity-80 p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer active:opacity-80 p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined">switch_account</span>
+</button>
+<img alt="Professional avatar" class="w-8 h-8 rounded-full border border-slate-200 object-cover ml-2" data-alt="A tightly framed, professional corporate headshot of a diverse male executive in a sharp navy suit. Clean, bright studio lighting with a soft white background. Modern, high-trust corporate aesthetic suitable for an enterprise profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVXdNYE_w5HdKiI9_TbR7FrPnUX3ysWFv5bAq0139sm6v9eCZUZ0EqF4GSs3x-q8ZdLJ-YIvJL91g4m5rPmn7qrf25-TwHVVRYsbx6KsHidwH314T7uW-nO25ngAM1gTMr8QPaM8txo8rFuSdHc7AhWlKKfWqNuq7O5qBSRTOZ4isaieFSdvWzoDn2Vi27o5sLK0ZG7kPmFsY-_Zlalqmf1y9wvzb6OagMUakPQAAuMk5N854pM_cUoYbhUDa0sgIAfiCKE2qkSh1Z"/>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full flex flex-col pt-16 z-40 h-screen w-64 border-r rounded-none bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 font-public-sans text-sm font-medium text-blue-900 dark:text-blue-400 hidden md:flex">
+<div class="px-6 py-lg flex flex-col gap-xs border-b border-slate-200 dark:border-slate-800">
+<span class="text-lg font-black text-blue-900 dark:text-blue-200">MarComn</span>
+<span class="text-slate-600 dark:text-slate-400 font-label-sm text-label-sm">Enterprise Maritime</span>
+</div>
+<ul class="flex-1 py-md flex flex-col">
+<!-- Dashboard (Inactive) -->
+<li>
+<a class="flex items-center gap-md px-6 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+</li>
+<!-- Logbook (Inactive) -->
+<li>
+<a class="flex items-center gap-md px-6 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span>Logbook</span>
+</a>
+</li>
+<!-- Jobs (Active) -->
+<li>
+<a class="flex items-center gap-md px-6 py-3 bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 border-r-2 border-blue-700 shadow-sm transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">work</span>
+<span>Jobs</span>
+</a>
+</li>
+<!-- Teams (Inactive) -->
+<li>
+<a class="flex items-center gap-md px-6 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span>Teams</span>
+</a>
+</li>
+<!-- The Bridge (Inactive) -->
+<li>
+<a class="flex items-center gap-md px-6 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">anchor</span>
+<span>The Bridge</span>
+</a>
+</li>
+<!-- Profiles (Inactive) -->
+<li>
+<a class="flex items-center gap-md px-6 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined">person</span>
+<span>Profiles</span>
+</a>
+</li>
+</ul>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 pt-16 p-margin-mobile md:p-margin-desktop bg-surface min-h-screen">
+<div class="mb-lg">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Job Operations</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-sm">Manage open requisitions and preview candidate experiences.</p>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-gutter items-start">
+<!-- Recruiter View: Create Job Form -->
+<section class="xl:col-span-5 bg-surface-container-lowest border border-outline-variant rounded-lg p-lg shadow-sm">
+<div class="border-b border-outline-variant pb-md mb-md">
+<h2 class="font-headline-md text-headline-md text-primary flex items-center gap-sm">
+<span class="material-symbols-outlined text-surface-tint">edit_document</span>
+                        Create Job Posting
+                    </h2>
+</div>
+<form class="flex flex-col gap-md">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant uppercase mb-xs">Job Title</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-DEFAULT focus:border-primary focus:ring-1 focus:ring-primary px-3 py-2 font-body-md text-body-md text-on-surface outline-none transition-colors" type="text" value="Chief Engineer"/>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant uppercase mb-xs">Vessel Type</label>
+<select class="w-full bg-surface-container-lowest border border-outline-variant rounded-DEFAULT focus:border-primary focus:ring-1 focus:ring-primary px-3 py-2 font-body-md text-body-md text-on-surface outline-none transition-colors appearance-none">
+<option>Container Ship</option>
+<option>Oil Tanker</option>
+<option>Bulk Carrier</option>
+</select>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant uppercase mb-xs">Rank</label>
+<select class="w-full bg-surface-container-lowest border border-outline-variant rounded-DEFAULT focus:border-primary focus:ring-1 focus:ring-primary px-3 py-2 font-body-md text-body-md text-on-surface outline-none transition-colors appearance-none">
+<option>Officer</option>
+<option>Master</option>
+<option>Rating</option>
+</select>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant uppercase mb-xs">Monthly Salary (USD)</label>
+<div class="relative">
+<span class="absolute left-3 top-2 text-on-surface-variant font-body-md material-symbols-outlined text-sm">attach_money</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-DEFAULT focus:border-primary focus:ring-1 focus:ring-primary pl-8 pr-3 py-2 font-body-md text-body-md text-on-surface outline-none transition-colors" type="text" value="9,500 - 11,000"/>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant uppercase mb-xs">Requirements &amp; Description</label>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-DEFAULT focus:border-primary focus:ring-1 focus:ring-primary px-3 py-2 font-body-md text-body-md text-on-surface outline-none transition-colors resize-none" rows="4">Requires Class 1 Certificate of Competency. Minimum 24 months sea time in rank on large container vessels. Valid STCW certificates.</textarea>
+</div>
+<div class="flex justify-end gap-sm mt-sm pt-md border-t border-outline-variant">
+<button class="px-6 py-2 rounded-DEFAULT border border-outline text-primary font-label-md text-label-md hover:bg-surface-container-low transition-colors" type="button">Save Draft</button>
+<button class="px-6 py-2 rounded-DEFAULT bg-primary text-on-primary font-label-md text-label-md hover:bg-surface-tint transition-colors" type="button">Publish Posting</button>
+</div>
+</form>
+</section>
+<!-- Candidate View: Job Application Preview -->
+<section class="xl:col-span-7 flex flex-col gap-md">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-on-surface-variant">visibility</span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Candidate View Preview</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden shadow-sm flex flex-col">
+<!-- Hero Image Area -->
+<div class="h-48 w-full relative">
+<img alt="Large commercial container ship at sea" class="w-full h-full object-cover" data-alt="A dramatic, high-resolution aerial photograph of a massive, modern commercial container ship navigating through deep, dark blue ocean waters. The scene is brightly lit with natural, crisp daylight, emphasizing the impressive scale and industrial precision of maritime logistics. The aesthetic is clean, powerful, and corporate, fitting an enterprise-grade platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAncDAUYUocI42388h1wAGx3WRRlRBe8NOQjAyfzQqMP8pfHrRGmb5zK79DFN7sAHNWWo6TdXaXnSw5hFW_XhNoeY6ixg7Ox7z7kQ-O936KWXXY06sVtTWdUCATyaDXBjUxHNVv7U-t6BgJ0sy6GrZw7_hOvoi5EdEIB-M3zPP95CWQLKFVBvrnrXSvtLJFZKBAK8KChEC4QsFAD8O3PxHpibIkpJDFe29r3tIytdSFhjqB0dK2uzK8eEj-ofVuKcjdfPQSZ41biRqR"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
+<div class="absolute bottom-md left-lg right-lg flex justify-between items-end">
+<div>
+<span class="bg-tertiary-container text-on-tertiary-container font-label-sm text-label-sm px-2 py-1 rounded-DEFAULT inline-flex items-center gap-xs mb-xs">
+<span class="material-symbols-outlined text-[14px]">verified</span> Verified Employer
+                                </span>
+<h3 class="font-headline-lg text-headline-lg text-on-primary m-0">Chief Engineer</h3>
+<p class="font-body-md text-body-md text-primary-fixed-dim">Global Maritime Lines Ltd.</p>
+</div>
+</div>
+</div>
+<!-- Application Details Bento -->
+<div class="p-lg grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Quick Stats -->
+<div class="bg-surface-container-low rounded-lg p-md border border-outline-variant/50">
+<ul class="flex flex-col gap-sm">
+<li class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-surface-tint">directions_boat</span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Vessel</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">14,000 TEU Container</span>
+</div>
+</li>
+<li class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-surface-tint">route</span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Route</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Asia - Europe Trade</span>
+</div>
+</li>
+<li class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-surface-tint">calendar_month</span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Contract Length</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">4 Months (+/- 1)</span>
+</div>
+</li>
+</ul>
+</div>
+<!-- Salary Highlight -->
+<div class="bg-secondary-container/20 border border-secondary-container rounded-lg p-md flex flex-col justify-center items-center text-center">
+<span class="font-label-md text-label-md text-on-secondary-container uppercase tracking-widest mb-xs">Monthly Compensation</span>
+<span class="font-headline-lg text-headline-lg text-primary">$9,500 - $11,000</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-xs">USD • Paid onboard &amp; home allotment</span>
+</div>
+<!-- Requirements -->
+<div class="md:col-span-2 border-t border-outline-variant pt-md mt-sm">
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-md">Mandatory Requirements</h4>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-sm">
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-surface-tint mt-[2px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Class 1 Certificate of Competency (CoC)</span>
+</div>
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-surface-tint mt-[2px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">24+ months sea time on &gt;10,000 TEU</span>
+</div>
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-surface-tint mt-[2px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Valid STCW &amp; Medical certificates</span>
+</div>
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-surface-tint mt-[2px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">US C1/D Visa preferred</span>
+</div>
+</div>
+</div>
+<!-- Action -->
+<div class="md:col-span-2 mt-md pt-md border-t border-outline-variant flex justify-end">
+<button class="w-full md:w-auto px-xl py-3 rounded-DEFAULT bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center gap-sm hover:bg-surface-tint transition-colors shadow-sm">
+                                Apply Now
+                                <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>

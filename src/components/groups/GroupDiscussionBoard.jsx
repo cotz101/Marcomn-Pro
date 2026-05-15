@@ -1,10 +1,42 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 import DiscussionPost from './DiscussionPost';
+import RichTextEditor from '@/src/components/common/RichTextEditor';
+
+
+
+const QUILL_STYLE = `
+  .quill-composer .ql-container {
+    font-family: inherit;
+    font-size: 14px;
+    border: none !important;
+  }
+  .quill-composer .ql-editor {
+    min-height: 40px;
+    max-height: 120px;
+    padding: 10px 0;
+    line-height: 1.6;
+    background: transparent;
+  }
+  .quill-composer .ql-editor.ql-blank::before {
+    left: 0;
+    color: #9ca3af;
+    font-style: normal;
+  }
+  .quill-composer .ql-toolbar {
+    border: none !important;
+    padding: 8px 0 0 0 !important;
+    display: flex;
+    align-items: center;
+  }
+  .quill-composer .ql-formats {
+    margin-right: 8px !important;
+  }
+`;
 
 export default function GroupDiscussionBoard({ groupId }) {
   const [posts, setPosts] = useState([]);
@@ -130,6 +162,7 @@ function GroupPostComposer({ resolvedUuid, onPostCreated }) {
   const { userId, currentIdentity, profile } = useProfile();
   const supabase = createClient();
 
+
   const isCompany = currentIdentity?.type === 'company';
   const identityName = isCompany ? currentIdentity.data.name : profile?.fullName;
   const identityImage = isCompany 
@@ -137,7 +170,8 @@ function GroupPostComposer({ resolvedUuid, onPostCreated }) {
     : (profile?.profilePic || '/profile_pic.png');
 
   const handlePost = async () => {
-    if (!text.trim() || !userId || submitting || !resolvedUuid) return;
+    const isTextEmpty = !text.replace(/<[^>]*>/g, '').trim();
+    if (isTextEmpty || !userId || submitting || !resolvedUuid) return;
 
     setSubmitting(true);
     try {
@@ -189,17 +223,17 @@ function GroupPostComposer({ resolvedUuid, onPostCreated }) {
           className="w-10 h-10 object-cover" 
           style={{ borderRadius: isCompany ? '8px' : '50%' }}
         />
-        <div className="flex-1">
-          <textarea
-            className="w-full min-h-[100px] border-none focus:ring-0 text-sm placeholder:text-slate-400 bg-transparent resize-none"
-            placeholder="Start a discussion..."
+        <div className="flex-1 quill-composer">
+          <style>{QUILL_STYLE}</style>
+          <RichTextEditor 
             value={text}
-            onChange={e => setText(e.target.value)}
+            onChange={setText}
+            placeholder="Start a discussion..."
           />
           <div className="flex justify-end pt-3 border-t border-slate-50">
             <button
               onClick={handlePost}
-              disabled={!text.trim() || submitting}
+              disabled={!text.replace(/<[^>]*>/g, '').trim() || submitting}
               className="bg-blue-950 text-white px-5 py-1.5 rounded-full text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-900 transition-all active:scale-95"
             >
               {submitting ? 'Posting...' : 'Post'}

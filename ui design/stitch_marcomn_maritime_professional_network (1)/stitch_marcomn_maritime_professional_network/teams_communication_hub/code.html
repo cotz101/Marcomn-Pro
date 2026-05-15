@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MarComn - Teams</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f4f3f7",
+                        "outline-variant": "#c4c6cf",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "primary-fixed-dim": "#adc8f6",
+                        "on-primary-fixed": "#001b3c",
+                        "tertiary-container": "#cca830",
+                        "surface-container-high": "#e9e7eb",
+                        "on-secondary-fixed": "#0b1c30",
+                        "tertiary-fixed-dim": "#e9c349",
+                        "surface": "#faf9fd",
+                        "on-secondary-container": "#54647a",
+                        "surface-dim": "#dad9dd",
+                        "outline": "#74777f",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#000d22",
+                        "on-tertiary-fixed": "#241a00",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "inverse-on-surface": "#f1f0f4",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#1a1c1e",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "secondary-container": "#d0e1fb",
+                        "inverse-surface": "#2f3033",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#faf9fd",
+                        "on-surface-variant": "#43474e",
+                        "tertiary-fixed": "#ffe088",
+                        "secondary-fixed": "#d3e4fe",
+                        "surface-container-highest": "#e3e2e6",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#4f3e00",
+                        "on-surface": "#1a1c1e",
+                        "surface-container": "#eeedf1",
+                        "tertiary": "#735c00",
+                        "primary-container": "#002349",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#e3e2e6",
+                        "inverse-primary": "#adc8f6",
+                        "surface-tint": "#455f88",
+                        "on-primary-container": "#718bb7",
+                        "on-primary": "#ffffff",
+                        "background": "#faf9fd",
+                        "secondary": "#505f76",
+                        "primary-fixed": "#d5e3ff",
+                        "on-primary-fixed-variant": "#2c476f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "margin-mobile": "16px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "xs": "4px",
+                        "xl": "40px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Public Sans"],
+                        "body-md": ["Public Sans"],
+                        "headline-sm": ["Public Sans"],
+                        "body-lg": ["Public Sans"],
+                        "body-sm": ["Public Sans"],
+                        "label-sm": ["Public Sans"],
+                        "headline-md": ["Public Sans"],
+                        "label-md": ["Public Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400" }],
+                        "label-sm": ["11px", { "lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Public Sans', sans-serif; }
+        /* Material Symbols Outlined standard class setup */
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md min-h-screen overflow-hidden flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-white dark:bg-slate-900 docked full-width top-0 z-50 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center w-full px-6 h-16 fixed font-public-sans text-sm antialiased shadow-none">
+<div class="flex items-center gap-lg">
+<span class="text-xl font-bold tracking-tight text-blue-900 dark:text-blue-100">MarComn</span>
+<div class="relative hidden md:flex items-center">
+<span class="material-symbols-outlined absolute left-sm text-outline-variant" style="font-size: 20px;">search</span>
+<input class="pl-xl pr-md py-sm bg-surface-container-low border border-outline-variant rounded-DEFAULT font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-64 transition-all" placeholder="Search MarComn..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-sm rounded-DEFAULT hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer active:opacity-80 text-slate-600 dark:text-slate-400">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-sm rounded-DEFAULT hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer active:opacity-80 text-slate-600 dark:text-slate-400 flex items-center gap-sm border border-outline-variant bg-surface-container-lowest">
+<img alt="Professional avatar" class="w-8 h-8 rounded-DEFAULT object-cover" data-alt="A professional headshot of a senior maritime executive in a sharp navy blue business suit, standing in a brightly lit modern corporate office with subtle nautical decor in the background. The lighting is soft and even, highlighting a confident and authoritative expression. The aesthetic is clean, high-trust, and enterprise-focused, utilizing a cool and professional color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGcMdox4U34V0euNtf5mOIa65zUoI6X4bcw-wGzJis18qynmoXA7sV7FHAe07R8NBpXhaOExbMDDMDdVO49RRnHNztAA7XPNumOa6ocJaj1_IgfqSm1NA9NYNPJgPxzZE_fPPgPYrOuN93QT5wrWxk2Bz_U3GMywFnjJWFEbImB_Zl7LqCFD5RJcj9kA2PMJ7l8BomMLnbJjqRHanIMTHxhdy57zkuONASaJp6kiAxQGP_aJobDqgxp5fOZRI7fIZkgQHDSLNoC9-E"/>
+<span class="material-symbols-outlined" data-icon="switch_account" style="font-size: 18px;">switch_account</span>
+</button>
+</div>
+</nav>
+<div class="flex flex-1 pt-16 h-screen">
+<!-- SideNavBar -->
+<aside class="bg-slate-50 dark:bg-slate-950 h-screen w-64 border-r border-slate-200 dark:border-slate-800 rounded-none fixed left-0 top-0 flex flex-col pt-16 z-40 hidden md:flex font-public-sans text-sm font-medium">
+<div class="flex flex-col gap-sm p-md mt-sm">
+<!-- Inactive: Dashboard -->
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<!-- Inactive: Logbook -->
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span>Logbook</span>
+</a>
+<!-- Inactive: Jobs -->
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="work">work</span>
+<span>Jobs</span>
+</a>
+<!-- Active: Teams -->
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 border-r-2 border-blue-700 shadow-sm transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span>Teams</span>
+</a>
+<!-- Inactive: The Bridge -->
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="anchor">anchor</span>
+<span>The Bridge</span>
+</a>
+<!-- Inactive: Profiles -->
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span>Profiles</span>
+</a>
+</div>
+<div class="mt-auto p-md border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 bg-primary-container rounded-DEFAULT flex items-center justify-center text-on-primary-container font-headline-sm text-headline-sm">
+                        M
+                    </div>
+<div>
+<div class="font-headline-sm text-body-sm text-blue-900 dark:text-blue-200">MarComn</div>
+<div class="font-label-sm text-label-sm text-slate-500">Enterprise Maritime</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area (3 Panes) -->
+<main class="flex-1 flex ml-0 md:ml-64 bg-surface-container-lowest h-full relative">
+<!-- Left Pane: Channels & DMs -->
+<div class="w-72 border-r border-outline-variant bg-surface-container-low flex flex-col h-full shrink-0 hidden lg:flex">
+<div class="p-lg border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Channels</h2>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto py-sm">
+<div class="px-md mb-xs mt-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Fleet Operations</span>
+</div>
+<a class="flex items-center gap-sm px-lg py-sm mx-sm rounded-DEFAULT bg-secondary-container text-on-secondary-container font-body-sm text-body-sm font-medium" href="#">
+<span class="material-symbols-outlined text-outline" style="font-size: 18px;">tag</span>
+                        #deck-officers
+                    </a>
+<a class="flex items-center gap-sm px-lg py-sm mx-sm rounded-DEFAULT hover:bg-surface-variant text-on-surface-variant font-body-sm text-body-sm transition-colors" href="#">
+<span class="material-symbols-outlined text-outline" style="font-size: 18px;">tag</span>
+                        #technical-fleet
+                    </a>
+<a class="flex items-center gap-sm px-lg py-sm mx-sm rounded-DEFAULT hover:bg-surface-variant text-on-surface-variant font-body-sm text-body-sm transition-colors" href="#">
+<span class="material-symbols-outlined text-outline" style="font-size: 18px;">lock</span>
+                        #management-confidential
+                    </a>
+<div class="px-md mb-xs mt-lg flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Direct Messages</span>
+<span class="material-symbols-outlined text-outline-variant cursor-pointer hover:text-primary" style="font-size: 16px;">add</span>
+</div>
+<a class="flex items-center gap-md px-md py-sm mx-sm rounded-DEFAULT hover:bg-surface-variant transition-colors" href="#">
+<div class="relative">
+<img alt="Capt. Reynolds" class="w-8 h-8 rounded-DEFAULT object-cover" data-alt="A portrait of a professional female maritime captain in her mid-40s, wearing a standard merchant navy uniform. She has a serious but approachable expression. The background is a slightly out-of-focus ship's bridge with navigation equipment visible. Bright, crisp lighting emphasizes a high-end corporate maritime environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbboHELSvVZRWt_0h5t4IERrkW6QE9HgyteNWv-JfPA2eex7bXiJScgFJwBMtKwCncWsTlMGC15mMwn1lUfYKQE4BIvA4qz8h6vrNIPB8tuCAMN2zktGPaFQxFjpfSbXXTj79FULGDxpB0E__Anx-EjbTh6Xe_85eghEbRbhlXxEktzTuNenOXM4LKO1-zyIFAwAq4hJTgbkzWCXC7EPqFNho2ZglhrarCzs8EfBEBkm4GxTqJ8gT2_8GSnV7IEHalfkbfoI_XDKOc"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border border-surface rounded-full"></span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface">Capt. Reynolds</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm mx-sm rounded-DEFAULT hover:bg-surface-variant transition-colors" href="#">
+<div class="relative">
+<div class="w-8 h-8 rounded-DEFAULT bg-tertiary-container text-on-tertiary-container flex items-center justify-center font-label-md text-label-md">
+                                CE
+                            </div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Chief Eng. Chen</span>
+</a>
+</div>
+</div>
+<!-- Middle Pane: Chat Area -->
+<div class="flex-1 flex flex-col bg-surface-container-lowest min-w-0">
+<!-- Chat Header -->
+<div class="h-16 px-lg border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest shrink-0">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-outline-variant hidden md:block">tag</span>
+<div>
+<h1 class="font-headline-sm text-headline-sm text-on-surface m-0 leading-tight">deck-officers</h1>
+<span class="font-body-sm text-body-sm text-on-surface-variant">General discussion and updates for deck crew</span>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<div class="flex -space-x-2 mr-sm">
+<img alt="Member" class="w-8 h-8 rounded-DEFAULT border border-surface-container-lowest relative z-30" data-alt="A portrait of a professional female maritime captain in her mid-40s, wearing a standard merchant navy uniform. She has a serious but approachable expression. The background is a slightly out-of-focus ship's bridge with navigation equipment visible. Bright, crisp lighting emphasizes a high-end corporate maritime environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAx2ZiShY88HHNO0H2gkyQX6XL_RWz2wHeKeP0NkOqchYUzRfWFUOMx_K0rySEhmUeJFmkdBesE2DToiGON2ye4NNaLKVI1bnCRc2B1zqEDaHJIz0x9p8be-BfsOqwKxDwmYlitdki-M1uec_X9HDNj_uy6i9M-A9cWkZvVtm0pOsKYtRDV7Lzj2XW7-NdWmEqys7lB1hS_NwYBtyhbGjmfu-R9Hak3e5jz_7R4X_-UMeRQE_gL9NAR87E-yG3Q2vzNHyw7eyjhYnY2"/>
+<img alt="Member" class="w-8 h-8 rounded-DEFAULT border border-surface-container-lowest relative z-20" data-alt="A professional headshot of a senior maritime executive in a sharp navy blue business suit, standing in a brightly lit modern corporate office with subtle nautical decor in the background. The lighting is soft and even, highlighting a confident and authoritative expression. The aesthetic is clean, high-trust, and enterprise-focused, utilizing a cool and professional color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCssmQu6GsQZ03H-fUYQ3tjHcOVrFeUfljXfTJc6IgCQulrNS4iMP7FBipEjP0QUpVKvdIjHyQhRqcgSckHf7C8k7MdJ_ZreIuhx5GZAosqAIvHhJI22Sy3b8y5niDx2SLs-MKPfSh-odDgZezqaR8BNTHfJZh1uRajOqlOpkaeOVOhuVEtw8N-04-6Msu1jd0sDj-Kbr2JUZsKmjcCofAJD_5uh4wuGFO3x6GCIgTqpWZdaHaVsk8JQt8OLreYpzdfFbL3ZfoWsBEV"/>
+<div class="w-8 h-8 rounded-DEFAULT bg-surface-variant border border-surface-container-lowest relative z-10 flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant">+12</div>
+</div>
+<button class="p-xs hover:bg-surface-variant rounded-DEFAULT text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">person_add</span>
+</button>
+<button class="p-xs hover:bg-surface-variant rounded-DEFAULT text-on-surface-variant transition-colors xl:hidden">
+<span class="material-symbols-outlined">info</span>
+</button>
+</div>
+</div>
+<!-- Chat Messages Scroll Area -->
+<div class="flex-1 overflow-y-auto p-lg flex flex-col gap-lg bg-surface">
+<!-- Date Divider -->
+<div class="flex items-center justify-center my-md">
+<span class="bg-surface-container-low px-md py-xs rounded-full font-label-sm text-label-sm text-on-surface-variant border border-outline-variant">Today, Oct 24</span>
+</div>
+<!-- Message from Other -->
+<div class="flex gap-md max-w-[85%]">
+<img alt="Capt. Reynolds" class="w-10 h-10 rounded-DEFAULT object-cover shrink-0 mt-xs" data-alt="A portrait of a professional female maritime captain in her mid-40s, wearing a standard merchant navy uniform. She has a serious but approachable expression. The background is a slightly out-of-focus ship's bridge with navigation equipment visible. Bright, crisp lighting emphasizes a high-end corporate maritime environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKxl6lxN9i-zvrZyYCSPyQy5pQYlxw_YvkdHPzgLgL-br8yiYa5OGLhaqhZStYvMjkZzlAs3H28X3IVTGExCb9Ak6GRwVhL7234JIOzj4Aw4zF5Emsahlf6I_2rZrD0MDU_ZY4kNdw661DFXIRCQJD1Z1dizHUYara0z4Aj_h5MC54f5q4USLpvzFD5jAoz4UCkVFiTqHPpEbHpFzg8oyV99uHaMNTptL1xK82Xp9rPkEdFuHmNrd3F0MStaYb3RTGIdeYixbTjDHu"/>
+<div class="flex flex-col gap-xs">
+<div class="flex items-baseline gap-sm">
+<span class="font-headline-sm text-body-md text-on-surface font-semibold">Capt. Reynolds</span>
+<span class="font-label-sm text-label-sm text-outline">08:45 AM</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-md rounded-DEFAULT rounded-tl-none shadow-sm text-on-surface font-body-md text-body-md">
+                                Update on the Singapore port approach: Weather routing suggests a minor deviation. I've uploaded the revised chart data to the shared drive. Please review before the 1000hrs briefing.
+                            </div>
+</div>
+</div>
+<!-- Message with File Attachment -->
+<div class="flex gap-md max-w-[85%]">
+<div class="w-10 h-10 rounded-DEFAULT bg-tertiary-container text-on-tertiary-container flex items-center justify-center font-label-md text-label-md shrink-0 mt-xs">
+                            2O
+                        </div>
+<div class="flex flex-col gap-xs w-full">
+<div class="flex items-baseline gap-sm">
+<span class="font-headline-sm text-body-md text-on-surface font-semibold">2nd Officer Davies</span>
+<span class="font-label-sm text-label-sm text-outline">09:12 AM</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-md rounded-DEFAULT rounded-tl-none shadow-sm flex flex-col gap-sm">
+<span class="text-on-surface font-body-md text-body-md">Acknowledged, Captain. Reviewing the updated waypoints now. Also attaching the preliminary stability calculations for the upcoming cargo ops.</span>
+<!-- File Attachment Card -->
+<div class="flex items-center gap-md p-sm border border-outline-variant rounded-DEFAULT bg-surface-container-low max-w-sm cursor-pointer hover:bg-surface-variant transition-colors">
+<div class="w-10 h-10 bg-primary-container rounded-DEFAULT flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined" style="font-size: 20px;">description</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="font-label-md text-label-md text-on-surface truncate">stability_calc_sg_v2.pdf</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">1.2 MB • PDF Document</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant pr-sm">download</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Message from Self (Right aligned conceptually, but standard enterprise chat often keeps left aligned for readability, just changes styling. Let's stick to standard left align but distinct style) -->
+<div class="flex gap-md max-w-[85%] self-end">
+<div class="flex flex-col gap-xs items-end">
+<div class="flex items-baseline gap-sm flex-row-reverse">
+<span class="font-headline-sm text-body-md text-on-surface font-semibold">You</span>
+<span class="font-label-sm text-label-sm text-outline">09:15 AM</span>
+</div>
+<div class="bg-primary text-on-primary p-md rounded-DEFAULT rounded-tr-none shadow-sm font-body-md text-body-md text-right">
+                                I'll cross-reference those calculations with the shore terminal requirements and get back to you shortly.
+                            </div>
+</div>
+</div>
+</div>
+<!-- Chat Input Area -->
+<div class="p-lg bg-surface-container-lowest border-t border-outline-variant shrink-0">
+<div class="flex items-end gap-sm bg-surface-container-low border border-outline-variant rounded-DEFAULT p-xs focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+<button class="p-sm text-outline-variant hover:text-on-surface transition-colors rounded-DEFAULT">
+<span class="material-symbols-outlined">add_circle</span>
+</button>
+<textarea class="flex-1 bg-transparent border-none focus:ring-0 resize-none max-h-32 py-sm font-body-md text-body-md text-on-surface placeholder-outline" placeholder="Message #deck-officers..." rows="1" style="min-height: 44px;"></textarea>
+<div class="flex items-center pb-xs pr-xs gap-xs">
+<button class="p-sm text-outline-variant hover:text-on-surface transition-colors rounded-DEFAULT">
+<span class="material-symbols-outlined" style="font-size: 20px;">sentiment_satisfied</span>
+</button>
+<button class="p-sm bg-primary text-on-primary rounded-DEFAULT hover:opacity-90 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-size: 20px;">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Pane: Channel Details -->
+<div class="w-80 border-l border-outline-variant bg-surface-container-lowest flex flex-col h-full shrink-0 hidden xl:flex">
+<div class="h-16 px-lg border-b border-outline-variant flex items-center bg-surface-container-lowest shrink-0">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Details</h2>
+</div>
+<div class="flex-1 overflow-y-auto p-lg flex flex-col gap-xl">
+<!-- About Section -->
+<div class="flex flex-col gap-sm">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">About</h3>
+<div class="bg-surface-container-low p-md rounded-DEFAULT border border-outline-variant">
+<p class="font-body-sm text-body-sm text-on-surface mb-md">General discussion, routing updates, and operational coordination for all deck personnel across the Alpha fleet.</p>
+<div class="flex flex-wrap gap-xs">
+<span class="px-sm py-xs bg-surface-container-highest rounded-DEFAULT font-label-sm text-label-sm text-on-surface-variant">#operations</span>
+<span class="px-sm py-xs bg-surface-container-highest rounded-DEFAULT font-label-sm text-label-sm text-on-surface-variant">#fleet-alpha</span>
+</div>
+</div>
+</div>
+<!-- Pinned Items Bento style -->
+<div class="flex flex-col gap-sm">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest flex items-center justify-between">
+                            Pinned Assets
+                            <span class="material-symbols-outlined text-outline" style="font-size: 16px;">push_pin</span>
+</h3>
+<div class="grid grid-cols-2 gap-sm">
+<div class="bg-surface-container-low border border-outline-variant p-sm rounded-DEFAULT flex flex-col items-center justify-center text-center gap-xs cursor-pointer hover:bg-surface-variant transition-colors aspect-square">
+<span class="material-symbols-outlined text-primary-container" style="font-size: 28px;">map</span>
+<span class="font-label-sm text-label-sm text-on-surface">Route Charts</span>
+</div>
+<div class="bg-surface-container-low border border-outline-variant p-sm rounded-DEFAULT flex flex-col items-center justify-center text-center gap-xs cursor-pointer hover:bg-surface-variant transition-colors aspect-square">
+<span class="material-symbols-outlined text-tertiary" style="font-size: 28px;">policy</span>
+<span class="font-label-sm text-label-sm text-on-surface">Safety SOPs</span>
+</div>
+</div>
+</div>
+<!-- Members List -->
+<div class="flex flex-col gap-sm">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest flex justify-between items-center">
+                            Members (14)
+                            <span class="material-symbols-outlined text-outline-variant cursor-pointer hover:text-primary" style="font-size: 18px;">search</span>
+</h3>
+<div class="flex flex-col gap-xs mt-xs">
+<div class="flex items-center justify-between p-sm hover:bg-surface-container-low rounded-DEFAULT cursor-pointer transition-colors border border-transparent hover:border-outline-variant">
+<div class="flex items-center gap-md">
+<div class="relative">
+<img alt="Capt. Reynolds" class="w-8 h-8 rounded-DEFAULT object-cover" data-alt="A portrait of a professional female maritime captain in her mid-40s, wearing a standard merchant navy uniform. She has a serious but approachable expression. The background is a slightly out-of-focus ship's bridge with navigation equipment visible. Bright, crisp lighting emphasizes a high-end corporate maritime environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZN34UXbUn9AL-upCaRAUqTCKou1nqH3FNI4D7z7JXhz7AD6r7lpvY8fmgqc_KTROwzNX6dS1kh6zK_XxcNPsGmoKX8xYTX2_uR_aMqTy3EHrCckcc0VYVjAG6enHaXJU87Q9RyZ91xxqR1q8H-bRQeStL0j8DjiO0xuR7EzdLLO_b3-VFdoqF0PyzSnjBvF9qUDBNX8uYaTXJcYUoRJc3mbVmBPSAWxhSFRKRn5g5OQlrtd14a9N8N4s4h0Sytwrp_dKWThoKnfzv"/>
+<span class="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-surface-container-lowest rounded-full"></span>
+</div>
+<div>
+<div class="font-body-sm text-body-sm text-on-surface font-semibold">Capt. Reynolds</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Master Mariner</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant" style="font-size: 18px;">more_vert</span>
+</div>
+<div class="flex items-center justify-between p-sm hover:bg-surface-container-low rounded-DEFAULT cursor-pointer transition-colors border border-transparent hover:border-outline-variant">
+<div class="flex items-center gap-md">
+<div class="w-8 h-8 rounded-DEFAULT bg-tertiary-container text-on-tertiary-container flex items-center justify-center font-label-md text-label-md">
+                                        2O
+                                    </div>
+<div>
+<div class="font-body-sm text-body-sm text-on-surface">Davies</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">2nd Officer</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant" style="font-size: 18px;">more_vert</span>
+</div>
+<div class="flex items-center justify-between p-sm hover:bg-surface-container-low rounded-DEFAULT cursor-pointer transition-colors border border-transparent hover:border-outline-variant opacity-70">
+<div class="flex items-center gap-md">
+<img alt="Fleet Mgr" class="w-8 h-8 rounded-DEFAULT object-cover grayscale" data-alt="A professional headshot of a senior maritime executive in a sharp navy blue business suit, standing in a brightly lit modern corporate office with subtle nautical decor in the background. The lighting is soft and even, highlighting a confident and authoritative expression. The aesthetic is clean, high-trust, and enterprise-focused, utilizing a cool and professional color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD30s0LHs3Gpd8HrEXG_DeNl737HfXCx9jVnGv0NneWDnrsmlWjbYjsoUAU5W8hp3ESXrmYuEhqatjYpVLdkzI6ZX0vRZ90JuIqDXCx-sMUmp0Hr1kyOFMV3LpgJYmhrOd571ESMKRKPx_I22LHt3zsBaAMuSpoBY1r5sf41kCLsUo5pk5TFp7aFqvPGsMDFSSACIcMu01MN4q4Fa3FDnkIL_EE6fDD-ADPvQfXVZ-G4i9oZV0FRdfMgAUwByQ0ICrawOtxqTyPTITF"/>
+<div>
+<div class="font-body-sm text-body-sm text-on-surface">R. Thompson</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Fleet Manager (Offline)</div>
+</div>
+</div>
+</div>
+<button class="mt-sm text-center font-label-md text-label-md text-primary hover:text-primary-container transition-colors py-sm border border-dashed border-outline-variant rounded-DEFAULT hover:bg-surface-container-low">
+                                View All Members
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

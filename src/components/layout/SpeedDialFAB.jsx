@@ -1,48 +1,53 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Plus, X, BookOpen, Users, UserPlus, Star, Lightbulb, Handshake, FileText, Send, Library } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Plus, X, BookOpen, Users, UserPlus, Star, Lightbulb, Handshake, FileText, Send, Library, SquarePen } from 'lucide-react';
 
 export default function SpeedDialFAB() {
   const [isOpen, setIsOpen] = useState(false);
   const [animating, setAnimating] = useState(false);
-  const location = useLocation();
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     setAnimating(true);
     const timer = setTimeout(() => setAnimating(false), 600);
     return () => clearTimeout(timer);
-  }, [location.pathname]);
+  }, [pathname]);
 
   const getModuleConfig = () => {
-    switch (location.pathname) {
+    switch (pathname) {
       case '/services':
         return {
           color: 'var(--glow-services)',
           primaryAction: 'Post a Job',
+          primaryPath: '/services?post=true',
           shortcuts: [
-            { label: 'Opportunity', icon: Lightbulb },
-            { label: 'Partners', icon: Handshake },
-            { label: 'My Job Posting', icon: FileText },
-            { label: 'My Job Application', icon: Send },
+            { label: 'Opportunity', icon: Lightbulb, path: '/services/opportunities' },
+            { label: 'Partners', icon: Handshake, path: '/services/partners' },
+            { label: 'My Job Posting', icon: FileText, path: '/services/my-postings' },
+            { label: 'My Job Application', icon: Send, path: '/services/my-applications' },
           ]
         };
-      case '/blog':
+      case '/mblog':
         return {
           color: 'var(--primary)',
           primaryAction: 'Post a Blog',
+          primaryPath: '/mblog?compose=true',
           shortcuts: [
-            { label: 'My Blog', icon: Library },
+            { label: 'My Blog', icon: Library, path: '/mblog/my-blogs' },
           ]
         };
       default: // MNetwork
         return {
           color: 'var(--glow-network)',
           primaryAction: 'Post to Logbook',
+          primaryPath: '/logbook',
           shortcuts: [
-            { label: 'Logbook', icon: BookOpen },
-            { label: 'Group', icon: Users },
-            { label: 'Connection', icon: UserPlus },
-            { label: 'Talents', icon: Star },
+            { label: 'Logbook', icon: BookOpen, path: '/logbook' },
+            { label: 'Group', icon: Users, path: '/groups' },
+            { label: 'Connection', icon: UserPlus, path: '/connections' },
+            { label: 'Talents', icon: Star, path: '/talent' },
+            { label: 'Post to Blog', icon: SquarePen, path: '/mblog?compose=true' },
           ]
         };
     }
@@ -50,17 +55,29 @@ export default function SpeedDialFAB() {
 
   const config = getModuleConfig();
 
+  const handleNavigation = (path) => {
+    router.push(path);
+    setIsOpen(false);
+  };
+
   return (
     <>
       <div className={`mobile-fab-container ${isOpen ? 'open' : ''}`}>
         {/* Speed Dial Menu */}
         <div className="speed-dial-menu">
-          <div className="speed-dial-primary-btn">
+          <div 
+            className="speed-dial-primary-btn"
+            onClick={() => handleNavigation(config.primaryPath)}
+          >
             {config.primaryAction}
           </div>
           <div className="speed-dial-shortcuts">
             {config.shortcuts.map((s, idx) => (
-              <div key={idx} className="speed-dial-shortcut-item">
+              <div 
+                key={idx} 
+                className="speed-dial-shortcut-item"
+                onClick={() => handleNavigation(s.path)}
+              >
                 <span className="shortcut-label">{s.label}</span>
                 <div className="shortcut-icon-wrapper">
                   <s.icon size={18} />

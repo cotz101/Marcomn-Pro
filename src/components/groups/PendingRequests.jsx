@@ -46,11 +46,12 @@ export default function PendingRequests({ groupId }) {
 
       if (error) throw error;
       
-      setRequests(prev => prev.filter(req => req.user_id !== userId));
       alert('User approved!');
+      // Revalidate: Re-fetch requests from backend
+      fetchRequests();
     } catch (err) {
-      console.error('Error approving user:', err);
-      alert('Failed to approve user.');
+      console.error('Error approving user:', err.message);
+      alert('Failed to approve user: ' + err.message);
     }
   };
 
@@ -64,11 +65,12 @@ export default function PendingRequests({ groupId }) {
 
       if (error) throw error;
       
-      setRequests(prev => prev.filter(req => req.user_id !== userId));
       alert('Request declined.');
+      // Revalidate: Re-fetch requests from backend
+      fetchRequests();
     } catch (err) {
-      console.error('Error declining request:', err);
-      alert('Failed to decline request.');
+      console.error('Error declining request:', err.message);
+      alert('Failed to decline request: ' + err.message);
     }
   };
 

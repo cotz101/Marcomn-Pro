@@ -92,7 +92,7 @@ export default function CreateGroupModal({ isOpen, onClose, onSuccess }) {
           />
         </div>
 
-        <div>
+        <div className="mb-8">
           <label className="block text-sm font-bold text-[#0e2a4d] mb-1">Privacy Setting</label>
           <select 
             value={type}
@@ -102,20 +102,21 @@ export default function CreateGroupModal({ isOpen, onClose, onSuccess }) {
             <option value="public">Public - Anyone can join</option>
             <option value="private">Private - Request to join</option>
           </select>
+          <p className="mt-1 text-[10px] text-gray-500 font-medium">Public groups are visible to everyone, while private groups require approval to join.</p>
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-3 pt-6 border-t border-gray-100">
           <button 
             type="button"
             onClick={onClose}
-            className="flex-1 py-3 border border-gray-300 rounded-lg font-bold text-gray-600 hover:bg-gray-50 transition-all"
+            className="flex-1 py-3 border border-gray-300 rounded-lg font-bold text-gray-600 hover:bg-gray-50 transition-all text-sm"
           >
             Cancel
           </button>
           <button 
             type="submit"
             disabled={isLoading}
-            className={`flex-1 py-3 bg-[#002b4e] text-white rounded-lg font-bold hover:bg-[#001f38] transition-all ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`flex-1 py-3 bg-[#002b4e] text-white rounded-lg font-bold hover:bg-[#001f38] transition-all text-sm ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {isLoading ? 'Creating...' : 'Create Community'}
           </button>

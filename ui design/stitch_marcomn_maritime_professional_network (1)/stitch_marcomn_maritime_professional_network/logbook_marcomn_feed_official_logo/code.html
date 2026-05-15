@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MarComn - Logbook</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f4f3f7",
+                        "outline-variant": "#c4c6cf",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "primary-fixed-dim": "#adc8f6",
+                        "on-primary-fixed": "#001b3c",
+                        "tertiary-container": "#cca830",
+                        "surface-container-high": "#e9e7eb",
+                        "on-secondary-fixed": "#0b1c30",
+                        "tertiary-fixed-dim": "#e9c349",
+                        "surface": "#faf9fd",
+                        "on-secondary-container": "#54647a",
+                        "surface-dim": "#dad9dd",
+                        "outline": "#74777f",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#000d22",
+                        "on-tertiary-fixed": "#241a00",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "inverse-on-surface": "#f1f0f4",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#1a1c1e",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "secondary-container": "#d0e1fb",
+                        "inverse-surface": "#2f3033",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#faf9fd",
+                        "on-surface-variant": "#43474e",
+                        "tertiary-fixed": "#ffe088",
+                        "secondary-fixed": "#d3e4fe",
+                        "surface-container-highest": "#e3e2e6",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#4f3e00",
+                        "on-surface": "#1a1c1e",
+                        "surface-container": "#eeedf1",
+                        "tertiary": "#735c00",
+                        "primary-container": "#002349",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#e3e2e6",
+                        "inverse-primary": "#adc8f6",
+                        "surface-tint": "#455f88",
+                        "on-primary-container": "#718bb7",
+                        "on-primary": "#ffffff",
+                        "background": "#faf9fd",
+                        "secondary": "#505f76",
+                        "primary-fixed": "#d5e3ff",
+                        "on-primary-fixed-variant": "#2c476f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "margin-mobile": "16px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "xs": "4px",
+                        "xl": "40px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Public Sans"],
+                        "body-md": ["Public Sans"],
+                        "headline-sm": ["Public Sans"],
+                        "body-lg": ["Public Sans"],
+                        "body-sm": ["Public Sans"],
+                        "label-sm": ["Public Sans"],
+                        "headline-md": ["Public Sans"],
+                        "label-md": ["Public Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
+                        "label-sm": ["11px", {"lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md text-body-md antialiased overflow-y-scroll">
+<!-- TopNavBar (Shared Component) -->
+<header class="fixed bg-white dark:bg-slate-900 flex justify-between items-center w-full px-6 h-16 border-b border-slate-200 dark:border-slate-800 flat no shadows docked full-width top-0 z-50">
+<div class="flex items-center gap-6">
+<div class="text-xl font-bold tracking-tight text-blue-900 dark:text-blue-100 font-public-sans"><img alt="MarComn Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ADBb0ug5oUcQeH96m5acZXwhoBGHkipF6s9q08bBFn1uPP4cdWpXeT7nVSevFadRT6mlmrhQ7JG_Bg0SFYPZclxbT-MLLqRU8AZIzDPXYdNi6Oh7t_W2HDqwRNYGrCFkA1VulLuu7ZmQeKID63-U9uZgLDv_h1E0aVCHPN06dTh2plAHsW3Vxnk6CKbt9MWFVMbCQ84QfLebaajAounuOcOcNxNUPKoeuNQc_HpqBzp7UvR6E2HNXgPp0Nwas2Us2DT1wNQ97mg_IXflcx8"/></div>
+<!-- Search Bar: on_left -->
+<div class="relative hidden md:block w-80 ml-4">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[20px]">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors font-body-sm text-body-sm text-slate-700" placeholder="Search professionals, vessels, or jobs..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors rounded-full cursor-pointer active:opacity-80 flex items-center justify-center">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors rounded-full cursor-pointer active:opacity-80 flex items-center justify-center">
+<span class="material-symbols-outlined">switch_account</span>
+</button>
+<div class="h-8 border-l border-slate-200 mx-2"></div>
+<img alt="Professional avatar" class="w-9 h-9 rounded-full border border-slate-200 cursor-pointer object-cover" data-alt="A professional headshot of a confident male maritime executive wearing a crisp white dress shirt and a navy blue blazer. He is standing in a brightly lit modern office with subtle nautical decor in the blurred background. The lighting is soft and professional, evoking a sense of trust and authority in the corporate maritime sector." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDS0QSrXrIcW4u__O5VhU8ksGLBZwJiPQPNGpApcm36ItWEKjrD31JeUn6A0RPLkWN3krykY0TkHZ-FfSScaZnA1gIh1XCOr3Kiu3TAHyqHcEnWPNfTyiv_LHzRSkGvjGDj2OsYq8iUMT_UmB6SFqnf7dWQ1Qa-qpDsIYbxB0gIOJRkDtNR7HEksMluGnLR_5jRRpOXB_GF6b7gJu_XKK0mUflK4v8XqNSg4timql0t1vd7qgOcxxYeo2Q-SbauREnrMUYoF8w8KNzb"/>
+</div>
+</header>
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full flex flex-col pt-16 z-40 bg-slate-50 dark:bg-slate-950 h-screen w-64 border-r rounded-none border-r border-slate-200 dark:border-slate-800 flat no shadows font-public-sans text-sm font-medium">
+<div class="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-white flex items-center justify-center p-1 border border-slate-200">
+<img alt="M" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida/ADBb0ug5oUcQeH96m5acZXwhoBGHkipF6s9q08bBFn1uPP4cdWpXeT7nVSevFadRT6mlmrhQ7JG_Bg0SFYPZclxbT-MLLqRU8AZIzDPXYdNi6Oh7t_W2HDqwRNYGrCFkA1VulLuu7ZmQeKID63-U9uZgLDv_h1E0aVCHPN06dTh2plAHsW3Vxnk6CKbt9MWFVMbCQ84QfLebaajAounuOcOcNxNUPKoeuNQc_HpqBzp7UvR6E2HNXgPp0Nwas2Us2DT1wNQ97mg_IXflcx8"/>
+</div>
+<div>
+<div class="text-lg font-black text-blue-900 dark:text-blue-200 leading-tight">MarComn</div>
+<div class="text-xs text-slate-500 font-normal">Enterprise Maritime</div>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto py-4 flex flex-col gap-1 px-3">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+                Dashboard
+            </a>
+<!-- Active Tab: Logbook -->
+<a class="flex items-center gap-3 px-3 py-2.5 bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 border-r-2 border-blue-700 shadow-sm transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+                Logbook
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined text-[20px]">work</span>
+                Jobs
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined text-[20px]">groups</span>
+                Teams
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined text-[20px]">anchor</span>
+                The Bridge
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined text-[20px]">person</span>
+                Profiles
+            </a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pl-64 pt-16 min-h-screen pb-xl">
+<div class="max-w-[1400px] mx-auto w-full flex gap-lg p-lg items-start justify-center">
+<!-- Left Sidebar: Quick Nav & Trending -->
+<aside class="w-[280px] hidden xl:flex flex-col gap-md sticky top-[88px]">
+<!-- Profile Snippet -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden">
+<div class="h-16 bg-surface-container-high w-full relative">
+<img class="w-full h-full object-cover opacity-80" data-alt="A wide, cinematic shot of a vast, calm ocean horizon at dusk. The sky is painted in deep blues and subtle purples, reflecting off the still water. The scene is minimal and expansive, representing the open sea and global navigation in a sleek, professional light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTBUo3qtKuBvqfmI-YPQMN-4DnFq44UN7z5Sm7EBaNvDyQnSRogC-7JHXgvjqTSs9XNKMjyn-W1i3IOJswv4bcescVVfsIRsN7MWHXKZCrDeQgpRNfoBhrytGYZ79eIPo-z-QlUiiEnAj7c_LHzOCL3ju40VeJGxM_lDbN7J5GF-KBC7Mf0RuqCAdTw4uLvaiXkCbCmXmpEbQYk56GbiaXcvasUJVaptESq8kCQBVHrNdl2yjnx74Fp7nkqB8yuLlQlt_U-6V-EeUy"/>
+</div>
+<div class="px-md pb-md relative pt-10">
+<img class="w-14 h-14 rounded-full border-2 border-surface-container-lowest absolute -top-7 left-md object-cover bg-white" data-alt="A professional headshot of a confident male maritime executive wearing a crisp white dress shirt and a navy blue blazer. He is standing in a brightly lit modern office with subtle nautical decor in the blurred background. The lighting is soft and professional, evoking a sense of trust and authority in the corporate maritime sector." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCodJoNevtC4tiuBxs9HoEtZgmqxsaBrUT9fI1vmdQES1r4uv-qSYP1rFF1-IJp-2XtVzvD1vSnel0HZdfzwMB-p15KnsLOt9skhbIPE2Fhe4cRimk2-I6g-9cuNt3XDXod-vWTHX5BLFcOMbcC3u_uTi-lhRR0IqxQ23dZHca8OkVL23A9dojyNlPfqy_EY7x2OLbSQF7g44nULzktRzsUEWDE3k8AKrloDfQ_gX803vOJQf4ydkjiJbfugfKsi0tLTlphxvzSvceW"/>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Capt. Marcus Vance</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">Master Mariner at Oceanix Global</p>
+<div class="flex items-center gap-xs mt-sm text-tertiary-container font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span>Verified Master</span>
+</div>
+</div>
+<div class="border-t border-outline-variant py-sm px-md flex justify-between items-center bg-surface hover:bg-surface-container-low cursor-pointer transition-colors">
+<span class="font-label-md text-label-md text-on-surface-variant">Profile Views</span>
+<span class="font-label-md text-label-md text-primary">342</span>
+</div>
+<div class="border-t border-outline-variant py-sm px-md flex justify-between items-center bg-surface hover:bg-surface-container-low cursor-pointer transition-colors">
+<span class="font-label-md text-label-md text-on-surface-variant">Network</span>
+<span class="font-label-md text-label-md text-primary">1,204</span>
+</div>
+</div>
+<!-- Trending Topics -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-sm">Industry Signals</h3>
+<div class="flex flex-col gap-sm mt-md">
+<a class="group" href="#">
+<div class="font-label-md text-label-md text-on-surface-variant mb-xs">Trending in Singapore</div>
+<div class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">#MaritimeDecarbonization</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant mt-xs">1.2k updates</div>
+</a>
+<div class="h-[1px] bg-outline-variant opacity-50 my-xs"></div>
+<a class="group" href="#">
+<div class="font-label-md text-label-md text-on-surface-variant mb-xs">Hiring Surge</div>
+<div class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Offshore Wind Specialists</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant mt-xs">450 open roles</div>
+</a>
+<div class="h-[1px] bg-outline-variant opacity-50 my-xs"></div>
+<a class="group" href="#">
+<div class="font-label-md text-label-md text-on-surface-variant mb-xs">Logistics Network</div>
+<div class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">#PanamaCanalDraft</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant mt-xs">890 discussions</div>
+</a>
+</div>
+</div>
+</aside>
+<!-- Center Column: The Logbook Feed -->
+<div class="flex-1 max-w-[640px] flex flex-col gap-md">
+<!-- Create Post Input -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md">
+<div class="flex gap-sm items-start">
+<img class="w-12 h-12 rounded-full border border-outline-variant object-cover" data-alt="A professional headshot of a confident male maritime executive wearing a crisp white dress shirt and a navy blue blazer. He is standing in a brightly lit modern office with subtle nautical decor in the blurred background. The lighting is soft and professional, evoking a sense of trust and authority in the corporate maritime sector." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCI4yE6gkE-PY5gJI4-NC7vWka_JNgoDxHKn0HrD4p8GUAAyutCAcOo4sghtnXS5y-5v1DRdXFmsOJJJzDzwMnwQ_q092cUAqWWbMbqh2bbXBPqzuqAnxWq5oHxN81i0FxXiWhlJi0THRPUVhk_KB1IjhIxaCIC7wKKGIYYqhpl9BtYoM4_q8OxutL4hn9Hgcz9eFaKN7KVTs23toxDsKfhYAN8loAKI7g6Sd6dbT5PdWVcBmqtCl0olR0d_JjRSrQtT5JRvUZqiWfy"/>
+<div class="flex-1">
+<button class="w-full text-left bg-surface hover:bg-surface-container-low border border-outline-variant rounded-full py-3 px-4 font-body-md text-body-md text-on-surface-variant transition-colors cursor-text">
+                                Log an update, share news, or post a role...
+                            </button>
+</div>
+</div>
+<div class="flex justify-between items-center mt-sm pt-sm border-t border-surface-container-high">
+<div class="flex gap-2">
+<button class="flex items-center gap-2 p-2 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[20px] text-primary">image</span>
+<span class="font-label-md text-label-md">Media</span>
+</button>
+<button class="flex items-center gap-2 p-2 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[20px] text-tertiary">description</span>
+<span class="font-label-md text-label-md">Document</span>
+</button>
+<button class="flex items-center gap-2 p-2 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[20px] text-secondary">work</span>
+<span class="font-label-md text-label-md">Job Post</span>
+</button>
+</div>
+<button class="bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded transition-colors hover:bg-primary/90">
+                            Post Update
+                        </button>
+</div>
+</div>
+<!-- Feed Divider -->
+<div class="flex items-center gap-sm my-xs">
+<div class="h-[1px] bg-outline-variant flex-1 opacity-50"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">SORT BY: RECENT</span>
+<div class="h-[1px] bg-outline-variant flex-1 opacity-50"></div>
+</div>
+<!-- Post 1: Personal Update (Glassmorphism hint with crisp borders) -->
+<article class="bg-surface-container-lowest border border-outline-variant rounded-lg p-0 overflow-hidden shadow-[0_2px_8px_-4px_rgba(0,13,34,0.1)]">
+<div class="p-md">
+<div class="flex justify-between items-start mb-sm">
+<div class="flex gap-sm items-center">
+<img class="w-12 h-12 rounded-full border border-outline-variant object-cover" data-alt="A professional headshot of a female Chief Engineer wearing a crisp navy blue uniform with gold stripes on the shoulders. She has a confident, warm smile and is standing in a brightly lit, modern ship control room with digital panels softly glowing in the out-of-focus background. The image exudes competence and professional maritime authority." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPkB3XIeEXUqPOtn_GZM3yfcXaTzvhhQgeuMkemLsUAp46bmddEQUkWONuHxx3hF-zgCyorpK8fn2Sijsdd61G6XGM2XwptbIaBX62I7I-kCRZELQ6e_e-WAWhS3sOmd9HxInQ6z588TbwOJOjKBpzQ9TCb8P-E8t6V7ASCiOjv7WddG3J0M4SFcqmUmSi2HpcP9CSryd-0maVcTYbh3bFZpiPoKTuzIqFwc9c6mZ9F8qQUEFAkhIDShZ6vtLENXNoTGhlYnu8lQvq"/>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface hover:text-primary cursor-pointer transition-colors">Sarah Jenkins</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Chief Engineer at North Star Fleet</p>
+<p class="font-label-sm text-label-sm text-outline mt-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">public</span> 2h ago
+                                    </p>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+<div class="font-body-md text-body-md text-on-surface mt-md mb-md whitespace-pre-line">
+                            Just completed a 6-month rotation aboard the NS Vanguard across the Pacific route. Incredibly proud of the engineering team for maintaining 99.8% propulsion uptime despite challenging weather conditions near the Aleutians. 
+                            
+                            Taking a few weeks of shore leave before my next assignment. Looking forward to catching up with the network in Rotterdam next month! ⚓️🌊 #MaritimeEngineering #LifeAtSea
+                        </div>
+</div>
+<!-- Image Grid Layout -->
+<div class="grid grid-cols-2 gap-xs px-md pb-md">
+<img class="w-full h-48 object-cover rounded-l-md border border-outline-variant/30" data-alt="A stunning, wide-angle photograph taken from the deck of a massive cargo ship sailing through rough, deep blue ocean waters. The sky is dramatic with dark, textured clouds, but bright sunlight breaks through to illuminate the towering steel structure of the ship and the crashing whitecaps. The aesthetic is powerful, industrial, and high-definition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtI3_MzD-aN6mM_fvzJqVMgP8RWjmVwJIHG_SllLEOuXYrxdHBs9ISyYUxhUwCxZTuOq_g_vxJt6-MNpbCxBOqh3wSHRtlH-aGbmpE01quVZbcvmakLa4uDOIujW3GF07zkG20KLD-k72y9Q-CcERXSunun5aTsWZJN119WXwLX8yZPAvjVeAsezqPduVDOleJ0Oqy6Xtv9XycFjie-QsAzJNbpo1NdVz2MtRmq-zYX6cRCadrWFtsxmC0u775XUySvzfbGyopR5SQ"/>
+<img class="w-full h-48 object-cover rounded-r-md border border-outline-variant/30" data-alt="A close-up, highly detailed shot of complex, pristine steel machinery inside a modern ship's engine room. The lighting is clinical and bright, highlighting the polished metal pipes, massive valves, and digital gauge panels. The scene conveys technical precision, cleanliness, and the immense power of marine engineering in a corporate context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBaEUESDlhx36W7hPxX4-hfrq6kLN9M7QJkUcc8Z-a5QwiNwCQlldmcTsEIJrRplRn1RWNxAtz7hexJI8dI5wHQqHHcjTqrIMI6VfXBIPWtAmThSCOFlWGFX3MjafZmjNPRScEMkx5pA_jOGk6cS6mKW6bIw9nLcuzAzmRqw8uIjQwI8vgbMgIXXn8wG9YWPMCEirdhM4Znqda8gR9GNV0O-ag8z7-ekeJ3PWNk2Qlfi6L0G2T_MRvBg8MrNSj5vpfTd4B8I7gLaXvV"/>
+</div>
+<div class="px-md py-sm border-t border-outline-variant bg-surface flex items-center justify-between">
+<div class="flex gap-1">
+<button class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">thumb_up</span>
+<span class="font-label-md text-label-md">248</span>
+</button>
+<button class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[20px]">chat_bubble</span>
+<span class="font-label-md text-label-md">42</span>
+</button>
+</div>
+<button class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[20px]">share</span>
+<span class="font-label-md text-label-md">Share</span>
+</button>
+</div>
+</article>
+<!-- Post 2: Company Announcement -->
+<article class="bg-surface-container-lowest border border-outline-variant rounded-lg p-0 overflow-hidden shadow-[0_2px_8px_-4px_rgba(0,13,34,0.1)]">
+<div class="p-md">
+<div class="flex justify-between items-start mb-sm">
+<div class="flex gap-sm items-center">
+<div class="w-12 h-12 rounded bg-surface-container border border-outline-variant flex items-center justify-center p-1">
+<img class="w-full h-full object-contain mix-blend-multiply" data-alt="A clean, minimalist corporate logo featuring a stylized ocean wave intersecting with a geometric globe, rendered in deep navy blue and vibrant cyan. The logo sits perfectly centered on a pristine white background. The aesthetic is strictly enterprise, conveying global reach, stability, and modern corporate identity in the logistics sector." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDV4bKg5Wq2AjWbY6ba5ivtZrwCQDUzcO3IGrVXloq8AsnGhmfrohpZJAgYbKGWA5PUnEtQHD6mElmdEvrORCXw377iOrBN8-4MD6U8PsGEwXZ1z2YSAne8ZJEO2gbRYwtmMZJdum_sGq81FrEzLpEqAfhrQMDBK6zpzKZQcZz3fL2fC7TMoFgFhvNAVrI4pRhfbYK0uOkPo6Gkao0Sw3sqV4HVdxQJ209DyjhFbs__QOwLlvO0u_MN1FLmJbQSEHHIdRz5OeaxfVVZ"/>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="font-headline-sm text-headline-sm text-on-surface hover:text-primary cursor-pointer transition-colors">Maersk Corporate</h3>
+<span class="material-symbols-outlined text-[16px] text-tertiary-container" title="Verified Enterprise">verified</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Global Shipping &amp; Logistics • 1.2M Followers</p>
+<p class="font-label-sm text-label-sm text-outline mt-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">public</span> Promoted
+                                    </p>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+<div class="font-body-md text-body-md text-on-surface mt-md mb-md">
+                            We are accelerating our journey to net-zero. We're actively recruiting <strong>Dual-Fuel (Methanol) Certified Engineers</strong> to join our growing green fleet. If you have experience with next-generation propulsion systems and want to lead the industry's energy transition, we want to hear from you.
+                        </div>
+<!-- Embedded Job Card -->
+<div class="border border-outline-variant rounded-lg p-md mb-md bg-surface flex items-center justify-between">
+<div>
+<h4 class="font-headline-sm text-headline-sm text-primary mb-1">Chief Engineer - Dual Fuel Vessels</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-2">Maersk • Copenhagen, Denmark (Hybrid / At Sea)</p>
+<div class="flex gap-2">
+<span class="px-2 py-1 rounded bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">Full-time</span>
+<span class="px-2 py-1 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Executive Level</span>
+</div>
+</div>
+<button class="border border-outline text-primary rounded px-4 py-2 font-label-md text-label-md hover:bg-surface-container transition-colors">
+                                View Role
+                            </button>
+</div>
+</div>
+<div class="px-md py-sm border-t border-outline-variant bg-surface flex items-center justify-between">
+<div class="flex gap-1">
+<button class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">thumb_up</span>
+<span class="font-label-md text-label-md">1.2k</span>
+</button>
+<button class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[20px]">chat_bubble</span>
+<span class="font-label-md text-label-md">89</span>
+</button>
+</div>
+<button class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[20px]">share</span>
+<span class="font-label-md text-label-md">Share</span>
+</button>
+</div>
+</article>
+</div>
+<!-- Right Sidebar: People You May Know -->
+<aside class="w-[320px] hidden lg:flex flex-col gap-md sticky top-[88px]">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Network Suggestions</h3>
+<button class="p-1 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined text-[20px]">info</span>
+</button>
+</div>
+<div class="flex flex-col gap-md">
+<!-- Person 1 -->
+<div class="flex items-start gap-sm">
+<img class="w-12 h-12 rounded-full border border-outline-variant object-cover" data-alt="A professional, well-lit headshot of a younger male maritime officer wearing a pristine white uniform shirt with dark epaulets. He has a neat haircut and a slight, approachable smile. The background is a softly blurred modern office environment with hints of blue, emphasizing a crisp, corporate maritime aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1tZFUFkjGuaiXf0Bh1cxP6h0b2eIpB7HcyXUPNtGluh9QPx3i_7HrBhmAmDOdOosgNxvKw6NXr6Fjr4d_wmH6-1YBGTBnGUXWXPK4CLgd1PvyMab-F6iOPMvVhonfKQhTPBxw5V43RFCbFGx63sixLeQptgvlRjtEVSuo8FAxmz5VnNXV7ax80pkZSt1dpagYOpyGvMZQbo_VgvJszKhZcXD8V91XPzU9ZVpgq8ecBHT4c8KHoV36Hjy6nWzwUYRYh4MBD3MY7N6v"/>
+<div class="flex-1">
+<h4 class="font-body-md text-body-md font-semibold text-on-surface leading-tight">David Chen</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight mt-1">2nd Officer at Evergreen Marine</p>
+<p class="font-label-sm text-label-sm text-outline mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">link</span> 12 mutual connections
+                                </p>
+<button class="mt-2 w-full border border-outline text-primary rounded py-1.5 font-label-md text-label-md hover:bg-surface-container transition-colors flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[16px]">person_add</span> Connect
+                                </button>
+</div>
+</div>
+<!-- Person 2 -->
+<div class="flex items-start gap-sm">
+<img class="w-12 h-12 rounded-full border border-outline-variant object-cover" data-alt="A bright, professional headshot of a female maritime lawyer in a tailored charcoal grey blazer over a white blouse. She exudes confidence and intelligence. The background is an out-of-focus view of a bustling, modern port city seen through large glass windows. The lighting is natural and flattering, fitting a high-end corporate profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmLnaDCJ-B9fZyOAQh0uPs0ohgH0q5x7qkg1lgylZ6z1kJTffakqxIkiph8LJy5mN3bEFWDuXTu60_x17275tAW64XASetadgb8TZAILr1Ytoii7s-lh9zCo9eYGDaxA0Vk6P4ahAXWFUdMTwwZ4FbwbS2O4ljvtTo49SytUpaJrnXDnLLrg-3Ehe45RvhCd4txRNJnqt0ZmAA6rMgDuQ6ZmhYqpuqPExVQywtY7lKqHP0iWpFRSbKr0m10solq1IjrD_XrQlpQIrO"/>
+<div class="flex-1">
+<h4 class="font-body-md text-body-md font-semibold text-on-surface leading-tight">Elena Rostova</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight mt-1">Maritime Law Counsel • HFW</p>
+<p class="font-label-sm text-label-sm text-outline mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">location_on</span> Based in London
+                                </p>
+<button class="mt-2 w-full border border-outline text-primary rounded py-1.5 font-label-md text-label-md hover:bg-surface-container transition-colors flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[16px]">person_add</span> Connect
+                                </button>
+</div>
+</div>
+</div>
+<button class="w-full mt-md text-primary font-label-md text-label-md py-2 hover:bg-surface-container-low rounded transition-colors text-center border-t border-outline-variant pt-3">
+                        View All Recommendations
+                    </button>
+</div>
+<!-- Footer Links -->
+<div class="flex flex-wrap gap-x-3 gap-y-2 px-2 mt-sm justify-center text-center">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">About</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Accessibility</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Help Center</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy &amp; Terms</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Ad Choices</a>
+<div class="w-full font-label-sm text-label-sm text-outline mt-2">
+                        MarComn Corporation © 2024
+                    </div>
+</div>
+</aside>
+</div>
+</main>
+</body></html>

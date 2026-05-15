@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MarComn - Maritime Logistics Company</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f4f3f7",
+                        "outline-variant": "#c4c6cf",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "primary-fixed-dim": "#adc8f6",
+                        "on-primary-fixed": "#001b3c",
+                        "tertiary-container": "#cca830",
+                        "surface-container-high": "#e9e7eb",
+                        "on-secondary-fixed": "#0b1c30",
+                        "tertiary-fixed-dim": "#e9c349",
+                        "surface": "#faf9fd",
+                        "on-secondary-container": "#54647a",
+                        "surface-dim": "#dad9dd",
+                        "outline": "#74777f",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#000d22",
+                        "on-tertiary-fixed": "#241a00",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "inverse-on-surface": "#f1f0f4",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#1a1c1e",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "secondary-container": "#d0e1fb",
+                        "inverse-surface": "#2f3033",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#faf9fd",
+                        "on-surface-variant": "#43474e",
+                        "tertiary-fixed": "#ffe088",
+                        "secondary-fixed": "#d3e4fe",
+                        "surface-container-highest": "#e3e2e6",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#4f3e00",
+                        "on-surface": "#1a1c1e",
+                        "surface-container": "#eeedf1",
+                        "tertiary": "#735c00",
+                        "primary-container": "#002349",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#e3e2e6",
+                        "inverse-primary": "#adc8f6",
+                        "surface-tint": "#455f88",
+                        "on-primary-container": "#718bb7",
+                        "on-primary": "#ffffff",
+                        "background": "#faf9fd",
+                        "secondary": "#505f76",
+                        "primary-fixed": "#d5e3ff",
+                        "on-primary-fixed-variant": "#2c476f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "margin-mobile": "16px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "xs": "4px",
+                        "xl": "40px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Public Sans"],
+                        "body-md": ["Public Sans"],
+                        "headline-sm": ["Public Sans"],
+                        "body-lg": ["Public Sans"],
+                        "body-sm": ["Public Sans"],
+                        "label-sm": ["Public Sans"],
+                        "headline-md": ["Public Sans"],
+                        "label-md": ["Public Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400" }],
+                        "label-sm": ["11px", { "lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #faf9fd; }
+        .nav-active { border-left-width: 4px; border-left-color: #002349; background-color: #eeedf1; color: #002349; font-weight: 600; }
+        .nav-inactive { color: #54647a; font-weight: 400; }
+        .nav-inactive:hover { background-color: #f4f3f7; color: #001b3c; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased flex">
+<!-- SideNavBar (Web) -->
+<nav class="hidden md:flex flex-col h-screen w-64 border-r border-outline-variant rounded-none bg-surface-container-lowest z-40 fixed left-0 top-0 pt-16">
+<div class="px-6 py-lg border-b border-outline-variant flex flex-col items-start gap-xs">
+<span class="font-headline-lg text-headline-lg text-primary tracking-tight">MarComn</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Enterprise Maritime</span>
+</div>
+<div class="flex-1 overflow-y-auto py-md flex flex-col gap-xs">
+<a class="flex items-center gap-sm px-6 py-sm nav-inactive transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-sm px-6 py-sm nav-inactive transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-body-md text-body-md">Logbook</span>
+</a>
+<a class="flex items-center gap-sm px-6 py-sm nav-active transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="work">work</span>
+<span class="font-body-md text-body-md">Jobs</span>
+</a>
+<a class="flex items-center gap-sm px-6 py-sm nav-inactive transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-body-md text-body-md">Teams</span>
+</a>
+<a class="flex items-center gap-sm px-6 py-sm nav-inactive transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="anchor">anchor</span>
+<span class="font-body-md text-body-md">The Bridge</span>
+</a>
+<a class="flex items-center gap-sm px-6 py-sm nav-inactive transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-body-md text-body-md">Profiles</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col min-h-screen md:ml-64 w-full">
+<!-- TopNavBar -->
+<header class="bg-surface-container-lowest text-primary font-body-sm antialiased docked full-width top-0 z-50 border-b border-outline-variant flat no shadows flex justify-between items-center w-full px-6 h-16 sticky">
+<div class="flex items-center gap-md">
+<span class="md:hidden font-headline-md text-headline-md font-bold tracking-tight text-primary">MarComn</span>
+<div class="hidden md:flex items-center gap-sm text-on-surface-variant bg-surface-container-low px-sm py-xs rounded-lg border border-outline-variant">
+<span class="material-symbols-outlined text-outline" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 p-0 font-body-sm text-body-sm w-48 text-on-surface placeholder-outline" placeholder="Search logistics..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<button class="p-xs rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-outline-variant ml-sm cursor-pointer hover:bg-surface-container-low transition-colors active:opacity-80 flex items-center justify-center bg-surface-container-high text-primary font-label-md text-label-md">
+                    CO
+                </div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 p-margin-mobile md:p-margin-desktop overflow-y-auto">
+<div class="max-w-7xl mx-auto flex flex-col gap-lg md:gap-xl">
+<!-- Hero Banner & Company Info Bento -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-md">
+<!-- Banner -->
+<div class="lg:col-span-3 rounded-xl overflow-hidden relative h-64 md:h-80 border border-outline-variant bg-surface-container-lowest shadow-sm">
+<img alt="Company Banner" class="w-full h-full object-cover opacity-90" data-alt="A wide panoramic shot of a massive, modern maritime cargo port at dawn. Rows of highly organized shipping containers in muted blues and slate grays stretch into the distance. Enormous industrial cranes stand silhouetted against a crisp, clear morning sky. The scene conveys immense scale, logistical precision, and professional stability, perfectly aligning with a corporate enterprise aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC43zfFgRxmFxqY_AxDFjSu_KgcaIlVXf9eDq5sveaZbAHRt3L9d4_h-lYLERab_89G99dULb5SZVLybes4K7hembM_YSTuRtBYS9hxZrfskahIK9P_WRkD-5ktQZCEtQQbbYjk-TS1anMlBK2NoNWnyp52hvoqHPAkQHFaJrQZJN90DdOTw_1xrrzbFrUavrUuxEz5_kXZL6KhDnm3yc4hL9Mvpu4MMeEkFZGVr6ngEE8epHiqn4AWBo02uthysOkxHE9JkmSCIRgB"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
+<div class="absolute bottom-lg left-lg right-lg flex flex-col md:flex-row items-start md:items-end gap-md">
+<div class="h-24 w-24 md:h-32 md:w-32 bg-surface-container-lowest rounded-xl border-2 border-surface p-sm flex items-center justify-center shadow-sm shrink-0">
+<span class="material-symbols-outlined text-primary" data-icon="directions_boat" style="font-size: 48px;">directions_boat</span>
+</div>
+<div class="flex flex-col gap-xs text-surface-container-lowest mb-sm">
+<h1 class="font-headline-lg text-headline-lg text-surface-container-lowest">Nautical Logistics Corp</h1>
+<p class="font-body-lg text-body-lg opacity-90 flex items-center gap-xs">
+<span class="material-symbols-outlined text-base" data-icon="location_on">location_on</span>
+                                    Singapore Hub &amp; Global Operations
+                                </p>
+</div>
+<div class="md:ml-auto mb-sm">
+<button class="bg-primary text-on-primary border border-outline-variant hover:bg-primary-container px-lg py-sm rounded-lg font-label-md text-label-md transition-colors shadow-sm flex items-center gap-sm">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                                    Follow Company
+                                </button>
+</div>
+</div>
+</div>
+<!-- About / Mission -->
+<div class="lg:col-span-2 bg-surface-container-lowest rounded-xl p-lg border border-outline-variant shadow-sm flex flex-col gap-md">
+<h2 class="font-headline-sm text-headline-sm text-primary border-b border-surface-variant pb-xs">About Us</h2>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                            Nautical Logistics Corp is a premier provider of integrated maritime transport and supply chain solutions. With a focus on efficiency, reliability, and technological innovation, we operate a state-of-the-art fleet servicing major global trade routes. Our commitment to sustainable shipping practices and enterprise-grade operational stability makes us the trusted partner for complex cargo movements across the Asia-Pacific region and beyond.
+                        </p>
+<div class="flex gap-sm mt-auto pt-md">
+<span class="inline-flex items-center px-sm py-xs rounded bg-surface-container text-on-surface-variant font-label-md text-label-md border border-outline-variant">
+                                Deep Sea Freight
+                            </span>
+<span class="inline-flex items-center px-sm py-xs rounded bg-surface-container text-on-surface-variant font-label-md text-label-md border border-outline-variant">
+                                Port Management
+                            </span>
+</div>
+</div>
+<!-- Stats Sidebar -->
+<div class="bg-surface-container-lowest rounded-xl p-lg border border-outline-variant shadow-sm flex flex-col gap-md">
+<h2 class="font-headline-sm text-headline-sm text-primary border-b border-surface-variant pb-xs">Fleet &amp; Operations</h2>
+<div class="flex flex-col gap-sm">
+<div class="flex justify-between items-center p-sm bg-surface-container-low rounded border border-surface-dim">
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="directions_boat">directions_boat</span>
+<span class="font-body-sm text-body-sm">Active Vessels</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-primary">142</span>
+</div>
+<div class="flex justify-between items-center p-sm bg-surface-container-low rounded border border-surface-dim">
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-body-sm text-body-sm">Employees</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-primary">8,500+</span>
+</div>
+<div class="flex justify-between items-center p-sm bg-surface-container-low rounded border border-surface-dim">
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="public">public</span>
+<span class="font-body-sm text-body-sm">Global Ports</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-primary">64</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Current Openings Grid -->
+<section class="flex flex-col gap-md">
+<div class="flex justify-between items-end border-b border-outline-variant pb-sm">
+<h2 class="font-headline-md text-headline-md text-primary">Current Openings</h2>
+<a class="font-label-md text-label-md text-surface-tint hover:underline flex items-center gap-xs" href="#">
+                            View All Jobs <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+<!-- Job Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-md hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<div class="flex flex-col gap-xs">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Chief Engineer</h3>
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-base" data-icon="directions_boat">directions_boat</span>
+                                        Panamax Bulk Carrier
+                                    </span>
+</div>
+<span class="inline-flex items-center px-sm py-xs rounded bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">
+                                    Urgent
+                                </span>
+</div>
+<div class="flex flex-col gap-xs font-body-sm text-body-sm text-on-surface-variant border-t border-surface-variant pt-sm">
+<p class="flex items-center gap-sm"><span class="material-symbols-outlined text-sm" data-icon="location_on">location_on</span> Route: Singapore - Rotterdam</p>
+<p class="flex items-center gap-sm"><span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span> Contract: 4 Months on / 2 Off</p>
+</div>
+<div class="mt-auto pt-sm flex justify-end">
+<button class="bg-surface-container-lowest text-primary border border-outline-variant hover:bg-surface-container-low px-md py-xs rounded font-label-md text-label-md transition-colors w-full">
+                                    Apply Now
+                                </button>
+</div>
+</div>
+<!-- Job Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-md hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<div class="flex flex-col gap-xs">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Port Operations Manager</h3>
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-base" data-icon="domain">domain</span>
+                                        Onshore Logistics
+                                    </span>
+</div>
+</div>
+<div class="flex flex-col gap-xs font-body-sm text-body-sm text-on-surface-variant border-t border-surface-variant pt-sm">
+<p class="flex items-center gap-sm"><span class="material-symbols-outlined text-sm" data-icon="location_on">location_on</span> Location: Manila, Philippines</p>
+<p class="flex items-center gap-sm"><span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span> Type: Full-Time Permanent</p>
+</div>
+<div class="mt-auto pt-sm flex justify-end">
+<button class="bg-surface-container-lowest text-primary border border-outline-variant hover:bg-surface-container-low px-md py-xs rounded font-label-md text-label-md transition-colors w-full">
+                                    Apply Now
+                                </button>
+</div>
+</div>
+<!-- Job Card 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-md hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<div class="flex flex-col gap-xs">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Second Officer (Navigational)</h3>
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-base" data-icon="explore">explore</span>
+                                        Container Vessel
+                                    </span>
+</div>
+</div>
+<div class="flex flex-col gap-xs font-body-sm text-body-sm text-on-surface-variant border-t border-surface-variant pt-sm">
+<p class="flex items-center gap-sm"><span class="material-symbols-outlined text-sm" data-icon="location_on">location_on</span> Route: Trans-Pacific</p>
+<p class="flex items-center gap-sm"><span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span> Contract: 6 Months on / 2 Off</p>
+</div>
+<div class="mt-auto pt-sm flex justify-end">
+<button class="bg-surface-container-lowest text-primary border border-outline-variant hover:bg-surface-container-low px-md py-xs rounded font-label-md text-label-md transition-colors w-full">
+                                    Apply Now
+                                </button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+</body></html>

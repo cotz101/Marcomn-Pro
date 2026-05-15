@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { ThumbsUp, MessageSquare, Share2 } from 'lucide-react';
 import PostActions from './PostActions';
 import DOMPurify from 'dompurify';
@@ -162,6 +163,8 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
 
   const shouldTruncate = (post.content || '').length > 200;
 
+  const router = useRouter();
+
   return (
     <div className="card post-card" ref={cardRef}>
       {/* Absolute top-right menu */}
@@ -182,9 +185,21 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
           style={{ borderRadius: post.isCompany ? '8px' : '50%' }}
         />
         <div className="post-author-group">
-          <div className="post-author" style={{ fontWeight: 600, color: '#1b1c1c' }}>{post.author}</div>
-          <div className="post-headline">{post.headline}</div>
-          <div className="post-time">{post.time}</div>
+          {post.shared_article ? (
+            <div className="post-author" style={{ fontWeight: 600, color: '#1b1c1c' }}>
+              <span className="flex flex-wrap items-center gap-1">
+                {post.author} <span className="text-gray-500 font-normal">shared a blog:</span> {post.shared_article.title}
+                <span className="text-gray-300 mx-1">•</span>
+                <span className="text-gray-400 font-normal text-xs">{post.time}</span>
+              </span>
+            </div>
+          ) : (
+            <>
+              <div className="post-author" style={{ fontWeight: 600, color: '#1b1c1c' }}>{post.author}</div>
+              <div className="post-headline">{post.headline}</div>
+              <div className="post-time">{post.time}</div>
+            </>
+          )}
         </div>
       </div>
 
@@ -220,6 +235,40 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
           )}
         </div>
       </div>
+
+      {/* SHARED ARTICLE PREVIEW */}
+      {post.shared_article && (
+        <div 
+          onClick={() => router.push(`/mblog?articleId=${post.shared_article.id}`)}
+          className="mx-4 mb-4 p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-blue-200 hover:shadow-md transition-all cursor-pointer group shadow-sm active:scale-[0.98]"
+        >
+          <div className="flex flex-col gap-3">
+            {post.shared_article.media_url && (
+              <div className="rounded-lg overflow-hidden h-32 w-full">
+                <img 
+                  src={post.shared_article.media_url} 
+                  alt="" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                />
+              </div>
+            )}
+            <div>
+              <h4 className="text-sm font-bold text-[#0e2a4d] mb-1 group-hover:text-[#004173] line-clamp-2">
+                {post.shared_article.title}
+              </h4>
+              <div 
+                className="text-xs text-gray-500 line-clamp-3 leading-relaxed"
+                dangerouslySetInnerHTML={{ 
+                  __html: DOMPurify.sanitize(truncateHtmlWithTags(post.shared_article.content_html || '', 150)) 
+                }}
+              />
+              <div className="mt-2 text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1">
+                Read full article <span className="text-xs">→</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MEDIA CONTAINER */}
       {post.type === 'article' && (

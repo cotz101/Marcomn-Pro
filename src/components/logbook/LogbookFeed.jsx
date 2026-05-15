@@ -34,7 +34,15 @@ export default function LogbookFeed({ profile }) {
           company:companies(name, logo_url, industry),
           comments:comments(count),
           likes:likes(count),
-          user_liked:likes(id, user_id)
+          user_liked:likes(id, user_id),
+          shared_article:mblog_articles(
+            id, 
+            title, 
+            media_url, 
+            content_html,
+            created_at,
+            author:profiles(name)
+          )
         `)
         .order('created_at', { ascending: false });
 
@@ -86,7 +94,9 @@ export default function LogbookFeed({ profile }) {
             // For now, we'll need to check the user_liked array if it contains a record for this user
             // This requires having fetched user_id in the likes subselect.
             // Let's fix the select above to include user_id in user_liked.
-            user_has_liked: post.user_liked?.some(l => l.user_id === userId)
+            user_has_liked: post.user_liked?.some(l => l.user_id === userId),
+            shared_article_id: post.shared_article_id,
+            shared_article: post.shared_article
           };
         });
         setPosts(formattedPosts);

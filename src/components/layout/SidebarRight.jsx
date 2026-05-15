@@ -1,6 +1,6 @@
 'use client';
 
-import { Info, ExternalLink, Briefcase, TrendingUp, Sparkles } from 'lucide-react';
+import { Info, ExternalLink, Briefcase, TrendingUp, Sparkles, ThumbsUp, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -8,6 +8,7 @@ export default function SidebarRight() {
   const pathname = usePathname();
   const isGroupsPage = pathname === '/groups';
   const isGroupDiscussionPage = pathname?.startsWith('/groups/') && pathname !== '/groups';
+  const isMBlogPage = pathname?.startsWith('/mblog');
 
   const recentBlogs = [
     { id: 1, title: 'Sustainable Shipping in 2026', author: 'Capt. Sarah Miller', date: '2 days ago' },
@@ -32,6 +33,76 @@ export default function SidebarRight() {
     { id: 5, name: 'Singapore Port Staff', date: 'Created 5 days ago' },
     { id: 6, name: 'Cyber Security at Sea', date: 'Created 1 week ago' },
   ];
+
+  if (isMBlogPage) {
+    return (
+      <aside className="sidebar-right sticky top-24 hidden lg:block w-[300px]">
+        <div className="flex flex-col gap-5">
+          {/* Top Most Liked */}
+          <div className="card p-4 border border-[#f0f0f0] bg-white rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 bg-blue-50 rounded-md text-blue-600">
+                <ThumbsUp size={16} />
+              </div>
+              <h3 className="font-bold text-sm text-[#0e2a4d]">Top Most Liked</h3>
+            </div>
+            <div className="flex flex-col gap-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-3 bg-gray-100 rounded w-full mb-2" />
+                  <div className="h-2 bg-gray-50 rounded w-1/2" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Most Active */}
+          <div className="card p-4 border border-[#f0f0f0] bg-white rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 bg-green-50 rounded-md text-green-600">
+                <TrendingUp size={16} />
+              </div>
+              <h3 className="font-bold text-sm text-[#0e2a4d]">Most Active</h3>
+            </div>
+            <div className="flex flex-col gap-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-3 bg-gray-100 rounded w-full mb-2" />
+                  <div className="h-2 bg-gray-50 rounded w-1/3" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Most Shared */}
+          <div className="card p-4 border border-[#f0f0f0] bg-white rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 bg-purple-50 rounded-md text-purple-600">
+                <Share2 size={16} />
+              </div>
+              <h3 className="font-bold text-sm text-[#0e2a4d]">Most Shared</h3>
+            </div>
+            <div className="flex flex-col gap-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-3 bg-gray-100 rounded w-full mb-2" />
+                  <div className="h-2 bg-gray-50 rounded w-1/4" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4 px-2 text-[10px] text-[#727780] flex flex-wrap gap-x-3 gap-y-1 justify-center opacity-60">
+            <span>About</span>
+            <span>Accessibility</span>
+            <span>Help Center</span>
+            <span>Privacy & Terms</span>
+            <span className="w-full text-center mt-2">MarComn Corporation © 2026</span>
+          </div>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside className="sidebar-right sticky top-24 hidden lg:block">
@@ -155,8 +226,8 @@ export default function SidebarRight() {
                   <p className="text-[11px] text-[#727780] mt-1">{blog.author} • {blog.date}</p>
                 </div>
               ))}
-              <Link href="/blog" className="text-xs font-bold text-[#004173] mt-2 hover:underline">
-                View all blogs
+              <Link href="/mblog" className="text-xs font-bold text-[#004173] mt-2 hover:underline">
+                View all articles
               </Link>
             </div>
           </div>

@@ -7,7 +7,7 @@ export default function BottomNav() {
   const navItems = [
     { label: 'Network', path: '/', icon: Network, color: 'var(--glow-network)' },
     { label: 'Services', path: '/services', icon: Briefcase, color: 'var(--glow-services)' },
-    { label: 'Blog', path: '/blog', icon: SquarePen, color: 'var(--primary)' },
+    { label: 'Blog', path: '/mblog', icon: SquarePen, color: 'var(--primary)' },
     { label: 'Profile', path: '/profile', icon: User, color: 'var(--primary)' },
   ];
 

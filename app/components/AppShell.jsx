@@ -43,7 +43,8 @@ export default function AppShell({ children, userEmail, userId }) {
   const pathname = usePathname();
   const { 
     profile, setProfile, onboardingCompleted, setOnboardingCompleted,
-    companies, refreshCompanies, currentIdentity, setCurrentIdentity 
+    companies, refreshCompanies, currentIdentity, setCurrentIdentity,
+    toast, setToast
   } = useProfile();
   
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -184,7 +185,7 @@ export default function AppShell({ children, userEmail, userId }) {
                     <LayoutGrid size={24} />
                     <span>MServices</span>
                   </Link>
-                  <Link href="/blog" className={`nav-link ${pathname === '/blog' ? 'active' : ''}`}>
+                  <Link href="/mblog" className={`nav-link ${pathname === '/mblog' ? 'active' : ''}`}>
                     <Newspaper size={24} />
                     <span>MBlog</span>
                   </Link>
@@ -311,8 +312,8 @@ export default function AppShell({ children, userEmail, userId }) {
           <span className="mobile-nav-label">MServices</span>
         </Link>
         <Link 
-          href="/blog" 
-          className={`mobile-nav-item ${pathname?.includes('/blog') ? 'active' : ''}`}
+          href="/mblog" 
+          className={`mobile-nav-item ${pathname?.includes('/mblog') ? 'active' : ''}`}
           style={{ '--active-color': '#002b4e' }}
         >
           <Newspaper size={24} className="mobile-nav-icon" />
@@ -393,6 +394,10 @@ export default function AppShell({ children, userEmail, userId }) {
                     <span className="shortcut-label">Talents</span>
                     <div className="shortcut-icon-wrapper"><Search size={18} /></div>
                   </div>
+                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/mblog?compose=true'); }}>
+                    <span className="shortcut-label">Post to Blog</span>
+                    <div className="shortcut-icon-wrapper"><Pencil size={18} /></div>
+                  </div>
                 </>
               )}
               {(pathname?.includes('/services') || pathname?.includes('/partners') || pathname?.includes('/jobs')) && (
@@ -415,9 +420,9 @@ export default function AppShell({ children, userEmail, userId }) {
                   </div>
                 </>
               )}
-              {pathname?.includes('/blog') && (
-                <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/blog/my-blogs'); }}>
-                  <span className="shortcut-label">My Blog</span>
+              {pathname?.includes('/mblog') && (
+                <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/mblog/my-blogs'); }}>
+                  <span className="shortcut-label">My Articles</span>
                   <div className="shortcut-icon-wrapper"><Library size={18} /></div>
                 </div>
               )}
@@ -435,8 +440,8 @@ export default function AppShell({ children, userEmail, userId }) {
                   Post a Job
                 </button>
               )}
-              {pathname?.includes('/blog') && (
-                <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); router.push('/blog/create'); }}>
+              {pathname?.includes('/mblog') && (
+                <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); router.push('/mblog?compose=true'); }}>
                   Post a Blog
                 </button>
               )}
@@ -468,6 +473,17 @@ export default function AppShell({ children, userEmail, userId }) {
           </div>
         </div>
       </main>
+      {toast && (
+        <div className={`fixed bottom-24 right-4 z-[9999] transition-all duration-300 animate-in slide-in-from-right-full ${
+          toast.type === 'success' ? 'bg-[#002b4e] text-white' : 'bg-red-600 text-white'
+        } px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-white/10`}>
+          <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+          <span className="font-bold text-sm uppercase tracking-wider">{toast.message}</span>
+          <button onClick={() => setToast(null)} className="ml-2 hover:bg-white/10 p-1 rounded">
+            <X size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

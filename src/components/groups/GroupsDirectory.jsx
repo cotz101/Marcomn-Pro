@@ -38,6 +38,7 @@ export default function GroupsDirectory() {
           owner_id, 
           group_members(count)
         `)
+        .eq('is_archived', false)
         .order('created_at', { ascending: false })
         .range(start, end);
 
@@ -199,7 +200,7 @@ export default function GroupsDirectory() {
   });
 
   const GroupSkeleton = () => (
-    <div className="w-full bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
+    <div className="w-full bg-white rounded-none border-y border-x-0 sm:rounded-xl sm:border-x border-gray-100 p-4 animate-pulse">
       <div className="flex gap-4">
         <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-lg flex-shrink-0" />
         <div className="flex-1 space-y-3 py-1">
@@ -220,7 +221,7 @@ export default function GroupsDirectory() {
   return (
     <div className="relative w-full max-w-full h-screen overflow-x-hidden flex flex-col">
       {/* Fixed Header & Search Area */}
-      <div className="w-full max-w-full pt-4 pb-2 bg-white flex-shrink-0">
+      <div className="w-full max-w-full px-4 sm:px-0 pt-4 pb-2 bg-white flex-shrink-0">
         <div className="flex flex-col md:flex-row md:justify-between md:items-start w-full mb-4 gap-4">
           <div className="flex flex-col">
             <h1 className="text-2xl font-bold text-[#0e2a4d]">Maritime Groups</h1>
@@ -236,7 +237,7 @@ export default function GroupsDirectory() {
         </div>
 
         {/* Search Bar */}
-        <div className="search-container mb-2" style={{ paddingTop: '0' }}>
+        <div className="search-container mb-2 px-4 sm:px-0" style={{ paddingTop: '0' }}>
           <div className="search-bar-wrapper relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input 
@@ -270,7 +271,7 @@ export default function GroupsDirectory() {
               />
             ))
           ) : (
-            <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+            <div className="mx-4 sm:mx-0 text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
               <p className="text-gray-500 font-medium">No groups found.</p>
               <button 
                 onClick={() => { setSearchTerm(''); }}
@@ -285,7 +286,7 @@ export default function GroupsDirectory() {
             <div className="pt-2 flex justify-center w-full">
               <button 
                 onClick={handleLoadMore} 
-                className="w-full py-4 mt-4 border border-gray-200 rounded-lg text-gray-600 font-medium hover:bg-gray-50 transition-all flex items-center justify-center bg-white"
+                className="w-[calc(100%-2rem)] mx-4 sm:w-full sm:mx-0 py-4 mt-4 border border-gray-200 rounded-lg text-gray-600 font-medium hover:bg-gray-50 transition-all flex items-center justify-center bg-white"
               >
                 Show more groups
               </button>

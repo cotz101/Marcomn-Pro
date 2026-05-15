@@ -46,7 +46,7 @@ export default function Header() {
   const navItems = [
     { label: 'MNetwork', path: '/', icon: null },
     { label: 'MServices', path: '/services', icon: null },
-    { label: 'MBlog', path: '/blog', icon: null },
+    { label: 'MBlog', path: '/mblog', icon: null },
   ];
 
   return (

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MarComn Dashboard - Company Mode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 1,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#faf9fd",
+                        "outline-variant": "#c4c6cf",
+                        "surface-dim": "#dad9dd",
+                        "tertiary-container": "#cca830",
+                        "secondary": "#505f76",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#d0e1fb",
+                        "background": "#faf9fd",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed": "#001b3c",
+                        "inverse-surface": "#2f3033",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#f4f3f7",
+                        "on-secondary-fixed": "#0b1c30",
+                        "inverse-primary": "#adc8f6",
+                        "primary": "#000d22",
+                        "surface-variant": "#e3e2e6",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#faf9fd",
+                        "tertiary-fixed": "#ffe088",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "tertiary": "#735c00",
+                        "surface-container-highest": "#e3e2e6",
+                        "surface-container-high": "#e9e7eb",
+                        "on-secondary-container": "#54647a",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed": "#241a00",
+                        "on-surface": "#1a1c1e",
+                        "surface-tint": "#455f88",
+                        "surface-container": "#eeedf1",
+                        "secondary-fixed": "#d3e4fe",
+                        "inverse-on-surface": "#f1f0f4",
+                        "primary-container": "#002349",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#718bb7",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed": "#d5e3ff",
+                        "primary-fixed-dim": "#adc8f6",
+                        "on-tertiary-container": "#4f3e00",
+                        "on-primary-fixed-variant": "#2c476f",
+                        "outline": "#74777f",
+                        "tertiary-fixed-dim": "#e9c349",
+                        "on-background": "#1a1c1e",
+                        "on-surface-variant": "#43474e",
+                        "on-primary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "margin-mobile": "16px",
+                        "xl": "40px",
+                        "base": "4px",
+                        "margin-desktop": "32px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Public Sans"],
+                        "headline-sm": ["Public Sans"],
+                        "headline-lg": ["Public Sans"],
+                        "body-md": ["Public Sans"],
+                        "body-lg": ["Public Sans"],
+                        "label-sm": ["Public Sans"],
+                        "headline-md": ["Public Sans"],
+                        "body-sm": ["Public Sans"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-sm": ["20px", { "lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400" }],
+                        "label-sm": ["11px", { "lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md antialiased flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="bg-white dark:bg-slate-900 font-public-sans text-sm antialiased docked full-width top-0 z-50 border-b border-slate-200 dark:border-slate-800 flat no shadows flex justify-between items-center w-full px-6 h-16 fixed">
+<div class="flex items-center gap-4">
+<div class="text-xl font-bold tracking-tight text-blue-900 dark:text-blue-100 flex items-center gap-2">
+<img alt="MarComn Logo" class="h-8 w-auto rounded" data-alt="A highly detailed corporate logo for a maritime networking platform named MarComn. The design should feel authoritative, stable, and deeply rooted in global enterprise shipping. Incorporate a precise, clean vector aesthetic using a deep, commanding 'MarComn Blue' palette set against a pristine white background. The visual mood is professional, technical, and sharply executed, reflecting a high-contrast digital workspace." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDD64KivfgiZ9XqFxz95x-kV8MneaZHCXDvgwPAjFrHaxrlOs6SQcw6bdg216KbIOYdLJnbKTONAgVYI8EvbCPyNQDsABaV49zsIlBeYtyxWB_8f2GhiQF-jGkQK0jWIhtmgRuUQFVnkbteeQ5v38yGDwlgcT-U511LwFWpGjb2lM7g2Ydkjfm5A8clmiX3lpk_U3FongWrvJ4Zvf4HL2cUG0cYipptCOMoAIvfcx4NAcwBx371UHvqQWCGzsyL_Z77_jsoSHtp5IlP"/>
+<span>MarComn</span>
+</div>
+<!-- Identity Switcher -->
+<div class="ml-6 flex items-center gap-2 border border-slate-200 dark:border-slate-800 rounded px-3 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">business</span>
+<span class="font-label-md text-label-md text-on-surface">Company Mode</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">expand_more</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border border-slate-200 rounded focus:border-primary focus:ring-2 focus:ring-secondary-container transition-all w-64 text-sm outline-none" placeholder="Search MarComn..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors rounded cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors rounded cursor-pointer active:opacity-80 flex items-center gap-2 border border-slate-200 ml-2">
+<img alt="Professional avatar" class="h-6 w-6 rounded-sm object-cover" data-alt="A professional corporate headshot of an executive maritime professional. The individual is wearing a crisp white shirt and a dark navy blazer, exuding authority and stability. The background is a clean, bright, high-key white, matching the light-mode UI aesthetic. The lighting is soft but precise, creating a sharp, modern, enterprise-grade feel suitable for a networking platform dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdl_utd3y6aWQwb6XavqOr7NTf19TmVtr18C_XFbLgOWKb7lzadMdG2_XCYNrO2v4HjcNjvlw-4Tlc9KY1rLKBiP7TSaEqYG_bD6mxtSzKhFjvleF8GK20nlF5Zk6htdTIQM4DSr01MgDb6axHpRPkSSuorltJPEpecv9E6YZekdTwiKYIo7bx4pZ4u36DUV8FoJx_4jxEkneaxuwlw_aznD_LkdKWZLO2EnlhYpiCOHZ7--FDqfRU4Dj1c9hyZFCeum5v2lbBFvfy"/>
+<span class="material-symbols-outlined text-[16px]" data-icon="switch_account">switch_account</span>
+</button>
+</div>
+</div>
+</header>
+<div class="flex flex-1 pt-16 h-screen overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-slate-50 dark:bg-slate-950 font-public-sans text-sm font-medium h-screen w-64 border-r rounded-none border-r border-slate-200 dark:border-slate-800 flat no shadows fixed left-0 top-0 h-full flex flex-col pt-16 z-40 transition-all duration-200 ease-in-out hidden md:flex">
+<div class="p-6 border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-3 mb-2">
+<div class="h-10 w-10 bg-primary-container text-on-primary-container rounded flex items-center justify-center font-headline-sm text-headline-sm">MC</div>
+<div>
+<h2 class="text-lg font-black text-blue-900 dark:text-blue-200 leading-tight">MarComn</h2>
+<p class="text-slate-600 dark:text-slate-400 font-label-sm text-label-sm uppercase tracking-wider">Enterprise Maritime</p>
+</div>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto py-4">
+<!-- Expanded Group: MServices -->
+<div class="mb-6 px-4">
+<div class="flex items-center justify-between px-2 mb-2">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">MServices</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_less</span>
+</div>
+<ul class="space-y-1">
+<li>
+<a class="bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 border-r-2 border-blue-700 shadow-sm flex items-center gap-3 px-3 py-2 rounded-l" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="anchor">anchor</span>
+<span>The Bridge</span>
+</a>
+</li>
+<li>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 px-3 py-2 rounded transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="list_alt">list_alt</span>
+<span>Registry</span>
+</a>
+</li>
+<li>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 px-3 py-2 rounded transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="work">work</span>
+<span>My Postings</span>
+</a>
+</li>
+</ul>
+</div>
+<!-- Group: MNetwork -->
+<div class="mb-6 px-4">
+<div class="flex items-center justify-between px-2 mb-2 cursor-pointer hover:bg-slate-100 p-1 rounded">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">MNetwork</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
+</div>
+<ul class="space-y-1 hidden">
+<!-- Items hidden as group is collapsed in this view state implicitly by lack of 'expanded' instruction -->
+</ul>
+</div>
+<!-- Group: MBlog -->
+<div class="mb-6 px-4">
+<div class="flex items-center justify-between px-2 mb-2 cursor-pointer hover:bg-slate-100 p-1 rounded">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">MBlog</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<!-- System Tabs from JSON as fallback/core nav -->
+<div class="px-4 mt-8 pt-4 border-t border-slate-200">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase px-2 mb-2 block">System</span>
+<ul class="space-y-1">
+<li>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 px-3 py-2 rounded transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+</li>
+<li>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 px-3 py-2 rounded transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="groups">groups</span>
+<span>Teams</span>
+</a>
+</li>
+<li>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 px-3 py-2 rounded transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="person">person</span>
+<span>Profiles</span>
+</a>
+</li>
+</ul>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-0 md:ml-64 bg-surface h-full overflow-y-auto">
+<div class="p-lg lg:p-xl max-w-7xl mx-auto space-y-lg">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-outline-variant pb-md">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary">Company Overview</h1>
+<p class="text-on-surface-variant mt-1">High-level metrics and active fleet status.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 border border-outline text-primary font-label-md text-label-md rounded hover:bg-surface-variant transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                            Export Report
+                        </button>
+<button class="px-4 py-2 bg-primary text-on-primary font-label-md text-label-md rounded hover:bg-primary-container transition-colors flex items-center gap-2 shadow-sm border border-primary">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                            New Posting
+                        </button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<!-- Metrics Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-lg flex flex-col justify-between hover:shadow-[0_4px_12px_rgba(0,13,34,0.05)] transition-shadow">
+<div class="flex items-start justify-between mb-4">
+<div class="p-2 bg-primary-fixed rounded">
+<span class="material-symbols-outlined text-on-primary-fixed">sailing</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant bg-surface-container px-2 py-1 rounded">Active</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-1">Fleet Deployment</p>
+<h3 class="font-headline-lg text-headline-lg text-primary">84%</h3>
+<p class="text-sm text-secondary mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-tertiary-container" data-weight="fill">trending_up</span>
+                                +2% from last month
+                            </p>
+</div>
+</div>
+<!-- Metrics Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-lg flex flex-col justify-between hover:shadow-[0_4px_12px_rgba(0,13,34,0.05)] transition-shadow">
+<div class="flex items-start justify-between mb-4">
+<div class="p-2 bg-secondary-fixed rounded">
+<span class="material-symbols-outlined text-on-secondary-fixed">work</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant bg-surface-container px-2 py-1 rounded">Urgent</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-1">Open Postings</p>
+<h3 class="font-headline-lg text-headline-lg text-primary">12</h3>
+<p class="text-sm text-secondary mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-error" data-weight="fill">warning</span>
+                                3 critical roles unfilled
+                            </p>
+</div>
+</div>
+<!-- Metrics Card 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-lg flex flex-col justify-between hover:shadow-[0_4px_12px_rgba(0,13,34,0.05)] transition-shadow">
+<div class="flex items-start justify-between mb-4">
+<div class="p-2 bg-tertiary-fixed rounded">
+<span class="material-symbols-outlined text-on-tertiary-fixed">group</span>
+</div>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-1">Crew Retention</p>
+<h3 class="font-headline-lg text-headline-lg text-primary">92%</h3>
+<p class="text-sm text-secondary mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary" data-weight="fill">check_circle</span>
+                                Above industry average
+                            </p>
+</div>
+</div>
+<!-- Large Fleet Status Card -->
+<div class="md:col-span-2 bg-surface-container-lowest border border-outline-variant rounded p-0 overflow-hidden flex flex-col">
+<div class="p-md border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+<h3 class="font-headline-sm text-headline-sm text-primary">Live Fleet Status</h3>
+<button class="text-primary font-label-md text-label-md hover:underline flex items-center gap-1">
+                                View Full Registry <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+<div class="p-0 flex-1 relative min-h-[300px] bg-slate-100">
+<!-- Conceptual Map Placeholder -->
+<div class="absolute inset-0 bg-cover bg-center opacity-40" data-alt="A highly detailed, stylized digital map visualization of global maritime shipping routes. The map uses a sleek, light-mode corporate aesthetic, dominated by precise lines and a sophisticated 'MarComn Blue' and white palette. Subtle glowing nodes indicate port locations, and delicate connecting lines represent vessel paths. The overall look is modern, technical, and strictly professional, suitable for an enterprise dashboard background." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDeeQHU7BsLSJgSttMGLIr4qFALp6e2wIxoSfhUZk2rDwgs25EUBn3eJCy5zhb64iXHzVbkxamIvJAUllpUG4r07u5camGZfawhcvMfSI1ZmLj2vh1ZbhhDFgaL8wSxPJqM7o_eTEd0E2voqB2nJ2mQ7p8XogEEFjXNSPMjH0C9DA_W7KZdSYHJHrieAsn77oF7djholQek12nrzX418aqAabzXznQ29J61Pks_cg5uHHUEuUF2lQikZtz0YS3bY66N8INyYtFvC2Ft');"></div>
+<!-- Overlay Content -->
+<div class="relative z-10 p-md h-full flex flex-col justify-end">
+<div class="bg-white/90 backdrop-blur-sm border border-outline-variant rounded p-md max-w-sm">
+<h4 class="font-label-md text-label-md text-on-surface mb-2">Vessel Alerts</h4>
+<div class="space-y-2">
+<div class="flex items-center gap-2 text-sm text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span><strong>MV Oceanic</strong> - Delayed at Port of Singapore</span>
+</div>
+<div class="flex items-center gap-2 text-sm text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-tertiary-container"></span>
+<span><strong>MV Horizon</strong> - Approaching storm zone</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Activity/Hiring List -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-0 flex flex-col">
+<div class="p-md border-b border-outline-variant bg-surface-container-low">
+<h3 class="font-headline-sm text-headline-sm text-primary">Recent Applications</h3>
+</div>
+<div class="flex-1 overflow-y-auto p-0">
+<ul class="divide-y divide-outline-variant">
+<li class="p-md hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-start gap-3">
+<div class="h-10 w-10 bg-primary-fixed text-on-primary-fixed rounded flex items-center justify-center font-label-md">JD</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">John Doe</p>
+<p class="text-xs text-secondary mt-0.5">Applied for Chief Engineer</p>
+<div class="mt-2 flex gap-2">
+<span class="px-2 py-0.5 bg-surface-variant text-on-surface-variant text-[10px] uppercase font-bold rounded">10 Yrs Sea</span>
+<span class="px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] uppercase font-bold rounded flex items-center gap-1"><span class="material-symbols-outlined text-[12px]" data-weight="fill">verified</span> Verified</span>
+</div>
+</div>
+</div>
+</li>
+<li class="p-md hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-start gap-3">
+<div class="h-10 w-10 bg-secondary-fixed text-on-secondary-fixed rounded flex items-center justify-center font-label-md">AS</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Alice Smith</p>
+<p class="text-xs text-secondary mt-0.5">Applied for Second Officer</p>
+<div class="mt-2 flex gap-2">
+<span class="px-2 py-0.5 bg-surface-variant text-on-surface-variant text-[10px] uppercase font-bold rounded">4 Yrs Sea</span>
+</div>
+</div>
+</div>
+</li>
+<li class="p-md hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-start gap-3">
+<div class="h-10 w-10 bg-surface-container-highest text-on-surface rounded flex items-center justify-center font-label-md">MR</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Michael Ross</p>
+<p class="text-xs text-secondary mt-0.5">Applied for Deck Cadet</p>
+<div class="mt-2 flex gap-2">
+<span class="px-2 py-0.5 bg-surface-variant text-on-surface-variant text-[10px] uppercase font-bold rounded">New Grad</span>
+</div>
+</div>
+</div>
+</li>
+</ul>
+</div>
+<div class="p-md border-t border-outline-variant bg-surface-container-lowest text-center">
+<button class="text-primary font-label-md text-label-md hover:underline w-full">View All Applications</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

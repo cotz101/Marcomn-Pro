@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Bridge - Autonomous Shipping Trends</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-low": "#f4f3f7",
+                      "outline-variant": "#c4c6cf",
+                      "on-secondary-fixed-variant": "#38485d",
+                      "primary-fixed-dim": "#adc8f6",
+                      "on-primary-fixed": "#001b3c",
+                      "tertiary-container": "#cca830",
+                      "surface-container-high": "#e9e7eb",
+                      "on-secondary-fixed": "#0b1c30",
+                      "tertiary-fixed-dim": "#e9c349",
+                      "surface": "#faf9fd",
+                      "on-secondary-container": "#54647a",
+                      "surface-dim": "#dad9dd",
+                      "outline": "#74777f",
+                      "surface-container-lowest": "#ffffff",
+                      "primary": "#000d22",
+                      "on-tertiary-fixed": "#241a00",
+                      "secondary-fixed-dim": "#b7c8e1",
+                      "inverse-on-surface": "#f1f0f4",
+                      "on-secondary": "#ffffff",
+                      "on-background": "#1a1c1e",
+                      "on-tertiary-fixed-variant": "#574500",
+                      "secondary-container": "#d0e1fb",
+                      "inverse-surface": "#2f3033",
+                      "error-container": "#ffdad6",
+                      "on-tertiary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "surface-bright": "#faf9fd",
+                      "on-surface-variant": "#43474e",
+                      "tertiary-fixed": "#ffe088",
+                      "secondary-fixed": "#d3e4fe",
+                      "surface-container-highest": "#e3e2e6",
+                      "error": "#ba1a1a",
+                      "on-tertiary-container": "#4f3e00",
+                      "on-surface": "#1a1c1e",
+                      "surface-container": "#eeedf1",
+                      "tertiary": "#735c00",
+                      "primary-container": "#002349",
+                      "on-error-container": "#93000a",
+                      "surface-variant": "#e3e2e6",
+                      "inverse-primary": "#adc8f6",
+                      "surface-tint": "#455f88",
+                      "on-primary-container": "#718bb7",
+                      "on-primary": "#ffffff",
+                      "background": "#faf9fd",
+                      "secondary": "#505f76",
+                      "primary-fixed": "#d5e3ff",
+                      "on-primary-fixed-variant": "#2c476f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "margin-desktop": "32px",
+                      "lg": "24px",
+                      "md": "16px",
+                      "margin-mobile": "16px",
+                      "base": "4px",
+                      "gutter": "16px",
+                      "xs": "4px",
+                      "xl": "40px",
+                      "sm": "8px"
+              },
+              "fontFamily": {
+                      "headline-lg": ["Public Sans"],
+                      "body-md": ["Public Sans"],
+                      "headline-sm": ["Public Sans"],
+                      "body-lg": ["Public Sans"],
+                      "body-sm": ["Public Sans"],
+                      "label-sm": ["Public Sans"],
+                      "headline-md": ["Public Sans"],
+                      "label-md": ["Public Sans"]
+              },
+              "fontSize": {
+                      "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-md": ["16px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
+                      "headline-sm": ["20px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "600"}],
+                      "body-lg": ["18px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
+                      "body-sm": ["14px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
+                      "label-sm": ["11px", {"lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                      "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "label-md": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            font-feature-settings: 'liga';
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md text-body-md min-h-screen flex flex-col md:flex-row">
+<!-- TopNavBar (Mobile Only) -->
+<header class="md:hidden flex justify-between items-center w-full px-6 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 docked full-width top-0 z-50">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-blue-900 dark:text-blue-400" data-icon="menu">menu</span>
+<span class="font-headline-md text-headline-md font-bold tracking-tight text-blue-900 dark:text-blue-100">MarComn</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-400 cursor-pointer active:opacity-80" data-icon="notifications">notifications</span>
+<img alt="Professional avatar" class="w-8 h-8 rounded-full border border-outline-variant object-cover" data-alt="A professional headshot of a maritime executive wearing a crisp navy suit, well-lit in a corporate setting. The background is a slightly blurred, modern office environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgpciz-_e8Nl30htssSvu_0XobBKC-t0kFxyy6vbaGrQjg8QGP1UG5BFnuruCTBWYQxI-08BHE8LLWhBTuIa2eOtxzgpZcnN1ByIcR-q7JRycZOousJP-512cFtpB6Cp5GgHxIuVfc_Vrdzop0hSlhvHf74MBsp8qiRNtNJsF5FKIbv24Q5IgYSB8Pol63MDxySLCv6gHL0d1Z7MsddqdI_mCxHMxZlvNwj8d9jmVcX3TAGKgFPK7x7H84EVcUJokD-hM_NsHJaGFl"/>
+</div>
+</header>
+<!-- SideNavBar (Desktop Only) -->
+<nav class="hidden md:flex flex-col h-screen w-64 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 fixed left-0 top-0 pt-16 z-40">
+<div class="px-lg pb-lg">
+<h1 class="font-headline-sm text-headline-sm font-black text-blue-900 dark:text-blue-200">MarComn</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-xs">Enterprise Maritime</p>
+</div>
+<div class="flex-1 overflow-y-auto mt-md flex flex-col gap-xs font-public-sans text-sm font-medium">
+<!-- MNetwork Group -->
+<div class="flex flex-col">
+<button class="flex items-center justify-between w-full px-lg py-sm text-on-surface-variant font-label-md uppercase tracking-wider">
+<span class="flex items-center gap-md">
+<span class="material-symbols-outlined text-[20px]" data-icon="hub">hub</span> MNetwork
+            </span>
+<span class="material-symbols-outlined text-[18px]" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</button>
+<div class="flex flex-col gap-xs pl-md">
+<a class="flex items-center gap-md px-lg py-sm text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="menu_book">menu_book</span> Logbook
+            </a>
+<a class="flex items-center gap-md px-lg py-sm text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="group">group</span> The Crew
+            </a>
+<a class="flex items-center gap-md px-lg py-sm text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="directions_boat">directions_boat</span> Fleet
+            </a>
+<a class="flex items-center gap-md px-lg py-sm text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="person_search">person_search</span> Talent
+            </a>
+</div>
+</div>
+<!-- MServices Group -->
+<div class="flex flex-col mt-sm">
+<button class="flex items-center justify-between w-full px-lg py-sm text-on-surface-variant font-label-md uppercase tracking-wider">
+<span class="flex items-center gap-md">
+<span class="material-symbols-outlined text-[20px]" data-icon="handyman">handyman</span> MServices
+            </span>
+<span class="material-symbols-outlined text-[18px]" data-icon="keyboard_arrow_right">keyboard_arrow_right</span>
+</button>
+<!-- Sub-menu hidden as it's collapsed by default, but keeping 'The Bridge' active as per current screen context -->
+<div class="hidden flex flex-col gap-xs pl-md">
+<a class="flex items-center gap-md px-lg py-sm bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 border-r-2 border-blue-700 shadow-sm" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="anchor" style="font-variation-settings: 'FILL' 1;">anchor</span> The Bridge
+            </a>
+<a class="flex items-center gap-md px-lg py-sm text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="assignment">assignment</span> Registry
+            </a>
+<a class="flex items-center gap-md px-lg py-sm text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="post_add">post_add</span> My Postings
+            </a>
+</div>
+</div>
+<!-- MBlog Group -->
+<div class="flex flex-col mt-sm">
+<button class="flex items-center justify-between w-full px-lg py-sm text-on-surface-variant font-label-md uppercase tracking-wider">
+<span class="flex items-center gap-md">
+<span class="material-symbols-outlined text-[20px]" data-icon="rss_feed">rss_feed</span> MBlog
+            </span>
+<span class="material-symbols-outlined text-[18px]" data-icon="keyboard_arrow_right">keyboard_arrow_right</span>
+</button>
+<div class="hidden flex flex-col gap-xs pl-md">
+<a class="flex items-center gap-md px-lg py-sm text-slate-600 dark:text-slate-400 hover:text-blue-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="article">article</span> Articles
+            </a>
+</div>
+</div>
+</div>
+<div class="p-lg border-t border-outline-variant mt-auto flex items-center gap-md cursor-pointer hover:bg-slate-100 transition-colors">
+<img alt="Professional avatar" class="w-10 h-10 rounded-full border border-outline-variant object-cover" data-alt="A professional headshot of a maritime executive wearing a crisp navy suit, well-lit in a corporate setting. The background is a slightly blurred, modern office environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEzV8073zwdqFJEu8j00eocZQPe9MOrl4W183XC2J37IKoL3CsA8Ll1Bed3UgzUO3dMBR8dn0Hah7-AIv7WPN71GS6RHsmH0266YY8nD2GSj2DAy8Edbv1QJlF5PL147brzEyY1_lfASFajOVhBt0TB1Yf5nE4pG3ZrpxKVVe-K93r_AL2ry76QdZIcPX446AyONatJBADZ9ijIPXWxUMAABfIVJHPLOwH_5n8nQL6LA3-jkiaIj52ETJTdctPmXYrItnzcBIO058i"/>
+<div class="flex-1 overflow-hidden">
+<p class="font-body-sm text-body-sm text-on-surface truncate">Capt. James Holden</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">Master Mariner</p>
+</div>
+<span class="material-symbols-outlined text-outline" data-icon="switch_account">switch_account</span>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 flex flex-col xl:flex-row min-h-screen bg-surface-container-lowest">
+<!-- Article Column -->
+<article class="flex-1 px-margin-mobile py-lg md:px-margin-desktop md:py-margin-desktop xl:max-w-4xl mx-auto w-full">
+<!-- Breadcrumb -->
+<div class="flex items-center gap-xs font-label-md text-label-md text-on-surface-variant mb-lg">
+<a class="hover:text-primary transition-colors" href="#">The Bridge</a>
+<span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-primary font-semibold">Technology Insights</span>
+</div>
+<!-- Header -->
+<header class="mb-xl">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-md">Navigating the Future: Autonomous Shipping Trends in 2024</h1>
+<div class="flex flex-wrap items-center gap-md mb-lg">
+<div class="flex items-center gap-sm">
+<img alt="Author Avatar" class="w-8 h-8 rounded-full border border-outline-variant object-cover" data-alt="A professional portrait of a female maritime tech analyst with short hair, wearing a grey blazer. Shot in a bright, modern office with soft natural lighting and a clean, corporate aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdAbtM40se3wggT3TlO5iupvDozT0TBk8YGuZMOSqKy5X0hLzjMAlEJBVov-rHxXDUGLN36WsZZHhwGHjU3MXpoWtKZ28ovu8RDy6oqtcHNc1POEUEpmYKES5OjAkuOKH8Z267otMVnYdDbFcq0fCe9EK-61lZhGYT57g47y3si4fOYepZ5h0MiIOG-f_a9dBVhwW-XmtTbjQUPwCyyKP9gM5h4f5IaulZqXKc3tnGoDiF9cakTduVAitzYhYJxi91edD7h5xIgbz1"/>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Dr. Elena Rostova</span>
+</div>
+<span class="text-outline-variant">•</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Published Oct 12, 2024</span>
+<span class="text-outline-variant">•</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]" data-icon="schedule">schedule</span> 8 min read
+                    </span>
+</div>
+<div class="w-full h-64 md:h-96 rounded-xl overflow-hidden border border-outline-variant mb-xl relative">
+<img alt="Autonomous Ship" class="w-full h-full object-cover" data-alt="A massive, modern container ship navigating through calm, deep blue ocean waters at dawn. The ship has a sleek, futuristic design with minimal visible crew deckhouses, emphasizing its autonomous nature. Soft, golden hour light reflects off its dark blue hull. The overall aesthetic is professional, advanced, and serene." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLqugEIRm46O4uEE1pDbtnZ4sobEnpViKviiYA5aQEXmzxKjtFDOQSik4fB18rKHanMKWEXhVSlXBo2ISVRIYLkSHg7dXfs3RI8ZwKB_5PvXBmHJvHm51PQ52IHjawCgl3xNtK3YkSM-o3hsloEF-NtAh19qtYfZydw9yozpZMcWmMhe0sWPnitElqeGvE60CoFhlAzFv_9ZcD1ztCfNGmTurmHQcSUaAuwKNgYTUtmGbe4ve278UP5FWwNrqqPmtGNGC75OrT3ZG7"/>
+<div class="absolute bottom-4 left-4 flex gap-sm">
+<span class="px-sm py-xs bg-surface-container-lowest/80 backdrop-blur-sm border border-outline-variant rounded font-label-sm text-label-sm text-on-surface">Maritime Tech</span>
+<span class="px-sm py-xs bg-surface-container-lowest/80 backdrop-blur-sm border border-outline-variant rounded font-label-sm text-label-sm text-on-surface">Automation</span>
+</div>
+</div>
+</header>
+<!-- Content -->
+<div class="prose prose-slate max-w-none">
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-lg leading-relaxed">
+                    The maritime industry stands on the precipice of a technological revolution. As global supply chains face unprecedented pressure, the drive toward autonomous shipping has shifted from conceptual studies to tangible sea trials. This transition is not merely about replacing crews; it's about optimizing routes, reducing fuel consumption, and fundamentally reimagining maritime logistics.
+                </p>
+<h2 class="font-headline-md text-headline-md text-on-surface mt-xl mb-md">The Current State of Autonomy</h2>
+<p class="font-body-md text-body-md text-on-surface mb-md">
+                    We are currently operating largely in 'Level 2' and 'Level 3' autonomy—where systems assist human operators or assume control under specific conditions with a human fallback. However, pilot programs in the Scandinavian fjords and designated test zones in Asia are demonstrating the viability of 'Level 4' (fully autonomous under specific conditions) operations.
+                </p>
+<div class="bg-surface-container p-lg rounded-lg border border-outline-variant my-lg border-l-4 border-l-primary-container">
+<p class="font-body-md text-body-md text-on-surface font-medium italic">
+                        "The challenge isn't just building the technology; it's building the regulatory framework to support it. The sea is unpredictable, and algorithms must account for variables that experienced mariners handle intuitively."
+                    </p>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-sm">— Chief Technologist, Maritime Innovation Hub</p>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mt-lg mb-sm">Key Technological Drivers</h3>
+<ul class="list-disc pl-lg mb-lg font-body-md text-body-md text-on-surface space-y-sm">
+<li><strong>Advanced Sensor Fusion:</strong> Combining LIDAR, radar, and optical cameras to create a comprehensive 360-degree situational awareness model.</li>
+<li><strong>AI and Machine Learning:</strong> Algorithms trained on vast datasets of maritime traffic patterns to predict ship movements and automate collision avoidance maneuvers (COLREGs compliance).</li>
+<li><strong>High-Bandwidth Connectivity:</strong> The proliferation of Low Earth Orbit (LEO) satellite networks enabling real-time telemetry and remote pilot intervention.</li>
+</ul>
+<div class="w-full h-48 md:h-64 rounded-lg overflow-hidden border border-outline-variant my-lg">
+<img alt="Tech Control Room" class="w-full h-full object-cover" data-alt="A modern maritime shore control center with multiple high-definition glowing screens displaying radar data, ship telemetry, and live camera feeds. A remote operator sits at a sleek console in a dark, tech-focused environment lit by the cool blue glow of the monitors. The aesthetic is professional, data-driven, and highly advanced." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzUuJY6vh-b92K_t2DuV0qp6ph3PZ7w46Fd3-RJIMH8-WlsoskBPP1ZIiLldjd9LTUoTeBwfIUyudKmk8mWc6lzz7T4Tqw_3YmqvHHPTvIA14MQUTgh-igLaLihKf0myDZBTsTzhuWWqcCDQpRGCIL5LkLXcrg4jDTmW4NkfgudpqxX38JnysJkN1Ag1sgdP6CLkUgC5HU-pZ13yZLAXoiBGsPUB-LZ6F7p98YrIed7aWyCKGQssFHAOa4q2EFOTa6FeWMQiPTEvVG"/>
+</div>
+<p class="font-body-md text-body-md text-on-surface mb-xl">
+                    As we look toward the next decade, the integration of these systems will redefine the role of the seafarer. The focus will shift from onboard manual operation to remote monitoring and complex system management, requiring a new set of skills and training paradigms across the industry.
+                </p>
+</div>
+<hr class="border-outline-variant my-xl"/>
+<div class="flex items-center justify-between">
+<div class="flex gap-sm">
+<button class="flex items-center gap-xs px-md py-sm border border-outline-variant rounded hover:bg-surface-container transition-colors font-label-md text-label-md text-on-surface">
+<span class="material-symbols-outlined text-[18px]" data-icon="thumb_up">thumb_up</span> Helpful
+                    </button>
+<button class="flex items-center gap-xs px-md py-sm border border-outline-variant rounded hover:bg-surface-container transition-colors font-label-md text-label-md text-on-surface">
+<span class="material-symbols-outlined text-[18px]" data-icon="bookmark">bookmark</span> Save
+                    </button>
+</div>
+<button class="flex items-center gap-xs px-md py-sm bg-primary text-on-primary rounded border border-primary hover:bg-primary/90 transition-colors font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="share">share</span> Share Article
+                </button>
+</div>
+</article>
+<!-- Right Sidebar (Metadata & Related) -->
+<aside class="w-full xl:w-80 bg-surface border-t xl:border-t-0 xl:border-l border-outline-variant p-lg flex flex-col gap-xl shrink-0">
+<!-- Author Card -->
+<section class="bg-surface-container-lowest p-md rounded-lg border border-outline-variant shadow-[0_4px_12px_rgba(0,13,34,0.03)]">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-md">About the Author</h3>
+<div class="flex items-start gap-md mb-md">
+<img alt="Author Avatar" class="w-12 h-12 rounded-full border border-outline-variant object-cover" data-alt="A professional portrait of a female maritime tech analyst with short hair, wearing a grey blazer. Shot in a bright, modern office with soft natural lighting and a clean, corporate aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuChm3bOwj1Ow4iyan-VsJA9Ix9DO1NIxoj7NbRq0lNxve_q8RNKn_g23RgLHdViPjb65hjFL1VsRmBt4-opia1-PZQOaFN3vhawFb4tU6lzBYIKAyGtoJho6t1r4WuoO9VF5ydm0gp_uZmkhk3A1h-KdrZVM3BGTJHjnFpHIOBd_mlQPZqfI5tUPFU8z7BLxopqUQiHn_uVuF2jmM77l5rgdlKOjXv-KZ1hiL432TCYGe6TyzpgbN9xRSVwnp0Soz_cxo5ypypA6Phr"/>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface text-[16px]">Dr. Elena Rostova</h4>
+<p class="font-label-sm text-label-sm text-secondary">Lead Analyst, Maritime Tech</p>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">
+                    Former naval architect specializing in automation systems and regulatory frameworks for next-generation vessels.
+                </p>
+<button class="w-full py-sm border border-outline-variant rounded text-primary-container font-label-md text-label-md hover:bg-surface-container transition-colors">View Profile</button>
+</section>
+<!-- Related Articles -->
+<section>
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="article">article</span> Related Insights
+                </h3>
+<div class="flex flex-col gap-md">
+<!-- Article 1 -->
+<a class="group flex gap-md items-start p-sm -mx-sm rounded hover:bg-surface-container transition-colors" href="#">
+<img alt="Cybersecurity" class="w-16 h-16 rounded border border-outline-variant object-cover" data-alt="Abstract digital graphic representing cybersecurity in a corporate environment. A glowing shield icon overlaid on blurred code and data streams, utilizing a cool blue and silver color palette. The aesthetic is modern, secure, and professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiDj32StkGy3txv8dFFYM7lAmFPgD8Eq6bZmVdRRow7igzt86J3Exh7uNtri0VVK5bYzwDvQIJKn8eqjUWtLDlC-fKglMZoDicbWGuCLx6lz05FMrRUYYWnFFrkkYKR-a9tp1tIgqN5KIhs6k8z4zB29dzQBYLMb_s87Nw1SGeynuVabYv5ldZKT3MJsRrmQ2mw9afNdUlRUxww_YEhzRkvP5mU25-O1PR7m72MjQiaiHFTBzPUPXQT9Je5Hcv-DG243a4k4iGxg1b"/>
+<div>
+<h4 class="font-body-sm text-body-sm text-on-surface font-semibold group-hover:text-primary transition-colors line-clamp-2">Securing the Helm: Cybersecurity for Autonomous Fleets</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-xs">Sep 28 • 5 min read</p>
+</div>
+</a>
+<!-- Article 2 -->
+<a class="group flex gap-md items-start p-sm -mx-sm rounded hover:bg-surface-container transition-colors" href="#">
+<img alt="Port Operations" class="w-16 h-16 rounded border border-outline-variant object-cover" data-alt="A high-angle view of a bustling container port at twilight, showing rows of neatly stacked shipping containers and towering cranes. The lighting is functional and industrial, emphasizing scale and organization. Corporate, modern aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCO15x83OKvUrBcxABMin0i1DoICvSGANOpeDyKd9XcwgVOAH1BSzJ7DElOiux3FYRPR03aYQJTHb8BW2lpQR5lLEDbYGEh9ZtAKfByyaAtaP2G4Cnx6JsXow0EmXWzyuOSpZacrO6trUdZudcHqsei66VVQ3eybQEFAD3l_T2KmanRdTikmCLYR-zd3qDddzzL3aqz9vhhQgu-9PR6a0FVo3r6Lgz2Q3dKwTnD12OUoZsXdF_MPwrCcCXY_X_R4VkvHwE4WJbuz5d_"/>
+<div>
+<h4 class="font-body-sm text-body-sm text-on-surface font-semibold group-hover:text-primary transition-colors line-clamp-2">Smart Ports: Infrastructure Readiness for Next-Gen Vessels</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-xs">Sep 15 • 10 min read</p>
+</div>
+</a>
+</div>
+</section>
+<!-- Tags -->
+<section>
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-md">Topics</h3>
+<div class="flex flex-wrap gap-sm">
+<span class="px-sm py-xs bg-surface-container border border-outline-variant rounded font-label-sm text-label-sm text-on-surface hover:bg-surface-dim cursor-pointer transition-colors">Innovation</span>
+<span class="px-sm py-xs bg-surface-container border border-outline-variant rounded font-label-sm text-label-sm text-on-surface hover:bg-surface-dim cursor-pointer transition-colors">Engineering</span>
+<span class="px-sm py-xs bg-surface-container border border-outline-variant rounded font-label-sm text-label-sm text-on-surface hover:bg-surface-dim cursor-pointer transition-colors">Future Outlook</span>
+</div>
+</section>
+</aside>
+</main>
+</body></html>

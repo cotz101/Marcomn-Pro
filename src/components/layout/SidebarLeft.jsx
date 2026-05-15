@@ -48,13 +48,13 @@ export default function SidebarLeft() {
     statsValue1 = "12";
     statsLabel2 = "New Applicants";
     statsValue2 = "48";
-  } else if (pathname?.includes('/blog')) {
+  } else if (pathname?.includes('/mblog')) {
     sidebarTitle = "Manage my insights";
     navLinks = [
-      { name: 'All Articles', href: '/blog', icon: Library },
-      { name: 'My Articles', href: '/blog/my-blogs', icon: BookOpen },
-      { name: 'Drafts', href: '/blog/drafts', icon: FileText },
-      { name: 'Trending Topics', href: '/blog/trending', icon: TrendingUp },
+      { name: 'All Articles', href: '/mblog?view=all', icon: Library },
+      { name: 'My Articles', href: '/mblog?view=my', icon: BookOpen },
+      { name: 'Drafts', href: '/mblog?view=drafts', icon: FileText },
+      { name: 'Trending Topics', href: '/mblog?view=trending', icon: TrendingUp },
     ];
     showStats = false; // Will show Contributors instead
   } else {
@@ -127,7 +127,7 @@ export default function SidebarLeft() {
         </nav>
       </div>
 
-      {pathname?.includes('/blog') && (
+      {pathname?.includes('/mblog') && (
         <>
           <div className="sidebar-spacer"></div>
           <div className="card p-4">
