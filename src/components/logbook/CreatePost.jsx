@@ -107,7 +107,7 @@ export default function CreatePost({ profile, onPostCreated, groupId }) {
           </button>
           <button className="create-action-btn" onClick={() => setIsArticleOpen(true)}>
             <Newspaper size={24} className="icon-article" style={{ color: '#004173' }} />
-            <span>Write article</span>
+            <span className="whitespace-nowrap">Post a Blog</span>
           </button>
         </div>
       </div>

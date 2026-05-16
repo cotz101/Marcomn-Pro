@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import MBlogFeed from '@/src/components/mblog/MBlogFeed';
 import MBlogComposer from '@/src/components/mblog/MBlogComposer';
-import { PenTool } from 'lucide-react';
+import { SquarePen } from 'lucide-react';
 
 function MBlogPageContent() {
   const [view, setView] = useState('all'); // 'all' or 'my'
@@ -16,8 +16,11 @@ function MBlogPageContent() {
 
   useEffect(() => {
     const viewParam = searchParams.get('view');
-    if (viewParam) {
+    if (viewParam === 'all' || viewParam === 'my') {
       setView(viewParam);
+    } else if (viewParam) {
+      // Gracefully default back to 'all' if invalid or removed view (like drafts) is requested
+      setView('all');
     }
 
     if (searchParams.get('compose') === 'true') {
@@ -52,10 +55,10 @@ function MBlogPageContent() {
         </div>
         <button 
           onClick={() => setShowComposer(true)}
-          className="bg-[#002b4e] text-white px-6 py-2.5 rounded-full font-bold flex items-center gap-2 hover:bg-[#004173] transition-all active:scale-95 shadow-md shadow-blue-900/10"
+          className="text-[#002b4e] hover:text-[#004173] transition-all active:scale-95 p-2"
+          title="Post a Blog"
         >
-          <PenTool size={18} />
-          Write Article
+          <SquarePen size={28} />
         </button>
       </div>
 

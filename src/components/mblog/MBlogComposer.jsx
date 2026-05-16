@@ -154,9 +154,9 @@ export default function MBlogComposer({ onClose, onArticleCreated, initialData }
     const canPublish = title.trim() && !isContentEmpty(contentHtml) && !submitting;
 
     return (
-      <div className="article-editor-overlay" onClick={onClose}>
+      <div className="article-editor-overlay w-full overflow-x-hidden" onClick={onClose}>
         <div className="article-editor-container" onClick={e => e.stopPropagation()}>
-          <div className="article-editor-header">
+          <div className="article-editor-header flex-wrap px-3 sm:px-6">
             <div className="flex items-center gap-4">
               <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" onClick={onClose}>
                 <X size={24} />
@@ -166,7 +166,7 @@ export default function MBlogComposer({ onClose, onArticleCreated, initialData }
               </h2>
             </div>
   
-            <div className="flex items-center gap-3">
+            <div className="flex items-center flex-wrap gap-2 sm:gap-4">
               {uploadProgress && (
                 <span className="text-sm text-blue-600 font-medium animate-pulse mr-2">{uploadProgress}</span>
               )}
@@ -177,7 +177,7 @@ export default function MBlogComposer({ onClose, onArticleCreated, initialData }
                 Cancel
               </button>
               <button 
-                className="bg-[#002b4e] text-white px-8 py-2 rounded-lg font-bold disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-blue-900/10"
+                className="bg-[#002b4e] text-white px-8 py-2 rounded-lg font-bold shrink-0 disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-blue-900/10"
                 onClick={handleSubmit}
                 disabled={!canPublish}
               >

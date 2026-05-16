@@ -132,7 +132,7 @@ export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profi
       onClose={onClose} 
       title={initialData ? "Edit Post" : "Create a Post"}
     >
-      <div className="flex flex-col">
+      <div className="flex flex-col w-full overflow-x-hidden px-3 sm:px-6">
         <div className="composer-header-sub flex items-center gap-3 mb-6">
           <img 
             src={identityImage} 
@@ -182,8 +182,8 @@ export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profi
           )}
         </div>
 
-        <div className="m-composer-footer-actions flex justify-between items-center pt-4 border-t border-[var(--outline)]">
-          <div className="m-composer-media-btns flex items-center gap-4">
+        <div className="m-composer-footer-actions flex flex-wrap justify-between items-center pt-4 border-t border-[var(--outline)]">
+          <div className="m-composer-media-btns flex items-center gap-2 sm:gap-4">
             <button onClick={() => { setMediaType(null); fileInputRef.current.click(); }} className="flex items-center gap-2 text-[var(--on-surface-variant)] hover:text-[var(--primary)] transition-colors" title="Add Media">
               <MediaIcon size={22} />
               <span className="text-sm font-semibold">Media</span>
@@ -191,7 +191,7 @@ export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profi
           </div>
 
           <button 
-            className="btn-primary-pill px-6"
+            className="btn-primary-pill px-6 shrink-0"
             disabled={isPostDisabled}
             onClick={handlePost}
           >

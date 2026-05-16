@@ -53,8 +53,6 @@ export default function SidebarLeft() {
     navLinks = [
       { name: 'All Articles', href: '/mblog?view=all', icon: Library },
       { name: 'My Articles', href: '/mblog?view=my', icon: BookOpen },
-      { name: 'Drafts', href: '/mblog?view=drafts', icon: FileText },
-      { name: 'Trending Topics', href: '/mblog?view=trending', icon: TrendingUp },
     ];
     showStats = false; // Will show Contributors instead
   } else {
