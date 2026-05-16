@@ -34,7 +34,7 @@ export default function SpeedDialFAB() {
           primaryAction: 'Post a Blog',
           primaryPath: '/mblog?compose=true',
           shortcuts: [
-            { label: 'My Blog', icon: Library, path: '/mblog/my-blogs' },
+            { label: 'My Articles', icon: BookOpen, path: '/mblog?view=my' },
           ]
         };
       default: // MNetwork
@@ -47,7 +47,6 @@ export default function SpeedDialFAB() {
             { label: 'Group', icon: Users, path: '/groups' },
             { label: 'Connection', icon: UserPlus, path: '/connections' },
             { label: 'Talents', icon: Star, path: '/talent' },
-            { label: 'Post to Blog', icon: SquarePen, path: '/mblog?compose=true' },
           ]
         };
     }

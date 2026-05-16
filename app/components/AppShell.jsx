@@ -26,6 +26,7 @@ import {
   Target,
   Lightbulb,
   Anchor,
+  BookOpen,
   ArrowLeft
 } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
@@ -394,10 +395,6 @@ export default function AppShell({ children, userEmail, userId }) {
                     <span className="shortcut-label">Talents</span>
                     <div className="shortcut-icon-wrapper"><Search size={18} /></div>
                   </div>
-                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/mblog?compose=true'); }}>
-                    <span className="shortcut-label">Post to Blog</span>
-                    <div className="shortcut-icon-wrapper"><Pencil size={18} /></div>
-                  </div>
                 </>
               )}
               {(pathname?.includes('/services') || pathname?.includes('/partners') || pathname?.includes('/jobs')) && (
@@ -421,10 +418,12 @@ export default function AppShell({ children, userEmail, userId }) {
                 </>
               )}
               {pathname?.includes('/mblog') && (
-                <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/mblog/my-blogs'); }}>
-                  <span className="shortcut-label">My Articles</span>
-                  <div className="shortcut-icon-wrapper"><Library size={18} /></div>
-                </div>
+                <>
+                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/mblog?view=my'); }}>
+                    <span className="shortcut-label">My Articles</span>
+                    <div className="shortcut-icon-wrapper"><BookOpen size={18} /></div>
+                  </div>
+                </>
               )}
             </div>
 

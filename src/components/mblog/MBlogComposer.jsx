@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 import { X, Image as ImageIcon, FileText, Play, Upload, CheckCircle, Paperclip } from 'lucide-react';
 import RichTextEditor from '@/src/components/common/RichTextEditor';
+import { extractYouTubeId } from '@/src/lib/youtubeUtils';
+
 
 export default function MBlogComposer({ onClose, onArticleCreated, initialData }) {
   const [title, setTitle] = useState('');
@@ -25,7 +27,7 @@ export default function MBlogComposer({ onClose, onArticleCreated, initialData }
     if (initialData) {
       setTitle(initialData.title || '');
       setContentHtml(initialData.content_html || '');
-      setYoutubeId(initialData.youtube_id || '');
+      setYoutubeId(extractYouTubeId(initialData.youtube_id) || initialData.youtube_id || '');
       if (initialData.media_url) {
         setMediaPreview(initialData.media_url);
       }
@@ -156,7 +158,7 @@ export default function MBlogComposer({ onClose, onArticleCreated, initialData }
         <div className="article-editor-container" onClick={e => e.stopPropagation()}>
           <div className="article-editor-header">
             <div className="flex items-center gap-4">
-              <button className="p-2 hover:bg-gray-100 rounded-full transition-colors" onClick={onClose}>
+              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" onClick={onClose}>
                 <X size={24} />
               </button>
               <h2 className="font-bold text-xl text-[#0e2a4d]">
@@ -164,12 +166,18 @@ export default function MBlogComposer({ onClose, onArticleCreated, initialData }
               </h2>
             </div>
   
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {uploadProgress && (
-                <span className="text-sm text-blue-600 font-medium animate-pulse">{uploadProgress}</span>
+                <span className="text-sm text-blue-600 font-medium animate-pulse mr-2">{uploadProgress}</span>
               )}
               <button 
-                className="bg-[#002b4e] text-white px-8 py-2 rounded-full font-bold disabled:opacity-50 transition-all active:scale-95"
+                className="px-8 py-2 rounded-lg font-bold text-gray-500 hover:bg-gray-50 transition-all active:scale-95 border border-gray-200"
+                onClick={onClose}
+              >
+                Cancel
+              </button>
+              <button 
+                className="bg-[#002b4e] text-white px-8 py-2 rounded-lg font-bold disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-blue-900/10"
                 onClick={handleSubmit}
                 disabled={!canPublish}
               >
@@ -256,22 +264,16 @@ export default function MBlogComposer({ onClose, onArticleCreated, initialData }
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase text-gray-500 tracking-wider flex items-center gap-2">
-                <Play size={14} /> Video Integration
+              <label className="text-xs font-bold uppercase text-gray-500 tracking-wider block">
+                Video Integration
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                  <span className="text-xs font-bold">YT:</span>
-                </div>
                 <input 
                   type="text" 
-                  placeholder="Paste YouTube Video ID"
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  value={youtubeId}
-                  onChange={e => setYoutubeId(e.target.value)}
+                  placeholder="Paste video URL here (YouTube, Vimeo, etc.)"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  value={youtubeId || ""}
+                  onChange={e => setYoutubeId(extractYouTubeId(e.target.value))}
                 />
-              </div>
-              <p className="text-[10px] text-gray-400 pl-1 italic">Example: dQw4w9WgXcQ (ID only, not full URL)</p>
             </div>
           </div>
         </div>
