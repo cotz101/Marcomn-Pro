@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -18,6 +19,7 @@ import {
   Award
 } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
+import { createClient } from '@/lib/supabase';
 
 export default function SidebarLeft() {
   const pathname = usePathname();
@@ -28,6 +30,64 @@ export default function SidebarLeft() {
   const image = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (profile?.profilePic || '/profile_pic.png');
   const headline = isCompany ? 'Maritime Enterprise' : (profile?.headline || 'Maritime Professional');
 
+  const supabase = createClient();
+  const [topContributors, setTopContributors] = useState([]);
+  const [loadingContributors, setLoadingContributors] = useState(true);
+
+  const isMBlogPage = pathname?.includes('/mblog');
+
+  useEffect(() => {
+    if (isMBlogPage) {
+      fetchTopContributors();
+    }
+  }, [isMBlogPage]);
+
+  const fetchTopContributors = async () => {
+    try {
+      setLoadingContributors(true);
+      const { data: articles, error } = await supabase
+        .from('mblog_articles')
+        .select(`
+          author_id,
+          author:profiles(id, name, avatar_url, headline)
+        `);
+
+      if (error) throw error;
+
+      if (!articles || articles.length === 0) {
+        setTopContributors([]);
+        return;
+      }
+
+      const authorCountsMap = articles.reduce((acc, article) => {
+        if (article.author_id && article.author) {
+          const authorId = article.author_id;
+          if (!acc[authorId]) {
+            acc[authorId] = {
+              id: authorId,
+              name: article.author.name,
+              img: article.author.avatar_url || '/profile_pic.png',
+              role: article.author.headline || 'Maritime Professional',
+              count: 0
+            };
+          }
+          acc[authorId].count += 1;
+        }
+        return acc;
+      }, {});
+
+      const sortedAuthors = Object.values(authorCountsMap)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      setTopContributors(sortedAuthors);
+    } catch (err) {
+      console.error('Error fetching top contributors:', err.message || err);
+    } finally {
+      setLoadingContributors(false);
+    }
+  };
+
   let navLinks = [];
   let sidebarTitle = "Manage MNetwork";
   let showStats = true;
@@ -36,10 +96,10 @@ export default function SidebarLeft() {
   let statsLabel2 = "Post impressions";
   let statsValue2 = "1.2k";
 
-  if (pathname?.includes('/services')) {
+  if (pathname?.startsWith('/mservices') || pathname?.startsWith('/partners') || pathname?.startsWith('/jobs')) {
     sidebarTitle = "Manage MServices";
     navLinks = [
-      { name: 'Opportunity', href: '/services', icon: Lightbulb },
+      { name: 'Opportunity', href: '/mservices', icon: Lightbulb },
       { name: 'Partners', href: '/partners', icon: Handshake },
       { name: 'My Job Posting', href: '/jobs/my-postings', icon: FileText },
       { name: 'My Job Application', href: '/jobs/my-applications', icon: Send },
@@ -125,7 +185,7 @@ export default function SidebarLeft() {
         </nav>
       </div>
 
-      {pathname?.includes('/mblog') && (
+      {isMBlogPage && (
         <>
           <div className="sidebar-spacer"></div>
           <div className="card p-4">
@@ -134,19 +194,31 @@ export default function SidebarLeft() {
               <Award size={14} className="text-[#42474f]" />
             </div>
             <div className="flex flex-col gap-4">
-              {[
-                { name: 'Sarah Jenkins', role: 'Chief Maritime Economist', img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150' },
-                { name: 'David Chen', role: 'Lead Naval Architect', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150' },
-                { name: 'Elena Rostova', role: 'Port Operations Dir.', img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=150' }
-              ].map((contributor) => (
-                <div key={contributor.name} className="flex items-center gap-3">
-                  <img src={contributor.img} alt={contributor.name} className="w-10 h-10 rounded-full object-cover" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-[#1b1c1c] truncate">{contributor.name}</p>
-                    <p className="text-[10px] text-[#42474f] truncate">{contributor.role}</p>
+              {loadingContributors ? (
+                [1, 2, 3].map(i => (
+                  <div key={i} className="flex items-center gap-3 animate-pulse">
+                    <div className="w-10 h-10 rounded-full bg-gray-200"></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="h-3 bg-gray-200 rounded w-24 mb-1"></div>
+                      <div className="h-2 bg-gray-100 rounded w-16"></div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : topContributors.length === 0 ? (
+                <p className="text-xs text-gray-400">No contributors yet.</p>
+              ) : (
+                topContributors.map((contributor) => (
+                  <div key={contributor.id} className="flex items-center gap-3">
+                    <img src={contributor.img} alt={contributor.name} className="w-10 h-10 rounded-full object-cover" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-[#1b1c1c] truncate">{contributor.name}</p>
+                      <p className="text-[10px] text-[#42474f] truncate">
+                        {contributor.count} {contributor.count === 1 ? 'Article' : 'Articles'} • {contributor.role}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
             <button className="w-full mt-4 text-xs font-bold text-[#004173] hover:underline">View All Authors</button>
           </div>

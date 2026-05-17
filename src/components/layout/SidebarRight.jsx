@@ -1,14 +1,63 @@
 'use client';
 
-import { Info, ExternalLink, Briefcase, TrendingUp, Sparkles, ThumbsUp, Share2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Info, ExternalLink, Briefcase, TrendingUp, Sparkles, ThumbsUp, Share2, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { createClient } from '@/lib/supabase';
 
 export default function SidebarRight() {
   const pathname = usePathname();
   const isGroupsPage = pathname === '/groups';
   const isGroupDiscussionPage = pathname?.startsWith('/groups/') && pathname !== '/groups';
   const isMBlogPage = pathname?.startsWith('/mblog');
+
+  const supabase = createClient();
+  const [topLiked, setTopLiked] = useState([]);
+  const [mostActive, setMostActive] = useState([]);
+  const [mostShared, setMostShared] = useState([]);
+  const [loadingMBlogStats, setLoadingMBlogStats] = useState(true);
+
+  useEffect(() => {
+    if (isMBlogPage) {
+      fetchMBlogStats();
+    }
+  }, [isMBlogPage]);
+
+  const fetchMBlogStats = async () => {
+    try {
+      setLoadingMBlogStats(true);
+      const { data, error } = await supabase
+        .from('mblog_articles')
+        .select(`
+          id,
+          title,
+          author:profiles(name),
+          likes:mblog_article_likes(id),
+          comments:mblog_article_comments(id),
+          shares:posts!shared_article_id(id)
+        `);
+
+      if (error) throw error;
+
+      if (data) {
+        const processed = data.map(a => ({
+          ...a,
+          likeCount: a.likes?.length || 0,
+          commentCount: a.comments?.length || 0,
+          shareCount: a.shares?.length || 0,
+        }));
+
+        setTopLiked([...processed].sort((a, b) => b.likeCount - a.likeCount).slice(0, 3));
+        setMostActive([...processed].sort((a, b) => b.commentCount - a.commentCount).slice(0, 3));
+        setMostShared([...processed].sort((a, b) => b.shareCount - a.shareCount).slice(0, 3));
+      }
+    } catch (err) {
+      console.error('Error fetching mblog stats:', err);
+    } finally {
+      setLoadingMBlogStats(false);
+    }
+  };
 
   const recentBlogs = [
     { id: 1, title: 'Sustainable Shipping in 2026', author: 'Capt. Sarah Miller', date: '2 days ago' },
@@ -46,13 +95,38 @@ export default function SidebarRight() {
               </div>
               <h3 className="font-bold text-sm text-[#0e2a4d]">Top Most Liked</h3>
             </div>
-            <div className="flex flex-col gap-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="animate-pulse">
-                  <div className="h-3 bg-gray-100 rounded w-full mb-2" />
-                  <div className="h-2 bg-gray-50 rounded w-1/2" />
-                </div>
-              ))}
+            <div className="flex flex-col gap-1">
+              {loadingMBlogStats ? (
+                [1, 2, 3].map(i => (
+                  <div key={i} className="animate-pulse p-2">
+                    <div className="h-3 bg-gray-100 rounded w-full mb-2" />
+                    <div className="h-2 bg-gray-50 rounded w-1/2" />
+                  </div>
+                ))
+              ) : topLiked.length === 0 ? (
+                 <p className="text-xs text-gray-400 p-2">No articles yet.</p>
+              ) : (
+                topLiked.map(article => (
+                  <Link 
+                    key={article.id} 
+                    href={`/mblog?articleId=${article.id}`}
+                    className="flex flex-col gap-1 p-2 rounded-md hover:bg-slate-50 cursor-pointer transition-colors group"
+                  >
+                    <p className="text-sm font-semibold text-[#002b4e] line-clamp-2 group-hover:text-[#004173] leading-tight">
+                      {article.title}
+                    </p>
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-[11px] text-gray-500 truncate pr-2">
+                        {article.author?.name || 'Anonymous'}
+                      </span>
+                      <span className="flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+                        <ThumbsUp size={10} />
+                        {article.likeCount}
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
           </div>
 
@@ -64,13 +138,38 @@ export default function SidebarRight() {
               </div>
               <h3 className="font-bold text-sm text-[#0e2a4d]">Most Active</h3>
             </div>
-            <div className="flex flex-col gap-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="animate-pulse">
-                  <div className="h-3 bg-gray-100 rounded w-full mb-2" />
-                  <div className="h-2 bg-gray-50 rounded w-1/3" />
-                </div>
-              ))}
+            <div className="flex flex-col gap-1">
+              {loadingMBlogStats ? (
+                [1, 2, 3].map(i => (
+                  <div key={i} className="animate-pulse p-2">
+                    <div className="h-3 bg-gray-100 rounded w-full mb-2" />
+                    <div className="h-2 bg-gray-50 rounded w-1/3" />
+                  </div>
+                ))
+              ) : mostActive.length === 0 ? (
+                 <p className="text-xs text-gray-400 p-2">No articles yet.</p>
+              ) : (
+                mostActive.map(article => (
+                  <Link 
+                    key={article.id} 
+                    href={`/mblog?articleId=${article.id}`}
+                    className="flex flex-col gap-1 p-2 rounded-md hover:bg-slate-50 cursor-pointer transition-colors group"
+                  >
+                    <p className="text-sm font-semibold text-[#002b4e] line-clamp-2 group-hover:text-[#004173] leading-tight">
+                      {article.title}
+                    </p>
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-[11px] text-gray-500 truncate pr-2">
+                        {article.author?.name || 'Anonymous'}
+                      </span>
+                      <span className="flex items-center gap-1 text-[11px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+                        <MessageSquare size={10} />
+                        {article.commentCount}
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
           </div>
 
@@ -82,13 +181,38 @@ export default function SidebarRight() {
               </div>
               <h3 className="font-bold text-sm text-[#0e2a4d]">Most Shared</h3>
             </div>
-            <div className="flex flex-col gap-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="animate-pulse">
-                  <div className="h-3 bg-gray-100 rounded w-full mb-2" />
-                  <div className="h-2 bg-gray-50 rounded w-1/4" />
-                </div>
-              ))}
+            <div className="flex flex-col gap-1">
+              {loadingMBlogStats ? (
+                [1, 2, 3].map(i => (
+                  <div key={i} className="animate-pulse p-2">
+                    <div className="h-3 bg-gray-100 rounded w-full mb-2" />
+                    <div className="h-2 bg-gray-50 rounded w-1/4" />
+                  </div>
+                ))
+              ) : mostShared.length === 0 ? (
+                 <p className="text-xs text-gray-400 p-2">No articles yet.</p>
+              ) : (
+                mostShared.map(article => (
+                  <Link 
+                    key={article.id} 
+                    href={`/mblog?articleId=${article.id}`}
+                    className="flex flex-col gap-1 p-2 rounded-md hover:bg-slate-50 cursor-pointer transition-colors group"
+                  >
+                    <p className="text-sm font-semibold text-[#002b4e] line-clamp-2 group-hover:text-[#004173] leading-tight">
+                      {article.title}
+                    </p>
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-[11px] text-gray-500 truncate pr-2">
+                        {article.author?.name || 'Anonymous'}
+                      </span>
+                      <span className="flex items-center gap-1 text-[11px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+                        <Share2 size={10} />
+                        {article.shareCount}
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
           </div>
 

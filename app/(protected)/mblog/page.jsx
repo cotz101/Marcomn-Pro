@@ -55,10 +55,10 @@ function MBlogPageContent() {
         </div>
         <button 
           onClick={() => setShowComposer(true)}
-          className="text-[#002b4e] hover:text-[#004173] transition-all active:scale-95 p-2"
-          title="Post a Blog"
+          className="bg-[#002b4e] text-white px-6 py-2.5 rounded-md font-bold flex items-center gap-2 hover:bg-[#004173] transition-all active:scale-95 shadow-md shadow-blue-900/10"
         >
-          <SquarePen size={28} />
+          <SquarePen size={18} />
+          <span>Post a Blog</span>
         </button>
       </div>
 

@@ -182,7 +182,7 @@ export default function AppShell({ children, userEmail, userId }) {
                     <Ship size={24} />
                     <span>MNetwork</span>
                   </Link>
-                  <Link href="/services" className={`nav-link ${pathname === '/services' ? 'active' : ''}`}>
+                  <Link href="/mservices" className={`nav-link ${pathname?.startsWith('/mservices') ? 'active' : ''}`}>
                     <LayoutGrid size={24} />
                     <span>MServices</span>
                   </Link>
@@ -305,8 +305,8 @@ export default function AppShell({ children, userEmail, userId }) {
           <span className="mobile-nav-label">MNetwork</span>
         </Link>
         <Link 
-          href="/services" 
-          className={`mobile-nav-item ${pathname?.includes('/services') || pathname?.includes('/partners') || pathname?.includes('/jobs') ? 'active' : ''}`}
+          href="/mservices" 
+          className={`mobile-nav-item ${pathname?.startsWith('/mservices') || pathname?.includes('/partners') || pathname?.includes('/jobs') ? 'active' : ''}`}
           style={{ '--active-color': '#002b4e' }}
         >
           <LayoutGrid size={24} className="mobile-nav-icon" />
@@ -397,9 +397,9 @@ export default function AppShell({ children, userEmail, userId }) {
                   </div>
                 </>
               )}
-              {(pathname?.includes('/services') || pathname?.includes('/partners') || pathname?.includes('/jobs')) && (
+              {(pathname?.startsWith('/mservices') || pathname?.includes('/partners') || pathname?.includes('/jobs')) && (
                 <>
-                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/services'); }}>
+                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/mservices'); }}>
                     <span className="shortcut-label">Opportunity</span>
                     <div className="shortcut-icon-wrapper"><Lightbulb size={18} /></div>
                   </div>
@@ -434,7 +434,7 @@ export default function AppShell({ children, userEmail, userId }) {
                   Post to Logbook
                 </button>
               )}
-              {(pathname?.includes('/services') || pathname?.includes('/partners') || pathname?.includes('/jobs')) && (
+              {(pathname?.startsWith('/mservices') || pathname?.includes('/partners') || pathname?.includes('/jobs')) && (
                 <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); setShowPostJob(true); }}>
                   Post a Job
                 </button>
