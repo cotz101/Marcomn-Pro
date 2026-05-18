@@ -1,16 +1,19 @@
 import { X, MapPin, Clock, Briefcase, DollarSign, Award, Ship, Compass, Anchor } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase';
 
-export default function JobDetailsModal({ job, onClose, onApply }) {
-  const { userId } = useProfile();
+export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
+  const { userId, openPostJobModal } = useProfile();
+  const router = useRouter();
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   if (!job) return null;
 
-  const isPoster = userId && (
-    userId === job.poster_id || 
-    userId === job.user_id || 
-    userId === job.creator_id || 
-    userId === job.poster?.id
-  );
+  // Check both user_id and poster_id — different views populate different columns
+  const isOwner = userId && (userId === job?.user_id || userId === job?.poster_id);
 
   // Determine display name
   const companyName = job.company?.name || (typeof job.company === 'string' ? job.company : null) || job.poster?.name || 'Private Poster';
@@ -49,6 +52,25 @@ export default function JobDetailsModal({ job, onClose, onApply }) {
     }
   };
 
+  const handleDeleteJob = async () => {
+    setIsDeleting(true);
+    const supabase = createClient();
+    const { error } = await supabase.from('jobs').delete().eq('id', job.id);
+    setIsDeleting(false);
+    
+    if (!error) {
+      setIsDeleteConfirmOpen(false);
+      onClose();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('job-posted'));
+      }
+      router.refresh();
+    } else {
+      console.error('Error deleting job:', error);
+      alert('Error deleting job: ' + error.message);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-300">
       {/* Backdrop Closer */}
@@ -58,7 +80,7 @@ export default function JobDetailsModal({ job, onClose, onApply }) {
       <div className="relative z-10 max-w-3xl w-full bg-white rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transform transition-all duration-300 scale-100">
         
         {/* Sticky Header */}
-        <div className="border-b border-gray-100 p-6 flex justify-between items-start gap-4 sticky top-0 bg-white z-10">
+        <div className="border-b border-gray-100 py-6 px-8 flex justify-between items-start gap-4 sticky top-0 bg-white z-10">
           <div className="flex gap-4 items-center">
             {/* Logo box */}
             <div className="w-16 h-16 bg-gray-50 border border-gray-100 rounded-md flex items-center justify-center flex-shrink-0">
@@ -130,7 +152,7 @@ export default function JobDetailsModal({ job, onClose, onApply }) {
           {/* Required Skills Tags */}
           {tags.length > 0 && (
             <div>
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Required Skills</h4>
+              <label className="text-sm font-semibold text-gray-700 block mb-1.5">Required Skills</label>
               <div className="flex flex-wrap gap-2">
                 {tags.map((tag, index) => (
                   <span 
@@ -147,11 +169,12 @@ export default function JobDetailsModal({ job, onClose, onApply }) {
           {/* Job Description */}
           {job.description && (
             <div>
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Job Description</h4>
+              <label className="text-sm font-semibold text-gray-700 block mb-1.5">Job Description</label>
               <div className="bg-white border border-gray-100 rounded-lg p-4">
-                <p className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
-                  {job.description}
-                </p>
+                <div 
+                  className="prose prose-sm max-w-none text-gray-700 text-sm leading-relaxed rich-text-content"
+                  dangerouslySetInnerHTML={{ __html: job.description }}
+                />
               </div>
             </div>
           )}
@@ -159,11 +182,12 @@ export default function JobDetailsModal({ job, onClose, onApply }) {
           {/* Responsibilities */}
           {job.responsibilities && (
             <div>
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Key Responsibilities</h4>
+              <label className="text-sm font-semibold text-gray-700 block mb-1.5">Responsibilities</label>
               <div className="bg-white border border-gray-100 rounded-lg p-4">
-                <p className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
-                  {job.responsibilities}
-                </p>
+                <div 
+                  className="prose prose-sm max-w-none text-gray-700 text-sm leading-relaxed rich-text-content"
+                  dangerouslySetInnerHTML={{ __html: job.responsibilities }}
+                />
               </div>
             </div>
           )}
@@ -171,24 +195,42 @@ export default function JobDetailsModal({ job, onClose, onApply }) {
         </div>
 
         {/* Sticky Footer */}
-        <div className="border-t border-gray-100 p-5 bg-gray-50 flex justify-end gap-3 sticky bottom-0 z-10">
+        <div className="flex items-center justify-end gap-3 pt-4 pb-6 px-6 border-t border-[var(--outline)] bg-gray-50 sticky bottom-0 z-10">
+          {isOwner && (
+            <button 
+              className="px-6 py-2.5 bg-red-50 text-red-600 hover:bg-red-100 text-sm font-semibold rounded-lg transition-colors mr-auto"
+              onClick={() => setIsDeleteConfirmOpen(true)}
+            >
+              Delete Posting
+            </button>
+          )}
           <button 
             onClick={onClose}
-            className="px-5 py-3 border border-gray-200 bg-white rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-colors shadow-2xs"
+            className="px-4 py-2 text-sm font-medium hover:bg-slate-100 rounded-lg text-gray-700"
           >
             Cancel
           </button>
-          {isPoster ? (
+          {isOwner ? (
             <button 
-              className="bg-gray-100 hover:bg-gray-200 border border-gray-300 text-[#42474f] font-bold py-3 px-8 rounded-lg transition-colors shadow-sm text-sm"
-              onClick={() => console.log('Edit Job clicked:', job.id)}
+              className="btn-primary-pill px-6 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-[#42474f]"
+              style={{ backgroundColor: '#f3f4f6', color: '#42474f' }}
+              onClick={() => {
+                if (onEdit) {
+                  // Parent's bridge: closes this modal + sets jobToEdit + opens PostJobModal
+                  onEdit(job);
+                } else {
+                  // Fallback: use global context (closes modal manually first)
+                  onClose();
+                  openPostJobModal(job);
+                }
+              }}
             >
               Edit Job
             </button>
           ) : (
             <button 
               onClick={handleApplyClick}
-              className="bg-blue-900 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-800 transition-colors shadow-sm text-sm"
+              className="btn-primary-pill px-6"
             >
               Quick Apply
             </button>
@@ -196,6 +238,34 @@ export default function JobDetailsModal({ job, onClose, onApply }) {
         </div>
 
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteConfirmOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="max-w-md w-full bg-white rounded-xl p-6 shadow-2xl flex flex-col relative z-10">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Job Posting?</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to permanently delete this opportunity? This action cannot be undone.
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button 
+                onClick={() => setIsDeleteConfirmOpen(false)}
+                className="px-4 py-2 text-sm font-medium hover:bg-slate-100 rounded-lg text-gray-700"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDeleteJob}
+                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors"
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Confirm Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

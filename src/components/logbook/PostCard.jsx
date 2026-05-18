@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ThumbsUp, MessageSquare, Share2 } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, Briefcase, MapPin, Building2 } from 'lucide-react';
 import PostActions from './PostActions';
 import DOMPurify from 'dompurify';
 import CommentSection from './CommentSection';
@@ -145,14 +145,65 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
   };
 
   const [mounted, setMounted] = useState(false);
+  const [sharedJobId, setSharedJobId] = useState(null);
+  const [sharedJob, setSharedJob] = useState(null);
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    const jobShareMatch = (post.content || '').match(/\[link\]\(route:\/mservices(?:\?jobId=|\/opportunity\/)([^)]+)\)/);
+    if (jobShareMatch) {
+      const jobId = jobShareMatch[1];
+      setSharedJobId(jobId);
+
+      // Pre-populate shared job details directly from public post content data payload
+      let parsedTitle = 'Opportunity';
+      let parsedCompanyName = 'Private Poster';
+      const alertMatch = (post.content || '').match(/⚓ New Opportunity Alert:\s*(.*?)\s+at\s+(.*?)(?:!| We are looking|$)/);
+      if (alertMatch) {
+        parsedTitle = alertMatch[1]?.trim();
+        parsedCompanyName = alertMatch[2]?.trim();
+      }
+
+      setSharedJob({
+        id: jobId,
+        title: parsedTitle,
+        companyName: parsedCompanyName,
+        location: 'Remote'
+      });
+    }
+  }, [post.content]);
+
+  useEffect(() => {
+    if (sharedJobId) {
+      const fetchSharedJob = async () => {
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('id, title, location, company:companies(name), poster:profiles(name)')
+          .eq('id', sharedJobId)
+          .single();
+        if (data && !error) {
+          setSharedJob(prev => ({
+            ...prev,
+            id: data.id,
+            title: data.title || prev?.title || 'Opportunity',
+            location: data.location || prev?.location || 'Remote',
+            companyName: data.company?.name || data.poster?.name || prev?.companyName || 'Private Poster'
+          }));
+        }
+      };
+      fetchSharedJob();
+    }
+  }, [sharedJobId, supabase]);
+
   const contentLimit = 180;
   
   const processedContent = useMemo(() => {
-    const rawContent = post.content || '';
+    let rawContent = post.content || '';
+    rawContent = rawContent.replace(/\[link\]\(route:\/mservices(?:\?jobId=|\/opportunity\/)[^)]+\)/g, '').trim();
+
     const isEscaped = rawContent.includes('&lt;') || rawContent.includes('&gt;');
     const unescaped = isEscaped && mounted ? unescapeHtml(rawContent) : rawContent;
     
@@ -267,6 +318,42 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* SHARED JOB PREVIEW */}
+      {sharedJob && (
+        <div className="mx-4 mb-4 p-5 rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center text-blue-900">
+                <Briefcase size={16} />
+              </div>
+              <h3 className="text-base font-bold text-blue-900">
+                {sharedJob.title}
+              </h3>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600 ml-10">
+              <div className="flex items-center gap-1.5">
+                <Building2 size={14} className="text-gray-400" />
+                <span className="font-medium">{sharedJob.companyName}</span>
+              </div>
+              {sharedJob.location && (
+                <div className="flex items-center gap-1.5">
+                  <MapPin size={14} className="text-gray-400" />
+                  <span>{sharedJob.location}</span>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <button
+            onClick={() => router.push('/mservices?tab=opportunity&jobId=' + sharedJob.id)}
+            className="px-6 py-2 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition-colors whitespace-nowrap text-center shadow-sm"
+          >
+            View Job Details
+          </button>
         </div>
       )}
 

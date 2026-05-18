@@ -31,6 +31,19 @@ export function ProfileProvider({ children, userId, userEmail }) {
   const [currentIdentity, setCurrentIdentityState] = useState({ type: 'user', id: userId }); // { type: 'user' | 'company', id: string, data: object }
   const [toast, setToast] = useState(null);
 
+  const [showPostJob, setShowPostJob] = useState(false);
+  const [jobToEdit, setJobToEdit] = useState(null);
+
+  const openPostJobModal = (job = null) => {
+    setJobToEdit(job);
+    setShowPostJob(true);
+  };
+
+  const closePostJobModal = () => {
+    setJobToEdit(null);
+    setShowPostJob(false);
+  };
+
   // ... (localStorage logic kept) ...
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -83,6 +96,7 @@ export function ProfileProvider({ children, userId, userEmail }) {
         previousRole: data.previousRole || '',
         yearsExperience: data.yearsExperience || 0,
         openToWork: data.openToWork || 'Not Available',
+        message_privacy: data.message_privacy || 'connections',
       });
     } else {
       setOnboardingCompleted(false);
@@ -130,6 +144,9 @@ export function ProfileProvider({ children, userId, userEmail }) {
       companies, setCompanies, refreshCompanies: fetchCompanies,
       currentIdentity, setCurrentIdentity,
       toast, setToast,
+      showPostJob, setShowPostJob,
+      jobToEdit, setJobToEdit,
+      openPostJobModal, closePostJobModal,
       showToast: (message, type = 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);

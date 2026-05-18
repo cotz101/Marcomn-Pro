@@ -1,10 +1,11 @@
-import { X, Briefcase, MapPin, DollarSign, Clock, Check } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 import BaseModal from '../layout/BaseModal';
+import RichTextEditor from '../common/RichTextEditor';
+import { Briefcase } from 'lucide-react';
 
-export default function PostJobModal({ isOpen, onClose, onComplete }) {
+export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit }) {
   const { currentIdentity, userId, profile } = useProfile();
   const [loading, setLoading] = useState(false);
   
@@ -25,6 +26,79 @@ export default function PostJobModal({ isOpen, onClose, onComplete }) {
 
   const [skills, setSkills] = useState([]);
   const [skillInput, setSkillInput] = useState('');
+  const [withdrawalLimit, setWithdrawalLimit] = useState(3);
+  const [tagsString, setTagsString] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      if (jobToEdit) {
+        let payAmount = '';
+        let currency = 'USD';
+        let payRate = 'Hour';
+        if (jobToEdit.salary_range) {
+          const parts = jobToEdit.salary_range.split(' ');
+          if (parts.length >= 2) {
+            currency = parts[0];
+            const rateParts = parts[1].split('/');
+            payAmount = rateParts[0] || '';
+            payRate = rateParts[1] || 'Hour';
+          } else {
+            const rateParts = jobToEdit.salary_range.split('/');
+            payAmount = rateParts[0] || '';
+            payRate = rateParts[1] || 'Hour';
+          }
+        }
+
+        let startDateStr = '';
+        if (jobToEdit.created_at) {
+          startDateStr = new Date(jobToEdit.created_at).toISOString().split('T')[0];
+        } else {
+          startDateStr = new Date().toISOString().split('T')[0];
+        }
+
+        setFormData({
+          title: jobToEdit.title || '',
+          location: jobToEdit.location || '',
+          startDate: startDateStr,
+          payAmount: payAmount,
+          currency: currency,
+          payRate: payRate,
+          jobType: jobToEdit.employment_type || 'Full-time',
+          experienceLevel: jobToEdit.experience_level || 'Junior',
+          positionStatus: 'Active Position',
+          postingStatus: jobToEdit.status || 'Draft',
+          description: jobToEdit.description || '',
+          responsibilities: jobToEdit.responsibilities || jobToEdit.description || ''
+        });
+
+        if (Array.isArray(jobToEdit.required_skills)) {
+          setSkills(jobToEdit.required_skills);
+        } else {
+          setSkills([]);
+        }
+        setWithdrawalLimit(jobToEdit.withdrawal_limit ?? 3);
+        setTagsString(jobToEdit.tags ? jobToEdit.tags.join(', ') : '');
+      } else {
+        setFormData({
+          title: '',
+          location: '',
+          startDate: new Date().toISOString().split('T')[0],
+          payAmount: '',
+          currency: 'USD',
+          payRate: 'Hour',
+          jobType: 'Full-time',
+          experienceLevel: 'Junior',
+          positionStatus: 'Active Position',
+          postingStatus: 'Draft',
+          description: '',
+          responsibilities: ''
+        });
+        setSkills([]);
+        setWithdrawalLimit(3);
+        setTagsString('');
+      }
+    }
+  }, [jobToEdit, isOpen]);
 
   if (!isOpen) return null;
 
@@ -54,7 +128,6 @@ export default function PostJobModal({ isOpen, onClose, onComplete }) {
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
 
-    // Field verification
     if (!formData.title || !formData.location || !formData.startDate || !formData.payAmount || !formData.description || !formData.responsibilities) {
       alert('Please fill in all required fields.');
       return;
@@ -63,7 +136,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete }) {
     setLoading(true);
     const supabase = createClient();
 
-    // 1. Create target payload and log
+    const formattedTags = tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+
     const payload = {
       title: formData.title,
       location: formData.location,
@@ -77,59 +151,92 @@ export default function PostJobModal({ isOpen, onClose, onComplete }) {
       postingStatus: formData.postingStatus,
       skills: skills,
       description: formData.description,
-      responsibilities: formData.responsibilities
+      responsibilities: formData.responsibilities,
+      tags: formattedTags
     };
     console.log('Enterprise Job Posting Payload:', payload);
 
-    // 2. Insert into jobs table
-    const { data: jobData, error: jobError } = await supabase
-      .from('jobs')
-      .insert({
-        title: formData.title,
-        description: formData.description,
-        location: formData.location,
-        salary_range: `${formData.currency} ${formData.payAmount}/${formData.payRate}`,
-        employment_type: formData.jobType,
-        company_id: isCompany ? currentIdentity.id : null,
-        poster_id: userId,
-        status: formData.positionStatus === 'Active Position' ? 'Open' : 'Closed',
-        required_skills: skills,
-        priority: formData.positionStatus === 'Active Position'
-      })
-      .select()
-      .single();
+    if (jobToEdit) {
+      const { data: jobData, error: jobError } = await supabase
+        .from('jobs')
+        .update({
+          title: formData.title,
+          description: formData.description,
+          responsibilities: formData.responsibilities,
+          location: formData.location,
+          salary_range: `${formData.currency} ${formData.payAmount}/${formData.payRate}`,
+          employment_type: formData.jobType,
+          status: formData.postingStatus,
+          required_skills: skills,
+          priority: formData.positionStatus === 'Active Position',
+          withdrawal_limit: parseInt(withdrawalLimit, 10),
+          tags: formattedTags,
+        })
+        .eq('id', jobToEdit.id)
+        .select()
+        .single();
 
-    if (jobError) {
-      alert('Error creating job: ' + jobError.message);
+      if (jobError) {
+        alert('Error updating job: ' + jobError.message);
+        setLoading(false);
+        return;
+      }
+
       setLoading(false);
-      return;
+      onComplete(jobData);
+    } else {
+      const { data: jobData, error: jobError } = await supabase
+        .from('jobs')
+        .insert({
+          title: formData.title,
+          description: formData.description,
+          responsibilities: formData.responsibilities,
+          location: formData.location,
+          salary_range: `${formData.currency} ${formData.payAmount}/${formData.payRate}`,
+          employment_type: formData.jobType,
+          company_id: isCompany ? currentIdentity.id : null,
+          poster_id: userId,
+          status: formData.postingStatus,
+          required_skills: skills,
+          priority: formData.positionStatus === 'Active Position',
+          withdrawal_limit: parseInt(withdrawalLimit, 10),
+          tags: formattedTags,
+        })
+        .select()
+        .single();
+
+      if (jobError) {
+        alert('Error creating job: ' + jobError.message);
+        setLoading(false);
+        return;
+      }
+
+      const postContent = `⚓ New Opportunity Alert: ${formData.title} at ${identityName}! We are looking for top maritime talent... [link](route:/mservices/opportunity/${jobData.id})`;
+      const { error: postError } = await supabase
+        .from('posts')
+        .insert({
+          user_id: userId,
+          content: postContent,
+          posted_as_company_id: isCompany ? currentIdentity.id : null,
+          media_type: 'image'
+        });
+
+      if (postError) {
+        console.error('Error creating feed post:', postError.message);
+      }
+
+      setLoading(false);
+      onComplete(jobData);
     }
-
-    // 3. Create a post in the feed
-    const postContent = `${identityName} is hiring for ${formData.title}! Check it out.`;
-    const { error: postError } = await supabase
-      .from('posts')
-      .insert({
-        user_id: userId,
-        content: postContent,
-        posted_as_company_id: isCompany ? currentIdentity.id : null,
-        media_type: 'image'
-      });
-
-    if (postError) {
-      console.error('Error creating feed post:', postError.message);
-    }
-
-    setLoading(false);
-    onComplete(jobData);
   };
 
   return (
     <BaseModal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title="Post a Job"
+      title={jobToEdit ? "Edit Job Posting" : "Create Job Posting"}
       maxWidth="800px"
+      disableBackdropClick={true}
     >
       <form onSubmit={handleSubmit} className="flex flex-col">
         {/* Header Icon Section */}
@@ -138,7 +245,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete }) {
             <Briefcase size={20} />
           </div>
           <div>
-            <h3 className="text-base font-bold text-blue-900">Enterprise Job Form</h3>
+            <h3 className="text-base font-bold text-blue-900">{jobToEdit ? "Edit Enterprise Job Form" : "Enterprise Job Form"}</h3>
             <p className="text-xs text-gray-500">Provide complete candidate, rate, and credential requirements.</p>
           </div>
         </div>
@@ -292,6 +399,41 @@ export default function PostJobModal({ isOpen, onClose, onComplete }) {
             </div>
           </div>
 
+          {/* Row 5b: Max Withdrawals Allowed */}
+          <div>
+            <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+              Max Withdrawals Allowed
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="10"
+              value={withdrawalLimit}
+              onChange={(e) => setWithdrawalLimit(e.target.value)}
+              className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 max-w-[120px]"
+            />
+            <p className="text-xs text-gray-400 mt-1.5">
+              Limits how many times an applicant can withdraw and re-apply to prevent spam.
+            </p>
+          </div>
+
+          {/* Row 5c: Job Tags (Optional) */}
+          <div>
+            <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+              Job Tags (Optional)
+            </label>
+            <input 
+              type="text" 
+              className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900" 
+              placeholder="e.g., Engineer, Offshore, Contract"
+              value={tagsString}
+              onChange={(e) => setTagsString(e.target.value)}
+            />
+            <p className="text-xs text-gray-400 mt-1.5">
+              Separate multiple tags with commas. These help candidates find your job.
+            </p>
+          </div>
+
           {/* Row 6: Required Skills */}
           <div>
             <label className="text-sm font-semibold text-gray-700 block mb-1.5">Required Skills</label>
@@ -328,29 +470,25 @@ export default function PostJobModal({ isOpen, onClose, onComplete }) {
           {/* Row 7: Job Description */}
           <div>
             <label className="text-sm font-semibold text-gray-700 block mb-1.5">Job Description</label>
-            <textarea 
-              name="description" 
-              className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900" 
-              rows={4}
-              placeholder="Describe the role and main responsibilities..."
-              value={formData.description}
-              onChange={handleInputChange}
-              required
-            />
+            <div className="border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-900 overflow-hidden rich-text-editor-container">
+              <RichTextEditor
+                value={formData.description}
+                onChange={(val) => setFormData(prev => ({ ...prev, description: val }))}
+                placeholder="Describe the role and main responsibilities..."
+              />
+            </div>
           </div>
 
           {/* Row 8: Responsibilities */}
           <div>
             <label className="text-sm font-semibold text-gray-700 block mb-1.5">Responsibilities</label>
-            <textarea 
-              name="responsibilities" 
-              className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900" 
-              rows={4}
-              placeholder="List key duties and performance expectations..."
-              value={formData.responsibilities}
-              onChange={handleInputChange}
-              required
-            />
+            <div className="border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-900 overflow-hidden rich-text-editor-container">
+              <RichTextEditor
+                value={formData.responsibilities}
+                onChange={(val) => setFormData(prev => ({ ...prev, responsibilities: val }))}
+                placeholder="List key duties and performance expectations..."
+              />
+            </div>
           </div>
 
         </div>
@@ -369,7 +507,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete }) {
             className="btn-primary-pill px-6" 
             disabled={loading}
           >
-            {loading ? 'Posting...' : 'Create Job'}
+            {loading ? (jobToEdit ? 'Saving...' : 'Posting...') : (jobToEdit ? 'Save Changes' : 'Create Job')}
           </button>
         </div>
       </form>

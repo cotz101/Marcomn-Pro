@@ -370,7 +370,7 @@ export default function SidebarRight() {
                   <p className="text-xs text-[#42474f] mt-1">{job.company} • {job.location}</p>
                 </div>
               ))}
-              <Link href="/jobs" className="text-xs font-bold text-[#004173] mt-2 hover:underline">
+              <Link href="/mservices" className="text-xs font-bold text-[#004173] mt-2 hover:underline">
                 View all jobs
               </Link>
             </div>

@@ -45,14 +45,14 @@ export default function AppShell({ children, userEmail, userId }) {
   const { 
     profile, setProfile, onboardingCompleted, setOnboardingCompleted,
     companies, refreshCompanies, currentIdentity, setCurrentIdentity,
-    toast, setToast
+    toast, setToast,
+    showPostJob, jobToEdit, openPostJobModal, closePostJobModal
   } = useProfile();
   
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
   const [mnetworkOpen, setMnetworkOpen] = useState(false);
   const [showCreateCompany, setShowCreateCompany] = useState(false);
-  const [showPostJob, setShowPostJob] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
   const [isFabExpanded, setIsFabExpanded] = useState(false);
   const [fabAnimating, setFabAnimating] = useState(false);
@@ -93,8 +93,11 @@ export default function AppShell({ children, userEmail, userId }) {
   };
 
   const handleJobPosted = () => {
-    setShowPostJob(false);
-    router.push('/jobs');
+    closePostJobModal();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('job-posted'));
+    }
+    router.refresh();
   };
 
   const handlePostSubmit = async (postData) => {
@@ -139,8 +142,9 @@ export default function AppShell({ children, userEmail, userId }) {
       {showPostJob && (
         <PostJobModal 
           isOpen={showPostJob}
-          onClose={() => setShowPostJob(false)}
+          onClose={closePostJobModal}
           onComplete={handleJobPosted}
+          jobToEdit={jobToEdit}
         />
       )}
 
@@ -195,12 +199,12 @@ export default function AppShell({ children, userEmail, userId }) {
             </div>
             <div className="header-right">
               <div className="header-actions-desktop flex items-center">
-                <button className="header-icon-btn"><MessageSquare size={22} /></button>
+                <button className="header-icon-btn" onClick={() => router.push('/messages')}><MessageSquare size={22} /></button>
                 <button className="header-icon-btn"><Bell size={22} /></button>
                 <button 
                    className="btn-primary-pill px-4 py-1.5 ml-2"
                    style={{ backgroundColor: 'var(--primary-container)' }}
-                   onClick={() => setShowPostJob(true)}
+                   onClick={() => openPostJobModal()}
                 >
                   <Briefcase size={16} className="mr-1" />
                   <span className="font-bold text-sm">Post a Job</span>
@@ -435,7 +439,7 @@ export default function AppShell({ children, userEmail, userId }) {
                 </button>
               )}
               {(pathname?.startsWith('/mservices') || pathname?.includes('/partners') || pathname?.includes('/jobs')) && (
-                <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); setShowPostJob(true); }}>
+                <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); openPostJobModal(); }}>
                   Post a Job
                 </button>
               )}
@@ -461,15 +465,21 @@ export default function AppShell({ children, userEmail, userId }) {
         </button>
       </div>
 
-      <main className="flex-1">
-        <div className="app-container">
-          <div className="main-grid">
-            <SidebarLeft />
-            <div className="center-feed">
+      <main className="flex-1 flex flex-col">
+        <div className={pathname === '/messages' ? 'w-full flex-1 flex flex-col' : 'app-container'}>
+          {pathname === '/messages' ? (
+            <div className="w-full flex-1 flex flex-col">
               {children}
             </div>
-            <SidebarRight />
-          </div>
+          ) : (
+            <div className="main-grid">
+              <SidebarLeft />
+              <div className="center-feed">
+                {children}
+              </div>
+              <SidebarRight />
+            </div>
+          )}
         </div>
       </main>
       {toast && (

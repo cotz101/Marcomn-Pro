@@ -3,7 +3,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import ProfessionalCard from '../connections/ProfessionalCard';
 import { createClient } from '@/lib/supabase';
-import { Camera, Briefcase, MapPin, Edit3, X, Check, Plus, ArrowLeft, Ship, MessageSquare, UserPlus, UserCheck } from 'lucide-react';
+import { Camera, Briefcase, MapPin, Edit3, X, Check, Plus, ArrowLeft, Ship, MessageSquare, UserPlus, UserCheck, Lock } from 'lucide-react';
 
 export default function Profile({ profile: initialProfile, setProfile: setInitialProfile, userId: currentUserId }) {
   const router = useRouter();
@@ -25,6 +25,8 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
   const [editYearsExperience, setEditYearsExperience] = useState(profile.yearsExperience || 0);
   const [editIsSailing, setEditIsSailing] = useState(profile.isSailing || false);
   const [editVesselName, setEditVesselName] = useState(profile.vesselName || '');
+  const [messagePrivacy, setMessagePrivacy] = useState('connections');
+  const [isFollowedBack, setIsFollowedBack] = useState(false);
   
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
@@ -71,6 +73,16 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
             .maybeSingle();
           
           setIsFollowing(!!followData);
+
+          // Check if they follow us back (mutual follow)
+          const { data: followBackData } = await supabase
+            .from('follows')
+            .select('*')
+            .eq('follower_id', viewUid)
+            .eq('following_id', currentUserId)
+            .maybeSingle();
+
+          setIsFollowedBack(!!followBackData);
         }
         setLoading(false);
       };
@@ -99,6 +111,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
     setEditYearsExperience(profile.yearsExperience || 0);
     setEditIsSailing(profile.isSailing || false);
     setEditVesselName(profile.vesselName || '');
+    setMessagePrivacy(profile.message_privacy || 'connections');
     setIsModalOpen(true);
   };
 
@@ -164,6 +177,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
       yearsExperience: parseInt(editYearsExperience) || 0,
       isSailing: !!editIsSailing,
       vesselName: editIsSailing ? (editVesselName || '') : '',
+      message_privacy: messagePrivacy,
       updated_at: new Date().toISOString(),
     };
  
@@ -182,6 +196,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
         vesselName: profileUpdate.vesselName,
         openToWork: profileUpdate.openToWork,
         yearsExperience: profileUpdate.yearsExperience,
+        message_privacy: profileUpdate.message_privacy,
         profilePic: profile.profilePic,
         coverPhoto: profile.coverPhoto
       };
@@ -230,6 +245,59 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
         .insert({ follower_id: currentUserId, following_id: viewUid });
       
       if (!error) setIsFollowing(true);
+    }
+  };
+
+  const handleMessageClick = async () => {
+    if (!currentUserId || !viewUid) return;
+    const supabase = createClient();
+    
+    try {
+      // Query both combinations
+      const { data: conv1 } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('participant_one', currentUserId)
+        .eq('participant_two', viewUid)
+        .maybeSingle();
+
+      if (conv1) {
+        router.push(`/messages?chat=${conv1.id}`);
+        return;
+      }
+
+      const { data: conv2 } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('participant_one', viewUid)
+        .eq('participant_two', currentUserId)
+        .maybeSingle();
+
+      if (conv2) {
+        router.push(`/messages?chat=${conv2.id}`);
+        return;
+      }
+
+      // If it does not exist, insert a new conversation
+      const { data: newConv, error: insertError } = await supabase
+        .from('conversations')
+        .insert({
+          participant_one: currentUserId,
+          participant_two: viewUid
+        })
+        .select('id')
+        .single();
+
+      if (insertError) {
+        console.error('Error creating conversation:', insertError);
+        showToast('Error starting conversation: ' + insertError.message, 'error');
+        return;
+      }
+
+      router.push(`/messages?chat=${newConv.id}`);
+    } catch (err) {
+      console.error('Error handling message click:', err);
+      showToast('Failed to start chat', 'error');
     }
   };
 
@@ -341,10 +409,32 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
                     {isFollowing ? <Check size={16} /> : <Plus size={16} />}
                     {isFollowing ? 'Following' : 'Follow'}
                   </button>
-                  <button className="w-auto px-4 py-1.5 text-sm inline-flex items-center gap-2 bg-white border-2 border-blue-900 text-blue-900 font-bold rounded-lg transition-all shadow-sm active:scale-[0.98]">
-                    <MessageSquare size={16} />
-                    Message
-                  </button>
+                  {(() => {
+                    const areConnected = isFollowing && isFollowedBack;
+                    const canMessage = isOwnProfile || (profile.message_privacy === 'anyone') || areConnected;
+
+                    if (canMessage) {
+                      return (
+                        <button 
+                          onClick={handleMessageClick}
+                          className="w-auto px-4 py-1.5 text-sm inline-flex items-center gap-2 bg-[#002b4e] hover:bg-[#001e38] text-white font-bold rounded-lg transition-all shadow-sm active:scale-[0.98]"
+                        >
+                          <MessageSquare size={16} />
+                          Message
+                        </button>
+                      );
+                    } else {
+                      return (
+                        <button 
+                          disabled
+                          className="w-auto px-4 py-1.5 text-sm inline-flex items-center gap-2 bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed font-medium rounded-lg shadow-sm"
+                        >
+                          <Lock size={16} />
+                          Inbox Private
+                        </button>
+                      );
+                    }
+                  })()}
                 </div>
               )}
             </div>
@@ -582,6 +672,63 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
                       )}
                     </div>
                   </div>
+
+                  {/* Section C: Messaging Privacy */}
+                  <div className="section-c p-5 bg-slate-50 rounded-xl border border-slate-200">
+                    <h3 className="text-lg font-bold text-[#002b4e] mb-4 flex items-center gap-2">
+                      Messaging Privacy
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                      {/* Option A: Connections Only */}
+                      <div 
+                        onClick={() => setMessagePrivacy('connections')}
+                        className={`cursor-pointer p-4 bg-white rounded-xl border-2 transition-all flex flex-col justify-between ${
+                          messagePrivacy === 'connections' 
+                            ? 'border-[#002b4e] ring-2 ring-[#002b4e]/10' 
+                            : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-bold text-slate-800 text-sm">Connections Only</span>
+                            {messagePrivacy === 'connections' && (
+                              <div className="w-5 h-5 rounded-full bg-[#002b4e] flex items-center justify-center text-white">
+                                <Check size={12} strokeWidth={3} />
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 leading-relaxed">
+                            Only users in your MNetwork connections can send you direct messages.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Option B: Open Inbox */}
+                      <div 
+                        onClick={() => setMessagePrivacy('anyone')}
+                        className={`cursor-pointer p-4 bg-white rounded-xl border-2 transition-all flex flex-col justify-between ${
+                          messagePrivacy === 'anyone' 
+                            ? 'border-[#002b4e] ring-2 ring-[#002b4e]/10' 
+                            : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-bold text-slate-800 text-sm">Open Inbox</span>
+                            {messagePrivacy === 'anyone' && (
+                              <div className="w-5 h-5 rounded-full bg-[#002b4e] flex items-center justify-center text-white">
+                                <Check size={12} strokeWidth={3} />
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 leading-relaxed">
+                            Anyone on MarComn can message you. Note: This allows recruiters/employers to easily contact you.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
             </div>
  

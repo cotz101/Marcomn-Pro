@@ -1,61 +1,115 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
-import { Briefcase, MapPin, DollarSign, Clock, Building2, Search, Filter } from 'lucide-react';
+import { Briefcase, MapPin, DollarSign, Clock, Building2, Search, Filter, Ship } from 'lucide-react';
 import Link from 'next/link';
 
 export default function JobBoard() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('recent');
   const supabase = createClient();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const jobIdFromUrl = searchParams.get('jobId');
 
-  useEffect(() => {
-    async function fetchJobs() {
+  const fetchJobs = useCallback(async () => {
+    try {
       const { data, error } = await supabase
         .from('jobs')
         .select(`
           *,
           company:companies(name, logo_url, industry)
         `)
-        .eq('status', 'Open')
+        .in('status', ['Published', 'published', 'Open', 'open'])
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
+      if (error) {
+        console.error('Supabase error fetching jobs:', error.message || error);
+        throw error;
+      }
+      
+      if (data) {
         setJobs(data);
       }
+    } catch (err) {
+      console.error('Error in fetchJobs:', err);
+    } finally {
       setLoading(false);
     }
-
-    fetchJobs();
   }, [supabase]);
 
-  const filteredJobs = jobs.filter(job => 
-    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (job.company?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    fetchJobs();
+
+    const handleJobUpdate = () => {
+      fetchJobs();
+    };
+
+    window.addEventListener('job-posted', handleJobUpdate);
+    return () => {
+      window.removeEventListener('job-posted', handleJobUpdate);
+    };
+  }, [fetchJobs]);
+
+  useEffect(() => {
+    if (jobIdFromUrl) {
+      router.push(`/mservices/opportunity/${jobIdFromUrl}`);
+    }
+  }, [jobIdFromUrl, router]);
+
+  const filteredJobs = jobs.filter(job => {
+    const matchesTitle = job.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCompany = (job.company?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTag = job.tags && job.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesTitle || matchesCompany || matchesTag;
+  });
+
+  const sortedJobs = [...filteredJobs].sort((a, b) => {
+    if (sortBy === 'recent') {
+      return new Date(b.created_at) - new Date(a.created_at);
+    }
+    if (sortBy === 'title') {
+      return a.title.localeCompare(b.title);
+    }
+    return 0;
+  });
 
   return (
     <div className="job-board-container">
       <header className="job-board-header">
-        <div className="header-content">
-          <h1>Maritime Job Marketplace</h1>
-          <p>Find your next mission in the global maritime industry.</p>
+        <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 to-indigo-800 rounded-xl py-10 px-6 md:px-12 mb-8 shadow-sm flex items-center justify-center text-center">
+          <div className="relative z-10 w-full max-w-2xl text-center mx-auto">
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Maritime Job Marketplace</h1>
+            <p className="text-blue-100 text-sm md:text-base">Find your next maritime opportunity or recruit top talent.</p>
+          </div>
+          <Ship className="absolute -right-4 top-1/2 -translate-y-1/2 text-white opacity-10" size={160} />
         </div>
         
-        <div className="search-bar-container">
-          <div className="search-input-wrapper">
+        <div className="command-bar-container">
+          <div className="search-input-wrapper w-full max-w-lg">
             <Search size={20} className="search-icon" />
             <input 
               type="text" 
-              placeholder="Search by job title or company..." 
+              placeholder="Search jobs, companies, or tags..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="btn-filter">
-            <Filter size={18} /> Filters
-          </button>
+          
+          <div className="sort-controls">
+            <span className="text-sm text-gray-500 font-medium whitespace-nowrap">Sort by:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-gray-50 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block p-2.5 outline-none shadow-sm cursor-pointer hover:bg-gray-100/50 transition-colors"
+            >
+              <option value="recent">Most Recent</option>
+              <option value="title">Alphabetical</option>
+            </select>
+          </div>
         </div>
       </header>
 
@@ -64,10 +118,10 @@ export default function JobBoard() {
           <div className="spinner"></div>
           <p>Scanning the horizon for opportunities...</p>
         </div>
-      ) : filteredJobs.length > 0 ? (
+      ) : sortedJobs.length > 0 ? (
         <div className="jobs-grid">
-          {filteredJobs.map(job => (
-            <div key={job.id} className="job-card card">
+          {sortedJobs.map(job => (
+            <div key={job.id} className="job-card card cursor-pointer" onClick={() => router.push(`/mservices/opportunity/${job.id}`)}>
               <div className="job-card-header">
                 <div className="company-logo-wrapper">
                   {job.company?.logo_url ? (
@@ -98,13 +152,38 @@ export default function JobBoard() {
                 )}
               </div>
 
-              <p className="job-description">
-                {job.description.length > 150 ? job.description.substring(0, 150) + '...' : job.description}
-              </p>
+              {/* Job Tag Container */}
+              {job.tags && job.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {job.tags.slice(0, 4).map((tag, index) => (
+                    <span key={index} className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-md border border-blue-100 uppercase tracking-wide">
+                      {tag}
+                    </span>
+                  ))}
+                  {job.tags.length > 4 && (
+                    <span className="px-2.5 py-1 text-gray-500 text-xs font-medium">
+                      +{job.tags.length - 4} more
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {job.required_skills && job.required_skills.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2 mb-4">
+                  {job.required_skills.map((skill, index) => (
+                    <span 
+                      key={index} 
+                      className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-medium"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               <div className="job-card-footer">
                 <span className="post-date">Posted {new Date(job.created_at).toLocaleDateString()}</span>
-                <button className="btn-apply">View Details</button>
+                <button className="btn-apply" onClick={(e) => { e.stopPropagation(); router.push(`/mservices/opportunity/${job.id}`); }}>View Details</button>
               </div>
             </div>
           ))}
@@ -119,9 +198,7 @@ export default function JobBoard() {
 
       <style jsx>{`
         .job-board-container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 20px;
+          width: 100%;
         }
         .job-board-header {
           margin-bottom: 40px;
@@ -137,13 +214,29 @@ export default function JobBoard() {
           color: #64748b;
           font-size: 16px;
         }
-        .search-bar-container {
-          margin-top: 30px;
+        .command-bar-container {
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 16px 24px;
+          box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
           display: flex;
-          gap: 12px;
-          max-width: 700px;
-          margin-left: auto;
-          margin-right: auto;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 24px;
+        }
+        @media (max-width: 640px) {
+          .command-bar-container {
+            flex-direction: column;
+            align-items: stretch;
+          }
+        }
+        .sort-controls {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          justify-content: flex-end;
         }
         .search-input-wrapper {
           flex: 1;

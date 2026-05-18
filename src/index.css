@@ -164,8 +164,8 @@ a {
   background-color: var(--primary);
   color: white;
   border: none;
-  padding: 10px 24px;
-  border-radius: 999px;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -3558,3 +3558,56 @@ html.dark .btn-primary {
   animation: buttonLoadPulse 0.8s ease-in-out infinite;
   pointer-events: none;
 }
+
+/* Premium Rich Text Editor Customizations */
+.rich-text-editor-container .ql-toolbar.ql-snow {
+  border: none !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  background-color: #f9fafb;
+  padding: 8px 12px;
+}
+
+.rich-text-editor-container .ql-container.ql-snow {
+  border: none !important;
+  min-height: 160px;
+  max-height: 250px;
+  overflow-y: auto;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.rich-text-editor-container .ql-editor {
+  padding: 12px;
+  min-height: 160px;
+}
+
+.rich-text-editor-container .ql-editor.ql-blank::before {
+  left: 12px;
+  font-style: normal;
+  color: #9ca3af;
+}
+
+/* Premium Rich Text Display Customizations */
+.rich-text-content ul {
+  list-style-type: disc !important;
+  padding-left: 20px !important;
+  margin-top: 4px !important;
+  margin-bottom: 12px !important;
+}
+
+.rich-text-content ol {
+  list-style-type: decimal !important;
+  padding-left: 20px !important;
+  margin-top: 4px !important;
+  margin-bottom: 12px !important;
+}
+
+.rich-text-content li {
+  margin-bottom: 4px !important;
+}
+
+.rich-text-content strong, .rich-text-content b {
+  font-weight: 700 !important;
+}
+
