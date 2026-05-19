@@ -373,97 +373,101 @@ export default function AppShell({ children, userEmail, userId }) {
       )}
 
       {/* Contextual Speed Dial FAB */}
-      {isFabExpanded && (
-        <div className="fab-overlay show" onClick={() => setIsFabExpanded(false)}></div>
-      )}
-      <div className={`mobile-fab-container sm:hidden ${isFabExpanded ? 'open' : ''}`}>
-        {isFabExpanded && (
-          <div className="speed-dial-menu">
-            {/* Contextual Sub-Nav Shortcuts (Top Layer) */}
-            <div className="speed-dial-shortcuts">
-              {(pathname?.includes('/logbook') || pathname?.includes('/network') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) && (
-                <>
-                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/logbook'); }}>
-                    <span className="shortcut-label">Logbook</span>
-                    <div className="shortcut-icon-wrapper"><Ship size={18} /></div>
-                  </div>
-                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/groups'); }}>
-                    <span className="shortcut-label">Groups</span>
-                    <div className="shortcut-icon-wrapper"><Users size={18} /></div>
-                  </div>
-                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/network/connections'); }}>
-                    <span className="shortcut-label">Connections</span>
-                    <div className="shortcut-icon-wrapper"><UserPlus size={18} /></div>
-                  </div>
-                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/talent'); }}>
-                    <span className="shortcut-label">Talents</span>
-                    <div className="shortcut-icon-wrapper"><Search size={18} /></div>
-                  </div>
-                </>
-              )}
-              {(pathname?.startsWith('/mservices') || pathname?.includes('/partners') || pathname?.includes('/jobs')) && (
-                <>
-                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/mservices'); }}>
-                    <span className="shortcut-label">Opportunity</span>
-                    <div className="shortcut-icon-wrapper"><Lightbulb size={18} /></div>
-                  </div>
-                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/partners'); }}>
-                    <span className="shortcut-label">Partners</span>
-                    <div className="shortcut-icon-wrapper"><Handshake size={18} /></div>
-                  </div>
-                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/jobs/my-postings'); }}>
-                    <span className="shortcut-label">My Job Posting</span>
-                    <div className="shortcut-icon-wrapper"><FileText size={18} /></div>
-                  </div>
-                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/jobs/my-applications'); }}>
-                    <span className="shortcut-label">My Job Application</span>
-                    <div className="shortcut-icon-wrapper"><Send size={18} /></div>
-                  </div>
-                </>
-              )}
-              {pathname?.includes('/mblog') && (
-                <>
-                  <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/mblog?view=my'); }}>
-                    <span className="shortcut-label">My Articles</span>
-                    <div className="shortcut-icon-wrapper"><BookOpen size={18} /></div>
-                  </div>
-                </>
-              )}
-            </div>
+      {!pathname?.startsWith('/messages') && (
+        <>
+          {isFabExpanded && (
+            <div className="fab-overlay show" onClick={() => setIsFabExpanded(false)}></div>
+          )}
+          <div className={`mobile-fab-container sm:hidden ${isFabExpanded ? 'open' : ''}`}>
+            {isFabExpanded && (
+              <div className="speed-dial-menu">
+                {/* Contextual Sub-Nav Shortcuts (Top Layer) */}
+                <div className="speed-dial-shortcuts">
+                  {(pathname?.includes('/logbook') || pathname?.includes('/network') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) && (
+                    <>
+                      <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/logbook'); }}>
+                        <span className="shortcut-label">Logbook</span>
+                        <div className="shortcut-icon-wrapper"><Ship size={18} /></div>
+                      </div>
+                      <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/groups'); }}>
+                        <span className="shortcut-label">Groups</span>
+                        <div className="shortcut-icon-wrapper"><Users size={18} /></div>
+                      </div>
+                      <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/network/connections'); }}>
+                        <span className="shortcut-label">Connections</span>
+                        <div className="shortcut-icon-wrapper"><UserPlus size={18} /></div>
+                      </div>
+                      <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/talent'); }}>
+                        <span className="shortcut-label">Talents</span>
+                        <div className="shortcut-icon-wrapper"><Search size={18} /></div>
+                      </div>
+                    </>
+                  )}
+                  {(pathname?.startsWith('/mservices') || pathname?.includes('/partners') || pathname?.includes('/jobs')) && (
+                    <>
+                      <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/mservices'); }}>
+                        <span className="shortcut-label">Opportunity</span>
+                        <div className="shortcut-icon-wrapper"><Lightbulb size={18} /></div>
+                      </div>
+                      <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/partners'); }}>
+                        <span className="shortcut-label">Partners</span>
+                        <div className="shortcut-icon-wrapper"><Handshake size={18} /></div>
+                      </div>
+                      <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/jobs/my-postings'); }}>
+                        <span className="shortcut-label">My Job Posting</span>
+                        <div className="shortcut-icon-wrapper"><FileText size={18} /></div>
+                      </div>
+                      <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/jobs/my-applications'); }}>
+                        <span className="shortcut-label">My Job Application</span>
+                        <div className="shortcut-icon-wrapper"><Send size={18} /></div>
+                      </div>
+                    </>
+                  )}
+                  {pathname?.includes('/mblog') && (
+                    <>
+                      <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/mblog?view=my'); }}>
+                        <span className="shortcut-label">My Articles</span>
+                        <div className="shortcut-icon-wrapper"><BookOpen size={18} /></div>
+                      </div>
+                    </>
+                  )}
+                </div>
 
-            {/* Primary Action (Navy Theme) - RESTORED SOLID NAVY BLUE */}
-            <div className="speed-dial-primary-btn" style={{ backgroundColor: '#002b4e', color: 'white', zIndex: 9999 }}>
-              {(pathname?.includes('/logbook') || pathname?.includes('/network') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) && (
-                <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); setShowPostModal(true); }}>
-                  Post to Logbook
-                </button>
-              )}
-              {(pathname?.startsWith('/mservices') || pathname?.includes('/partners') || pathname?.includes('/jobs')) && (
-                <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); openPostJobModal(); }}>
-                  Post a Job
-                </button>
-              )}
-              {pathname?.includes('/mblog') && (
-                <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); router.push('/mblog?compose=true'); }}>
-                  Post a Blog
-                </button>
-              )}
-            </div>
+                {/* Primary Action (Navy Theme) - RESTORED SOLID NAVY BLUE */}
+                <div className="speed-dial-primary-btn" style={{ backgroundColor: '#002b4e', color: 'white', zIndex: 9999 }}>
+                  {(pathname?.includes('/logbook') || pathname?.includes('/network') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) && (
+                    <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); setShowPostModal(true); }}>
+                      Post to Logbook
+                    </button>
+                  )}
+                  {(pathname?.startsWith('/mservices') || pathname?.includes('/partners') || pathname?.includes('/jobs')) && (
+                    <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); openPostJobModal(); }}>
+                      Post a Job
+                    </button>
+                  )}
+                  {pathname?.includes('/mblog') && (
+                    <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); router.push('/mblog?compose=true'); }}>
+                      Post a Blog
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            <button 
+              className={`main-fab ${isFabExpanded ? 'active' : ''} ${fabAnimating ? 'animating' : ''}`} 
+              onClick={() => setIsFabExpanded(!isFabExpanded)}
+              style={{ 
+                '--fab-color': '#002b4e' 
+              }}
+              aria-label="Speed Dial"
+            >
+              {/* Always Ship Anchor - White inside Navy Circle */}
+              <Anchor size={28} style={{ color: 'white' }} />
+            </button>
           </div>
-        )}
-        
-        <button 
-          className={`main-fab ${isFabExpanded ? 'active' : ''} ${fabAnimating ? 'animating' : ''}`} 
-          onClick={() => setIsFabExpanded(!isFabExpanded)}
-          style={{ 
-            '--fab-color': '#002b4e' 
-          }}
-          aria-label="Speed Dial"
-        >
-          {/* Always Ship Anchor - White inside Navy Circle */}
-          <Anchor size={28} style={{ color: 'white' }} />
-        </button>
-      </div>
+        </>
+      )}
 
       <main className="flex-1 flex flex-col">
         <div className={pathname === '/messages' ? 'w-full flex-1 flex flex-col' : 'app-container'}>

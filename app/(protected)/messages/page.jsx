@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 import {
@@ -20,14 +21,16 @@ export default function InboxPage() {
   const activeChatId = searchParams.get('chat');
 
   const { userId, profile: currentUserProfile, showToast } = useProfile();
+  const currentUser = { id: userId };
   
   const [conversations, setConversations] = useState([]);
   const [profiles, setProfiles] = useState({}); // map of userId -> profile data
+  const [lastMessages, setLastMessages] = useState({}); // map of conversationId -> message string
   const [loading, setLoading] = useState(true);
   
   const [messages, setMessages] = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  const [newMessageText, setNewMessageText] = useState('');
+  const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,6 +42,28 @@ export default function InboxPage() {
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Lock body scroll on mobile when active chat is open
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile && activeChatId) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [activeChatId]);
 
   // 1. Fetch all conversations and cache profiles
   useEffect(() => {
@@ -77,6 +102,24 @@ export default function InboxPage() {
             profileMap[p.id] = p;
           });
           setProfiles(profileMap);
+        }
+
+        // Fetch last messages for all conversations to show one-line preview
+        if (conversationsList.length > 0) {
+          const convIds = conversationsList.map(c => c.id);
+          const { data: lastMsgs, error: lastMsgsError } = await supabase
+            .from('messages')
+            .select('conversation_id, body, created_at')
+            .in('conversation_id', convIds)
+            .order('created_at', { ascending: true });
+          
+          if (!lastMsgsError && lastMsgs) {
+            const lastMsgMap = {};
+            lastMsgs.forEach(m => {
+              lastMsgMap[m.conversation_id] = m.body;
+            });
+            setLastMessages(lastMsgMap);
+          }
         }
       } catch (err) {
         console.error('Error loading inbox:', err);
@@ -137,6 +180,10 @@ export default function InboxPage() {
               if (prev.some(m => m.id === payload.new.id)) return prev;
               return [...prev, payload.new];
             });
+            setLastMessages((prev) => ({
+              ...prev,
+              [activeChatId]: payload.new.body
+            }));
           }
         }
       )
@@ -147,40 +194,42 @@ export default function InboxPage() {
     };
   }, [activeChatId]);
 
-  // 4. Scroll to bottom when messages load or change
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, loadingMessages]);
+  // 4. Scroll layout effect: triggered when messages length changes
+  useLayoutEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length]);
 
   // 5. Send message logic
   const handleSendMessage = async (e) => {
     e?.preventDefault();
-    if (!newMessageText.trim() || !activeChatId || !userId || sending) return;
+    if (!newMessage.trim() || !activeChatId || !currentUser.id || sending) return;
 
     try {
       setSending(true);
-      const textToSend = newMessageText.trim();
-      setNewMessageText(''); // Clear early for snappy UX
+      const textToSend = newMessage.trim();
 
       const { data, error } = await supabase
         .from('messages')
         .insert({
           conversation_id: activeChatId,
-          sender_id: userId,
+          sender_id: currentUser.id,
           body: textToSend
         })
         .select()
         .single();
 
-      if (error) {
-        setNewMessageText(textToSend); // Restore if error
-        throw error;
-      }
+      if (error) throw error;
 
+      setNewMessage(''); // On a successful database insert, completely wipe the input text state clean
+      
       setMessages(prev => {
         if (prev.some(m => m.id === data.id)) return prev;
         return [...prev, data];
       });
+      setLastMessages(prev => ({
+        ...prev,
+        [activeChatId]: textToSend
+      }));
     } catch (err) {
       console.error('Error sending message:', err);
       showToast('Failed to send message', 'error');
@@ -205,7 +254,7 @@ export default function InboxPage() {
   const activePartner = activeConv ? getOtherParticipantProfile(activeConv) : null;
 
   return (
-    <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-gray-50 border-t border-gray-100">
+    <div className="flex flex-row w-full h-[100dvh] md:h-[calc(100vh-80px)] overflow-hidden">
       <style dangerouslySetInnerHTML={{ __html: `
         .no-scrollbar::-webkit-scrollbar {
           display: none;
@@ -214,13 +263,41 @@ export default function InboxPage() {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
+        @media (max-width: 767px) {
+          .mobile-chat-container {
+            position: fixed !important;
+            top: calc(56px + env(safe-area-inset-top)) !important;
+            bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: calc(100dvh - (56px + env(safe-area-inset-top)) - (72px + env(safe-area-inset-bottom))) !important;
+            width: 100vw !important;
+            z-index: 50 !important;
+            background-color: #ffffff !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+          }
+          .mobile-chat-feed {
+            flex: 1 !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            overscroll-behavior-y: contain !important;
+          }
+          .mobile-chat-composer {
+            padding-top: 12px !important;
+            padding-bottom: 12px !important;
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+            background-color: #ffffff !important;
+            border-top: 1px solid #f3f4f6 !important;
+          }
+        }
       ` }} />
 
       {/* Roster / Sidebar - Hidden on mobile if chat is active */}
       <div 
-        className={`w-full md:w-80 lg:w-96 flex-shrink-0 flex flex-col border-r border-gray-200 bg-white ${
-          activeChatId ? 'hidden md:flex' : 'flex'
-        }`}
+        className={activeChatId ? "hidden md:flex flex-col w-1/3 max-w-[350px] min-w-[250px] border-r border-gray-200 h-full overflow-y-auto bg-white" : "flex flex-col w-full md:w-1/3 md:max-w-[350px] md:min-w-[250px] border-r border-gray-200 h-full overflow-y-auto bg-white"}
       >
         {/* Search header */}
         <div className="p-4 border-b border-gray-100 flex-shrink-0">
@@ -257,13 +334,13 @@ export default function InboxPage() {
                 const isActive = conv.id === activeChatId;
                 
                 return (
-                  <button
+                  <Link
                     key={conv.id}
-                    onClick={() => router.push(`/messages?chat=${conv.id}`)}
-                    className={`w-full flex items-center gap-3 p-4 text-left transition-all ${
+                    href={`?chat=${conv.id}`}
+                    className={`w-full flex items-center gap-3 p-4 text-left cursor-pointer transition-colors duration-200 border-l-4 ${
                       isActive 
-                        ? 'bg-blue-50/60 border-l-4 border-[#002b4e]' 
-                        : 'hover:bg-gray-50 border-l-4 border-transparent'
+                        ? 'bg-gray-100 border-blue-900' 
+                        : 'hover:bg-gray-50 border-transparent'
                     }`}
                   >
                     {/* Avatar */}
@@ -290,10 +367,10 @@ export default function InboxPage() {
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 truncate mt-0.5">
-                        {partner.currentRole || 'Maritime Member'}
+                        {lastMessages[conv.id] || partner.currentRole || 'No messages yet'}
                       </p>
                     </div>
-                  </button>
+                  </Link>
                 );
               })}
             </div>
@@ -303,19 +380,17 @@ export default function InboxPage() {
 
       {/* Active Stage - Hidden on mobile if no active chat */}
       <div 
-        className={`flex-1 flex flex-col bg-slate-50 ${
-          activeChatId ? 'flex' : 'hidden md:flex'
-        }`}
+        className={activeChatId ? "mobile-chat-container grid grid-rows-[auto_1fr_auto] h-[100dvh] md:h-full w-full md:flex-1 overflow-hidden bg-white min-w-0 pb-0" : "hidden md:grid md:grid-rows-[auto_1fr_auto] md:h-full md:flex-1 overflow-hidden bg-white min-w-0 md:pb-0"}
       >
         {activeConv && activePartner ? (
           <>
             {/* Chat stage header */}
-            <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between flex-shrink-0 z-10 shadow-sm">
+            <div className="row-start-1 flex-none border-b border-gray-200 bg-white p-4 z-20 flex items-center justify-between shadow-sm">
               <div className="flex items-center min-w-0">
                 {/* Back button on mobile */}
                 <button
                   onClick={() => router.push('/messages')}
-                  className="md:hidden p-2 -ml-2 mr-2 text-gray-500 hover:text-[#002b4e] rounded-lg hover:bg-gray-100 transition-colors"
+                  className="md:hidden mr-2 p-2 text-gray-500 hover:text-[#002b4e] rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <ArrowLeft size={20} />
                 </button>
@@ -355,7 +430,7 @@ export default function InboxPage() {
             </div>
 
             {/* Message Feed */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 no-scrollbar">
+            <div className="mobile-chat-feed row-start-2 overflow-y-auto p-4 flex flex-col space-y-4 no-scrollbar">
               {loadingMessages ? (
                 <div className="flex flex-col items-center justify-center h-full py-12 text-gray-400 space-y-3">
                   <Loader2 className="animate-spin text-[#002b4e]" size={28} />
@@ -369,29 +444,29 @@ export default function InboxPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {messages.map((msg) => {
-                    const isOwn = msg.sender_id === userId;
+                  {messages.map((message) => {
+                    const isOwn = message.sender_id === currentUser.id;
                     
                     return (
                       <div
-                        key={msg.id}
+                        key={message.id}
                         className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                       >
                         <div className={`max-w-[70%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
                           {/* Message bubble */}
                           <div
-                            className={`p-3.5 text-sm leading-relaxed shadow-sm transition-all ${
+                            className={`p-3.5 text-sm leading-relaxed shadow-sm transition-all break-words whitespace-pre-wrap ${
                               isOwn
-                                ? 'bg-[#002b4e] text-white rounded-2xl rounded-tr-none'
-                                : 'bg-white text-gray-800 border border-gray-150 rounded-2xl rounded-tl-none'
+                                ? 'bg-blue-900 text-white rounded-2xl rounded-br-none'
+                                : 'bg-gray-100 text-gray-800 rounded-2xl rounded-bl-none'
                             }`}
                           >
-                            <p className="whitespace-pre-wrap break-words">{msg.body}</p>
+                            <p className="whitespace-pre-wrap break-words">{message.body}</p>
                           </div>
                           
                           {/* Timestamp */}
                           <span className="text-[10px] text-gray-400 mt-1.5 font-medium px-1">
-                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
                       </div>
@@ -405,19 +480,19 @@ export default function InboxPage() {
             {/* Composer Footer */}
             <form 
               onSubmit={handleSendMessage}
-              className="bg-white border-t border-gray-200 p-4 flex items-center gap-3 flex-shrink-0"
+              className="mobile-chat-composer row-start-3 shrink-0 border-t border-gray-100 bg-white px-4 pt-4 pb-[100px] md:pb-4 z-20 flex items-center gap-3"
             >
               <input
                 type="text"
                 placeholder="Type your message..."
-                value={newMessageText}
-                onChange={(e) => setNewMessageText(e.target.value)}
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
                 disabled={sending}
                 className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-[#002b4e] transition-colors"
               />
               <button
                 type="submit"
-                disabled={!newMessageText.trim() || sending}
+                disabled={!newMessage.trim() || sending}
                 className="p-3 bg-[#002b4e] hover:bg-[#001e38] text-white rounded-xl transition-all duration-150 shadow-sm flex items-center justify-center disabled:opacity-40 disabled:hover:bg-[#002b4e] cursor-pointer"
               >
                 {sending ? (
