@@ -29,80 +29,57 @@ export default function LogbookFeed({ profile }) {
       const { data, error } = await supabase
         .from('posts')
         .select(`
-          *,
-          author:profiles(name, avatar_url, headline),
-          company:companies(name, logo_url, industry),
-          comments:comments(count),
-          likes:likes(count),
-          user_liked:likes(id, user_id),
-          shared_article:mblog_articles(
-            id, 
-            title, 
-            media_url, 
-            content_html,
-            created_at,
-            author:profiles(name)
-          )
+          id,
+          title,
+          content,
+          media_url,
+          created_at,
+          user_id,
+          profiles:user_id (
+            name,
+            avatar_url
+          ),
+          likes ( id, user_id ),
+          comments ( id, content, user_id )
         `)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Supabase fetch error:', error);
+        console.error('PostgREST Optimization Trace:', JSON.stringify(error, null, 2));
+        setPosts([]);
         setIsLoading(false);
         return;
       }
 
-      console.log('LogbookFeed: Received posts data, count:', data?.length);
+      // Flattening structure and injecting default mocks to prevent UI layout failure
+      const sanitizedPosts = (data || []).map(post => {
+        const postLikes = post.likes || [];
+        const postComments = post.comments || [];
+        const profilesObj = post.profiles || { name: 'MarComn Professional', avatar_url: null };
+        const dateObj = new Date(post.created_at);
+        const timeString = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-      if (data) {
-        const formattedPosts = data.map(post => {
-          const isCompanyPost = !!post.posted_as_company_id;
-          const authorName = isCompanyPost ? post.company?.name : post.author?.name;
-          const authorAvatar = isCompanyPost ? post.company?.logo_url : post.author?.avatar_url;
-          const authorHeadline = isCompanyPost ? post.company?.industry : post.author?.headline;
+        return {
+          ...post,
+          likes: postLikes,
+          comments: postComments,
           
-          const dateObj = new Date(post.created_at);
-          const timeString = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+          // UI properties for PostCard compatibility
+          author: profilesObj.name || 'MarComn Professional',
+          avatar: profilesObj.avatar_url || '/profile_pic.png',
+          headline: 'Maritime Professional',
+          time: timeString,
+          comment_count: postComments.length,
+          like_count: postLikes.length,
+          user_has_liked: postLikes.some(l => l.user_id === userId)
+        };
+      });
 
-          // Check if current user is among the likes
-          // Since we didn't filter the join in the query (to avoid filtering out posts),
-          // we should ideally have filtered the joined table if possible, 
-          // but checking in JS is safer for compatibility.
-          // Note: In the query above, user_liked is just an array of likes.
-          // We need to see if any of those likes belong to the current user.
-          // Actually, if we wanted only the current user's like, we'd need a more complex query.
-          // For now, let's assume we'll just check the likes array if we fetched it all, 
-          // but the current select returns ALL likes for each post in 'user_liked'.
-          // Let's refine the check.
-          
-          return {
-            id: post.id,
-            authorId: post.user_id,
-            author: authorName || 'Anonymous',
-            headline: authorHeadline || (isCompanyPost ? 'Maritime Company' : 'Maritime Professional'),
-            time: timeString,
-            avatar: authorAvatar || (isCompanyPost ? '/favicon.svg' : '/profile_pic.png'),
-            isCompany: isCompanyPost,
-            content: post.content,
-            type: post.title ? 'article' : 'standard',
-            title: post.title,
-            media: post.media_url,
-            mediaType: post.media_type,
-            youtubeLink: post.youtube_link,
-            comment_count: post.comments?.[0]?.count || 0,
-            like_count: post.likes?.[0]?.count || 0,
-            // For now, we'll need to check the user_liked array if it contains a record for this user
-            // This requires having fetched user_id in the likes subselect.
-            // Let's fix the select above to include user_id in user_liked.
-            user_has_liked: post.user_liked?.some(l => l.user_id === userId),
-            shared_article_id: post.shared_article_id,
-            shared_article: post.shared_article
-          };
-        });
-        setPosts(formattedPosts);
-      }
+      setPosts(sanitizedPosts);
+      setIsLoading(false);
     } catch (err) {
       console.error('Fatal fetch error:', err);
+      setPosts([]);
     } finally {
       setIsLoading(false);
     }
@@ -139,6 +116,62 @@ export default function LogbookFeed({ profile }) {
     // Also trigger fetch to sync with DB state
     fetchPosts();
   };
+
+  const handleLike = useCallback(async (postId) => {
+    if (!userId) return;
+
+    let wasLiked = false;
+    let originalLikes = [];
+
+    setPosts(currentPosts => currentPosts.map(post => {
+      if (post.id === postId) {
+        const hasLiked = post.likes.some(like => like.user_id === userId);
+        wasLiked = hasLiked;
+        originalLikes = post.likes;
+
+        const updatedLikes = hasLiked
+          ? post.likes.filter(like => like.user_id !== userId)
+          : [...post.likes, { user_id: userId }];
+
+        return {
+          ...post,
+          likes: updatedLikes,
+          like_count: updatedLikes.length,
+          user_has_liked: !hasLiked
+        };
+      }
+      return post;
+    }));
+
+    try {
+      if (wasLiked) {
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', userId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('likes')
+          .insert({ post_id: postId, user_id: userId });
+        if (error) throw error;
+      }
+    } catch (err) {
+      console.error('Failed to update like in DB, reverting local state:', err);
+      setPosts(currentPosts => currentPosts.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            likes: originalLikes,
+            like_count: originalLikes.length,
+            user_has_liked: wasLiked
+          };
+        }
+        return post;
+      }));
+    }
+  }, [supabase, userId]);
 
   const handleUpdate = async (postData) => {
     const { error } = await supabase
@@ -200,6 +233,8 @@ export default function LogbookFeed({ profile }) {
             profile={profile}
             onEdit={setEditingPost} 
             onDeleteSuccess={handlePostDelete} 
+            onRefresh={fetchPosts}
+            onLike={handleLike}
           />
         ))
       ) : (

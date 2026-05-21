@@ -20,14 +20,22 @@ export default function JobBoard() {
       const { data, error } = await supabase
         .from('jobs')
         .select(`
-          *,
-          company:companies(name, logo_url, industry)
+          id,
+          title,
+          location,
+          employment_type,
+          salary_range,
+          tags,
+          required_skills,
+          created_at,
+          company_id,
+          poster_id
         `)
         .in('status', ['Published', 'published', 'Open', 'open'])
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Supabase error fetching jobs:', error.message || error);
+        console.error('⚠️ [PostgREST 406 Trace]:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
         throw error;
       }
       

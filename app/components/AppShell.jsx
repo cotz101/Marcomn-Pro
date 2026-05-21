@@ -35,6 +35,7 @@ import CreateCompanyModal from '@/src/components/company/CreateCompanyModal';
 import PostJobModal from '@/src/components/jobs/PostJobModal';
 import PostComposerModal from '@/src/components/logbook/PostComposerModal';
 import IdentitySwitcher from '@/src/components/layout/IdentitySwitcher';
+import NotificationDropdown from '@/src/components/layout/NotificationDropdown';
 import SidebarLeft from '@/src/components/layout/SidebarLeft';
 import SidebarRight from '@/src/components/layout/SidebarRight';
 import { createClient } from '@/lib/supabase';
@@ -56,16 +57,98 @@ export default function AppShell({ children, userEmail, userId }) {
   const [showPostModal, setShowPostModal] = useState(false);
   const [isFabExpanded, setIsFabExpanded] = useState(false);
   const [fabAnimating, setFabAnimating] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
   
   const avatarRef = useRef(null);
+  const notificationsRef = useRef(null);
+  const bellButtonRef = useRef(null);
 
   // FAB Transition logic
   useEffect(() => {
     setFabAnimating(true);
     setIsFabExpanded(false); // Auto-close FAB on route/module change
+    setShowNotifications(false); // Auto-close Notifications dropdown on route change
     const timer = setTimeout(() => setFabAnimating(false), 600);
     return () => clearTimeout(timer);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const supabase = createClient();
+
+    const fetchInitialNotifications = async () => {
+      setLoadingNotifications(true);
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*, sender:profiles(id, name, avatar_url)')
+          .eq('recipient_id', userId)
+          .order('created_at', { ascending: false });
+        
+        if (!error && data) {
+          setNotifications(data);
+          setUnreadCount(data.filter(n => !n.is_read).length);
+        }
+      } catch (err) {
+        console.error('Error fetching notifications:', err);
+      } finally {
+        setLoadingNotifications(false);
+      }
+    };
+
+    fetchInitialNotifications();
+
+    console.log('📡 [Notif Channel] Initializing Supabase Realtime Subscription...');
+
+    // Diagnostic Listener - Replace your existing channel logic with this
+    const channel = supabase
+      .channel('any_channel_name') // Generic name for testing
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        (payload) => {
+          console.log('📡 SIGNAL RECEIVED, UPDATING UI:', payload.new);
+          
+          // Force the local state to include the new notification
+          setNotifications((prev) => [payload.new, ...prev]);
+          
+          // Force the Unread Count to increment
+          setUnreadCount((prev) => prev + 1);
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Subscription Status:', status);
+      });
+
+
+    return () => {
+      console.log('🚫 [Notif Channel] Cleaning up subscription channel.');
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
+  const handleMarkAllAsRead = async () => {
+    if (!userId) return;
+    const supabase = createClient();
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('recipient_id', userId)
+        .eq('is_read', false);
+      
+      if (!error) {
+        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+        setUnreadCount(0);
+      }
+    } catch (err) {
+      console.error('Error marking all notifications as read:', err);
+    }
+  };
 
   useEffect(() => {
     document.documentElement.classList.remove('dark');
@@ -81,6 +164,18 @@ export default function AppShell({ children, userEmail, userId }) {
   useEffect(() => {
     function handleOutside(e) {
       if (avatarRef.current && !avatarRef.current.contains(e.target)) setDropdownOpen(false);
+      
+      // Close notifications dropdown on click outside, unless clicking the bell icon itself (desktop only)
+      if (typeof window !== 'undefined' && window.innerWidth >= 640) {
+        if (
+          notificationsRef.current && 
+          !notificationsRef.current.contains(e.target) &&
+          bellButtonRef.current &&
+          !bellButtonRef.current.contains(e.target)
+        ) {
+          setShowNotifications(false);
+        }
+      }
     }
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
@@ -200,7 +295,29 @@ export default function AppShell({ children, userEmail, userId }) {
             <div className="header-right">
               <div className="header-actions-desktop flex items-center">
                 <button className="header-icon-btn" onClick={() => router.push('/messages')}><MessageSquare size={22} /></button>
-                <button className="header-icon-btn"><Bell size={22} /></button>
+                <div className="relative" ref={notificationsRef} style={{ position: 'relative' }}>
+                  <button 
+                    ref={bellButtonRef}
+                    className={`header-icon-btn relative ${showNotifications ? 'text-indigo-600 bg-indigo-50/50' : ''}`}
+                    onClick={() => setShowNotifications(!showNotifications)}
+                  >
+                    <Bell size={22} />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border border-white shadow-sm animate-pulse">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {showNotifications && (
+                    <NotificationDropdown 
+                      notifications={notifications}
+                      loading={loadingNotifications}
+                      onMarkAllAsRead={handleMarkAllAsRead}
+                      onClose={() => setShowNotifications(false)} 
+                    />
+                  )}
+                </div>
                 <button 
                    className="btn-primary-pill px-4 py-1.5 ml-2"
                    style={{ backgroundColor: 'var(--primary-container)' }}
@@ -324,14 +441,22 @@ export default function AppShell({ children, userEmail, userId }) {
           <Newspaper size={24} className="mobile-nav-icon" />
           <span className="mobile-nav-label">MBlog</span>
         </Link>
-        <Link 
-          href="/notifications" 
-          className={`mobile-nav-item ${pathname === '/notifications' ? 'active' : ''}`}
-          style={{ '--active-color': '#002b4e' }}
+        <button 
+          onClick={(e) => {
+            e.preventDefault();
+            setShowNotifications(!showNotifications);
+          }}
+          className={`mobile-nav-item relative ${showNotifications ? 'active' : ''}`}
+          style={{ '--active-color': '#002b4e', background: 'none', border: 'none', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
         >
           <Bell size={24} className="mobile-nav-icon" />
           <span className="mobile-nav-label">Alerts</span>
-        </Link>
+          {unreadCount > 0 && (
+            <span className="absolute top-1 right-[calc(50%-14px)] min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow-sm animate-pulse">
+              {unreadCount}
+            </span>
+          )}
+        </button>
       </nav>
 
       {/* Mobile Bottom Sheet (High Fidelity) */}
@@ -486,6 +611,17 @@ export default function AppShell({ children, userEmail, userId }) {
           )}
         </div>
       </main>
+      {showNotifications && (
+        <div className="sm:hidden">
+          <NotificationDropdown 
+            notifications={notifications}
+            loading={loadingNotifications}
+            onMarkAllAsRead={handleMarkAllAsRead}
+            onClose={() => setShowNotifications(false)} 
+          />
+        </div>
+      )}
+
       {toast && (
         <div className={`fixed bottom-24 right-4 z-[9999] transition-all duration-300 animate-in slide-in-from-right-full ${
           toast.type === 'success' ? 'bg-[#002b4e] text-white' : 'bg-red-600 text-white'

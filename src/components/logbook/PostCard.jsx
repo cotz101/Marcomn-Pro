@@ -9,16 +9,24 @@ import CommentSection from './CommentSection';
 import ReactionsModal from './ReactionsModal';
 import { createClient } from '@/lib/supabase';
 
-export default function PostCard({ post, userId, profile, onEdit, onDeleteSuccess }) {
+export default function PostCard({ post, userId, profile, onEdit, onDeleteSuccess, onRefresh, onLike }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLiked, setIsLiked] = useState(post.user_has_liked || false);
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comment_count || 0);
   const [likeCount, setLikeCount] = useState(post.like_count || 0);
+
+  useEffect(() => {
+    setIsLiked(post.user_has_liked || false);
+    setLikeCount(post.like_count || 0);
+  }, [post.user_has_liked, post.like_count]);
   const [showReactions, setShowReactions] = useState(false);
   const supabase = createClient();
   const cardRef = useRef(null);
   const isAuthor = post.user_id === userId || post.userId === userId || post.authorId === userId;
+
+  const postLikes = post.likes || [];
+  const postComments = post.comments || [];
   
   // Debug log for author check (invisible to user)
   // console.log('Post:', post.id, 'AuthorId:', post.authorId, 'CurrentUserId:', userId, 'IsAuthor:', isAuthor);
@@ -37,35 +45,10 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
     return txt.value;
   };
 
-  const toggleLike = async () => {
+  const toggleLike = () => {
     if (!userId) return;
-
-    // Optimistic UI
-    const newLikedState = !isLiked;
-    setIsLiked(newLikedState);
-    setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
-
-    try {
-      if (newLikedState) {
-        // Add like
-        const { error } = await supabase
-          .from('likes')
-          .insert({ post_id: post.id, user_id: userId });
-        if (error) throw error;
-      } else {
-        // Remove like
-        const { error } = await supabase
-          .from('likes')
-          .delete()
-          .eq('post_id', post.id)
-          .eq('user_id', userId);
-        if (error) throw error;
-      }
-    } catch (err) {
-      console.error('Error toggling like:', err);
-      // Revert optimistic UI on error
-      setIsLiked(!newLikedState);
-      setLikeCount(prev => !newLikedState ? prev + 1 : prev - 1);
+    if (onLike) {
+      onLike(post.id);
     }
   };
 
@@ -262,10 +245,10 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
       )}
 
       {/* TEXT CONTENT ALWAYS ABOVE MEDIA */}
-      <div className="post-content-wrapper">
+      <div className="post-content-wrapper min-w-0">
         <div className="post-content">
           <div 
-            className="rich-text"
+            className="rich-text break-words whitespace-pre-wrap overflow-hidden"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(processedContent || '') }} 
           />
           {shouldTruncate && (
@@ -349,7 +332,7 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
           </div>
           
           <button
-            onClick={() => router.push('/mservices?tab=opportunity&jobId=' + sharedJob.id)}
+            onClick={() => router.push(`/mservices/opportunity/${sharedJob.id}`)}
             className="px-6 py-2 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition-colors whitespace-nowrap text-center shadow-sm"
           >
             View Job Details
@@ -433,8 +416,14 @@ export default function PostCard({ post, userId, profile, onEdit, onDeleteSucces
           postId={post.id} 
           userId={userId} 
           profile={profile} 
-          onCommentAdded={() => setCommentCount(prev => prev + 1)}
-          onCommentDeleted={() => setCommentCount(prev => prev - 1)}
+          onCommentAdded={() => {
+            setCommentCount(prev => prev + 1);
+            onRefresh?.();
+          }}
+          onCommentDeleted={() => {
+            setCommentCount(prev => prev - 1);
+            onRefresh?.();
+          }}
         />
       )}
 

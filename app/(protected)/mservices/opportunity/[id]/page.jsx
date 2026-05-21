@@ -37,27 +37,26 @@ export default function OpportunityDetailsPage() {
   const [selectedFiles, setSelectedFiles] = useState([]);
 
   const fetchJob = useCallback(async () => {
-    if (!id) return;
+    const jobId = params?.id || params?.jobId; // Ensure parameter name matches the folder
+    if (!jobId) return;
     try {
       setLoading(true);
       const supabase = createClient();
-      const { data, error: fetchError } = await supabase
+      const { data: job, error } = await supabase
         .from('jobs')
-        .select(`
-          *,
-          company:companies(*),
-          poster:profiles(*)
-        `)
-        .eq('id', id)
-        .maybeSingle();
+        .select('*, company:companies(*), poster:profiles(*)')
+        .eq('id', jobId)
+        .single();
 
-      if (fetchError) {
-        console.error('Error fetching job details:', fetchError);
-        setError(fetchError.message);
-      } else if (!data) {
+      if (error) {
+        console.error('Job Detail Fetch Error:', JSON.stringify(error, null, 2));
+        // Temporarily comment out notFound() during debugging so we can read the error on screen if it fails
+        // return notFound(); 
+        setError(error.message || JSON.stringify(error));
+      } else if (!job) {
         setError("This job opportunity is no longer available or you don't have permission to view it.");
       } else {
-        setJob(data);
+        setJob(job);
       }
     } catch (err) {
       console.error('Exception fetching job details:', err);
@@ -65,7 +64,7 @@ export default function OpportunityDetailsPage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [params]);
 
   useEffect(() => {
     fetchJob();

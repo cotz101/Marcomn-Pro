@@ -234,34 +234,22 @@ export default function InboxPage() {
 
       // Ensure we have a valid recipient ID from the active conversation before broadcasting
       const activeConv = conversations.find(c => c.id === activeChatId);
-      const recipientId = activeConv
+      const targetRecipientId = activeConv
         ? (activeConv.participant_one === currentUser.id ? activeConv.participant_two : activeConv.participant_one)
         : null;
 
       // Verify the Recipient ID
-      console.log('Target Recipient ID Lookup:', recipientId);
+      console.log('Target Recipient ID Lookup:', targetRecipientId);
 
-      if (recipientId && recipientId !== currentUser.id) {
-        // Force execution of secure Server Action bypass sequence
+      if (targetRecipientId && targetRecipientId !== currentUser.id) {
         try {
-          // Trigger server action using properties matched to our explicit schema definitions
-          const result = await sendNotification(
-            recipientId, 
-            currentUser.id, 
-            `${currentUser.user_metadata?.full_name || currentUserProfile?.name || 'Someone'} sent you a message.`, 
-            activeChatId
-          );
-          
-          if (!result.success) {
-            console.error('⚠️ Secure Action Database Error:', result.error);
-          } else {
-            console.log('✅ Notification successfully broadcasted via server pipeline!');
-          }
-        } catch (actionErr) {
-          console.error('⚠️ Critical Server Action Execution Fail:', actionErr.message);
+          await sendNotification(targetRecipientId, 'You have a new message.');
+          console.log('✅ Server Action Notification successful.');
+        } catch (err) {
+          console.error('⚠️ Server Action Error:', err.message);
         }
       } else {
-        console.warn('⚠️ recipientId is null or matches current user; skipping notification insertion.');
+        console.warn('⚠️ targetRecipientId is null or matches current user; skipping notification insertion.');
       }
     } catch (err) {
       console.error('Error sending message:', err);
