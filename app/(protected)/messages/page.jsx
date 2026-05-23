@@ -200,7 +200,40 @@ export default function InboxPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
-  // 5. Send message logic
+  // 5. Direct Notification creation helper
+  const createNotification = async (recipientId, senderId, text, chatId) => {
+    try {
+      console.log('DEBUG: Creating direct notification for recipient:', recipientId);
+      
+      const notificationData = {
+        recipient_id: recipientId,
+        sender_id: senderId,
+        type: 'message',
+        title: 'New Message',
+        body: `${currentUserProfile?.name || 'Someone'} sent you a message.`,
+        link: `/messages?chat=${chatId}`,
+        is_read: false
+      };
+
+      const { error } = await supabase
+        .from('notifications')
+        .insert([notificationData]);
+
+      if (error) {
+        console.error('DEBUG: Direct Notification insertion error:', {
+          message: error.message || error,
+          details: error.details || null,
+          hint: error.hint || null
+        });
+      } else {
+        console.log('✅ DEBUG: Direct notification inserted successfully!');
+      }
+    } catch (err) {
+      console.error('DEBUG: Direct notification exception caught:', err);
+    }
+  };
+
+  // 6. Send message logic
   const handleSendMessage = async (e) => {
     e?.preventDefault();
     if (!newMessage.trim() || !activeChatId || !currentUser.id || sending) return;
@@ -242,6 +275,9 @@ export default function InboxPage() {
       console.log('Target Recipient ID Lookup:', recipientId);
 
       if (recipientId && recipientId !== currentUser.id) {
+        // Trigger direct notification insertion first inside its own safe catch boundary
+        await createNotification(recipientId, currentUser.id, textToSend, activeChatId);
+
         // Force execution of secure Server Action bypass sequence
         try {
           // Trigger server action using properties matched to our explicit schema definitions
