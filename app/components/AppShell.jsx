@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -60,11 +60,33 @@ export default function AppShell({ children, userEmail, userId }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const unreadCount = notifications.filter(n => !n.is_read).length;
   
   const avatarRef = useRef(null);
   const notificationsRef = useRef(null);
   const bellButtonRef = useRef(null);
+
+  // Function to fetch notifications, defined using useCallback
+  const fetchNotifications = useCallback(async () => {
+    if (!userId) return;
+    const supabase = createClient();
+    setLoadingNotifications(true);
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*, sender:profiles(id, name, avatar_url)')
+        .eq('recipient_id', userId)
+        .order('created_at', { ascending: false });
+      
+      if (!error && data) {
+        setNotifications(data);
+      }
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  }, [userId]);
 
   // FAB Transition logic
   useEffect(() => {
@@ -78,34 +100,13 @@ export default function AppShell({ children, userEmail, userId }) {
   useEffect(() => {
     if (!userId) return;
 
-    const supabase = createClient();
-
-    const fetchInitialNotifications = async () => {
-      setLoadingNotifications(true);
-      try {
-        const { data, error } = await supabase
-          .from('notifications')
-          .select('*, sender:profiles(id, name, avatar_url)')
-          .eq('recipient_id', userId)
-          .order('created_at', { ascending: false });
-        
-        if (!error && data) {
-          setNotifications(data);
-          setUnreadCount(data.filter(n => !n.is_read).length);
-        }
-      } catch (err) {
-        console.error('Error fetching notifications:', err);
-      } finally {
-        setLoadingNotifications(false);
-      }
-    };
-
-    fetchInitialNotifications();
+    fetchNotifications();
 
     console.log('📡 [Notif Channel] Initializing Supabase Realtime Subscription...');
 
     // Bulletproof Realtime Subscription with de-duplication
     const processedIds = new Set();
+    const supabase = createClient();
     const channel = supabase.channel('notifications-channel');
 
     channel
@@ -121,7 +122,6 @@ export default function AppShell({ children, userEmail, userId }) {
 
         console.log('📡 [Notif Channel] Received new alert:', newNotif);
         setNotifications(prev => [newNotif, ...prev]);
-        setUnreadCount(prev => prev + 1);
       })
       .subscribe((status) => {
         console.log('📡 [Notif Channel] Subscription status:', status);
@@ -131,7 +131,7 @@ export default function AppShell({ children, userEmail, userId }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [userId, fetchNotifications]);
 
   const handleMarkAllAsRead = async () => {
     if (!userId) return;
@@ -145,7 +145,6 @@ export default function AppShell({ children, userEmail, userId }) {
       
       if (!error) {
         setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-        setUnreadCount(0);
       }
     } catch (err) {
       console.error('Error marking all notifications as read:', err);
@@ -317,6 +316,8 @@ export default function AppShell({ children, userEmail, userId }) {
                       loading={loadingNotifications}
                       onMarkAllAsRead={handleMarkAllAsRead}
                       onClose={() => setShowNotifications(false)} 
+                      setNotifications={setNotifications}
+                      fetchNotifications={fetchNotifications}
                     />
                   )}
                 </div>

@@ -14,20 +14,20 @@ const markAsRead = async (notificationId) => {
   }
 };
 
-export default function NotificationDropdown({ notifications = [], loading = false, onMarkAllAsRead, onClose }) {
-  const [localNotifications, setLocalNotifications] = useState(notifications);
-
-  // Keep local state in sync when parent prop changes
-  useEffect(() => {
-    setLocalNotifications(notifications);
-  }, [notifications]);
-
+export default function NotificationDropdown({ 
+  notifications = [], 
+  loading = false, 
+  onMarkAllAsRead, 
+  onClose,
+  setNotifications,
+  fetchNotifications
+}) {
   // Realtime subscription is handled by AppShell (parent) which owns the
   // notifications state and unreadCount for the bell badge.
 
   const router = useRouter();
 
-  const unreadCount = localNotifications.filter(n => !n.is_read).length;
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   const formatTimeAgo = (dateString) => {
     if (!dateString) return '';
@@ -114,7 +114,7 @@ export default function NotificationDropdown({ notifications = [], loading = fal
       );
     }
 
-    return localNotifications.map((notification) => {
+    return notifications.map((notification) => {
       const isMilestone = notification.type === 'milestone';
       
       return (
@@ -125,7 +125,17 @@ export default function NotificationDropdown({ notifications = [], loading = fal
           }`}
           onClick={async (e) => {
             e.stopPropagation();
+            // A) Mark as Read in DB
             await markAsRead(notification.id);
+            // B) Local State Update (Pruning from parent state)
+            if (setNotifications) {
+              setNotifications(prev => prev.filter(n => n.id !== notification.id));
+            }
+            // C) Force State Re-fetch (The "Hard Sync" with Supabase)
+            if (fetchNotifications) {
+              await fetchNotifications();
+            }
+            // D) Navigation to link
             if (notification.link) {
               router.push(notification.link);
             }
