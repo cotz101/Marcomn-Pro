@@ -39,6 +39,14 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
   const commentCount = commentsList.length;
   const hasLiked = userId ? likesList.some(like => like.user_id === userId) : false;
 
+  // Align article_id parameter
+  post.article_id = post.article_id || post.shared_article_id;
+
+  // Diagnostic Enforcement
+  if (post.article_id) {
+    console.log('DEBUG: Rendering post with article_id:', post.article_id, 'Hydrated Blog Data:', post.mblogs);
+  }
+
   const handleLikeCountClick = async () => {
     if (likeCount === 0) return;
     setLoadingLikes(true);
@@ -510,72 +518,126 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
         ) : (
           <div className="mb-4">
             
-            {/* ARTICLE VIEW */}
-            {isArticle ? (
-              <div>
-                {/* 1. Title */}
-                <h2 className={`font-extrabold text-[#0e2a4d] tracking-tight mt-1 mb-3 leading-snug ${isExpanded ? 'text-2xl md:text-3xl' : 'text-xl hover:text-blue-900 transition-colors'}`}>
-                  {post.title}
-                </h2>
+            {post.article_id ? (
+              /* Shared Blog Preview Mode */
+              (() => {
+                console.log('DEBUG: Rendering post with article_id:', post.article_id, 'Hydrated Blog Data:', post.mblogs);
+                return (
+                  <div className="border border-gray-100 rounded-lg p-3 bg-gray-50/50 space-y-3 font-sans">
+                    <div className="flex gap-3">
+                      {/* Image Source with fallback placeholder */}
+                      <div className="w-16 h-16 rounded object-cover border border-gray-250 bg-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                        {post.mblogs?.cover_image ? (
+                          <img
+                            src={post.mblogs.cover_image}
+                            alt={post.mblogs?.title || 'Shared Post'}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-full h-full bg-blue-50 flex items-center justify-center"
+                          style={{ display: post.mblogs?.cover_image ? 'none' : 'flex' }}
+                        >
+                          <BookOpen size={20} className="text-navy-900" />
+                        </div>
+                      </div>
 
-                {/* 2. Content Body */}
-                {isExpanded ? (
-                  <div className="prose prose-sm max-w-none text-gray-800 text-[15px] leading-relaxed space-y-4">
-                    <div
-                      dangerouslySetInnerHTML={{ __html: renderContentWithEmbeds(post.content) }}
-                      className="article-full-html"
-                    />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-extrabold text-[#0e2a4d] leading-snug">
+                          {post.mblogs?.title || 'Shared Post'}
+                        </h4>
+                        <p className="text-sm text-gray-600 mt-2 line-clamp-3">
+                          {post.mblogs?.content?.replace(/<[^>]*>?/gm, '') || 'No description available.'}
+                        </p>
+                      </div>
+                    </div>
                     
-                    <button
-                      type="button"
-                      onClick={() => setIsExpanded(false)}
-                      className="text-[#004173] hover:text-blue-800 font-extrabold text-xs mt-4 flex items-center gap-1 select-none focus:outline-none"
-                    >
-                      <span>Read less</span>
-                    </button>
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                      <a
+                        href={`/mblog`}
+                        className="text-sm font-medium text-[#0e2a4d] hover:underline transition-colors font-sans"
+                      >
+                        Read full blog
+                      </a>
+                    </div>
                   </div>
-                ) : (
-                  <div>
-                    {/* Excerpt */}
-                    <p className="text-gray-600 text-sm font-medium leading-relaxed mb-3 line-clamp-3">
-                      {post.excerpt || getPlainText(post.content).substring(0, 150) + '...'}
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsExpanded(true)}
-                      className="text-[#004173] hover:text-blue-800 font-extrabold text-xs flex items-center gap-1 select-none focus:outline-none"
-                    >
-                      <span>Read More</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* 3. Media (Image/Video/Embed) */}
-                {!isEditing && renderMedia(post.cover_media_url, post.media_type, post.video_url)}
-              </div>
+                );
+              })()
             ) : (
-              /* QUICK STATUS VIEW */
+              /* Standard Logbook Post Content */
               <div>
-                {isHtml(displayContent) ? (
-                  <div
-                    dangerouslySetInnerHTML={{ __html: displayContent }}
-                    className="prose prose-sm max-w-none text-gray-700 text-[15px] leading-relaxed"
-                  />
-                ) : (
-                  <div className="text-gray-700 text-[15px] leading-relaxed whitespace-pre-wrap break-words">
-                    {displayContent}
-                  </div>
-                )}
+                {/* ARTICLE VIEW */}
+                {isArticle ? (
+                  <div>
+                    {/* 1. Title */}
+                    <h2 className={`font-extrabold text-[#0e2a4d] tracking-tight mt-1 mb-3 leading-snug ${isExpanded ? 'text-2xl md:text-3xl' : 'text-xl hover:text-blue-900 transition-colors'}`}>
+                      {post.title}
+                    </h2>
 
-                {shouldTruncate && (
-                  <button
-                    type="button"
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="text-[#004173] hover:underline font-bold text-xs mt-1 focus:outline-none select-none"
-                  >
-                    {isExpanded ? '... Show less' : '... Show more'}
-                  </button>
+                    {/* 2. Content Body */}
+                    {isExpanded ? (
+                      <div className="prose prose-sm max-w-none text-gray-800 text-[15px] leading-relaxed space-y-4">
+                        <div
+                          dangerouslySetInnerHTML={{ __html: renderContentWithEmbeds(post.content) }}
+                          className="article-full-html"
+                        />
+                        
+                        <button
+                          type="button"
+                          onClick={() => setIsExpanded(false)}
+                          className="text-[#004173] hover:text-blue-800 font-extrabold text-xs mt-4 flex items-center gap-1 select-none focus:outline-none"
+                        >
+                          <span>Read less</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        {/* Excerpt */}
+                        <p className="text-gray-600 text-sm font-medium leading-relaxed mb-3 line-clamp-3">
+                          {post.excerpt || getPlainText(post.content).substring(0, 150) + '...'}
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsExpanded(true)}
+                          className="text-[#004173] hover:text-blue-800 font-extrabold text-xs flex items-center gap-1 select-none focus:outline-none"
+                        >
+                          <span>Read More</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* 3. Media (Image/Video/Embed) */}
+                    {!isEditing && renderMedia(post.cover_media_url, post.media_type, post.video_url)}
+                  </div>
+                ) : (
+                  /* QUICK STATUS VIEW */
+                  <div>
+                    {isHtml(displayContent) ? (
+                      <div
+                        dangerouslySetInnerHTML={{ __html: displayContent }}
+                        className="prose prose-sm max-w-none text-gray-700 text-[15px] leading-relaxed"
+                      />
+                    ) : (
+                      <div className="text-gray-700 text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                        {displayContent}
+                      </div>
+                    )}
+
+                    {shouldTruncate && (
+                      <button
+                        type="button"
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="text-[#004173] hover:underline font-bold text-xs mt-1 focus:outline-none select-none"
+                      >
+                        {isExpanded ? '... Show less' : '... Show more'}
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -755,7 +817,11 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
          prevProps.post.media_type === nextProps.post.media_type &&
          prevProps.post.likes?.length === nextProps.post.likes?.length &&
          prevProps.post.comments?.length === nextProps.post.comments?.length &&
-         prevProps.userId === nextProps.userId;
+         prevProps.userId === nextProps.userId &&
+         prevProps.post.mblogs?.id === nextProps.post.mblogs?.id &&
+         prevProps.post.mblogs?.title === nextProps.post.mblogs?.title &&
+         prevProps.post.mblogs?.cover_image === nextProps.post.mblogs?.cover_image &&
+         prevProps.post.mblogs?.content === nextProps.post.mblogs?.content;
 });
 
 LogbookPostCard.displayName = 'LogbookPostCard';

@@ -24,7 +24,7 @@ export default function LogbookFeed() {
   const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data: posts, error } = await supabase
         .from('logbook_posts')
         .select(`
           id,
@@ -42,14 +42,70 @@ export default function LogbookFeed() {
           user_id,
           author:profiles!user_id (name, avatar_url, headline),
           likes ( id, user_id ),
-          comments ( id, user_id, content, created_at, profiles:profiles!user_id (name, avatar_url) )
+          comments ( id, user_id, content, created_at, profiles:profiles!user_id (name, avatar_url) ),
+          shared_article_id
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPosts(data || []);
+
+      // Extract unique article IDs for in-memory hydration
+      const articleIds = (posts || [])
+        .map(post => post.article_id || post.shared_article_id)
+        .filter(Boolean);
+
+      let articles = [];
+      if (articleIds.length > 0) {
+        try {
+          const { data, error: mblogError } = await supabase
+            .from('mblogs')
+            .select('*')
+            .in('id', articleIds);
+          if (!mblogError && data) {
+            articles = data;
+          } else {
+            throw mblogError || new Error('No data');
+          }
+        } catch (mblogsErr) {
+          console.warn('DEBUG: Falling back to mblog_articles query due to:', mblogsErr);
+          const { data, error: fallbackError } = await supabase
+            .from('mblog_articles')
+            .select('*')
+            .in('id', articleIds);
+          if (!fallbackError && data) {
+            articles = data;
+          }
+        }
+      }
+
+      // Map to normalize article_id parameter and perform direct clean merge
+      const hydratedPosts = posts.map(post => {
+        post.article_id = post.article_id || post.shared_article_id;
+        const matchedArticle = post.article_id ? articles.find(a => a.id === post.article_id) : null;
+        
+        let mblogs = null;
+        if (matchedArticle) {
+          mblogs = {
+            ...matchedArticle,
+            cover_image: matchedArticle.cover_image || matchedArticle.media_url || null,
+            content: matchedArticle.content || matchedArticle.content_html || '',
+            title: matchedArticle.title || 'Shared Post'
+          };
+        }
+
+        return {
+          ...post,
+          mblogs: post.article_id ? mblogs : null
+        };
+      });
+
+      setPosts(hydratedPosts);
     } catch (err) {
-      console.error('Error fetching logbook posts:', err);
+      console.error('Error fetching logbook posts:', { 
+        message: err?.message || err, 
+        details: err?.details || null, 
+        hint: err?.hint || null 
+      });
     } finally {
       setLoading(false);
     }
@@ -80,7 +136,15 @@ export default function LogbookFeed() {
   };
 
   const handlePostUpdated = (updatedPost) => {
-    setPosts((prev) => prev.map((post) => (post.id === updatedPost.id ? updatedPost : post)));
+    setPosts((prev) => prev.map((post) => {
+      if (post.id === updatedPost.id) {
+        return {
+          ...updatedPost,
+          mblogs: post.mblogs // Keep the hydrated blog data to prevent UI layout collapse
+        };
+      }
+      return post;
+    }));
   };
 
   const PostSkeleton = () => (
