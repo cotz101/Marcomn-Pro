@@ -523,9 +523,9 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
               (() => {
                 console.log('DEBUG: Rendering post with article_id:', post.article_id, 'Hydrated Blog Data:', post.mblogs);
                 return (
-                  <div className="border border-gray-100 rounded-t-lg rounded-b-lg bg-gray-50/50 font-sans overflow-hidden flex flex-col">
+                  <div className="border border-gray-100 rounded-lg p-4 bg-gray-50/50 font-sans overflow-hidden flex flex-col gap-4">
                     {/* Hero Image Section */}
-                    <div className="w-full h-64 bg-gray-100 flex items-center justify-center overflow-hidden relative shrink-0">
+                    <div className="w-full h-64 bg-gray-100 flex items-center justify-center overflow-hidden relative shrink-0 rounded-lg border border-gray-150">
                       {post.mblogs?.cover_image ? (
                         <img
                           src={post.mblogs.cover_image}
@@ -547,7 +547,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                     </div>
 
                     {/* Content Section with breathing room padding */}
-                    <div className="p-4 flex flex-col flex-1">
+                    <div className="flex flex-col flex-1">
                       <h4 className="text-xl font-bold text-[#0e2a4d] mb-2 leading-snug">
                         {post.mblogs?.title || 'Shared Post'}
                       </h4>
@@ -557,7 +557,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                       
                       <a
                         href={`/mblog`}
-                        className="inline-flex items-center justify-start bg-blue-900 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-800 transition-colors active:scale-95 select-none mt-4 font-sans text-center"
+                        className="w-fit inline-block bg-blue-900 text-white px-6 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition-colors active:scale-95 select-none mt-4 font-sans text-center"
                       >
                         Read full blog
                       </a>
