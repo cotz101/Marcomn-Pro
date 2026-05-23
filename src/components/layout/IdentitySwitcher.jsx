@@ -1,4 +1,4 @@
-import { User, LogOut, Plus, Check } from 'lucide-react';
+import { User, LogOut, Plus, Check, Settings } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
@@ -97,6 +97,10 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
         <div className="footer-link-item" onClick={() => { router.push('/profile'); onClose(); }}>
           <User size={18} />
           <span>View Profile</span>
+        </div>
+        <div className="footer-link-item" onClick={() => { router.push('/settings/notifications'); onClose(); }}>
+          <Settings size={18} />
+          <span>Notification Settings</span>
         </div>
         <div className="footer-link-item sign-out-item" onClick={handleSignOut} style={{ color: '#ff4d4f', fontWeight: '600', cursor: 'pointer' }}>
           <LogOut size={18} />
