@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 import { Anchor, Calendar, User, ThumbsUp, MessageSquare, ShieldAlert } from 'lucide-react';
@@ -12,6 +13,8 @@ export default function LogbookFeed() {
   const [loading, setLoading] = useState(true);
   const { userId } = useProfile();
   const supabase = createClient();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Centralized URL resolver
   const resolveMediaUrl = useCallback((path) => {
@@ -45,7 +48,8 @@ export default function LogbookFeed() {
           comments ( id, user_id, content, created_at, profiles:profiles!user_id (name, avatar_url) ),
           shared_article_id
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('created_at', { foreignTable: 'comments', ascending: false });
 
       if (error) throw error;
 
@@ -126,6 +130,38 @@ export default function LogbookFeed() {
       supabase.removeChannel(channel);
     };
   }, [supabase, fetchPosts]);
+
+  // ── Feed Auto-Focus: Scroll to a specific post when ?focus= is present ──
+  useEffect(() => {
+    if (loading || posts.length === 0) return;
+
+    const focusPostId = searchParams.get('focus');
+    if (!focusPostId) return;
+
+    // Small delay to ensure DOM is fully painted
+    const timer = setTimeout(() => {
+      const targetEl = document.getElementById(`post-${focusPostId}`);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Apply a navy pulse highlight
+        targetEl.style.transition = 'box-shadow 0.3s ease, border-color 0.3s ease';
+        targetEl.style.boxShadow = '0 0 0 3px rgba(14, 42, 77, 0.35), 0 0 20px rgba(14, 42, 77, 0.15)';
+        targetEl.style.borderColor = '#0e2a4d';
+
+        // Fade out the highlight after 2.5s
+        setTimeout(() => {
+          targetEl.style.boxShadow = '';
+          targetEl.style.borderColor = '';
+        }, 2500);
+      }
+
+      // Clean the URL query param so refreshes don't re-trigger
+      router.replace('/logbook', { scroll: false });
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [loading, posts, searchParams, router]);
 
   const handlePostCreated = (newPost) => {
     setPosts((prev) => [newPost, ...prev]);

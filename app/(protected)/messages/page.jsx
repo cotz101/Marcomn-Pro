@@ -314,25 +314,49 @@ export default function InboxPage() {
       console.log('Target Recipient ID Lookup:', recipientId);
 
       if (recipientId && recipientId !== currentUser.id) {
-        // DB write via server action only — the Realtime listener in AppShell
-        // handles the UI state update, so we do NOT call createNotification here
-        // to avoid inserting a duplicate notification row.
+        // Strict Gatekeeper Patch: Check recipient preferences before inserting
         try {
-          // Trigger server action using properties matched to our explicit schema definitions
-          const result = await sendNotification(
-            recipientId, 
-            currentUser.id, 
-            `${currentUser.user_metadata?.full_name || currentUserProfile?.name || 'Someone'} sent you a message.`, 
-            activeChatId
-          );
+          // 1. Fetch recipient's notification settings and profile privacy
+          const [{ data: settings }, { data: profile }] = await Promise.all([
+            supabase
+              .from('notification_settings')
+              .select('messaging_enabled')
+              .eq('user_id', recipientId)
+              .maybeSingle(),
+            supabase
+              .from('profiles')
+              .select('inbox_privacy')
+              .eq('id', recipientId)
+              .maybeSingle()
+          ]);
+
+          // 2. Gatekeeper: If muted or private, EXIT.
+          const isMuted = settings && settings.messaging_enabled === false;
+          const isPrivate = profile && profile.inbox_privacy === 'private';
           
-          if (!result.success) {
-            console.error('⚠️ Secure Action Database Error:', result.error);
+          if (isMuted || isPrivate) {
+            console.log('Notification muted or private for user:', recipientId, '- Skipping insert.');
           } else {
-            console.log('✅ Notification successfully broadcasted via server pipeline!');
+            // 3. Only proceed if not muted
+            // Basket 2 (Logic) Patch: Asynchronous insert into the 'notifications' table
+            supabase.from('notifications').insert([{
+              recipient_id: recipientId,
+              sender_id: currentUser.id,
+              type: 'message',
+              title: 'New Message',
+              body: 'Sent you a new message', // content
+              link: '/messages?chat=' + activeChatId,
+              is_read: false
+            }]).then(({ error }) => {
+              if (error) {
+                console.error('⚠️ Notification insertion failed:', error);
+              } else {
+                console.log('✅ Notification successfully inserted');
+              }
+            });
           }
-        } catch (actionErr) {
-          console.error('⚠️ Critical Server Action Execution Fail:', actionErr.message);
+        } catch (notifErr) {
+          console.error('⚠️ Critical Notification Gatekeeper Fail:', notifErr.message);
         }
       } else {
         console.warn('⚠️ recipientId is null or matches current user; skipping notification insertion.');

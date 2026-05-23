@@ -1,9 +1,9 @@
 'use client';
 import { useRef, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import ProfessionalCard from '../connections/ProfessionalCard';
+
 import { createClient } from '@/lib/supabase';
-import { Camera, Briefcase, MapPin, Edit3, X, Check, Plus, ArrowLeft, Ship, MessageSquare, UserPlus, UserCheck, Lock } from 'lucide-react';
+import { Camera, Briefcase, MapPin, Edit3, X, Check, Plus, ArrowLeft, Ship, MessageSquare, Lock } from 'lucide-react';
 
 export default function Profile({ profile: initialProfile, setProfile: setInitialProfile, userId: currentUserId }) {
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const profilePicInputRef = useRef(null);
+  
   const coverPhotoInputRef = useRef(null);
   const avatarUploadRef = useRef(null);
 
@@ -88,16 +88,11 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
       };
       fetchViewedProfile();
     } else {
-      setProfile(initialProfile);
+      // No need to setProfile here as initial state already uses initialProfile
     }
   }, [viewUid, isOwnProfile, initialProfile, currentUserId]);
 
-  // Sync skills_input when profile changes
-  useEffect(() => {
-    if (profile?.skills && Array.isArray(profile.skills)) {
-      setEditSkillsInput(profile.skills.join(', '));
-    }
-  }, [profile?.skills]);
+  // Removed sync of editSkillsInput; handled when opening modal
  
   const handleOpenModal = () => {
     if (!isOwnProfile) return;
@@ -244,7 +239,33 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
         .from('follows')
         .insert({ follower_id: currentUserId, following_id: viewUid });
       
-      if (!error) setIsFollowing(true);
+      if (!error) {
+        setIsFollowing(true);
+        
+        // Connection Notification Bridge
+        try {
+          // Guard against Duplicate Notifs (don't spam if unfollow/re-follow)
+          const { count } = await supabase.from('notifications')
+            .select('*', { count: 'exact', head: true })
+            .eq('recipient_id', viewUid)
+            .eq('sender_id', currentUserId)
+            .eq('type', 'connection');
+
+          if (count === 0) {
+            await supabase.from('notifications').insert([{
+              recipient_id: viewUid,
+              sender_id: currentUserId,
+              type: 'connection',
+              title: 'New Connection',
+              body: 'Started following you',
+              link: '/profile/' + currentUserId,
+              is_read: false
+            }]);
+          }
+        } catch (err) {
+          console.error('Failed to send connection notification:', err);
+        }
+      }
     }
   };
 

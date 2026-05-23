@@ -102,12 +102,17 @@ export default function AppShell({ children, userEmail, userId }) {
 
     fetchNotifications();
 
+    console.log('📡 [Notif Channel] Auth Status:', { 
+      hasUser: !!userId, 
+      userId: userId,
+      timestamp: new Date().toISOString() 
+    });
     console.log('📡 [Notif Channel] Initializing Supabase Realtime Subscription...');
 
     // Bulletproof Realtime Subscription with de-duplication
     const processedIds = new Set();
     const supabase = createClient();
-    const channel = supabase.channel('notifications-channel');
+    const channel = supabase.channel(`notifications:${userId}`);
 
     channel
       .on('postgres_changes', {
@@ -123,8 +128,23 @@ export default function AppShell({ children, userEmail, userId }) {
         console.log('📡 [Notif Channel] Received new alert:', newNotif);
         setNotifications(prev => [newNotif, ...prev]);
       })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'notifications',
+        filter: `recipient_id=eq.${userId}`
+      }, (payload) => {
+        // If a notification was marked as 'read', update local state instead of removing
+        if (payload.new.is_read === true) {
+          console.log('📡 [Notif Channel] Notification marked read remotely, updating:', payload.new.id);
+          setNotifications(prev => prev.map(n => n.id === payload.new.id ? { ...n, is_read: true } : n));
+        }
+      })
       .subscribe((status) => {
-        console.log('📡 [Notif Channel] Subscription status:', status);
+        console.log('📡 [Notif Channel] Connection Status:', status);
+        if (status === 'CHANNEL_ERROR') {
+           console.error('CRITICAL: Realtime connection rejected! Check RLS policies.');
+        }
       });
 
     // Cleanup to prevent duplicate listeners

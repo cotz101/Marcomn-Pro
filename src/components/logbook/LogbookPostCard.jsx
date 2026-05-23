@@ -29,6 +29,11 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
   const [selectedLikes, setSelectedLikes] = useState([]);
   const [loadingLikes, setLoadingLikes] = useState(false);
 
+  const [connections, setConnections] = useState([]);
+  const [mentionSearch, setMentionSearch] = useState('');
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false);
+  const commentInputRef = React.useRef(null);
+
   useEffect(() => {
     setLikesList(post.likes || []);
     setCommentsList(post.comments || []);
@@ -135,6 +140,137 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
     }
   };
 
+  const fetchConnections = async () => {
+    if (!userId) return;
+    try {
+      const { data: followData, error: followError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', userId);
+        
+      if (followError) throw followError;
+      const followingIds = followData?.map(f => f.following_id) || [];
+      
+      if (followingIds.length === 0) {
+        setConnections([]);
+        return;
+      }
+      
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, avatar_url, username')
+        .in('id', followingIds);
+        
+      if (profilesError) throw profilesError;
+      setConnections(profilesData || []);
+    } catch (err) {
+      console.error('Error fetching connections for mentions:', err);
+    }
+  };
+
+  const filteredConnections = React.useMemo(() => {
+    if (!mentionSearch) return connections;
+    const searchLower = mentionSearch.toLowerCase();
+    return connections.filter(c => {
+      const nameMatch = (c.name || '').toLowerCase().includes(searchLower);
+      const usernameMatch = (c.username || '').toLowerCase().includes(searchLower);
+      return nameMatch || usernameMatch;
+    });
+  }, [connections, mentionSearch]);
+
+  const handleKeyUp = async (e) => {
+    const input = e.target;
+    const val = input.value;
+    const selStart = input.selectionStart;
+    
+    const textBeforeCaret = val.slice(0, selStart);
+    const lastAtIdx = textBeforeCaret.lastIndexOf('@');
+    
+    if (lastAtIdx !== -1 && (lastAtIdx === 0 || textBeforeCaret.charAt(lastAtIdx - 1) === ' ')) {
+      const query = textBeforeCaret.slice(lastAtIdx + 1);
+      
+      if (!query.includes(' ')) {
+        setMentionSearch(query);
+        setShowMentionDropdown(true);
+        
+        if (connections.length === 0) {
+          await fetchConnections();
+        }
+        return;
+      }
+    }
+    
+    setShowMentionDropdown(false);
+  };
+
+  const handleSelectMention = (connection) => {
+    const input = commentInputRef.current;
+    if (!input) return;
+    
+    const val = newCommentText;
+    const selStart = input.selectionStart;
+    
+    const textBeforeCaret = val.slice(0, selStart);
+    const lastAtIdx = textBeforeCaret.lastIndexOf('@');
+    
+    if (lastAtIdx !== -1) {
+      const mentionName = connection.username || (connection.name || '').replace(/\s+/g, '');
+      const insertedText = `@${mentionName} `;
+      
+      const newText = val.slice(0, lastAtIdx) + insertedText + val.slice(selStart);
+      setNewCommentText(newText);
+      setShowMentionDropdown(false);
+      
+      setTimeout(() => {
+        input.focus();
+        const newCaretPos = lastAtIdx + insertedText.length;
+        input.setSelectionRange(newCaretPos, newCaretPos);
+      }, 50);
+    }
+  };
+
+  const extractMentions = async (text) => {
+    if (!text) return [];
+    const regex = /@([a-zA-Z0-9_-]+)/g;
+    const matches = [...text.matchAll(regex)];
+    if (matches.length === 0) return [];
+    
+    const usernames = [...new Set(matches.map(m => m[1].toLowerCase()))];
+    
+    try {
+      const { data: allProfiles, error } = await supabase
+        .from('profiles')
+        .select('id, username, name');
+        
+      if (error || !allProfiles) return [];
+      
+      const matchedUserIds = [];
+      for (const username of usernames) {
+        const match = allProfiles.find(p => {
+          if (p.username && p.username.toLowerCase() === username) {
+            return true;
+          }
+          if (p.name) {
+            const normalizedName = p.name.toLowerCase().replace(/\s+/g, '');
+            if (normalizedName === username) {
+              return true;
+            }
+          }
+          return false;
+        });
+        
+        if (match) {
+          matchedUserIds.push(match.id);
+        }
+      }
+      
+      return [...new Set(matchedUserIds)];
+    } catch (err) {
+      console.error('Error extracting mentions:', err);
+      return [];
+    }
+  };
+
   const handleCommentSubmit = async (e) => {
     if (e) e.preventDefault();
     if (!userId) {
@@ -183,6 +319,33 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
       if (error) throw error;
 
       setCommentsList(prev => prev.map(c => c.id === 'temp-comment-id' ? newComment : c));
+
+      // Asynchronously process mentions resiliently
+      extractMentions(commentContent).then(async (mentionedUserIds) => {
+        const filteredUserIds = mentionedUserIds.filter(id => id !== userId);
+        if (filteredUserIds.length > 0) {
+          try {
+            await Promise.all(
+              filteredUserIds.map(async (mentionedUserId) => {
+                return supabase.from('notifications').insert([{
+                  recipient_id: mentionedUserId,
+                  sender_id: userId,
+                  type: 'mention',
+                  title: 'New Mention',
+                  body: 'Mentioned you in a comment',
+                  link: '/logbook/' + post.id,
+                  is_read: false
+                }]);
+              })
+            );
+          } catch (notifErr) {
+            console.error('Failed to send mention notification:', notifErr);
+          }
+        }
+      }).catch(err => {
+        console.error('Error in extractMentions process:', err);
+      });
+
     } catch (err) {
       console.error('Comment submission failed:', err);
       setCommentsList(commentsList);
@@ -414,7 +577,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
   };
 
   return (
-    <div className={`card border border-gray-100 bg-white hover:shadow-md transition-shadow duration-300 rounded-xl shadow-sm ${isArticle ? 'p-0 overflow-hidden' : 'p-6'}`}>
+    <div id={`post-${post.id}`} className={`card border border-gray-100 bg-white hover:shadow-md transition-shadow duration-300 rounded-xl shadow-sm ${isArticle ? 'p-0 overflow-hidden' : 'p-6'}`}>
       
       {/* Main Container */}
       <div className={isArticle ? 'p-6' : ''}>
@@ -699,7 +862,43 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
           <div className="mt-4 pt-4 border-t border-gray-100 space-y-4 animate-fadeIn">
             
             {/* Comment Input Box */}
-            <form onSubmit={handleCommentSubmit} className="flex gap-3 items-start">
+            <form onSubmit={handleCommentSubmit} className="flex gap-3 items-start relative">
+              {showMentionDropdown && filteredConnections.length > 0 && (
+                <div 
+                  className="absolute bottom-full left-11 mb-2 w-64 max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1.5 animate-fadeIn"
+                  style={{
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                  }}
+                >
+                  {filteredConnections.map((connection) => (
+                    <div
+                      key={connection.id}
+                      onClick={() => handleSelectMention(connection)}
+                      className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-slate-50 cursor-pointer transition-colors"
+                    >
+                      {connection.avatar_url ? (
+                        <img
+                          src={connection.avatar_url}
+                          alt={connection.name}
+                          className="w-6.5 h-6.5 rounded-full object-cover border border-slate-100"
+                        />
+                      ) : (
+                        <div className="w-6.5 h-6.5 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center">
+                          <User size={10} className="text-gray-400" />
+                        </div>
+                      )}
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-slate-800 leading-tight">
+                          {connection.name}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          @{connection.username || (connection.name || '').replace(/\s+/g, '').toLowerCase()}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
               {profile?.profilePic ? (
                 <img
                   src={profile.profilePic}
@@ -716,9 +915,11 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
               
               <div className="flex-1 flex gap-2">
                 <input
+                  ref={commentInputRef}
                   type="text"
                   value={newCommentText}
                   onChange={(e) => setNewCommentText(e.target.value)}
+                  onKeyUp={handleKeyUp}
                   placeholder="Add a comment..."
                   disabled={isSubmitting}
                   className="flex-1 bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 text-sm rounded-full px-4 py-2 focus:ring-1 focus:ring-navy-900/10 focus:border-navy-900/30 focus:outline-none outline-none transition-all disabled:opacity-60 font-sans"
@@ -735,7 +936,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
 
             {/* Comments List */}
             {commentsList.length > 0 ? (
-              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+              <div className="flex flex-col space-y-3 max-h-[300px] overflow-y-auto pr-1">
                 {commentsList.map((comment) => {
                   const commentAuthor = comment.profiles || { name: 'Maritime Professional', avatar_url: null };
                   return (

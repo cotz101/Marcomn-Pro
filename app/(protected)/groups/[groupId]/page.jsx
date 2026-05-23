@@ -169,10 +169,17 @@ function WhoLikedModal({ postId, onClose }) {
   );
 }
 
-function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, uploadFile }) {
+function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, uploadFile, groupId }) {
+  const supabase = createClient();
   const [isExpanded, setIsExpanded] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([]);
+
+
+
+  const handleInputChange = (e) => {
+    setCommentText(e.target.value);
+  };
   const [visibleCommentsCount, setVisibleCommentsCount] = useState(3);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -195,7 +202,6 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
 
   const editMediaRef = useRef(null);
   const editDocRef = useRef(null);
-  const supabase = createClient();
   const isPostAuthor = currentUserId === post.user_id;
   const fileUrls = Array.isArray(post.file_urls) ? post.file_urls : [];
 
@@ -456,7 +462,7 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
             <div className="relative">
               <textarea 
                 value={commentText} 
-                onChange={(e) => setCommentText(e.target.value)} 
+                onChange={handleInputChange} 
                 placeholder="Write a comment..." 
                 className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 px-4 pr-12 text-xs text-gray-700 focus:outline-none focus:border-blue-200 transition-all min-h-[60px] resize-none shadow-inner" 
               />
@@ -780,6 +786,56 @@ export default function GroupPage({ params: paramsPromise }) {
       const { data: p } = await supabase.from('profiles').select('name, avatar_url').eq('id', user.id).maybeSingle();
       setPosts([{ ...newPost, authorName: p?.name || 'MNetwork Member', authorAvatar: p?.avatar_url }, ...posts]);
       setPostText(''); setAttachments([]);
+      
+      // Asynchronous Broadcast Block for New Topic Alert
+      (async () => {
+        try {
+          const { data: members } = await supabase
+            .from('group_members')
+            .select('user_id')
+            .eq('group_id', groupId)
+            .neq('user_id', user.id);
+            
+          if (members && members.length > 0) {
+            console.log('📡 [Emitter] Preparing to insert group notifications. Group ID:', groupId);
+            
+            const { data: groupData } = await supabase
+              .from('groups')
+              .select('name')
+              .eq('id', groupId)
+              .single();
+            
+            await Promise.all(members.map(async (m) => {
+              try {
+                const notificationPayload = {
+                  recipient_id: m.user_id,
+                  sender_id: user.id,
+                  type: 'new_group_topic',
+                  title: groupData?.name || 'New Group Topic',
+                  body: `New topic posted in '${groupData?.name || 'Group'}'`,
+                  link: '/groups/' + groupId,
+                  is_read: false
+                };
+
+                const { error: insertError } = await supabase
+                  .from('notifications')
+                  .insert([notificationPayload]);
+                
+                if (insertError) {
+                  console.error('❌ [Emitter] Failed to insert notification row:', insertError);
+                } else {
+                  console.log('✅ [Emitter] Successfully inserted notification row for user:', m.user_id);
+                }
+              } catch (err) {
+                console.error('❌ [Emitter] Failed to insert notification row:', err);
+              }
+            }));
+          }
+        } catch (err) {
+          console.error('Failed to broadcast new topic alert:', err);
+        }
+      })();
+      
     } catch (e) { alert(e.message); } finally { setUploading(false); }
   };
 
@@ -1035,6 +1091,7 @@ export default function GroupPage({ params: paramsPromise }) {
                 onDelete={handleDelete}
                 onUpdate={handleUpdate}
                 uploadFile={uploadFile}
+                groupId={groupId}
               />
               ))}
               {/* FIX: Topic Pagination Show More Button */}

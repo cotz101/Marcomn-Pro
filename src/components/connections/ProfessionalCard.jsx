@@ -53,8 +53,34 @@ export default function ProfessionalCard({ profile, currentUser, onFollow }) {
       if (error) {
         setIsFollowing(false);
         console.error('Error following:', error);
-      } else if (onFollow) {
-        onFollow(profile.id, true);
+      } else {
+        if (onFollow) {
+          onFollow(profile.id, true);
+        }
+        
+        // Connection Notification Bridge
+        try {
+          // Guard against Duplicate Notifs
+          const { count } = await supabase.from('notifications')
+            .select('*', { count: 'exact', head: true })
+            .eq('recipient_id', profile.id)
+            .eq('sender_id', currentUser.id)
+            .eq('type', 'connection');
+
+          if (count === 0) {
+            await supabase.from('notifications').insert([{
+              recipient_id: profile.id,
+              sender_id: currentUser.id,
+              type: 'connection',
+              title: 'New Connection',
+              body: 'Started following you',
+              link: '/profile/' + currentUser.id,
+              is_read: false
+            }]);
+          }
+        } catch (err) {
+          console.error('Failed to send connection notification:', err);
+        }
       }
     }
   };

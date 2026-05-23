@@ -4,14 +4,15 @@ import { useState, useRef, useEffect } from 'react';
 import { 
   MessageSquare, ThumbsUp, 
   Send, MoreHorizontal,
-  FileText, Paperclip
+  FileText, Paperclip,
+  User
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 import DOMPurify from 'dompurify';
 
 /* ═══ Comment Component (Handles both Top-level and Replies) ═══ */
-function CommentItem({ comment, isReply, onAddComment, postAuthor, onReplyAction }) {
+function CommentItem({ comment, isReply, postAuthor, onReplyAction }) {
   const isAuthor = comment.author === postAuthor;
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(comment.likes || 0);
@@ -132,6 +133,8 @@ export default function DiscussionPost({ post, groupId }) {
   const { userId, profile } = useProfile();
   const supabase = createClient();
 
+
+
   useEffect(() => {
     if (showComments && groupId) {
       const fetchComments = async () => {
@@ -141,7 +144,7 @@ export default function DiscussionPost({ post, groupId }) {
             .from('group_comments')
             .select('*')
             .eq('post_id', post.id)
-            .order('created_at', { ascending: true });
+            .order('created_at', { ascending: false });
 
           if (error) throw error;
           
@@ -165,9 +168,72 @@ export default function DiscussionPost({ post, groupId }) {
     }
   }, [showComments, groupId, post.id, supabase]);
 
+  const extractMentions = async (text) => {
+    if (!text) return [];
+    const regex = /@([a-zA-Z0-9_-]+)/g;
+    const matches = [...text.matchAll(regex)];
+    if (matches.length === 0) return [];
+    
+    const usernames = [...new Set(matches.map(m => m[1].toLowerCase()))];
+    
+    try {
+      // Step A: Fetch only 'user_id' from 'group_members'
+      const { data: membersData, error: membersError } = await supabase
+        .from('group_members')
+        .select('user_id')
+        .eq('group_id', groupId);
+
+      if (membersError) throw membersError;
+
+      const userIds = (membersData || []).map(m => m.user_id).filter(Boolean);
+      if (userIds.length === 0) return [];
+
+      // Step B: Fetch the 'profiles' data for these user IDs
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, name')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+      
+      const matchedUserIds = [];
+      for (const username of usernames) {
+        const match = (profiles || []).find(p => {
+          if (p.username && p.username.toLowerCase() === username) return true;
+          if (p.name) {
+            const normalizedName = p.name.toLowerCase().replace(/\s+/g, '');
+            if (normalizedName === username) return true;
+          }
+          return false;
+        });
+        if (match) matchedUserIds.push(match.id);
+      }
+      return [...new Set(matchedUserIds)];
+    } catch (err) {
+      console.error('Error extracting mentions:', err);
+      return [];
+    }
+  };
+
   const handleLike = () => {
+    if (!userId) return;
     setLiked(prev => !prev);
     setLikeCount(prev => liked ? prev - 1 : prev + 1);
+
+    // Group Like Notification
+    if (!liked && post.user_id && post.user_id !== userId) {
+      Promise.all([
+        supabase.from('notifications').insert([{
+          type: 'group_like',
+          recipient_id: post.user_id,
+          sender_id: userId,
+          link: '/mnetwork/groups/' + groupId + '?focus=' + post.id,
+          content: 'Liked your post in the group',
+          group_id: groupId,
+          is_read: false
+        }])
+      ]).catch(err => console.error('Failed to send group like notification:', err));
+    }
   };
 
   const handleToggleComments = () => {
@@ -182,6 +248,62 @@ export default function DiscussionPost({ post, groupId }) {
     const content = text || commentText;
     const finalParentId = parentId || activeParentId;
     if (!content.trim() || !userId) return;
+
+    // Validation Check: Before allowing comment to submit, ensure all mentioned users belong to the group
+    const regex = /@([a-zA-Z0-9_-]+)/g;
+    const matches = [...content.matchAll(regex)];
+    if (matches.length > 0) {
+      const usernames = [...new Set(matches.map(m => m[1].toLowerCase()))];
+      try {
+        // Step A: Fetch user_ids in the group
+        const { data: membersData, error: membersError } = await supabase
+          .from('group_members')
+          .select('user_id')
+          .eq('group_id', groupId);
+
+        if (membersError) {
+          alert('Failed to validate group members for mentions.');
+          return;
+        }
+
+        const userIds = (membersData || []).map(m => m.user_id).filter(Boolean);
+        if (userIds.length === 0) {
+          alert('Failed to validate group members for mentions (no members found).');
+          return;
+        }
+
+        // Step B: Fetch profiles for these user_ids
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, name')
+          .in('id', userIds);
+
+        if (profilesError) {
+          alert('Failed to validate group members for mentions.');
+          return;
+        }
+
+        for (const username of usernames) {
+          const isValidMember = (profiles || []).some(p => {
+            if (p.username && p.username.toLowerCase() === username) return true;
+            if (p.name) {
+              const normalizedName = p.name.toLowerCase().replace(/\s+/g, '');
+              if (normalizedName === username) return true;
+            }
+            return false;
+          });
+
+          if (!isValidMember) {
+            alert(`The user @${username} is not a member of this group. Invalid mention.`);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Mentions validation exception:', err);
+        alert('Failed to validate group members for mentions.');
+        return;
+      }
+    }
 
     const newComment = {
       post_id: post.id,
@@ -213,6 +335,33 @@ export default function DiscussionPost({ post, groupId }) {
       setComments(prev => [...prev, formatted]);
       setCommentText('');
       setActiveParentId(null);
+
+      // Group Mention Notification Process
+      extractMentions(content.trim()).then(async (mentionedUserIds) => {
+        const filteredUserIds = mentionedUserIds.filter(id => id !== userId);
+        if (filteredUserIds.length > 0) {
+          try {
+            await Promise.all(
+              filteredUserIds.map(async (mentionedUserId) => {
+                return supabase.from('notifications').insert([{
+                  type: 'group_mention',
+                  recipient_id: mentionedUserId,
+                  sender_id: userId,
+                  link: '/mnetwork/groups/' + groupId + '?focus=' + data.id,
+                  content: 'Mentioned you in a group discussion',
+                  group_id: groupId,
+                  is_read: false
+                }]);
+              })
+            );
+          } catch (notifErr) {
+            console.error('Failed to send group mention notification:', notifErr);
+          }
+        }
+      }).catch(err => {
+        console.error('Error in group extractMentions process:', err);
+      });
+
     } catch (err) {
       console.error('Error adding comment:', err);
       alert('Failed to post comment.');
@@ -286,38 +435,44 @@ export default function DiscussionPost({ post, groupId }) {
       {/* Comment Section — Strict 2-layer Mapping Loop */}
       {showComments && (
         <div className="bg-gray-50/70 border-t border-gray-100 px-4 pt-3 pb-6">
-          <div className="space-y-6">
-            {topLevelComments.map((comment) => (
-              <div key={comment.id} className="relative">
-                {/* Main Top-Level Comment */}
-                <CommentItem 
-                  comment={comment} 
-                  postAuthor={post.author} 
-                  onReplyAction={handleReplyAction}
-                  onAddComment={handleAddComment}
-                /> 
-
-                {/* Nested Replies Loop */}
-                {getReplies(comment.id).length > 0 && (
-                  <div className="ml-8 md:ml-12 mt-1 space-y-2 border-l-2 border-gray-200 pl-4 relative">
-                    {getReplies(comment.id).map((reply) => (
-                      <CommentItem 
-                        key={reply.id} 
-                        comment={reply} 
-                        isReply={true} 
-                        postAuthor={post.author}
-                        onReplyAction={handleReplyAction}
-                        onAddComment={handleAddComment}
-                      />
-                    ))}
-                  </div>
-                )}
+          <div className="flex flex-col space-y-6">
+            {loadingComments && comments.length === 0 ? (
+              <div className="flex justify-center py-6">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#002b4e]"></div>
               </div>
-            ))}
+            ) : (
+              topLevelComments.map((comment) => (
+                <div key={comment.id} className="relative">
+                  {/* Main Top-Level Comment */}
+                  <CommentItem 
+                    comment={comment} 
+                    postAuthor={post.author} 
+                    onReplyAction={handleReplyAction}
+                    onAddComment={handleAddComment}
+                  /> 
+
+                  {/* Nested Replies Loop */}
+                  {getReplies(comment.id).length > 0 && (
+                    <div className="ml-8 md:ml-12 mt-1 space-y-2 border-l-2 border-gray-200 pl-4 relative">
+                      {getReplies(comment.id).map((reply) => (
+                        <CommentItem 
+                          key={reply.id} 
+                          comment={reply} 
+                          isReply={true} 
+                          postAuthor={post.author}
+                          onReplyAction={handleReplyAction}
+                          onAddComment={handleAddComment}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
 
           {/* Main reply input — always at the bottom */}
-          <div className="flex gap-2 mt-4 items-center">
+          <div className="flex gap-2 mt-4 items-center relative">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-[#002b4e] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
               {profile?.fullName?.charAt(0) || 'Y'}
             </div>

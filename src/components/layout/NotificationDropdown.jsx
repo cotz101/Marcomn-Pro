@@ -29,6 +29,23 @@ export default function NotificationDropdown({
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
+  // Feed-Centric Notification Handler
+  // Instead of navigating to dead /logbook/[id] routes, we route to the
+  // feed with a ?focus= query param so LogbookFeed can scroll-to-post.
+  const handleNotificationAction = (notification) => {
+    if (!notification.link) return;
+
+    // Mention notifications: route to feed with focus param
+    if (notification.type === 'mention' && notification.link.startsWith('/logbook/')) {
+      const postId = notification.link.replace('/logbook/', '');
+      router.push('/logbook?focus=' + postId);
+      return;
+    }
+
+    // All other notification types: use link as-is (messages, connections, etc.)
+    router.push(notification.link);
+  };
+
   const formatTimeAgo = (dateString) => {
     if (!dateString) return '';
     try {
@@ -116,29 +133,30 @@ export default function NotificationDropdown({
 
     return notifications.map((notification) => {
       const isMilestone = notification.type === 'milestone';
+      const isRead = notification.is_read;
       
       return (
         <div 
           key={notification.id}
-          className={`p-4 transition-all duration-150 hover:bg-slate-50/80 flex gap-3 items-start border-b border-gray-50 last:border-b-0 cursor-pointer ${
-            isMilestone ? 'bg-blue-50/40 hover:bg-blue-50/60 border-l-4 border-blue-500' : ''
-          }`}
+          className={`p-4 transition-all duration-150 flex gap-3 items-start border-b border-gray-50 last:border-b-0 cursor-pointer ${
+            isMilestone && !isRead ? 'bg-blue-50/40 hover:bg-blue-50/60 border-l-4 border-blue-500' : ''
+          } ${isRead ? 'opacity-60 hover:opacity-80 bg-gray-50/40' : 'hover:bg-slate-50/80'}`}
           onClick={async (e) => {
             e.stopPropagation();
-            // A) Mark as Read in DB
-            await markAsRead(notification.id);
-            // B) Local State Update (Pruning from parent state)
+            
+            // 1. Optimistic Update: Update the local state immediately
             if (setNotifications) {
-              setNotifications(prev => prev.filter(n => n.id !== notification.id));
+              setNotifications(prev => prev.map(n => 
+                n.id === notification.id ? { ...n, is_read: true } : n
+              ));
             }
-            // C) Force State Re-fetch (The "Hard Sync" with Supabase)
-            if (fetchNotifications) {
-              await fetchNotifications();
-            }
-            // D) Navigation to link
-            if (notification.link) {
-              router.push(notification.link);
-            }
+
+            // 2. Database Sync: Mark as read in Supabase
+            await markAsRead(notification.id);
+
+            // 3. Navigation: Move to the post/profile
+            handleNotificationAction(notification);
+            
             if (onClose) onClose();
           }}
         >
@@ -150,20 +168,20 @@ export default function NotificationDropdown({
           {/* Middle Content */}
           <div className="flex-1 min-w-0">
             <div className="flex justify-between items-start gap-2 mb-1">
-              <span className="text-xs font-semibold text-gray-900 truncate">
+              <span className={`text-xs font-semibold truncate ${isRead ? 'text-gray-500' : 'text-gray-900'}`}>
                 {notification.title}
               </span>
-              <span className="text-[10px] font-medium text-blue-500 whitespace-nowrap">
+              <span className={`text-[10px] font-medium whitespace-nowrap ${isRead ? 'text-gray-400' : 'text-blue-500'}`}>
                 {formatTimeAgo(notification.created_at)}
               </span>
             </div>
-            <p className="text-xs text-gray-600 font-medium leading-relaxed break-words line-clamp-2">
+            <p className={`text-xs font-medium leading-relaxed break-words line-clamp-2 ${isRead ? 'text-gray-400' : 'text-gray-600'}`}>
               {notification.body}
             </p>
           </div>
 
           {/* Right Side: Unread Dot Indicator */}
-          {!notification.is_read && (
+          {!isRead && (
             <div 
               className="w-2.5 h-2.5 rounded-full bg-indigo-600 shrink-0 mt-2 animate-pulse" 
               title="Unread notification"
