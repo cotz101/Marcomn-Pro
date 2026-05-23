@@ -523,46 +523,46 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
               (() => {
                 console.log('DEBUG: Rendering post with article_id:', post.article_id, 'Hydrated Blog Data:', post.mblogs);
                 return (
-                  <div className="border border-gray-100 rounded-lg p-3 bg-gray-50/50 space-y-3 font-sans">
-                    <div className="flex gap-3">
-                      {/* Image Source with fallback placeholder */}
-                      <div className="w-16 h-16 rounded object-cover border border-gray-250 bg-gray-100 flex items-center justify-center overflow-hidden shrink-0">
-                        {post.mblogs?.cover_image ? (
-                          <img
-                            src={post.mblogs.cover_image}
-                            alt={post.mblogs?.title || 'Shared Post'}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
-                            }}
-                          />
-                        ) : null}
-                        <div 
-                          className="w-full h-full bg-blue-50 flex items-center justify-center"
-                          style={{ display: post.mblogs?.cover_image ? 'none' : 'flex' }}
-                        >
-                          <BookOpen size={20} className="text-navy-900" />
-                        </div>
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-extrabold text-[#0e2a4d] leading-snug">
-                          {post.mblogs?.title || 'Shared Post'}
-                        </h4>
-                        <p className="text-sm text-gray-600 mt-2 line-clamp-3">
-                          {post.mblogs?.content?.replace(/<[^>]*>?/gm, '') || 'No description available.'}
-                        </p>
+                  <div className="border border-gray-100 rounded-t-lg rounded-b-lg bg-gray-50/50 font-sans overflow-hidden flex flex-col">
+                    {/* Hero Image Section */}
+                    <div className="w-full h-64 bg-gray-100 flex items-center justify-center overflow-hidden relative shrink-0">
+                      {post.mblogs?.cover_image ? (
+                        <img
+                          src={post.mblogs.cover_image}
+                          alt={post.mblogs?.title || 'Shared Post'}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="w-full h-full bg-blue-50 flex flex-col items-center justify-center gap-2"
+                        style={{ display: post.mblogs?.cover_image ? 'none' : 'flex' }}
+                      >
+                        <BookOpen size={48} className="text-navy-900" />
+                        <span className="text-xs text-navy-900/60 font-semibold uppercase tracking-wider">Shared Blog Article</span>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                      <a
-                        href={`/mblog`}
-                        className="text-sm font-medium text-[#0e2a4d] hover:underline transition-colors font-sans"
-                      >
-                        Read full blog
-                      </a>
+
+                    {/* Content Section with breathing room padding */}
+                    <div className="p-4 flex flex-col flex-1">
+                      <h4 className="text-xl font-bold text-[#0e2a4d] mb-2 leading-snug">
+                        {post.mblogs?.title || 'Shared Post'}
+                      </h4>
+                      <p className="text-sm text-gray-700 mb-4 leading-relaxed line-clamp-3">
+                        {post.mblogs?.content?.replace(/<[^>]*>?/gm, '') || 'No description available.'}
+                      </p>
+                      
+                      <div className="mt-auto pt-2 border-t border-gray-100 flex">
+                        <a
+                          href={`/mblog`}
+                          className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-navy-900 hover:bg-navy-800 rounded-lg transition-colors font-sans cursor-pointer active:scale-98 select-none"
+                        >
+                          Read full blog
+                        </a>
+                      </div>
                     </div>
                   </div>
                 );
