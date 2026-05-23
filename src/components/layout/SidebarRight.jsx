@@ -21,10 +21,17 @@ export default function SidebarRight() {
   useEffect(() => {
     if (isMBlogPage) {
       fetchMBlogStats();
+    } else {
+      setLoadingMBlogStats(false);
     }
   }, [isMBlogPage]);
 
   const fetchMBlogStats = async () => {
+    if (!isMBlogPage) {
+      setLoadingMBlogStats(false);
+      return;
+    }
+
     try {
       setLoadingMBlogStats(true);
       const { data, error } = await supabase
@@ -53,7 +60,7 @@ export default function SidebarRight() {
         setMostShared([...processed].sort((a, b) => b.shareCount - a.shareCount).slice(0, 3));
       }
     } catch (err) {
-      console.error('Error fetching mblog stats:', err);
+      console.log('DEBUG: MBlog stats fetch not applicable or skipped:', err.message || err);
     } finally {
       setLoadingMBlogStats(false);
     }

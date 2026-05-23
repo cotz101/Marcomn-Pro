@@ -26,7 +26,7 @@ export default function GroupPage() {
         .from('groups')
         .select('name')
         .eq('id', groupId)
-        .single();
+        .maybeSingle();
       if (gData) setGroupName(gData.name);
 
       // Fetch Posts
@@ -53,7 +53,7 @@ export default function GroupPage() {
         content: postText
       }])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       alert('Database Error: ' + error.message);

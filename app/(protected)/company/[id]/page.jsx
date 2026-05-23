@@ -23,7 +23,7 @@ export default function CompanyPage({ params: paramsPromise }) {
         .from('companies')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
       
       if (companyData && !companyError) {
         setCompany(companyData);
@@ -35,7 +35,7 @@ export default function CompanyPage({ params: paramsPromise }) {
         .select('role')
         .eq('company_id', id)
         .eq('profile_id', userId)
-        .single();
+        .maybeSingle();
       
       if (memberData && !memberError) {
         setRole(memberData.role);

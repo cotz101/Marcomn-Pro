@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@theme {
+  --color-navy-900: #0e2a4d;
+  --color-navy-800: #0a1f3b;
+}
+
 .main-app-container {
   max-width: 1128px;
   margin: 0 auto;

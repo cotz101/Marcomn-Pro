@@ -23,7 +23,7 @@ export default function Header() {
           .from('groups')
           .select('name')
           .eq('id', groupId)
-          .single();
+          .maybeSingle();
         if (data) setGroupName(data.name);
       };
       fetchGroupName();

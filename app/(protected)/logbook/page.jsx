@@ -1,14 +1,15 @@
 'use client';
 
-import { useProfile } from '@/app/context/ProfileContext';
-import LogbookFeedInner from '@/src/components/logbook/LogbookFeed';
-import SidebarLeft from '@/src/components/layout/SidebarLeft';
-import SidebarRight from '@/src/components/layout/SidebarRight';
+import { Anchor } from 'lucide-react';
+import LogbookFeed from '@/src/components/logbook/LogbookFeed';
 
 export default function LogbookPage() {
-  const { profile } = useProfile();
-
   return (
-    <LogbookFeedInner profile={profile} />
+    <div className="logbook-shell w-full max-w-full min-h-screen">
+      {/* Feed Content */}
+      <div className="feed-wrapper">
+        <LogbookFeed />
+      </div>
+    </div>
   );
 }

@@ -1,212 +1,278 @@
-import { X, Image as MediaIcon, ChevronDown, Type } from 'lucide-react';
-import { useRef, useState, useEffect } from 'react';
-import { useProfile } from '@/app/context/ProfileContext';
-import BaseModal from '../layout/BaseModal';
-import 'react-quill/dist/quill.snow.css';
+'use client';
 
-export default function PostComposerModal({ isOpen, onClose, onPostSubmit, profile, initialData = null, groupId = null }) {
-  const { currentIdentity } = useProfile();
+import { useState, useRef, useEffect } from 'react';
+import { createClient } from '@/lib/supabase';
+import { X, Image as ImageIcon, Video as VideoIcon, Loader2, Globe } from 'lucide-react';
+
+export default function PostComposerModal({ isOpen, onClose, userProfile, onPostCreated, initialFile }) {
   const [content, setContent] = useState('');
-  const [title, setTitle] = useState('');
-  const [media, setMedia] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [mediaPreview, setMediaPreview] = useState(null);
   const [mediaType, setMediaType] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(false);
+
   const fileInputRef = useRef(null);
-  const editorRef = useRef(null);
-  const quillInstance = useRef(null);
-  const [mounted, setMounted] = useState(false);
+  const supabase = createClient();
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (initialData && isOpen) {
-      setContent(initialData.content || '');
-      setTitle(initialData.title || '');
-      setMedia(initialData.media || null);
-      setMediaType(initialData.mediaType || null);
-    } else if (!initialData && isOpen) {
-      setContent('');
-      setTitle('');
-      setMedia(null);
-      setMediaType(null);
-    }
-  }, [initialData, isOpen]);
-
-  useEffect(() => {
-    const initQuill = async () => {
-      if (mounted && editorRef.current && !quillInstance.current) {
-        const Quill = (await import('quill')).default;
-        quillInstance.current = new Quill(editorRef.current, {
-          theme: 'snow',
-          placeholder: 'What do you want to talk about?',
-          modules: {
-            toolbar: [
-              ['bold', 'italic'],
-              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-              ['clean']
-            ]
-          }
-        });
-
-        // Replace the "Tx" button icon with Lucide Type
-        const cleanButton = document.querySelector('.ql-clean');
-        if (cleanButton) {
-          const Quill = (await import('quill')).default;
-          // We can't easily change the icon via Quill API for 'clean', so we inject it
-          const typeIconHtml = `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-type"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>`;
-          cleanButton.innerHTML = typeIconHtml;
-          cleanButton.title = "Remove Formatting";
-        }
-
-        quillInstance.current.on('text-change', () => {
-          setContent(quillInstance.current.root.innerHTML);
-        });
-      }
-      
-      // Update quill content when initialData changes or modal opens
-      if (quillInstance.current && isOpen) {
-        // Only update if current content in editor is different to avoid cursor jumps
-        if (content !== quillInstance.current.root.innerHTML) {
-          quillInstance.current.root.innerHTML = content;
-        }
-      }
-    };
-
     if (isOpen) {
-      initQuill();
-    } else {
-      // Cleanup quill instance when modal closes to prevent duplicates
-      if (quillInstance.current) {
-        quillInstance.current = null;
+      if (initialFile) {
+        setSelectedFile(initialFile);
+        const isVideo = initialFile.type.startsWith('video/');
+        setMediaType(isVideo ? 'video' : 'image');
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setMediaPreview(reader.result);
+        };
+        reader.readAsDataURL(initialFile);
       }
+    } else {
+      setContent('');
+      setMediaPreview(null);
+      setMediaType(null);
+      setSelectedFile(null);
+      setUploadProgress(false);
     }
-  }, [mounted, isOpen, initialData]);
+  }, [isOpen, initialFile]);
 
   if (!isOpen) return null;
 
-  const isCompany = currentIdentity?.type === 'company';
-  const identityName = isCompany ? currentIdentity.data.name : profile?.fullName;
-  const identityImage = isCompany 
-    ? (currentIdentity.data.logo_url || '/favicon.svg') 
-    : (profile?.profilePic || '/profile_pic.png');
-
-  const handleMediaUpload = (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const type = file.type.startsWith('video/') ? 'video' : 'image';
+      setSelectedFile(file);
+      const isVideo = file.type.startsWith('video/');
+      setMediaType(isVideo ? 'video' : 'image');
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        setMedia(reader.result);
-        setMediaType(type);
+        setMediaPreview(reader.result);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handlePost = () => {
-    onPostSubmit({
-      id: initialData?.id,
-      type: (initialData?.title || title) ? 'article' : 'standard',
-      title,
-      content,
-      media,
-      mediaType,
-    });
-    
-    // Clear local state if not editing
-    if (!initialData) {
-      setContent('');
-      setTitle('');
-      setMedia(null);
-      setMediaType(null);
+  const uploadMedia = async (file) => {
+    if (!file) return null;
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random()}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
+
+    setUploadProgress(true);
+    const { data, error } = await supabase.storage
+      .from('logbook-media')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    setUploadProgress(false);
+    if (error) {
+      console.error('Storage Upload Error:', error);
+      throw error;
     }
-    onClose();
+    return data.path;
   };
 
-  const isPostDisabled = !content.trim() && !media;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!content.trim() && !selectedFile) {
+      alert('Post content or media is required.');
+      return;
+    }
+
+    setSubmitting(true);
+    let mediaPath = null;
+
+    try {
+      if (selectedFile) {
+        mediaPath = await uploadMedia(selectedFile);
+      }
+
+      const postPayload = {
+        user_id: userProfile?.id,
+        author_id: userProfile?.id,
+        content: content.trim(),
+        media_url: mediaPath,
+        media_type: mediaType || null,
+        post_type: 'quick',
+        title: null,
+        video_url: null,
+        excerpt: content.trim().substring(0, 150)
+      };
+
+      const { data, error: insertError } = await supabase
+        .from('logbook_posts')
+        .insert([postPayload])
+        .select(`
+          id,
+          title,
+          content,
+          media_url,
+          media_type,
+          video_url,
+          post_type,
+          excerpt,
+          cover_media_url,
+          embedded_media,
+          author_id,
+          created_at,
+          user_id,
+          author:profiles!user_id (name, avatar_url, headline),
+          likes ( id ),
+          comments ( id )
+        `)
+        .maybeSingle();
+
+      if (insertError) {
+        console.error('Database Insert Error:', insertError);
+        alert('Failed to save post: ' + insertError.message);
+        return;
+      }
+
+      if (onPostCreated && data) {
+        onPostCreated(data);
+      }
+      onClose();
+    } catch (err) {
+      console.error('Submission failure:', err);
+      alert('An error occurred while posting: ' + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <BaseModal 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      title={initialData ? "Edit Post" : "Create a Post"}
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity duration-300 animate-fadeIn"
     >
-      <div className="flex flex-col w-full overflow-x-hidden px-3 sm:px-6">
-        <div className="composer-header-sub flex items-center gap-3 mb-6">
-          <img 
-            src={identityImage} 
-            alt={identityName} 
-            className="w-12 h-12 object-cover"
-            style={{ borderRadius: isCompany ? '8px' : '50%' }}
-          />
-          <div className="composer-name-group flex flex-col">
-            <span className="composer-name font-semibold text-base flex items-center gap-1 text-[var(--on-surface)]">
-              {identityName} <ChevronDown size={14} className="text-[var(--on-surface-variant)]" />
-            </span>
-            <span className="composer-visibility text-xs text-[var(--on-surface-variant)]">
-              {groupId ? 'Post to Group' : 'Post to Anyone'}
-            </span>
-          </div>
-        </div>
-
-        <div className="composer-content min-h-[250px]">
-          {initialData?.title && (
-            <input 
-              type="text" 
-              className="w-full border-none outline-none bg-transparent text-2xl font-bold mb-4 placeholder:text-[var(--on-surface-variant)] text-[var(--on-surface)]" 
-              placeholder="Title"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-            />
-          )}
-          {!mounted ? (
-            <div className="p-8 text-center text-[var(--on-surface-variant)]">Loading Editor...</div>
-          ) : (
-            <div className="quill-wrapper border-none">
-              <div ref={editorRef} className="text-base"></div>
-            </div>
-          )}
-
-          {media && (
-            <div className="media-preview-container relative mt-4 rounded-lg overflow-hidden border border-[var(--outline)]">
-              <button className="btn-remove-media absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full hover:bg-black/70" onClick={() => { setMedia(null); setMediaType(null); }}>
-                <X size={14} />
-              </button>
-              {mediaType === 'video' ? (
-                <video src={media} controls className="w-full max-h-[400px] object-contain bg-black" />
-              ) : (
-                <img src={media} alt="Attached Media" className="w-full max-h-[400px] object-contain" />
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="m-composer-footer-actions flex flex-wrap justify-between items-center pt-4 border-t border-[var(--outline)]">
-          <div className="m-composer-media-btns flex items-center gap-2 sm:gap-4">
-            <button onClick={() => { setMediaType(null); fileInputRef.current.click(); }} className="flex items-center gap-2 text-[var(--on-surface-variant)] hover:text-[var(--primary)] transition-colors" title="Add Media">
-              <MediaIcon size={22} />
-              <span className="text-sm font-semibold">Media</span>
-            </button>
-          </div>
-
-          <button 
-            className="btn-primary-pill px-6 shrink-0"
-            disabled={isPostDisabled}
-            onClick={handlePost}
+      {/* Modal Wrapper */}
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-auto overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-white">
+          <h3 className="text-lg font-semibold text-gray-900">Create a post</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
           >
-            {initialData ? 'Save Changes' : 'Post'}
+            <X size={20} />
           </button>
         </div>
-        
-        <input 
-          type="file" 
-          accept="image/*,video/*" 
-          ref={fileInputRef} 
-          className="hidden"
-          onChange={handleMediaUpload} 
-        />
+
+        {/* Profile Info */}
+        <div className="flex items-center gap-3 px-5 py-4 bg-white">
+          {userProfile?.avatar_url ? (
+            <img
+              src={userProfile.avatar_url}
+              alt={userProfile.name}
+              className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-xs"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shadow-inner">
+              <span className="text-xs font-bold text-blue-900">
+                {userProfile?.name?.charAt(0) || 'M'}
+              </span>
+            </div>
+          )}
+          <div>
+            <h4 className="font-semibold text-sm text-gray-800 leading-snug">
+              {userProfile?.name || 'Maritime Professional'}
+            </h4>
+            <div className="flex items-center gap-1 mt-0.5 px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-full text-[10px] font-bold text-gray-500 w-fit">
+              <Globe size={10} />
+              <span>Anyone</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Input content */}
+        <div className="flex-1 overflow-y-auto min-h-[160px] flex flex-col">
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="What do you want to talk about?"
+            className="w-full text-lg placeholder-gray-400 resize-none outline-none min-h-[150px] p-4 border-0 focus:ring-0 focus:outline-none leading-relaxed flex-1 text-gray-800"
+          />
+
+          {/* Media preview */}
+          {mediaPreview && (
+            <div className="relative mx-4 mb-4 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 max-h-[220px] flex items-center justify-center">
+              {mediaType === 'video' ? (
+                <video src={mediaPreview} controls className="max-h-[220px] w-auto" />
+              ) : (
+                <img src={mediaPreview} alt="Selected attachment" className="max-h-[220px] w-auto object-contain" />
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedFile(null);
+                  setMediaPreview(null);
+                  setMediaType(null);
+                }}
+                className="absolute top-2.5 right-2.5 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
+          {uploadProgress && (
+            <div className="mx-4 mb-4 flex items-center gap-2 justify-center text-xs font-semibold text-blue-600 bg-blue-50 py-2.5 rounded-lg border border-blue-100">
+              <Loader2 size={14} className="animate-spin" />
+              <span>Uploading media path...</span>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Actions / Action Bar */}
+        <div className="px-4 py-3 flex justify-between items-center bg-gray-50 border-t border-gray-100">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (fileInputRef.current) {
+                  fileInputRef.current.accept = 'image/*,video/mp4';
+                  fileInputRef.current.click();
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-gray-200/60 rounded-full text-gray-500 hover:text-gray-800 font-medium text-xs transition-all cursor-pointer active:scale-95"
+            >
+              <ImageIcon size={18} className="text-gray-400" />
+              <span>Attach</span>
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting || uploadProgress || (!content.trim() && !selectedFile)}
+            className="bg-[#002b4e] hover:bg-[#003d6e] text-white px-6 py-2 rounded-full font-semibold text-sm transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+          >
+            {submitting ? (
+              <div className="flex items-center gap-1.5">
+                <Loader2 size={14} className="animate-spin" />
+                <span>Posting...</span>
+              </div>
+            ) : (
+              <span>Post</span>
+            )}
+          </button>
+        </div>
       </div>
-    </BaseModal>
+    </div>
   );
 }

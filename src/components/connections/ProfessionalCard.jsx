@@ -26,7 +26,7 @@ export default function ProfessionalCard({ profile, currentUser, onFollow }) {
         .select('*')
         .eq('follower_id', currentUser.id)
         .eq('following_id', profile.id)
-        .single();
+        .maybeSingle();
       
       if (data) setIsFollowing(true);
     }

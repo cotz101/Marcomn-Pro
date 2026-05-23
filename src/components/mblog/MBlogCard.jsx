@@ -208,7 +208,7 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
     setIsSharing(true);
     try {
       const { error } = await supabase
-        .from('posts')
+        .from('logbook_posts')
         .insert({
           user_id: userId,
           shared_article_id: article.id,
@@ -326,7 +326,7 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
           created_at,
           user:profiles(name, avatar_url)
         `)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 

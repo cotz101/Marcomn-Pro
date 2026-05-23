@@ -46,7 +46,7 @@ export default function OpportunityDetailsPage() {
         .from('jobs')
         .select('*, company:companies(*), poster:profiles(*)')
         .eq('id', jobId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Job Detail Fetch Error:', JSON.stringify(error, null, 2));
@@ -195,7 +195,7 @@ export default function OpportunityDetailsPage() {
         .from('applications')
         .insert({ job_id: job.id, applicant_id: currentUser.id, documents: uploadedDocs })
         .select('id, status, withdrawal_count, documents')
-        .single();
+        .maybeSingle();
 
       if (applyError) {
         if (showToast) showToast('Failed to submit application: ' + applyError.message, 'error');

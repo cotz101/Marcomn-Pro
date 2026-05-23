@@ -43,7 +43,7 @@ export default function CreateGroupModal({ isOpen, onClose, onSuccess }) {
           owner_id: currentUser.id
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (groupError) {
         alert('Error creating group: ' + groupError.message);

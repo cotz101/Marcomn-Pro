@@ -251,9 +251,9 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
     try {
       const { data: newComment, error } = await supabase.from('group_comments').insert([
         { post_id: post.id, user_id: user.id, content: text, parent_id: parentId }
-      ]).select('*').single();
+      ]).select('*').maybeSingle();
       if (error) throw error;
-      const { data: profile } = await supabase.from('profiles').select('name, avatar_url').eq('id', user.id).single();
+      const { data: profile } = await supabase.from('profiles').select('name, avatar_url').eq('id', user.id).maybeSingle();
       setComments([{ ...newComment, profiles: profile }, ...comments]);
       if (parentId) setModalCommentText(''); else setCommentText('');
     } catch (e) { alert(e.message); }
@@ -649,7 +649,7 @@ export default function GroupPage({ params: paramsPromise }) {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) setCurrentUserId(user.id);
     
-    const { data: group } = await supabase.from('groups').select('name, description, owner_id').eq('id', groupId).single();
+    const { data: group } = await supabase.from('groups').select('name, description, owner_id').eq('id', groupId).maybeSingle();
     
     const { data: membersData } = await supabase.from('group_members').select('user_id, role, status').eq('group_id', groupId);
     
@@ -775,9 +775,9 @@ export default function GroupPage({ params: paramsPromise }) {
     const urls = await Promise.all(attachments.map(uploadFile));
     const cleanUrls = urls.filter(u => u !== null);
     try {
-      const { data: newPost, error } = await supabase.from('group_posts').insert([{ group_id: groupId, user_id: user.id, content: postText, file_urls: cleanUrls }]).select('*').single();
+      const { data: newPost, error } = await supabase.from('group_posts').insert([{ group_id: groupId, user_id: user.id, content: postText, file_urls: cleanUrls }]).select('*').maybeSingle();
       if (error) throw error;
-      const { data: p } = await supabase.from('profiles').select('name, avatar_url').eq('id', user.id).single();
+      const { data: p } = await supabase.from('profiles').select('name, avatar_url').eq('id', user.id).maybeSingle();
       setPosts([{ ...newPost, authorName: p?.name || 'MNetwork Member', authorAvatar: p?.avatar_url }, ...posts]);
       setPostText(''); setAttachments([]);
     } catch (e) { alert(e.message); } finally { setUploading(false); }
@@ -796,7 +796,7 @@ export default function GroupPage({ params: paramsPromise }) {
       const { data: { user } } = await supabase.auth.getUser();
       
       // Fetch post to check ownership
-      const { data: post } = await supabase.from('group_posts').select('user_id').eq('id', pid).single();
+      const { data: post } = await supabase.from('group_posts').select('user_id').eq('id', pid).maybeSingle();
       
       // RBAC Check: Author or Admin
       if (post?.user_id !== user?.id && !isAdmin) {

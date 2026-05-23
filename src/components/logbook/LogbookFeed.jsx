@@ -1,97 +1,67 @@
 'use client';
+
 import { useState, useEffect, useCallback } from 'react';
-import CreatePost from './CreatePost';
-import PostComposerModal from './PostComposerModal';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
-import PostCard from './PostCard';
-import { Anchor } from 'lucide-react';
+import { Anchor, Calendar, User, ThumbsUp, MessageSquare, ShieldAlert } from 'lucide-react';
+import CreatePost from './CreatePost';
+import LogbookPostCard from './LogbookPostCard';
 
-export default function LogbookFeed({ profile }) {
+export default function LogbookFeed() {
   const [posts, setPosts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [editingPost, setEditingPost] = useState(null);
-  const [isClient, setIsClient] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { userId } = useProfile();
   const supabase = createClient();
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  // Centralized URL resolver
+  const resolveMediaUrl = useCallback((path) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    const { data } = supabase.storage.from('logbook-media').getPublicUrl(path);
+    return data.publicUrl;
+  }, [supabase]);
 
   const fetchPosts = useCallback(async () => {
-    setIsLoading(true);
-    console.log('LogbookFeed: Fetching posts for user:', userId);
+    setLoading(true);
     try {
-      // We want to fetch all posts, but also know if the CURRENT user liked them.
-      // To do this without filtering the entire post list, we fetch the posts 
-      // and a sub-selection of likes that match the current user.
       const { data, error } = await supabase
-        .from('posts')
+        .from('logbook_posts')
         .select(`
           id,
           title,
           content,
           media_url,
+          media_type,
+          video_url,
+          post_type,
+          excerpt,
+          cover_media_url,
+          embedded_media,
+          author_id,
           created_at,
           user_id,
-          profiles:user_id (
-            name,
-            avatar_url
-          ),
+          author:profiles!user_id (name, avatar_url, headline),
           likes ( id, user_id ),
-          comments ( id, content, user_id )
+          comments ( id, user_id, content, created_at, profiles:profiles!user_id (name, avatar_url) )
         `)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('PostgREST Optimization Trace:', JSON.stringify(error, null, 2));
-        setPosts([]);
-        setIsLoading(false);
-        return;
-      }
-
-      // Flattening structure and injecting default mocks to prevent UI layout failure
-      const sanitizedPosts = (data || []).map(post => {
-        const postLikes = post.likes || [];
-        const postComments = post.comments || [];
-        const profilesObj = post.profiles || { name: 'MarComn Professional', avatar_url: null };
-        const dateObj = new Date(post.created_at);
-        const timeString = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
-        return {
-          ...post,
-          likes: postLikes,
-          comments: postComments,
-          
-          // UI properties for PostCard compatibility
-          author: profilesObj.name || 'MarComn Professional',
-          avatar: profilesObj.avatar_url || '/profile_pic.png',
-          headline: 'Maritime Professional',
-          time: timeString,
-          comment_count: postComments.length,
-          like_count: postLikes.length,
-          user_has_liked: postLikes.some(l => l.user_id === userId)
-        };
-      });
-
-      setPosts(sanitizedPosts);
-      setIsLoading(false);
+      if (error) throw error;
+      setPosts(data || []);
     } catch (err) {
-      console.error('Fatal fetch error:', err);
-      setPosts([]);
+      console.error('Error fetching logbook posts:', err);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [supabase, userId]);
+  }, [supabase]);
 
   useEffect(() => {
     fetchPosts();
 
+    // Set up real-time postgres changes listener
     const channel = supabase
-      .channel('public:posts')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, (payload) => {
-        console.log('LogbookFeed: Real-time update received:', payload.eventType);
+      .channel('public:logbook_posts')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'logbook_posts' }, () => {
         fetchPosts();
       })
       .subscribe();
@@ -99,161 +69,69 @@ export default function LogbookFeed({ profile }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchPosts, supabase]);
+  }, [supabase, fetchPosts]);
 
   const handlePostCreated = (newPost) => {
-    console.log('LogbookFeed: New post created, updating local state.');
-    // The newPost here is already formatted for the UI by CreatePost or we can fetch it.
-    // For instant feedback, we prepend it.
-    setPosts(prev => [newPost, ...prev]);
-    // Also re-fetch to ensure all joins (author, etc.) are correct
-    fetchPosts();
+    setPosts((prev) => [newPost, ...prev]);
   };
 
-  const handlePostDelete = (deletedId) => {
-    // Optimistically update the list
-    setPosts(prevPosts => prevPosts.filter(p => p.id !== deletedId));
-    // Also trigger fetch to sync with DB state
-    fetchPosts();
+  const handlePostDeleted = (postId) => {
+    setPosts((prev) => prev.filter((post) => post.id !== postId));
   };
 
-  const handleLike = useCallback(async (postId) => {
-    if (!userId) return;
-
-    let wasLiked = false;
-    let originalLikes = [];
-
-    setPosts(currentPosts => currentPosts.map(post => {
-      if (post.id === postId) {
-        const hasLiked = post.likes.some(like => like.user_id === userId);
-        wasLiked = hasLiked;
-        originalLikes = post.likes;
-
-        const updatedLikes = hasLiked
-          ? post.likes.filter(like => like.user_id !== userId)
-          : [...post.likes, { user_id: userId }];
-
-        return {
-          ...post,
-          likes: updatedLikes,
-          like_count: updatedLikes.length,
-          user_has_liked: !hasLiked
-        };
-      }
-      return post;
-    }));
-
-    try {
-      if (wasLiked) {
-        const { error } = await supabase
-          .from('likes')
-          .delete()
-          .eq('post_id', postId)
-          .eq('user_id', userId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('likes')
-          .insert({ post_id: postId, user_id: userId });
-        if (error) throw error;
-      }
-    } catch (err) {
-      console.error('Failed to update like in DB, reverting local state:', err);
-      setPosts(currentPosts => currentPosts.map(post => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            likes: originalLikes,
-            like_count: originalLikes.length,
-            user_has_liked: wasLiked
-          };
-        }
-        return post;
-      }));
-    }
-  }, [supabase, userId]);
-
-  const handleUpdate = async (postData) => {
-    const { error } = await supabase
-      .from('posts')
-      .update({
-        title: postData.title,
-        content: postData.content,
-        media_url: postData.media,
-        media_type: postData.mediaType
-      })
-      .eq('id', postData.id);
-
-    if (error) {
-      console.error('Error updating post:', error);
-      alert('Failed to save changes: ' + error.message);
-    } else {
-      setEditingPost(null);
-      await fetchPosts();
-    }
+  const handlePostUpdated = (updatedPost) => {
+    setPosts((prev) => prev.map((post) => (post.id === updatedPost.id ? updatedPost : post)));
   };
-
-  if (!isClient) {
-    return <div className="feed-container"><CreatePost profile={profile} /></div>;
-  }
 
   const PostSkeleton = () => (
-    <div className="card post-card p-4">
-      <div className="flex gap-3 mb-4">
-        <div className="skeleton skeleton-avatar"></div>
-        <div className="flex-1">
-          <div className="skeleton skeleton-text" style={{ width: '40%' }}></div>
-          <div className="skeleton skeleton-text" style={{ width: '25%' }}></div>
+    <div className="card p-6 animate-pulse border border-gray-100 bg-white rounded-xl mb-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-full bg-gray-200" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 bg-gray-200 rounded w-1/3" />
+          <div className="h-3 bg-gray-200 rounded w-1/4" />
         </div>
       </div>
-      <div className="skeleton skeleton-title"></div>
-      <div className="skeleton skeleton-text"></div>
-      <div className="skeleton skeleton-text"></div>
-      <div className="skeleton skeleton-text" style={{ width: '80%' }}></div>
-      <div className="skeleton skeleton-media"></div>
+      <div className="h-4 bg-gray-200 rounded w-3/4 mb-3" />
+      <div className="h-3 bg-gray-100 rounded w-full mb-2" />
+      <div className="h-3 bg-gray-100 rounded w-5/6 mb-4" />
+      <div className="h-48 bg-gray-50 rounded-xl w-full" />
     </div>
   );
 
   return (
-    <div className="feed-container">
-      <CreatePost profile={profile} onPostCreated={handlePostCreated} />
-      
-      {isLoading ? (
-        <div className="feed-loading">
-          <PostSkeleton />
-          <PostSkeleton />
-          <PostSkeleton />
-        </div>
-      ) : posts.length > 0 ? (
-        posts.map(post => (
-          <PostCard 
-            key={post.id} 
-            post={post} 
-            userId={userId} 
-            profile={profile}
-            onEdit={setEditingPost} 
-            onDeleteSuccess={handlePostDelete} 
-            onRefresh={fetchPosts}
-            onLike={handleLike}
-          />
-        ))
-      ) : (
-        <div className="empty-state-container">
-          <Anchor className="empty-state-icon" />
-          <div className="empty-state-text">
-            No log entries found. Start the voyage by posting an update.
-          </div>
-        </div>
-      )}
+    <div className="max-w-3xl mx-auto px-4 py-6">
+      <CreatePost onPostCreated={handlePostCreated} />
 
-      {editingPost && (
-        <PostComposerModal
-          isOpen={true}
-          onClose={() => setEditingPost(null)}
-          onPostSubmit={handleUpdate}
-          profile={profile}
-          initialData={editingPost}
-        />
+      {loading ? (
+        <div className="space-y-6">
+          <PostSkeleton />
+          <PostSkeleton />
+          <PostSkeleton />
+        </div>
+      ) : posts.length === 0 ? (
+        <div className="text-center py-16 bg-white border border-gray-100 rounded-xl shadow-sm mt-6">
+          <div className="flex justify-center mb-4">
+            <Anchor size={48} className="text-gray-300 animate-pulse" />
+          </div>
+          <h3 className="text-xl font-bold text-[#0e2a4d]">No Log Entries Yet</h3>
+          <p className="text-gray-500 mt-2 max-w-xs mx-auto text-sm">
+            Be the first to log a new update or share media from your current voyage.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6 mt-6">
+          {posts.map((post) => (
+            <LogbookPostCard
+              key={post.id}
+              post={post}
+              userId={userId}
+              onPostDeleted={handlePostDeleted}
+              onPostUpdated={handlePostUpdated}
+              resolveMediaUrl={resolveMediaUrl}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

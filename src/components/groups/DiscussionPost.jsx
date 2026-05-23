@@ -197,7 +197,7 @@ export default function DiscussionPost({ post, groupId }) {
         .from('group_comments')
         .insert(newComment)
         .select('*')
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 

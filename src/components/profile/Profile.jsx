@@ -53,7 +53,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
           .from('profiles')
           .select('*')
           .eq('id', viewUid)
-          .single();
+          .maybeSingle();
 
         if (!error && data) {
           // Map DB keys to component keys
@@ -286,7 +286,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
           participant_two: viewUid
         })
         .select('id')
-        .single();
+        .maybeSingle();
 
       if (insertError) {
         console.error('Error creating conversation:', insertError);

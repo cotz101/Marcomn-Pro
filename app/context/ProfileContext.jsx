@@ -79,7 +79,7 @@ export function ProfileProvider({ children, userId, userEmail }) {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     
     if (data && !error) {
       setOnboardingCompleted(data.onboarding_completed ?? false);

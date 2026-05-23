@@ -174,7 +174,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         })
         .eq('id', jobToEdit.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (jobError) {
         alert('Error updating job: ' + jobError.message);
@@ -203,7 +203,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           tags: formattedTags,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (jobError) {
         alert('Error creating job: ' + jobError.message);
@@ -213,7 +213,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
 
       const postContent = `⚓ New Opportunity Alert: ${formData.title} at ${identityName}! We are looking for top maritime talent... [link](route:/mservices/opportunity/${jobData.id})`;
       const { error: postError } = await supabase
-        .from('posts')
+        .from('logbook_posts')
         .insert({
           user_id: userId,
           content: postContent,

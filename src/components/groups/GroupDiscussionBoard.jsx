@@ -187,7 +187,7 @@ function GroupPostComposer({ resolvedUuid, onPostCreated }) {
           *,
           author:profiles(name, avatar_url, headline)
         `)
-        .single();
+        .maybeSingle();
 
       if (error) {
         alert(error.message);

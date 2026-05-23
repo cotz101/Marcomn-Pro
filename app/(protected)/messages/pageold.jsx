@@ -217,7 +217,7 @@ export default function InboxPage() {
           body: textToSend
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 

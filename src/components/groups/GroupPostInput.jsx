@@ -49,7 +49,7 @@ export default function GroupPostInput({ onPostCreated }) {
           .from('groups')
           .select('id')
           .eq('slug', groupId)
-          .single();
+          .maybeSingle();
         
         if (groupError || !groupData) {
           console.error('Failed to resolve group UUID from slug:', groupError);
@@ -73,7 +73,7 @@ export default function GroupPostInput({ onPostCreated }) {
           *,
           author:profiles(name, avatar_url, headline)
         `)
-        .single();
+        .maybeSingle();
 
       if (error) {
         // Deep Error Extraction

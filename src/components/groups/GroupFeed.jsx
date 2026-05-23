@@ -63,7 +63,7 @@ export default function GroupFeed({ groupId }) {
             avatar_url
           )
         `)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 

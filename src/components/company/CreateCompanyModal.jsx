@@ -39,7 +39,7 @@ export default function CreateCompanyModal({ userId, onComplete, onClose }) {
           bio: form.bio.trim(),
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (companyError) throw companyError;
 

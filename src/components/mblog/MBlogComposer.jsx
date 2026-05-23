@@ -114,7 +114,7 @@ export default function MBlogComposer({ onClose, onArticleCreated, initialData }
             *,
             author:profiles(name, avatar_url, headline)
           `)
-          .single();
+          .maybeSingle();
       } else {
         // CREATE New
         result = await supabase
@@ -131,7 +131,7 @@ export default function MBlogComposer({ onClose, onArticleCreated, initialData }
             *,
             author:profiles(name, avatar_url, headline)
           `)
-          .single();
+          .maybeSingle();
       }
 
       const { data, error } = result;
