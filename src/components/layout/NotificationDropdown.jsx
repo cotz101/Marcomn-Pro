@@ -1,13 +1,33 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase';
 import { X, Newspaper, Users, Briefcase, Bell } from 'lucide-react';
 
+const markAsRead = async (notificationId) => {
+  try {
+    const supabase = createClient();
+    await supabase.from('notifications').update({ is_read: true }).eq('id', notificationId);
+  } catch (err) {
+    console.error('DEBUG: Mark as read error:', err);
+  }
+};
+
 export default function NotificationDropdown({ notifications = [], loading = false, onMarkAllAsRead, onClose }) {
+  const [localNotifications, setLocalNotifications] = useState(notifications);
+
+  // Keep local state in sync when parent prop changes
+  useEffect(() => {
+    setLocalNotifications(notifications);
+  }, [notifications]);
+
+  // Realtime subscription is handled by AppShell (parent) which owns the
+  // notifications state and unreadCount for the bell badge.
+
   const router = useRouter();
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadCount = localNotifications.filter(n => !n.is_read).length;
 
   const formatTimeAgo = (dateString) => {
     if (!dateString) return '';
@@ -94,7 +114,7 @@ export default function NotificationDropdown({ notifications = [], loading = fal
       );
     }
 
-    return notifications.map((notification) => {
+    return localNotifications.map((notification) => {
       const isMilestone = notification.type === 'milestone';
       
       return (
@@ -103,8 +123,9 @@ export default function NotificationDropdown({ notifications = [], loading = fal
           className={`p-4 transition-all duration-150 hover:bg-slate-50/80 flex gap-3 items-start border-b border-gray-50 last:border-b-0 cursor-pointer ${
             isMilestone ? 'bg-blue-50/40 hover:bg-blue-50/60 border-l-4 border-blue-500' : ''
           }`}
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
+            await markAsRead(notification.id);
             if (notification.link) {
               router.push(notification.link);
             }

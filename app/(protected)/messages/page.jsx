@@ -204,29 +204,68 @@ export default function InboxPage() {
   const createNotification = async (recipientId, senderId, text, chatId) => {
     try {
       console.log('DEBUG: Creating direct notification for recipient:', recipientId);
-      
-      const notificationData = {
-        recipient_id: recipientId,
-        sender_id: senderId,
-        type: 'message',
-        title: 'New Message',
-        body: `${currentUserProfile?.name || 'Someone'} sent you a message.`,
-        link: `/messages?chat=${chatId}`,
-        is_read: false
-      };
+      if (!recipientId) { console.warn('Notification skipped: No recipientId provided.'); return; }
 
-      const { error } = await supabase
-        .from('notifications')
-        .insert([notificationData]);
+      // Preference gatekeeper
+      let allowNotification = true;
+      // Force allow for testing (bypass gatekeeper)
+      allowNotification = true;
+      try {
+          // Lookup notification settings
+          console.log('DEBUG: Sending notification to:', recipientId);
+          const { data: pref, error: prefError } = await supabase
+            .from('notification_settings')
+            .select('messaging_enabled')
+            .eq('user_id', recipientId)
+            .maybeSingle();
 
-      if (error) {
-        console.error('DEBUG: Direct Notification insertion error:', {
-          message: error.message || error,
-          details: error.details || null,
-          hint: error.hint || null
-        });
+          if (prefError && prefError.code !== 'PGRST116') {
+            console.error('Lookup Debug:', { name: prefError?.name, message: prefError?.message, query: 'notification_settings' });
+          }
+          const messagingEnabled = pref?.messaging_enabled ?? true;
+
+          // Lookup profile inbox privacy
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('inbox_privacy')
+            .eq('id', recipientId)
+            .maybeSingle();
+
+          if (profileError && profileError.code !== 'PGRST116') {
+            console.error('Lookup Debug:', { name: profileError?.name, message: profileError?.message, query: 'profiles' });
+          }
+          const inboxPrivacy = profile?.inbox_privacy ?? 'public';
+
+          // Determine if notification is allowed
+          if (messagingEnabled === false || inboxPrivacy === 'private') {
+            allowNotification = false;
+          }
+      } catch (gateErr) {
+        console.error('DEBUG: Notification gatekeeper exception:', gateErr);
+      }
+
+      if (allowNotification) {
+        const notificationData = {
+          recipient_id: recipientId,
+          sender_id: senderId,
+          type: 'message',
+          title: 'New Message',
+          body: `${currentUserProfile?.name || 'Someone'} sent you a message.`,
+          link: `/messages?chat=${chatId}`,
+          is_read: false
+        };
+
+        const { data: insertData, error: insertError } = await supabase
+          .from('notifications')
+          .insert([notificationData]);
+
+        if (insertError) {
+          console.error('Insertion Failed:', insertError);
+        } else {
+          console.log('Notification successfully inserted for:', recipientId);
+        }
       } else {
-        console.log('✅ DEBUG: Direct notification inserted successfully!');
+        console.log('⚠️ Notification blocked by user preferences for recipient:', recipientId);
       }
     } catch (err) {
       console.error('DEBUG: Direct notification exception caught:', err);
@@ -275,10 +314,9 @@ export default function InboxPage() {
       console.log('Target Recipient ID Lookup:', recipientId);
 
       if (recipientId && recipientId !== currentUser.id) {
-        // Trigger direct notification insertion first inside its own safe catch boundary
-        await createNotification(recipientId, currentUser.id, textToSend, activeChatId);
-
-        // Force execution of secure Server Action bypass sequence
+        // DB write via server action only — the Realtime listener in AppShell
+        // handles the UI state update, so we do NOT call createNotification here
+        // to avoid inserting a duplicate notification row.
         try {
           // Trigger server action using properties matched to our explicit schema definitions
           const result = await sendNotification(

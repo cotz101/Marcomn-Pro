@@ -104,29 +104,31 @@ export default function AppShell({ children, userEmail, userId }) {
 
     console.log('📡 [Notif Channel] Initializing Supabase Realtime Subscription...');
 
-    // Diagnostic Listener - Replace your existing channel logic with this
-    const channel = supabase
-      .channel('any_channel_name') // Generic name for testing
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications' },
-        (payload) => {
-          console.log('📡 SIGNAL RECEIVED, UPDATING UI:', payload.new);
-          
-          // Force the local state to include the new notification
-          setNotifications((prev) => [payload.new, ...prev]);
-          
-          // Force the Unread Count to increment
-          setUnreadCount((prev) => prev + 1);
-        }
-      )
+    // Bulletproof Realtime Subscription with de-duplication
+    const processedIds = new Set();
+    const channel = supabase.channel('notifications-channel');
+
+    channel
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `recipient_id=eq.${userId}`
+      }, (payload) => {
+        const newNotif = payload.new;
+        if (processedIds.has(newNotif.id)) return; // Skip if already processed
+        processedIds.add(newNotif.id);
+
+        console.log('📡 [Notif Channel] Received new alert:', newNotif);
+        setNotifications(prev => [newNotif, ...prev]);
+        setUnreadCount(prev => prev + 1);
+      })
       .subscribe((status) => {
-        console.log('📡 Subscription Status:', status);
+        console.log('📡 [Notif Channel] Subscription status:', status);
       });
 
-
+    // Cleanup to prevent duplicate listeners
     return () => {
-      console.log('🚫 [Notif Channel] Cleaning up subscription channel.');
       supabase.removeChannel(channel);
     };
   }, [userId]);
