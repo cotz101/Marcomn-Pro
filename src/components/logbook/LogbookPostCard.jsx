@@ -557,7 +557,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                       
                       <a
                         href={`/mblog`}
-                        className="w-full bg-blue-900 text-white py-2.5 rounded-lg flex items-center justify-center font-medium hover:bg-blue-800 transition-colors active:scale-95 select-none mt-4 font-sans text-center"
+                        className="inline-flex items-center justify-start bg-blue-900 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-800 transition-colors active:scale-95 select-none mt-4 font-sans text-center"
                       >
                         Read full blog
                       </a>
