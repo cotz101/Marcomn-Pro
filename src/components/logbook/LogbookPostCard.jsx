@@ -555,12 +555,14 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                         {post.mblogs?.content?.replace(/<[^>]*>?/gm, '') || 'No description available.'}
                       </p>
                       
-                      <a
-                        href={`/mblog`}
-                        className="w-fit inline-block bg-blue-900 text-white px-6 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition-colors active:scale-95 select-none mt-4 font-sans text-center"
-                      >
-                        Read full blog
-                      </a>
+                      <div className="text-left mt-3">
+                        <a
+                          href={`/mblog`}
+                          className="text-blue-900 font-semibold text-sm hover:underline cursor-pointer"
+                        >
+                          Read full blog
+                        </a>
+                      </div>
                     </div>
                   </div>
                 );
