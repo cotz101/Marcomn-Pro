@@ -16,7 +16,9 @@ import {
   Library,
   BookOpen,
   TrendingUp,
-  Award
+  Award,
+  MapPin,
+  Briefcase
 } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import { createClient } from '@/lib/supabase';
@@ -26,9 +28,6 @@ export default function SidebarLeft() {
   const { profile, currentIdentity } = useProfile();
   
   const isCompany = currentIdentity?.type === 'company';
-  const name = isCompany ? currentIdentity.data?.name : profile?.fullName;
-  const image = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (profile?.profilePic || '/profile_pic.png');
-  const headline = isCompany ? 'Maritime Enterprise' : (profile?.headline || 'Maritime Professional');
 
   const supabase = createClient();
   const [topContributors, setTopContributors] = useState([]);
@@ -36,11 +35,60 @@ export default function SidebarLeft() {
 
   const isMBlogPage = pathname?.includes('/mblog');
 
+  const [connectionCount, setConnectionCount] = useState(0);
+  const [groupCount, setGroupCount] = useState(0);
+  const [fetchedProfileData, setFetchedProfileData] = useState(null);
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
+
   useEffect(() => {
     if (isMBlogPage) {
       fetchTopContributors();
     }
   }, [isMBlogPage]);
+
+  useEffect(() => {
+    const fetchUserMetrics = async () => {
+      const currentUserId = profile?.id;
+      if (!currentUserId) return;
+      
+      setLoadingMetrics(true);
+      try {
+        // Explicit Profile Fetch
+        const { data: profData, error: profErr } = await supabase
+          .from('profiles')
+          .select('name, currentRole, previousRole, location, yearsOfExperience, bio, avatar_url, skills')
+          .eq('id', currentUserId)
+          .single();
+        
+        if (!profErr && profData) {
+          setFetchedProfileData(profData);
+        }
+
+        // Connections
+        const { count: cCount, error: cErr } = await supabase
+          .from('follows')
+          .select('*', { count: 'exact', head: true })
+          .or(`follower_id.eq.${currentUserId},following_id.eq.${currentUserId}`);
+        
+        // Groups
+        const { count: gCount, error: gErr } = await supabase
+          .from('group_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', currentUserId);
+
+        if (!cErr) setConnectionCount(cCount || 0);
+        if (!gErr) setGroupCount(gCount || 0);
+      } catch (err) {
+        console.error('Error fetching user metrics:', err);
+      } finally {
+        setLoadingMetrics(false);
+      }
+    };
+
+    if (profile?.id) {
+      fetchUserMetrics();
+    }
+  }, [profile?.id]);
 
   const fetchTopContributors = async () => {
     try {
@@ -89,7 +137,7 @@ export default function SidebarLeft() {
   };
 
   let navLinks = [];
-  let sidebarTitle = "Manage MNetwork";
+  let sidebarTitle = "MNetwork";
   let showStats = true;
   let statsLabel1 = "Profile viewers";
   let statsValue1 = "42";
@@ -125,35 +173,85 @@ export default function SidebarLeft() {
     ];
   }
 
+  const activeConnections = connectionCount || 0;
+  const activeGroups = groupCount || 0;
+
+  // Dynamic Metadata Priority Extraction Logic
+  const sourceProfile = fetchedProfileData || profile || {};
+  
+  const name = isCompany ? currentIdentity.data?.name : (sourceProfile.name || sourceProfile.fullName || 'MarComn Member');
+  const image = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (sourceProfile.avatar_url || sourceProfile.profilePic || '/profile_pic.png');
+  const displayRole = sourceProfile.currentRole || sourceProfile.previousRole || 'MarComn Professional';
+  const headline = isCompany ? 'Maritime Enterprise' : displayRole;
+
+  const experience = sourceProfile.yearsOfExperience || sourceProfile.yearsExperience;
+  const location = sourceProfile.location;
+  const skills = sourceProfile.skills;
+  const bio = sourceProfile.bio;
+
   return (
     <aside className="sidebar-left">
-      <div className="card overflow-hidden">
-        <div className="h-16 bg-[#002b4e]"></div>
-        <div className="px-4 pb-4">
-          <div className="flex justify-center -mt-8 mb-3">
+      <div className="post-card rounded-[16px] border border-[#e5e7eb] overflow-hidden bg-white flex flex-col">
+        {/* Content Section */}
+        <div className="post-inner p-5 relative flex flex-col">
+          {/* Avatar Overlap */}
+          <div className="flex justify-center mb-3">
             <img 
               src={image} 
               alt={name} 
-              className="w-16 h-16 rounded-lg border-2 border-white object-cover bg-white"
+              className="w-20 h-20 rounded-full object-cover bg-white shadow-sm"
             />
           </div>
-          <div className="text-center">
-            <h3 className="font-bold text-base text-[#1b1c1c]">{name}</h3>
-            <p className="text-xs text-[#42474f] mt-1">{headline}</p>
+          
+          <div className="flex flex-col items-center mb-4 text-center">
+            <h3 className="font-sans font-bold text-lg text-[#0e2a4d] tracking-tight leading-tight">{name}</h3>
+            <p className="text-[15px] text-gray-600 mt-0.5 font-sans font-medium">{headline}</p>
+            {location && (
+              <div className="flex items-center gap-1.5 text-gray-500 text-[13px] mt-1.5 font-['Public_Sans',sans-serif]">
+                <MapPin size={14} className="text-gray-400" />
+                <span>{location}</span>
+              </div>
+            )}
           </div>
           
-          {showStats && (
-            <div className="border-t border-[#efeded] mt-4 pt-4 flex flex-col gap-3">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-[#42474f]">{statsLabel1}</span>
-                <span className="font-semibold text-[#002b4e]">{statsValue1}</span>
+          {/* Professional Overview */}
+          {showStats && (!loadingMetrics && (skills?.length > 0 || experience || bio)) && (
+            <div className="flex flex-col w-full mb-2">
+              <div className="uppercase text-[11px] font-extrabold text-gray-400 tracking-wider mb-2.5 font-['Public_Sans',sans-serif]">
+                Professional Overview
               </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-[#42474f]">{statsLabel2}</span>
-                <span className="font-semibold text-[#002b4e]">{statsValue2}</span>
+              
+              <div className="flex flex-col gap-3.5 w-full">
+                {skills && skills.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {skills.map((skill, sIdx) => (
+                      <span key={sIdx} className="px-2.5 py-1 bg-gray-50 border border-gray-200 text-[#0e2a4d] rounded-full text-[11px] font-semibold whitespace-nowrap font-sans">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                {experience && (
+                  <div className="flex items-center gap-2 text-[#4b5563] text-[13px] font-medium font-['Public_Sans',sans-serif]">
+                    <Briefcase size={14} className="text-gray-400" />
+                    <span>{experience} Years of Experience</span>
+                  </div>
+                )}
+
+                {bio && (
+                  <div className="text-gray-500 text-[13px] line-clamp-2 leading-relaxed font-['Public_Sans',sans-serif]">
+                    {bio}
+                  </div>
+                )}
               </div>
             </div>
           )}
+
+          {/* Footer Section */}
+          <Link href={`/profile/${profile?.id || ''}`} className="block w-full py-2 mt-4 text-center text-[13px] font-medium text-blue-950 bg-transparent hover:text-blue-700 hover:underline transition-all font-sans">
+            View Profile
+          </Link>
         </div>
       </div>
 
@@ -173,8 +271,8 @@ export default function SidebarLeft() {
                 href={link.href} 
                 className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
                   isActive 
-                    ? 'bg-[#f5f3f3] text-[#002b4e] font-bold' 
-                    : 'text-[#42474f] hover:bg-[#f5f3f3] font-medium'
+                    ? 'bg-blue-50/50 border-l-4 border-blue-950 font-semibold text-blue-950' 
+                    : 'text-gray-500 hover:bg-[#f5f3f3] font-medium'
                 }`}
               >
                 <Icon size={18} />

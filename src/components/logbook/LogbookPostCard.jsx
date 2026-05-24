@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 import LogbookActionBar from './LogbookActionBar';
 import RichTextEditor from '@/src/components/common/RichTextEditor';
-import EngagementModal from '../ui/EngagementModal';
+import LikersModal from '@/src/components/modals/LikersModal';
 
 const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, resolveMediaUrl }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -26,8 +26,6 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isLikesModalOpen, setIsLikesModalOpen] = useState(false);
-  const [selectedLikes, setSelectedLikes] = useState([]);
-  const [loadingLikes, setLoadingLikes] = useState(false);
 
   const [connections, setConnections] = useState([]);
   const [mentionSearch, setMentionSearch] = useState('');
@@ -54,36 +52,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
 
   const handleLikeCountClick = async () => {
     if (likeCount === 0) return;
-    setLoadingLikes(true);
-    const postId = post.id;
-    try {
-      const { data, error } = await supabase
-        .from('likes')
-        .select('user_id') // First, just fetch the ID
-        .eq('post_id', postId);
-
-      if (error) throw error;
-      
-      // Log specifically what we got back
-      console.log('DEBUG: Likes raw data:', data);
-      
-      // If that works, then we attempt the join
-      const { data: hydrated, error: joinError } = await supabase
-        .from('likes')
-        .select('user_id, profiles(name, avatar_url)')
-        .eq('post_id', postId);
-
-      if (joinError) {
-        console.error('DEBUG: Join error details:', joinError);
-        throw joinError;
-      }
-      setSelectedLikes(hydrated || []);
-      setIsLikesModalOpen(true);
-    } catch (err) {
-      console.error('DEBUG: Critical failure during hydration:', JSON.stringify(err, null, 2));
-    } finally {
-      setLoadingLikes(false);
-    }
+    setIsLikesModalOpen(true);
   };
 
   const handleLike = async () => {
@@ -456,11 +425,13 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
     const diffInMins = Math.floor(diffInSecs / 60);
     const diffInHours = Math.floor(diffInMins / 60);
     const diffInDays = Math.floor(diffInHours / 24);
+    const diffInWeeks = Math.floor(diffInDays / 7);
 
-    if (diffInSecs < 60) return 'Just now';
+    if (diffInSecs < 60) return 'just now';
     if (diffInMins < 60) return `${diffInMins}m ago`;
     if (diffInHours < 24) return `${diffInHours}h ago`;
     if (diffInDays < 7) return `${diffInDays}d ago`;
+    if (diffInWeeks < 4) return `${diffInWeeks}w ago`;
     return past.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
@@ -577,46 +548,61 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
   };
 
   return (
-    <div id={`post-${post.id}`} className={`card border border-gray-100 bg-white hover:shadow-md transition-shadow duration-300 rounded-xl shadow-sm ${isArticle ? 'p-0 overflow-hidden' : 'p-6'}`}>
-      
-      {/* Main Container */}
-      <div className={isArticle ? 'p-6' : ''}>
+    <div id={`post-${post.id}`} className="card border border-gray-100 bg-white hover:shadow-md transition-shadow duration-300 rounded-xl shadow-sm overflow-hidden p-4 mb-4 relative">
         
         {/* Post Author Info Header */}
-        <div className="flex justify-between items-start gap-4 mb-4">
-          <div className="flex items-center gap-3">
-            {author.avatar_url ? (
-              <img
-                src={author.avatar_url}
-                alt={author.name}
-                className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-xs"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-100">
-                <User size={18} className="text-gray-400" />
-              </div>
-            )}
-            <div>
+        <div className="flex justify-between items-start mb-4">
+          {/* Left: Avatar & Metadata */}
+          <div className="flex items-start gap-3 min-w-0 flex-1 pr-4">
+            <div className="flex-shrink-0">
+              {author.avatar_url ? (
+                <img
+                  src={author.avatar_url}
+                  alt={author.name}
+                  className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-xs"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-100">
+                  <User size={18} className="text-gray-400" />
+                </div>
+              )}
+            </div>
+            
+            <div className="flex flex-col justify-center min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <h4 className="font-bold text-[#0e2a4d] text-sm sm:text-base leading-tight">
+                <h4 className="font-bold text-[#0e2a4d] text-sm sm:text-base leading-tight truncate">
                   {author.name || 'Maritime Professional'}
                 </h4>
                 {isArticle && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-extrabold tracking-wider bg-emerald-50 text-emerald-950 rounded-full border border-emerald-100 uppercase select-none">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-extrabold tracking-wider bg-emerald-50 text-emerald-950 rounded-full border border-emerald-100 uppercase select-none flex-shrink-0">
                     <BookOpen size={10} />
                     <span>Article</span>
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-500 font-medium mt-0.5">
-                {author.headline || 'MarComn Member'}
-              </p>
+              <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium mt-0.5 truncate">
+                <span className="truncate">{author.headline || 'MarComn Member'}</span>
+                <span className="flex-shrink-0 text-gray-400 font-normal">•</span>
+                <span className="flex-shrink-0 text-gray-400 font-normal">{getRelativeTime(post.created_at)}</span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 text-gray-400 text-xs font-semibold select-none flex-shrink-0">
-            <Calendar size={13} />
-            <span>{getRelativeTime(post.created_at)}</span>
-          </div>
+          
+          {/* Right: 3-Dot Menu */}
+          {!isEditing && (
+            <div className="flex-shrink-0 relative z-20">
+              <LogbookActionBar
+                post={post}
+                userId={userId}
+                onEditClick={() => {
+                  setEditContent(post.content || '');
+                  setEditTitle(post.title || '');
+                  setIsEditing(true);
+                }}
+                onDeleteSuccess={onPostDeleted}
+              />
+            </div>
+          )}
         </div>
 
         {/* Post Content Area */}
@@ -736,7 +722,9 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                 {/* ARTICLE VIEW */}
                 {isArticle ? (
                   <div>
-                    {/* 1. Title */}
+                    {/* --- SURGICAL INSET ALIGNMENT --- */}
+                    <div>
+                      {/* 1. Title */}
                     <h2 className={`font-extrabold text-[#0e2a4d] tracking-tight mt-1 mb-3 leading-snug ${isExpanded ? 'text-2xl md:text-3xl' : 'text-xl hover:text-blue-900 transition-colors'}`}>
                       {post.title}
                     </h2>
@@ -773,6 +761,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                         </button>
                       </div>
                     )}
+                    </div>
 
                     {/* 3. Media (Image/Video/Embed) */}
                     {!isEditing && renderMedia(post.cover_media_url, post.media_type, post.video_url)}
@@ -811,50 +800,52 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
         {/* Media for Quick Post */}
         {!isArticle && !isEditing && renderMedia(post.media_url, post.media_type, post.video_url)}
 
-        {/* Action badges bar (Likes/Comments count) */}
-        <div className="flex justify-between items-center pt-3 border-t border-gray-100 text-gray-400 text-xs font-semibold select-none">
-          <div className="flex items-center gap-4 font-sans">
-            <span
-              onClick={handleLikeCountClick}
-              className={`font-sans flex items-center gap-1.5 ${
-                likeCount > 0 ? 'cursor-pointer hover:underline hover:text-[#0e2a4d] transition-colors' : ''
+        {/* Footer Actions */}
+        <div className="pt-4">
+          {/* Action badges bar (Likes/Comments count) */}
+          <div className="flex justify-between items-center text-gray-500 text-xs font-medium select-none mb-3">
+            <div className="flex items-center gap-4 font-sans">
+              <span
+                onClick={handleLikeCountClick}
+                className={`font-sans flex items-center gap-1.5 ${
+                  likeCount > 0 ? 'cursor-pointer hover:underline hover:text-[#0e2a4d] transition-colors' : ''
+                }`}
+              >
+                <span>{likeCount} {likeCount === 1 ? 'like' : 'likes'}</span>
+              </span>
+              <span>•</span>
+              <span>{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</span>
+            </div>
+          </div>
+
+          {/* Interactive Action Buttons Bar (Like & Comment triggers & 3-dot Menu) */}
+          <div className="flex items-center gap-1 w-full">
+            <button
+              type="button"
+              onClick={handleLike}
+              disabled={isSubmitting}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-bold transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
+                hasLiked
+                  ? 'text-navy-900 bg-navy-50/50'
+                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
               }`}
             >
-              {loadingLikes && <Loader2 size={12} className="animate-spin text-gray-400" />}
-              <span>{likeCount} {likeCount === 1 ? 'like' : 'likes'}</span>
-            </span>
-            <span>•</span>
-            <span>{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</span>
+              <ThumbsUp size={18} className={hasLiked ? 'fill-navy-900 stroke-navy-900' : 'text-gray-500'} />
+              <span className="font-sans">Like</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowComments(!showComments)}
+              disabled={isSubmitting}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
+                showComments ? 'bg-gray-50/80 text-gray-800' : ''
+              }`}
+            >
+              <MessageSquare size={18} />
+              <span className="font-sans">Comment</span>
+            </button>
           </div>
-        </div>
-
-        {/* Interactive Action Buttons Bar (Like & Comment triggers) */}
-        <div className="flex items-center gap-1 border-t border-b border-gray-100 py-1 mt-3">
-          <button
-            type="button"
-            onClick={handleLike}
-            disabled={isSubmitting}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-bold transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
-              hasLiked
-                ? 'text-navy-900 bg-navy-50/50'
-                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
-            }`}
-          >
-            <ThumbsUp size={18} className={hasLiked ? 'fill-navy-900 stroke-navy-900' : 'text-gray-500'} />
-            <span className="font-sans">Like</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowComments(!showComments)}
-            disabled={isSubmitting}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
-              showComments ? 'bg-gray-50/80 text-gray-800' : ''
-            }`}
-          >
-            <MessageSquare size={18} />
-            <span className="font-sans">Comment</span>
-          </button>
         </div>
 
         {/* Expandable Comments Section */}
@@ -979,31 +970,20 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
           </div>
         )}
 
-        {/* Edit/Delete Action Controls */}
-        {!isEditing && (
-          <LogbookActionBar
-            post={post}
-            userId={userId}
-            onEditClick={() => {
-              setEditContent(post.content || '');
-              setEditTitle(post.title || '');
-              setIsEditing(true);
-            }}
-            onDeleteSuccess={onPostDeleted}
-          />
-        )}
+
+
+        {/* Removed Action Controls from bottom */}
+
 
         {/* Likes Modal */}
-        <EngagementModal
+        <LikersModal
           isOpen={isLikesModalOpen}
           onClose={() => setIsLikesModalOpen(false)}
-          title="Likes"
-          data={selectedLikes}
-          searchPlaceholder="Search who liked..."
-          emptyMessage="No likes match your search."
+          postId={post.id}
+          tableName="likes"
+          foreignKey="post_id"
         />
 
-      </div>
     </div>
   );
 }, (prevProps, nextProps) => {

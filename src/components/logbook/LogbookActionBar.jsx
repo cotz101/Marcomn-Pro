@@ -1,12 +1,26 @@
 'use client';
 
-import { useState } from 'react';
-import { Edit2, Trash2, Loader2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Edit2, Trash2, Loader2, MoreVertical } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 
 export default function LogbookActionBar({ post, userId, onEditClick, onDeleteSuccess }) {
   const [deleting, setDeleting] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const supabase = createClient();
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
 
   // Guard: Show ONLY to author
   const isAuthor = (post.author_id === userId) || (post.user_id === userId);
@@ -43,29 +57,47 @@ export default function LogbookActionBar({ post, userId, onEditClick, onDeleteSu
   };
 
   return (
-    <div className="flex items-center gap-3 pt-3 border-t border-gray-50 mt-4 justify-end">
+    <div className="relative" ref={dropdownRef}>
       <button
         type="button"
-        onClick={onEditClick}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all active:scale-95 cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors focus:outline-none"
       >
-        <Edit2 size={13} />
-        <span>Edit</span>
+        <MoreVertical size={18} />
       </button>
 
-      <button
-        type="button"
-        onClick={handleDelete}
-        disabled={deleting}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50/50 rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
-      >
-        {deleting ? (
-          <Loader2 size={13} className="animate-spin" />
-        ) : (
-          <Trash2 size={13} />
-        )}
-        <span>Delete</span>
-      </button>
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1 flex flex-col animate-fadeIn">
+          <button
+            type="button"
+            onClick={() => {
+              setIsOpen(false);
+              onEditClick();
+            }}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+          >
+            <Edit2 size={14} />
+            <span className="font-sans font-medium">Edit Post</span>
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => {
+              setIsOpen(false);
+              handleDelete();
+            }}
+            disabled={deleting}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-default"
+          >
+            {deleting ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Trash2 size={14} />
+            )}
+            <span className="font-sans font-medium">Delete</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -13,10 +13,35 @@ export default function SidebarRight() {
   const isMBlogPage = pathname?.startsWith('/mblog');
 
   const supabase = createClient();
+  
+  const getRelativeTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 60) return 'Just now';
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    const diffInMonths = Math.floor(diffInDays / 30);
+    if (diffInMonths < 12) return `${diffInMonths} month${diffInMonths > 1 ? 's' : ''} ago`;
+    const diffInYears = Math.floor(diffInDays / 365);
+    return `${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`;
+  };
+
   const [topLiked, setTopLiked] = useState([]);
   const [mostActive, setMostActive] = useState([]);
   const [mostShared, setMostShared] = useState([]);
   const [loadingMBlogStats, setLoadingMBlogStats] = useState(true);
+
+  // Widget States
+  const [recentBlogsData, setRecentBlogsData] = useState([]);
+  const [latestGroupsData, setLatestGroupsData] = useState([]);
+  const [loadingWidgets, setLoadingWidgets] = useState(true);
 
   useEffect(() => {
     if (isMBlogPage) {
@@ -65,6 +90,65 @@ export default function SidebarRight() {
       setLoadingMBlogStats(false);
     }
   };
+
+  useEffect(() => {
+    const fetchWidgets = async () => {
+      setLoadingWidgets(true);
+      try {
+        // 1. Recent Blogs (Most Recently Created)
+        const { data: bData, error: bErr } = await supabase
+          .from('mblog_articles')
+          .select(`
+            id, title, created_at,
+            author:profiles(name)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(3);
+        
+        if (!bErr && bData) {
+          setRecentBlogsData(bData);
+        }
+
+        // 2. Latest Groups
+        let query = supabase.from('groups').select('*');
+        // Match active schema structure: 'type' holds public/private string
+        query = query.neq('type', 'private')
+                     .order('created_at', { ascending: false })
+                     .limit(3);
+
+        const { data: gData, error: gErr } = await query;
+
+        if (gErr) {
+          console.log('🚨 [Latest Groups Debug] Error occurred fetching data rows:', gErr);
+        }
+
+        if (!gErr && gData) {
+          const mappedGroups = await Promise.all(gData.map(async (group) => {
+            const { count, error: countErr } = await supabase
+              .from('group_members')
+              .select('*', { count: 'exact', head: true })
+              .eq('group_id', group.id);
+
+            if (countErr) {
+              console.log('🚨 [Latest Groups Debug] Error occurred fetching count rows:', countErr);
+            }
+
+            return {
+              ...group,
+              actualMemberCount: count || 0
+            };
+          }));
+          setLatestGroupsData(mappedGroups);
+        }
+      } catch (err) {
+        console.error('Error fetching widgets:', err);
+      } finally {
+        setLoadingWidgets(false);
+      }
+    };
+
+    fetchWidgets();
+  }, []);
 
   const recentBlogs = [
     { id: 1, title: 'Sustainable Shipping in 2026', author: 'Capt. Sarah Miller', date: '2 days ago' },
@@ -343,20 +427,36 @@ export default function SidebarRight() {
         </>
       ) : (
         <>
+          {/* Upper Container: Recent Blogs */}
           <div className="card p-4">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-sm text-[#1b1c1c]">Recent Blog</h3>
+              <h3 className="font-bold text-sm text-[#1b1c1c]">Recent Blogs</h3>
               <Info size={14} className="text-[#42474f] cursor-pointer" />
             </div>
             <div className="flex flex-col gap-4">
-              {recentBlogs.map(blog => (
-                <div key={blog.id} className="group cursor-pointer">
-                  <h4 className="text-sm font-semibold text-[#002b4e] group-hover:underline">
-                    {blog.title}
-                  </h4>
-                  <p className="text-[11px] text-[#727780] mt-1">{blog.author} • {blog.date}</p>
-                </div>
-              ))}
+              {loadingWidgets ? (
+                [1, 2, 3].map(i => (
+                  <div key={i} className="animate-pulse">
+                    <div className="h-4 bg-gray-100 rounded w-full mb-2" />
+                    <div className="h-3 bg-gray-50 rounded w-2/3" />
+                  </div>
+                ))
+              ) : recentBlogsData.length === 0 ? (
+                <p className="text-xs text-gray-400">No blogs found.</p>
+              ) : (
+                recentBlogsData.map(blog => {
+                  return (
+                    <div key={blog.id} className="group cursor-pointer">
+                      <Link href={`/mblog?articleId=${blog.id}`} className="text-sm font-medium text-blue-950 group-hover:underline line-clamp-2 leading-tight block">
+                        {blog.title}
+                      </Link>
+                      <p className="text-xs text-gray-400 mt-1 truncate">
+                        {blog.author?.name || 'Anonymous'} · {getRelativeTime(blog.created_at)}
+                      </p>
+                    </div>
+                  );
+                })
+              )}
               <Link href="/mblog" className="text-xs font-bold text-[#004173] mt-2 hover:underline">
                 View all articles
               </Link>
@@ -365,20 +465,36 @@ export default function SidebarRight() {
 
           <div className="sidebar-spacer"></div>
 
+          {/* Lower Container: Latest Groups */}
           <div className="card p-4">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-sm text-[#1b1c1c]">Recent Job Postings</h3>
-              <Briefcase size={14} className="text-[#42474f]" />
+              <h3 className="font-bold text-sm text-[#1b1c1c]">Latest Groups</h3>
+              <Sparkles size={14} className="text-[#42474f]" />
             </div>
             <div className="flex flex-col gap-4">
-              {recentJobs.map(job => (
-                <div key={job.id} className="cursor-pointer hover:bg-[#f5f3f3] -mx-4 px-4 py-2 transition-colors">
-                  <p className="text-sm font-semibold text-[#1b1c1c]">{job.title}</p>
-                  <p className="text-xs text-[#42474f] mt-1">{job.company} • {job.location}</p>
-                </div>
-              ))}
-              <Link href="/mservices" className="text-xs font-bold text-[#004173] mt-2 hover:underline">
-                View all jobs
+              {loadingWidgets ? (
+                [1, 2, 3].map(i => (
+                  <div key={i} className="animate-pulse">
+                    <div className="h-4 bg-gray-100 rounded w-full mb-2" />
+                    <div className="h-3 bg-gray-50 rounded w-1/2" />
+                  </div>
+                ))
+              ) : latestGroupsData.length === 0 ? (
+                <p className="text-xs text-gray-400">No groups found.</p>
+              ) : (
+                latestGroupsData.map(group => (
+                  <div key={group.id} className="group cursor-pointer">
+                    <Link href={`/groups/${group.id}`} className="text-sm font-medium text-blue-950 group-hover:underline truncate block">
+                      {group.name}
+                    </Link>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {group.actualMemberCount} {(group.actualMemberCount === 1) ? 'member' : 'Members'}
+                    </p>
+                  </div>
+                ))
+              )}
+              <Link href="/groups" className="text-xs font-bold text-[#004173] mt-2 hover:underline">
+                View all groups
               </Link>
             </div>
           </div>

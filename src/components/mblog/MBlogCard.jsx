@@ -2,11 +2,12 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { User, Calendar, ExternalLink, FileText, Play, PlayCircle, ChevronDown, ChevronUp, Pencil, Paperclip, Share2, X, Check, Trash2, AlertTriangle, ThumbsUp, MessageSquare } from 'lucide-react';
+import { User, Calendar, ExternalLink, FileText, Play, PlayCircle, ChevronDown, ChevronUp, Pencil, Paperclip, Share2, X, Check, Trash2, AlertTriangle, ThumbsUp, MessageSquare, MoreVertical } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import { createClient } from '@/lib/supabase';
 import DOMPurify from 'dompurify';
 import { extractYouTubeId } from '@/src/lib/youtubeUtils';
+import LikersModal from '@/src/components/modals/LikersModal';
 
 
 export default function MBlogCard({ article, userId, isEditable, onEdit, onDelete }) {
@@ -21,10 +22,26 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
   const supabase = createClient();
   const searchParams = useSearchParams();
   const { profile } = useProfile();
+  
+  const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+  const actionMenuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
+        setIsActionMenuOpen(false);
+      }
+    }
+    if (isActionMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isActionMenuOpen]);
 
   // Interaction State
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [isLikersModalOpen, setIsLikersModalOpen] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([]);
@@ -114,11 +131,13 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
     const diffInMins = Math.floor(diffInSecs / 60);
     const diffInHours = Math.floor(diffInMins / 60);
     const diffInDays = Math.floor(diffInHours / 24);
+    const diffInWeeks = Math.floor(diffInDays / 7);
 
-    if (diffInSecs < 60) return 'Just now';
+    if (diffInSecs < 60) return 'just now';
     if (diffInMins < 60) return `${diffInMins}m ago`;
     if (diffInHours < 24) return `${diffInHours}h ago`;
     if (diffInDays < 7) return `${diffInDays}d ago`;
+    if (diffInWeeks < 4) return `${diffInWeeks}w ago`;
     return past.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
@@ -405,53 +424,81 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
 
   return (
     <div 
-      className="card p-0 overflow-hidden hover:shadow-md transition-shadow border border-gray-100 bg-white" 
+      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 p-4 relative animate-in fade-in zoom-in-95 duration-300" 
       ref={cardRef}
     >
-      <div className="p-6 relative">
-        {/* HIERARCHY: TITLE FIRST */}
-        <div className="flex justify-between items-start gap-4 mb-3">
-          <h2 className="text-2xl font-bold text-[#0e2a4d] leading-tight hover:text-[#004173] transition-colors flex-1">
-            {article.title}
-          </h2>
-          
-          {isEditable && (
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => onEdit?.(article)}
-                className="p-2 bg-gray-50 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all active:scale-90 border border-transparent hover:border-blue-100"
-                title="Edit Article"
-              >
-                <Pencil size={18} />
-              </button>
-              <button 
-                onClick={() => setShowDeleteConfirm(true)}
-                className="p-2 bg-gray-50 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all active:scale-90 border border-transparent hover:border-red-100"
-                title="Delete Article"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* METADATA SECOND */}
-        <div className="flex items-center gap-4 text-xs text-gray-500 mb-6">
-          <div className="flex items-center gap-2">
+      {/* Post Author Info Header */}
+      <div className="flex justify-between items-start mb-4">
+        {/* Left: Avatar & Metadata */}
+        <div className="flex items-start gap-3 min-w-0 flex-1 pr-4">
+          <div className="flex-shrink-0">
             {article.author?.avatar_url ? (
-              <img src={article.author.avatar_url} className="w-6 h-6 rounded-full object-cover border border-gray-100" alt="" />
+              <img src={article.author.avatar_url} className="w-10 h-10 rounded-full border border-gray-100 object-cover" alt="" />
             ) : (
-              <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center border border-gray-100">
-                <User size={12} className="text-gray-400" />
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-100">
+                <User size={20} className="text-gray-400" />
               </div>
             )}
-            <span className="font-bold text-gray-700">{article.author?.name || 'Anonymous'}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-gray-400">
-            <Calendar size={14} />
-            <span className="font-medium">{getRelativeTime(article.created_at)}</span>
+          
+          <div className="flex flex-col justify-center min-w-0 flex-1">
+            <span className="font-bold text-[#0e2a4d] hover:underline cursor-pointer block truncate">
+              {article.author?.name || 'Anonymous'}
+            </span>
+            <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium mt-0.5 truncate">
+              <span className="truncate">{article.author?.headline || 'Member'}</span>
+              <span className="flex-shrink-0 text-gray-400 font-normal">•</span>
+              <span className="flex-shrink-0 text-gray-400 font-normal">{getRelativeTime(article.created_at)}</span>
+            </div>
           </div>
         </div>
+
+        {/* Right: 3-Dot Menu */}
+        {isEditable && (
+          <div className="flex-shrink-0 relative z-20" ref={actionMenuRef}>
+            <button 
+              type="button"
+              onClick={() => setIsActionMenuOpen(!isActionMenuOpen)}
+              className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors focus:outline-none"
+            >
+              <MoreVertical size={18} />
+            </button>
+
+            {isActionMenuOpen && (
+              <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1 flex flex-col animate-fadeIn">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsActionMenuOpen(false);
+                    onEdit?.(article);
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                >
+                  <Pencil size={14} />
+                  <span className="font-sans font-medium">Edit Article</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsActionMenuOpen(false);
+                    setShowDeleteConfirm(true);
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <Trash2 size={14} />
+                  <span className="font-sans font-medium">Delete</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+        {/* Title */}
+        <h2 className="font-extrabold text-[#0e2a4d] tracking-tight mt-1 mb-3 leading-snug text-xl hover:text-[#004173] transition-colors flex-1">
+          {article.title}
+        </h2>
 
         {/* MEDIA THIRD - IMAGE ONLY (Video moved to footer) */}
         {article.media_url && (
@@ -464,7 +511,7 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
           </div>
         )}
 
-        {/* CONTENT FOURTH */}
+        {/* Share Overlay (Rest of modals below) */}
         <div className="mblog-content-wrapper">
           <div 
             className="rich-text text-gray-600 leading-relaxed text-[15px]"
@@ -480,42 +527,58 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
           {shouldTruncate && (
             <button 
               onClick={() => setIsExpanded(!isExpanded)}
-              className="mt-3 flex items-center gap-2 text-sm font-bold text-[#004173] hover:text-[#0e2a4d] transition-colors py-2 px-4 rounded-lg bg-blue-50 hover:bg-blue-100 w-fit"
+              className="text-[#004173] hover:underline font-bold text-xs mt-1 focus:outline-none select-none"
             >
-              {isExpanded ? (
-                <>Show less <ChevronUp size={16} /></>
-              ) : (
-                <>Read full blog <ChevronDown size={16} /></>
-              )}
+              {isExpanded ? '... Show less' : '... Show more'}
             </button>
           )}
         </div>
 
-        {/* INTERACTION BAR (BASKET 2 & 3) */}
-        <div className="mt-8 pt-4 border-t border-gray-100 flex items-center gap-6">
-          <button 
-            onClick={handleLikeToggle}
-            className={`flex items-center gap-2 text-sm font-bold transition-all active:scale-95 ${
-              isLiked ? 'text-[#004173]' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <ThumbsUp 
-              size={18} 
-              fill={isLiked ? '#004173' : 'transparent'} 
-              className={isLiked ? 'animate-bounce-small' : ''}
-            />
-            <span>{likeCount} {likeCount === 1 ? 'Like' : 'Likes'}</span>
-          </button>
-          
-          <button 
-            onClick={() => setShowComments(!showComments)}
-            className={`flex items-center gap-2 text-sm font-bold transition-all active:scale-95 ${
-              showComments ? 'text-[#0e2a4d]' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <MessageSquare size={18} className={showComments ? 'text-[#0e2a4d]' : ''} />
-            <span>{comments.length} {comments.length === 1 ? 'Comment' : 'Comments'}</span>
-          </button>
+        {/* Footer Actions */}
+        <div className="pt-4">
+          {/* Action badges bar (Likes/Comments count) */}
+          <div className="flex justify-between items-center text-gray-500 text-xs font-medium select-none mb-3">
+            <div className="flex items-center gap-4 font-sans">
+              <span
+                onClick={() => setIsLikersModalOpen(true)}
+                className={`font-sans flex items-center gap-1.5 ${
+                  likeCount > 0 ? 'cursor-pointer hover:underline hover:text-[#0e2a4d] transition-colors' : ''
+                }`}
+              >
+                <span>{likeCount} {likeCount === 1 ? 'like' : 'likes'}</span>
+              </span>
+              <span>•</span>
+              <span>{comments.length} {comments.length === 1 ? 'comment' : 'comments'}</span>
+            </div>
+          </div>
+
+          {/* Interactive Action Buttons Bar (Like & Comment triggers & 3-dot Menu) */}
+          {/* Interactive Action Buttons Bar (Like & Comment triggers & 3-dot Menu) */}
+          <div className="flex items-center gap-1 w-full">
+            <button
+              type="button"
+              onClick={handleLikeToggle}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-bold transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
+                isLiked
+                  ? 'text-[#0e2a4d] bg-blue-50/50'
+                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+              }`}
+            >
+              <ThumbsUp size={18} className={isLiked ? 'fill-[#0e2a4d] stroke-[#0e2a4d]' : 'text-gray-500'} />
+              <span className="font-sans">Like</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowComments(!showComments)}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
+                showComments ? 'bg-gray-50/80 text-gray-800' : ''
+              }`}
+            >
+              <MessageSquare size={18} />
+              <span className="font-sans">Comment</span>
+            </button>
+          </div>
         </div>
 
         {/* LINEAR COMMENT SECTION */}
@@ -672,7 +735,8 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
             </button>
           )}
         </div>
-      </div>
+
+
 
       {/* Confirmation Dialog Overlay */}
       {showShareConfirm && (
@@ -772,6 +836,15 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
           </div>
         </div>
       )}
+
+      {/* Likers Modal */}
+      <LikersModal
+        isOpen={isLikersModalOpen}
+        onClose={() => setIsLikersModalOpen(false)}
+        postId={article.id}
+        tableName="mblog_article_likes"
+        foreignKey="article_id"
+      />
     </div>
   );
 }

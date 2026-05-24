@@ -293,7 +293,7 @@ export default function AppShell({ children, userEmail, userId }) {
               )}
             </div>
 
-            <div className="header-nav-center flex items-center justify-center">
+            <div className="header-nav-center flex items-center justify-center pt-3">
               {pathname === '/profile' ? (
                 <span className="font-bold text-xl text-[#002b4e]">Profile</span>
               ) : (
