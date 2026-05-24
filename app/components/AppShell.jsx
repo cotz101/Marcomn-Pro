@@ -394,9 +394,10 @@ export default function AppShell({ children, userEmail, userId }) {
                   </div>
                 </div>
               ) : (
-                <div className="mobile-search-bar" onClick={() => router.push('/search')}>
-                  <Search size={18} />
-                  <span>Search</span>
+                <div className="flex items-center px-4">
+                  <Link href="/" className="logo font-semibold text-[#002b4e]">
+                    Mar<span>Comn</span>
+                  </Link>
                 </div>
               )}
               <div className="flex items-center gap-3">
