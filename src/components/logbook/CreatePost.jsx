@@ -197,7 +197,10 @@ export default function CreatePost({ onPostCreated }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 px-2 sm:px-4 py-3 mb-6 shadow-sm flex flex-col gap-3 w-full max-w-xl mx-auto">
+    <div 
+      className="bg-white rounded-xl border border-gray-100 px-2 sm:px-4 py-5 mb-6 shadow-sm flex flex-col gap-3 w-full max-w-xl mx-auto"
+      style={{ paddingTop: '20px', paddingBottom: '20px' }}
+    >
       {/* Avatar + Rounded Trigger Button */}
       <div className="flex items-center gap-3 w-full">
         {profile?.profilePic ? (
@@ -220,7 +223,7 @@ export default function CreatePost({ onPostCreated }) {
             setPostMode('quick'); // Open modal and default to quick log
             setIsModalOpen(true);
           }}
-          className="flex-1 bg-gray-50 hover:bg-gray-100/80 border border-gray-200 font-sans font-medium text-sm text-gray-500 rounded-full px-3 sm:px-5 py-2.5 text-left transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-100 active:scale-[0.99] select-none"
+          className="flex-1 bg-gray-50 hover:bg-gray-100/80 border border-gray-200 font-sans font-medium text-sm text-gray-500 rounded-full pl-6 pr-3 sm:pr-5 py-3 text-left transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-100 active:scale-[0.99] select-none flex items-center"
         >
           Start a post as {profile?.name || 'member'}...
         </button>
@@ -262,19 +265,20 @@ export default function CreatePost({ onPostCreated }) {
             `}</style>
 
             {/* Navy Header Shell */}
-            <div className="h-14 bg-navy-900 text-white flex items-center justify-between px-6 flex-shrink-0 border-b border-[#0b223e]">
-              <span className="font-semibold text-lg font-sans">Create a Post</span>
+            <div className="h-14 bg-navy-900 text-white flex items-center justify-between px-6 flex-shrink-0 border-b border-[#0b223e] relative pr-4" style={{ position: "relative", paddingRight: "1rem" }}>
+              <div className="absolute left-1/2 -translate-x-1/2 font-semibold text-lg font-sans" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)" }}>Create a Post</div>
               <button
                 type="button"
                 onClick={handleClose}
-                className="text-white/80 hover:text-white hover:scale-105 transition-all p-1.5 rounded-full hover:bg-white/10 flex items-center justify-center outline-none focus:outline-none cursor-pointer"
+                className="text-white/80 hover:text-white hover:scale-105 transition-all p-1.5 rounded-full hover:bg-white/10 flex items-center justify-center outline-none focus:outline-none cursor-pointer absolute right-4 top-1/2 -translate-y-1/2"
+                style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)" }}
               >
                 <X size={20} />
               </button>
             </div>
 
             {/* Tabbed Posting Gate integrated into the top bar */}
-            <div className="flex border-b border-gray-150 px-6 gap-6 bg-gray-50 flex-shrink-0">
+            <div className="flex border-b border-gray-150 gap-6 bg-gray-50 flex-shrink-0 justify-center px-0" style={{ justifyContent: "center", paddingLeft: "0", paddingRight: "0" }}>
               <button
                 type="button"
                 onClick={() => setPostMode('quick')}
@@ -436,7 +440,7 @@ export default function CreatePost({ onPostCreated }) {
               </div>
 
               {/* Action Bar / Footer */}
-              <div className="px-6 py-4 flex justify-between items-center bg-white border-t border-gray-200 flex-shrink-0">
+              <div className="px-6 py-4 flex justify-between items-center bg-white border-t border-gray-200 flex-shrink-0 pr-6" style={{ paddingRight: "1.5rem" }}>
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -446,7 +450,8 @@ export default function CreatePost({ onPostCreated }) {
                         fileInputRef.current.click();
                       }
                     }}
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 rounded-lg text-gray-500 hover:text-gray-800 font-bold text-xs transition-all cursor-pointer active:scale-95 border border-gray-200 select-none bg-white shadow-3xs outline-none focus:outline-none font-sans"
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 rounded-lg text-gray-500 hover:text-gray-800 font-bold text-xs transition-all cursor-pointer active:scale-95 border border-gray-200 select-none bg-white shadow-3xs outline-none focus:outline-none font-sans ml-4 mb-2"
+                    style={{ marginLeft: "1rem", marginBottom: "0.5rem" }}
                   >
                     <ImageIcon size={18} className="text-navy-900" />
                     <span>Media</span>
@@ -470,7 +475,8 @@ export default function CreatePost({ onPostCreated }) {
                   <button
                     type="submit"
                     disabled={submitting || uploadProgress || !isFormValid()}
-                    className="bg-navy-900 hover:bg-navy-800 text-white px-6 py-2 rounded-full font-semibold text-sm transition-all active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 disabled:pointer-events-none transition-colors select-none cursor-pointer outline-none focus:outline-none shadow-3xs font-sans"
+                    className="bg-navy-900 hover:bg-navy-800 text-white px-10 py-2 rounded-full font-semibold text-sm transition-all active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 disabled:pointer-events-none transition-colors select-none cursor-pointer outline-none focus:outline-none shadow-3xs font-sans"
+                    style={{ paddingLeft: "2.5rem", paddingRight: "2.5rem" }}
                   >
                     {submitting ? (
                       <div className="flex items-center gap-1.5 font-sans">

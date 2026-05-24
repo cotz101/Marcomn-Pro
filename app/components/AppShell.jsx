@@ -276,7 +276,7 @@ export default function AppShell({ children, userEmail, userId }) {
       <header className="header" style={{ borderTop: isCompany ? '4px solid var(--primary)' : 'none' }}>
         <div className="app-container">
           {/* Desktop Header Content */}
-          <div className="header-content hidden sm:grid">
+          <div className="header-content hidden sm:grid items-center py-1">
             <div className="header-left flex items-center gap-3">
               {pathname === '/profile' ? (
                 <button 
@@ -293,7 +293,7 @@ export default function AppShell({ children, userEmail, userId }) {
               )}
             </div>
 
-            <div className="header-nav-center flex items-center justify-center pt-3">
+            <div className="header-nav-center flex items-center justify-center !pt-[6px]">
               {pathname === '/profile' ? (
                 <span className="font-bold text-xl text-[#002b4e]">Profile</span>
               ) : (

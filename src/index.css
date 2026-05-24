@@ -3611,3 +3611,15 @@ html.dark .btn-primary {
   font-weight: 700 !important;
 }
 
+/* Nuclear Layout Shift Overrides */
+.header, .header-content {
+  height: auto !important;
+  min-height: 64px !important;
+}
+
+.header-nav-center {
+  padding-top: 6px !important;
+  margin-top: 0 !important;
+}
+
+
