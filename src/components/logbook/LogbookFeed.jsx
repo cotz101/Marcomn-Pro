@@ -200,7 +200,7 @@ export default function LogbookFeed() {
   );
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
+    <div className="max-w-3xl mx-auto px-4 py-6 max-sm:max-w-full max-sm:px-0">
       <CreatePost onPostCreated={handlePostCreated} />
 
       {loading ? (
