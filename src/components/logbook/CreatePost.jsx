@@ -223,7 +223,7 @@ export default function CreatePost({ onPostCreated }) {
             setPostMode('quick'); // Open modal and default to quick log
             setIsModalOpen(true);
           }}
-          className="flex-1 bg-gray-50 hover:bg-gray-100/80 border border-gray-200 font-sans font-medium text-sm text-gray-500 rounded-full pl-6 pr-3 sm:pr-5 py-3 text-left transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-100 active:scale-[0.99] select-none flex items-center"
+          className="bg-gray-50 hover:bg-gray-100/80 border border-gray-200 font-sans font-medium text-sm text-gray-500 rounded-full transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-100 active:scale-[0.99] select-none flex items-center justify-center w-full text-center px-4 py-3"
         >
           Start a post as {profile?.name || 'member'}...
         </button>
