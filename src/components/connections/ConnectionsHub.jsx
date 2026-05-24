@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import DiscoveryGrid from './DiscoveryGrid';
-import { UserPlus, Users, Link as LinkIcon, Mail } from 'lucide-react';
+import { UserPlus, Users, Link as LinkIcon, Mail, Search } from 'lucide-react';
 
 export default function ConnectionsHub() {
   const [activeTab, setActiveTab] = useState('discovery');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const tabs = [
     { id: 'discovery', label: 'Discover', icon: UserPlus },
@@ -14,9 +15,23 @@ export default function ConnectionsHub() {
 
   return (
     <div className="connections-hub mx-auto w-full max-w-full px-4" style={{ paddingBottom: '100px' }}>
-      <div className="connections-header card mb-6" style={{ padding: '0', background: 'transparent', boxShadow: 'none', border: 'none' }}>
-        <h1 className="text-xl font-bold pt-6 pb-2" style={{ color: '#002b4e' }}>Professional Network</h1>
-        <div className="flex gap-8 py-4 border-b overflow-x-auto no-scrollbar">
+      <div className="connections-header bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6 flex flex-col gap-4 w-full">
+        <h1 className="text-xl font-bold" style={{ color: '#002b4e' }}>Professional Network</h1>
+        
+        <div className="search-container" style={{ padding: '0' }}>
+          <div className="search-bar-wrapper">
+            <Search className="search-icon" size={20} />
+            <input 
+              type="text" 
+              placeholder="Search by name, rank, or specialty..." 
+              className="search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-8 border-b overflow-x-auto no-scrollbar mt-2">
           {tabs.map(tab => (
             <button
               key={tab.id}
@@ -34,8 +49,8 @@ export default function ConnectionsHub() {
         </div>
       </div>
 
-      <div className="connections-content">
-        <DiscoveryGrid activeTab={activeTab} />
+      <div className="connections-content w-full">
+        <DiscoveryGrid activeTab={activeTab} searchTerm={searchTerm} />
       </div>
     </div>
   );

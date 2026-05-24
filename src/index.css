@@ -2612,7 +2612,7 @@ html.dark .btn-primary {
   @media (max-width: 767px) {
     .mobile-fab-container {
       position: fixed;
-      bottom: calc(var(--mobile-nav-height) + 16px);
+      bottom: 96px; /* bottom-24 equivalent to clear safe area */
       right: 16px;
       z-index: 1001;
       display: flex;

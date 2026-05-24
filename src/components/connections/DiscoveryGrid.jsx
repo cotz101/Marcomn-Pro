@@ -6,13 +6,12 @@ import ProfessionalCard from './ProfessionalCard';
 import ProfessionalCardSkeleton from './ProfessionalCardSkeleton';
 import { ChevronDown, Loader2, Search, Users } from 'lucide-react';
 
-export default function DiscoveryGrid({ activeTab = 'discovery' }) {
+export default function DiscoveryGrid({ activeTab = 'discovery', searchTerm = '' }) {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
   const [currentUserId, setCurrentUserId] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   
@@ -152,19 +151,6 @@ export default function DiscoveryGrid({ activeTab = 'discovery' }) {
 
   return (
     <div className="pb-32">
-      <div className="search-container" style={{ paddingTop: '0' }}>
-        <div className="search-bar-wrapper">
-          <Search className="search-icon" size={20} />
-          <input 
-            type="text" 
-            placeholder="Search by name, rank, or specialty..." 
-            className="search-input"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 min-[471px]:grid-cols-2 lg:grid-cols-2 gap-4">
         {filteredProfiles.map(profile => (
           <ProfessionalCard 

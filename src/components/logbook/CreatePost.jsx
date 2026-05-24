@@ -239,8 +239,8 @@ export default function CreatePost({ onPostCreated }) {
         >
           
           {/* Modal Container */}
-          <div className={`bg-white rounded-2xl shadow-xl w-full mx-auto overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col h-full max-h-[85vh] transition-all duration-300 ${
-            postMode === 'article' ? 'max-w-3xl md:max-h-[80vh]' : 'max-w-2xl md:max-h-[75vh]'
+          <div className={`bg-white rounded-2xl shadow-xl w-full mx-auto overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col h-auto max-h-[65vh] transition-all duration-300 ${
+            postMode === 'article' ? 'max-w-3xl md:max-h-[60vh]' : 'max-w-2xl md:max-h-[60vh]'
           }`}>
             
             {/* Scoped CSS Style to lock Rich-Text Editor height and styles */}
