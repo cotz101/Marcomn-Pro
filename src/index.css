@@ -3622,4 +3622,18 @@ html.dark .btn-primary {
   margin-top: 0 !important;
 }
 
+/* Mobile View Full-Width Fix (324-440px only) */
+@media (min-width: 324px) and (max-width: 440px) {
+  .container,
+  .profile-container,
+  .main-wrapper {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
 
