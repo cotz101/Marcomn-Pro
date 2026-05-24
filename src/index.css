@@ -2328,7 +2328,7 @@ html.dark .btn-primary {
   }
 }
 
-@media (min-width: 1025px) {
+@media (min-width: 768px) {
   .header-actions-desktop {
     display: flex !important;
     align-items: center !important;
