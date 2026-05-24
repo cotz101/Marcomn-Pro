@@ -248,7 +248,7 @@ a {
 .header {
   background-color: #ffffff;
   border-bottom: 1px solid #efeded;
-  height: 64px;
+  min-height: 64px;
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -278,7 +278,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 64px;
+  min-height: 64px;
   padding: 0 16px;
 }
 
@@ -2071,6 +2071,22 @@ html.dark .btn-primary {
 @media (max-width: 767px) {
   .app-container {
     padding: 0 12px !important; /* iPhone 13 Symmetry Fix */
+  }
+}
+
+/* Make main grid full width for specific mobile range */
+@media (min-width: 324px) and (max-width: 440px) {
+  .app-container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .main-grid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    width: 100% !important;
+    grid-template-columns: 1fr !important;
   }
 }
 
