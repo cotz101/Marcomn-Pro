@@ -33,6 +33,7 @@ export function ProfileProvider({ children, userId, userEmail }) {
 
   const [showPostJob, setShowPostJob] = useState(false);
   const [jobToEdit, setJobToEdit] = useState(null);
+  const [showCreatePost, setShowCreatePost] = useState(false);
 
   const openPostJobModal = (job = null) => {
     setJobToEdit(job);
@@ -147,6 +148,7 @@ export function ProfileProvider({ children, userId, userEmail }) {
       showPostJob, setShowPostJob,
       jobToEdit, setJobToEdit,
       openPostJobModal, closePostJobModal,
+      showCreatePost, setShowCreatePost,
       showToast: (message, type = 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);

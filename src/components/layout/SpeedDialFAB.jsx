@@ -44,8 +44,8 @@ export default function SpeedDialFAB() {
           primaryPath: '/logbook',
           shortcuts: [
             { label: 'Logbook', icon: BookOpen, path: '/logbook' },
-            { label: 'Group', icon: Users, path: '/groups' },
             { label: 'Connection', icon: UserPlus, path: '/connections' },
+            { label: 'Group', icon: Users, path: '/groups' },
             { label: 'Talents', icon: Star, path: '/talent' },
           ]
         };
@@ -88,7 +88,7 @@ export default function SpeedDialFAB() {
 
         {/* Main FAB */}
         <button 
-          className={`main-fab ${animating ? 'animating' : ''}`}
+          className={`main-fab transition-all duration-200 ease-in-out active:scale-95 ${isOpen ? 'active scale-110' : ''} ${animating ? 'animating' : ''}`}
           onClick={() => setIsOpen(!isOpen)}
           style={{ '--fab-color': config.color }}
         >

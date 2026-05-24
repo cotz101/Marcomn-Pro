@@ -163,6 +163,16 @@ export default function LogbookFeed() {
     return () => clearTimeout(timer);
   }, [loading, posts, searchParams, router]);
 
+  useEffect(() => {
+    const handleGlobalPostCreated = (e) => {
+      if (e.detail) {
+        handlePostCreated(e.detail);
+      }
+    };
+    window.addEventListener('logbook-post-created', handleGlobalPostCreated);
+    return () => window.removeEventListener('logbook-post-created', handleGlobalPostCreated);
+  }, []);
+
   const handlePostCreated = (newPost) => {
     setPosts((prev) => [newPost, ...prev]);
   };

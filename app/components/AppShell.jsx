@@ -33,7 +33,7 @@ import { useProfile } from '@/app/context/ProfileContext';
 import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
 import CreateCompanyModal from '@/src/components/company/CreateCompanyModal';
 import PostJobModal from '@/src/components/jobs/PostJobModal';
-import PostComposerModal from '@/src/components/logbook/PostComposerModal';
+import CreatePostModal from '@/src/components/logbook/CreatePostModal';
 import IdentitySwitcher from '@/src/components/layout/IdentitySwitcher';
 import NotificationDropdown from '@/src/components/layout/NotificationDropdown';
 import SidebarLeft from '@/src/components/layout/SidebarLeft';
@@ -47,14 +47,14 @@ export default function AppShell({ children, userEmail, userId }) {
     profile, setProfile, onboardingCompleted, setOnboardingCompleted,
     companies, refreshCompanies, currentIdentity, setCurrentIdentity,
     toast, setToast,
-    showPostJob, jobToEdit, openPostJobModal, closePostJobModal
+    showPostJob, jobToEdit, openPostJobModal, closePostJobModal,
+    showCreatePost, setShowCreatePost
   } = useProfile();
   
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
   const [mnetworkOpen, setMnetworkOpen] = useState(false);
   const [showCreateCompany, setShowCreateCompany] = useState(false);
-  const [showPostModal, setShowPostModal] = useState(false);
   const [isFabExpanded, setIsFabExpanded] = useState(false);
   const [fabAnimating, setFabAnimating] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -216,23 +216,6 @@ export default function AppShell({ children, userEmail, userId }) {
     router.refresh();
   };
 
-  const handlePostSubmit = async (postData) => {
-    const supabase = createClient();
-    const { error } = await supabase.from('posts').insert({
-      user_id: userId,
-      content: postData.content,
-      title: postData.title || null,
-      media_url: postData.media || null,
-      media_type: postData.mediaType || 'image',
-      posted_as_company_id: currentIdentity?.type === 'company' ? currentIdentity.id : null
-    });
-
-    if (!error) {
-      setShowPostModal(false);
-    } else {
-      alert('Error posting: ' + error.message);
-    }
-  };
 
   const isCompany = currentIdentity?.type === 'company';
   const identityImage = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (profile?.profilePic || '/profile_pic.png');
@@ -264,12 +247,14 @@ export default function AppShell({ children, userEmail, userId }) {
         />
       )}
 
-      {showPostModal && (
-        <PostComposerModal
-          isOpen={showPostModal}
-          onClose={() => setShowPostModal(false)}
-          onPostSubmit={handlePostSubmit}
-          profile={profile}
+      {showCreatePost && (
+        <CreatePostModal
+          isOpen={showCreatePost}
+          onClose={() => setShowCreatePost(false)}
+          onPostCreated={() => {
+            setShowCreatePost(false);
+            router.refresh();
+          }}
         />
       )}
 
@@ -538,13 +523,13 @@ export default function AppShell({ children, userEmail, userId }) {
                         <span className="shortcut-label">Logbook</span>
                         <div className="shortcut-icon-wrapper"><Ship size={18} /></div>
                       </div>
-                      <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/groups'); }}>
-                        <span className="shortcut-label">Groups</span>
-                        <div className="shortcut-icon-wrapper"><Users size={18} /></div>
-                      </div>
                       <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/network/connections'); }}>
                         <span className="shortcut-label">Connections</span>
                         <div className="shortcut-icon-wrapper"><UserPlus size={18} /></div>
+                      </div>
+                      <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/groups'); }}>
+                        <span className="shortcut-label">Groups</span>
+                        <div className="shortcut-icon-wrapper"><Users size={18} /></div>
                       </div>
                       <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/talent'); }}>
                         <span className="shortcut-label">Talents</span>
@@ -585,7 +570,7 @@ export default function AppShell({ children, userEmail, userId }) {
                 {/* Primary Action (Navy Theme) - RESTORED SOLID NAVY BLUE */}
                 <div className="speed-dial-primary-btn" style={{ backgroundColor: '#002b4e', color: 'white', zIndex: 9999 }}>
                   {(pathname?.includes('/logbook') || pathname?.includes('/network') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) && (
-                    <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); setShowPostModal(true); }}>
+                    <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); setShowCreatePost(true); }}>
                       Post to Logbook
                     </button>
                   )}
@@ -604,7 +589,7 @@ export default function AppShell({ children, userEmail, userId }) {
             )}
             
             <button 
-              className={`main-fab ${isFabExpanded ? 'active' : ''} ${fabAnimating ? 'animating' : ''}`} 
+              className={`main-fab transition-all duration-200 ease-in-out active:scale-95 ${isFabExpanded ? 'active scale-110' : ''} ${fabAnimating ? 'animating' : ''}`} 
               onClick={() => setIsFabExpanded(!isFabExpanded)}
               style={{ 
                 '--fab-color': '#002b4e' 

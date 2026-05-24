@@ -221,7 +221,7 @@ export default function GroupsDirectory() {
   return (
     <div className="relative w-full max-w-full h-screen overflow-x-hidden flex flex-col">
       {/* Fixed Header & Search Area */}
-      <div className="w-full max-w-full px-4 sm:px-0 pt-4 pb-2 bg-white flex-shrink-0">
+      <div className="header-container w-full max-w-full px-4 sm:px-0 pt-4 pb-0 mb-4 bg-white flex-shrink-0">
         <div className="flex flex-col md:flex-row md:justify-between md:items-start w-full mb-4 gap-4">
           <div className="flex flex-col">
             <h1 className="text-2xl font-bold text-[#0e2a4d]">Maritime Groups</h1>
@@ -237,7 +237,7 @@ export default function GroupsDirectory() {
         </div>
 
         {/* Search Bar */}
-        <div className="search-container mb-2 px-4 sm:px-0" style={{ paddingTop: '0' }}>
+        <div className="search-container px-4 sm:px-0 bg-white pb-[10px] pt-0">
           <div className="search-bar-wrapper relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input 
@@ -252,7 +252,7 @@ export default function GroupsDirectory() {
       </div>
 
       {/* Scrollable Zone */}
-      <div className="flex-1 w-full overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 w-full overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mt-4">
         <div className="space-y-4 w-full">
           {loading && groups.length === 0 ? (
             // Skeletal Loading state (4 cards)

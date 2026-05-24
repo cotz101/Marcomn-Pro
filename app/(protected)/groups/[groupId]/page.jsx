@@ -71,21 +71,24 @@ const QUILL_STYLE = `
     border: none !important;
   }
   .quill-composer .ql-editor {
-    min-height: 40px;
-    max-height: 120px;
-    padding: 10px 16px;
-    line-height: 1.6;
+    min-height: 40px !important;
+    height: auto !important;
+    padding: 8px 12px !important;
+    line-height: 1.2 !important;
     background: #f9fafb;
     border-radius: 8px;
+    overflow-y: auto !important;
   }
   .quill-composer .ql-editor.ql-blank::before {
-    left: 16px;
+    left: 12px !important;
     color: #9ca3af;
     font-style: normal;
   }
   .quill-composer .ql-toolbar {
     border: none !important;
-    padding: 8px 0 0 0 !important;
+    background-color: #f9fafb;
+    margin-bottom: 8px !important;
+    padding: 4px !important;
     display: flex;
     align-items: center;
   }
@@ -93,7 +96,6 @@ const QUILL_STYLE = `
     margin-right: 8px !important;
   }
 `;
-
 
 // Helper for relative timestamps
 function formatRelativeTime(dateString) {
@@ -114,6 +116,9 @@ function WhoLikedModal({ postId, onClose }) {
   const supabase = createClient();
 
   useEffect(() => {
+    // Hide 'Leave Group' buttons when modal is open
+    document.body.classList.add('liker-modal-active');
+    
     async function fetchLikers() {
       const { data: likes } = await supabase.from('group_post_likes').select('user_id').eq('post_id', postId);
       if (likes && likes.length > 0) {
@@ -124,6 +129,10 @@ function WhoLikedModal({ postId, onClose }) {
       setLoading(false);
     }
     fetchLikers();
+
+    return () => {
+      document.body.classList.remove('liker-modal-active');
+    };
   }, [postId]);
 
   const displayedLikers = searchQuery.trim() 
@@ -132,10 +141,17 @@ function WhoLikedModal({ postId, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-white w-full max-w-sm rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="px-6 pt-6 pb-4 border-b border-gray-100 flex items-center bg-gray-50/50 relative">
-          <h3 className="w-full text-center text-lg font-bold uppercase text-blue-950">{likers.length} PEOPLE WHO LIKED IT</h3>
-          <button onClick={onClose} className="absolute right-4 text-gray-400 hover:text-red-500 transition-colors"><X size={20} /></button>
+      {/* Modal Container (max-w-md for wider layout) */}
+      <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        
+        {/* Dark Navy Blue Header */}
+        <div className="bg-[#0e2a4d] text-white px-8 pt-6 pb-4 border-b border-gray-100 flex items-center relative">
+          <h3 className="w-full text-center text-lg font-bold uppercase tracking-wide">Likes</h3>
+          
+          {/* Close Button */}
+          <button onClick={onClose} className="absolute right-4 text-white/70 hover:text-white transition-colors">
+            <X size={20} />
+          </button>
         </div>
         
         <div className="px-6 mt-4 mb-2">
@@ -148,14 +164,15 @@ function WhoLikedModal({ postId, onClose }) {
           />
         </div>
 
-        <div className="max-h-[300px] overflow-y-auto p-6 space-y-4 pt-4">
+        {/* Scrollable Members List */}
+        <div className="max-h-[320px] overflow-y-auto px-6 py-6 space-y-4">
           {loading ? <div className="py-10 text-center text-xs font-bold text-gray-400 uppercase animate-pulse">Loading...</div> :
             likers.length === 0 ? <div className="py-10 text-center text-xs font-bold text-gray-400 uppercase italic">No likes yet</div> :
             <>
               {displayedLikers.map((l, i) => (
-                <div key={i} className="flex items-center gap-3 p-2 hover:bg-blue-50 rounded-xl transition-all">
+                <div key={i} className="flex items-center gap-3 hover:bg-blue-50/50 p-2 rounded-xl transition-all">
                   <img src={l.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md" />
-                  <span className="text-sm font-bold text-gray-900">{l.name}</span>
+                  <span className="font-medium text-gray-900">{l.name}</span>
                 </div>
               ))}
               {!searchQuery && likers.length > 5 && (
@@ -307,7 +324,7 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
   const handleDeleteComment = (cid) => setShowDeleteConfirm(cid);
 
   return (
-    <div key={post.id} className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-300 relative text-left">
+    <div key={post.id} className="bg-white rounded-xl shadow-sm px-4 card-container border border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-300 relative text-left">
       {/* Post Header */}
       {!isEditing && (isPostAuthor || isAdmin) && (
         <div className="absolute top-4 right-4 z-10">
@@ -347,7 +364,7 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
         ) : (
           <>
             <div 
-              className="text-gray-700 text-[15px] leading-relaxed pr-8 rich-text"
+              className="text-gray-700 text-[15px] leading-relaxed pr-8 rich-text text-clamped"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content || '') }}
             />
             {fileUrls.length > 0 && (
@@ -890,20 +907,17 @@ export default function GroupPage({ params: paramsPromise }) {
 
   // DEBUG: Verify Ownership Match
   console.log("Current User:", currentUserId, "Owner ID:", groupData?.owner_id);
-
-  return (
-    // FIX: Scroll Fix and Vertical Padding (pb-32)
-    <div className="w-full max-w-2xl mx-auto pb-32 overflow-y-auto">
+  return (    <div className="w-full max-w-2xl mx-auto py-[0.75rem] overflow-y-auto">
       <div className="bg-white border-b border-gray-100">
-
-        <div className="px-6 py-8 flex justify-between items-start w-full">
-          <div className="flex flex-col items-start text-left pl-4">
-            <h1 className="text-lg font-bold text-blue-950 tracking-tight pl-2">{groupData?.name}</h1>
-            <p className="text-sm text-gray-600 mt-1 max-w-md pl-2">{groupData?.description}</p>
+        <div className="header-container">
+          {/* Left Side: Title and Subtitle */}
+          <div className="title-section">
+            <h1 className="main-title">{groupData?.name}</h1>
+            <p className="sub-title">{groupData?.description}</p>
             
             {/* Goldilocks Admin Action Group */}
             {isAdmin && (
-              <div className="flex flex-row items-center gap-2 mt-4 pl-2">
+              <div className="button-container flex flex-row items-center gap-2 pl-2">
                 <button 
                   onClick={() => setShowManageModal(true)} 
                   className="py-2 px-4 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.1em] border border-blue-200 shadow-sm"
@@ -915,10 +929,10 @@ export default function GroupPage({ params: paramsPromise }) {
 
             {/* Non-Admin Actions: Relocated for visibility */}
             {!isAdmin && isMember && (
-              <div className="flex flex-wrap gap-2 mt-4 pl-2">
+              <div className="button-container">
                 <button 
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLeaveModal(true); }}
-                  className="px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-red-500 border-2 border-red-100 rounded-full hover:bg-red-50 hover:border-red-200 transition-all flex items-center gap-2 relative z-[9999] pointer-events-auto cursor-pointer"
+                  className="btn-leave flex items-center gap-2 relative z-[9999] pointer-events-auto cursor-pointer"
                 >
                   <LogOut size={12} /> Leave Group
                 </button>
@@ -926,17 +940,21 @@ export default function GroupPage({ params: paramsPromise }) {
             )}
           </div>
 
-          <div className="hidden min-[472px]:flex flex-col items-end gap-2 pr-6">
-            <div className="flex flex-row items-center -space-x-3">
+          {/* Right Side: Cascade Avatars */}
+          <div className="avatar-section hidden min-[472px]:flex">
+            <div className="avatar-cascade">
               {groupData?.members?.map((url, i) => (
-                <img key={i} src={url} className="w-8 h-8 rounded-full border-2 border-white shadow-sm object-cover" />
+                <img key={i} src={url} alt="Member" className="avatar-img" />
               ))}
-              {(groupData?.memberCount || 0) > 5 && <div className="w-8 h-8 rounded-full bg-gray-50 border-2 border-white shadow-sm flex items-center justify-center text-[10px] font-bold text-gray-400">+{(groupData?.memberCount || 0) - 5}</div>}
+              {(groupData?.memberCount || 0) > 4 && (
+                <div className="w-8 h-8 rounded-full bg-gray-50 border-2 border-white shadow-sm flex items-center justify-center text-[10px] font-bold text-gray-400" style={{ marginLeft: '-12px', zIndex: 10 }}>
+                  +{(groupData?.memberCount || 0) - 4}
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-xs font-medium text-gray-500 uppercase tracking-widest">{(groupData?.memberCount || 0)} Members</span>
+            <div className="member-count mt-2 text-xs font-medium text-gray-500 uppercase tracking-widest">
+              <span>{(groupData?.memberCount || 0)} Members</span>
             </div>
-
           </div>
         </div>
       </div>
@@ -1023,18 +1041,16 @@ export default function GroupPage({ params: paramsPromise }) {
             </div>
           )}
         </div>
-      )}
-
-      <div className="px-[22px] mt-10 space-y-8">
+      )}      <div className="px-[22px] mt-4">
         {/* Composer */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 quill-composer">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 card-container quill-composer">
           <style>{QUILL_STYLE}</style>
           <RichTextEditor 
             value={postText}
             onChange={setPostText}
             placeholder="Share an update..."
-          />
-          
+            className="share-update-box"
+          />          
           {attachments.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3 p-2 bg-blue-50/50 rounded-lg border border-blue-100">
               {attachments.map((f, i) => (
@@ -1057,15 +1073,14 @@ export default function GroupPage({ params: paramsPromise }) {
             </div>
             <div className="flex items-center gap-4">
               <Link href="/groups">
-                <button className="text-blue-600 px-6 h-[38px] text-sm font-bold hover:text-blue-800 transition-colors flex items-center">
+                <button className="text-blue-600 px-6 h-[30px] text-xs font-bold hover:text-blue-800 transition-colors flex items-center">
                   Back
                 </button>
               </Link>
-              {/* FIX: Locked Post Button Geometry 110x38px */}
               <button 
                 onClick={handlePost} 
                 disabled={uploading || (!postText.replace(/<[^>]*>/g, '').trim() && attachments.length === 0)} 
-                className="bg-blue-950 text-white w-[110px] h-[38px] rounded-lg font-bold text-sm shadow-md hover:bg-blue-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-post font-bold shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {uploading ? 'Posting...' : 'Post'}
               </button>

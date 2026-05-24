@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * @deprecated Use CreatePostModal instead of this redundant mobile-only composer.
+ */
+
 import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { X, Image as ImageIcon, Video as VideoIcon, Loader2, Globe } from 'lucide-react';
@@ -76,7 +80,7 @@ export default function PostComposerModal({ isOpen, onClose, userProfile, onPost
     return data.path;
   };
 
-  const handleSubmit = async (e) => {
+  const handlePost = async (e) => {
     e.preventDefault();
     if (!content.trim() && !selectedFile) {
       alert('Post content or media is required.');
@@ -103,6 +107,13 @@ export default function PostComposerModal({ isOpen, onClose, userProfile, onPost
         excerpt: content.trim().substring(0, 150)
       };
 
+      // Force-inject the current user's session data
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) { 
+        postPayload.user_id = user.id;
+        postPayload.author_id = user.id;
+      }
+
       const { data, error: insertError } = await supabase
         .from('logbook_posts')
         .insert([postPayload])
@@ -127,8 +138,13 @@ export default function PostComposerModal({ isOpen, onClose, userProfile, onPost
         .maybeSingle();
 
       if (insertError) {
-        console.error('Database Insert Error:', insertError);
-        alert('Failed to save post: ' + insertError.message);
+        console.error('--- FULL ERROR FORENSICS ---');
+        console.error('Error Message:', insertError.message);
+        console.error('Error Code:', insertError.code);
+        console.error('Error Details:', insertError.details);
+        console.error('Error Hint:', insertError.hint);
+        console.error('Full Error Object Stringify:', JSON.stringify(insertError, null, 2));
+        alert('Failed to save post: ' + (insertError.message || 'Unknown error occurred'));
         return;
       }
 
@@ -156,19 +172,19 @@ export default function PostComposerModal({ isOpen, onClose, userProfile, onPost
       {/* Modal Wrapper */}
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-auto overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-white">
-          <h3 className="text-lg font-semibold text-gray-900">Create a post</h3>
+        <div className="modal-header flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-white max-sm:relative max-sm:bg-[#1e3a8a] max-sm:text-white max-sm:justify-center max-sm:border-b-0">
+          <h3 className="text-lg font-semibold text-gray-900 max-sm:text-white max-sm:absolute max-sm:left-1/2 max-sm:-translate-x-1/2">Create a post</h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+            className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors cursor-pointer max-sm:absolute max-sm:right-5 max-sm:text-white max-sm:hover:bg-blue-800/40"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Profile Info */}
-        <div className="flex items-center gap-3 px-5 py-4 bg-white">
+        <div className="user-profile-row flex items-center gap-3 px-5 py-4 bg-white max-sm:pl-6">
           {userProfile?.avatar_url ? (
             <img
               src={userProfile.avatar_url}
@@ -233,7 +249,7 @@ export default function PostComposerModal({ isOpen, onClose, userProfile, onPost
         </div>
 
         {/* Footer Actions / Action Bar */}
-        <div className="px-4 py-3 flex justify-between items-center bg-gray-50 border-t border-gray-100">
+        <div className="modal-footer px-4 py-3 flex justify-between items-center bg-gray-50 border-t border-gray-100 max-sm:pr-6">
           <div className="flex gap-2">
             <button
               type="button"
@@ -258,9 +274,9 @@ export default function PostComposerModal({ isOpen, onClose, userProfile, onPost
 
           <button
             type="button"
-            onClick={handleSubmit}
+            onClick={handlePost}
             disabled={submitting || uploadProgress || (!content.trim() && !selectedFile)}
-            className="bg-[#002b4e] hover:bg-[#003d6e] text-white px-6 py-2 rounded-full font-semibold text-sm transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+            className="post-button bg-[#002b4e] hover:bg-[#003d6e] text-white px-6 py-2 rounded-full font-semibold text-sm transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer max-sm:px-10 max-sm:min-w-[120px]"
           >
             {submitting ? (
               <div className="flex items-center gap-1.5">
