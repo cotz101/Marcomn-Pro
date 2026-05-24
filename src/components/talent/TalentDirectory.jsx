@@ -8,113 +8,99 @@ import TalentCard from './TalentCard';
 export default function TalentDirectory() {
   const [profiles, setProfiles] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
   const [availabilityFilter, setAvailabilityFilter] = useState(false);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
+  // Debounce effect
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
   const fetchTalent = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch profiles using only safe, existing columns
-      const { data, error } = await supabase
+      let query = supabase
         .from('profiles')
-        .select('id, name, currentRole, location, avatar_url')
-        // Not filtering by openToWork or yearsExperience here yet to prevent fetch errors
+        .select('id, name, currentRole, yearsExperience, skills, openToWork, location, avatar_url')
         .order('updated_at', { ascending: false });
 
+      if (debouncedSearchTerm.trim() !== '') {
+        query = query.or(`name.ilike.%${debouncedSearchTerm}%,currentRole.ilike.%${debouncedSearchTerm}%,location.ilike.%${debouncedSearchTerm}%,skills.cs.{${debouncedSearchTerm}}`);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
-      
-      // Mocking availability locally if needed can be done here. 
-      // For now, we'll just pass the data through.
       if (data) setProfiles(data);
     } catch (err) {
       console.error('Error fetching talent:', err.message || err);
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, debouncedSearchTerm]);
 
   useEffect(() => {
     fetchTalent();
   }, [fetchTalent]);
 
   const filteredTalent = profiles.filter(profile => {
-    const matchesSearch = (profile.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (profile.currentRole || profile.current_role || '').toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const roleStr = (profile.currentRole || profile.current_role || '').toLowerCase();
-    let matchesRole = true;
-    if (roleFilter === 'deck') {
-      matchesRole = roleStr.includes('deck') || roleStr.includes('master') || roleStr.includes('officer') || roleStr.includes('captain') || roleStr.includes('chief mate');
-    } else if (roleFilter === 'engineering') {
-      matchesRole = roleStr.includes('engine') || roleStr.includes('technical') || roleStr.includes('eto') || roleStr.includes('electrician');
-    } else if (roleFilter === 'ratings') {
-      matchesRole = roleStr.includes('rating') || roleStr.includes('able') || roleStr.includes('bosun') || roleStr.includes('wiper') || roleStr.includes('oiler') || roleStr.includes('cook') || roleStr.includes('steward');
-    } else if (roleFilter === 'offshore') {
-      matchesRole = roleStr.includes('offshore') || roleStr.includes('dp') || roleStr.includes('rov') || roleStr.includes('subsea');
-    }
-
-    const isAvailable = profile.open_to_work === true;
+    const isAvailable = profile.openToWork === true;
     const matchesAvailability = availabilityFilter ? isAvailable : true;
 
-    return matchesSearch && matchesRole && matchesAvailability;
+    return matchesAvailability;
   });
 
   return (
     <div className="talent-directory mx-auto max-w-[1128px] px-4 py-8">
-      {/* Module Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[#002b4e]">Talent Pool</h1>
+      {/* Unified Dashboard Header Container */}
+      <div className="flex flex-col gap-6 p-6 bg-white rounded-lg shadow-sm border border-slate-100 mb-6">
+        
+        {/* Header Row: Title & Chip */}
+        <div className="flex flex-col gap-1 px-4">
+          <div className="flex items-center justify-between w-full">
+            <h1 className="text-2xl font-bold text-[#002b4e]">Talent Pool</h1>
+            {/* Professionals Chip */}
+            <div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 border border-blue-100 shadow-sm select-none">
+              <Briefcase size={14} className="flex-shrink-0" />
+              <span>{filteredTalent.length} {filteredTalent.length === 1 ? 'Professional' : 'Professionals'}</span>
+            </div>
+          </div>
           <p className="text-slate-500 text-sm">Discover and recruit elite maritime professionals worldwide.</p>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
-            <Briefcase size={16} />
-            <span>{filteredTalent.length} Professionals Found</span>
+
+        {/* Search and Filters Section */}
+        <div className="flex flex-col gap-4 w-full px-4">
+          {/* Row 1: Search Input (Full Width with margins) */}
+          <div className="mx-auto w-full flex-grow flex items-center bg-slate-50 border border-slate-200 rounded-md px-3 py-2">
+            <Search size={18} className="text-slate-400 mr-2 flex-shrink-0" />
+            <input 
+              type="text" 
+              placeholder="Search by name or keywords..." 
+              className="bg-transparent border-none outline-none w-full text-sm text-slate-700 focus:ring-0"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          {/* Row 2: Availability Checkbox */}
+          <div className="flex justify-start w-full mb-6">
+            <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-slate-800 select-none">
+              <input 
+                type="checkbox" 
+                className="rounded border-slate-300 text-[#002b4e] focus:ring-[#002b4e] cursor-pointer h-4 w-4 flex-shrink-0"
+                checked={availabilityFilter}
+                onChange={(e) => setAvailabilityFilter(e.target.checked)}
+              />
+              <span className="font-medium">Immediate Availability</span>
+            </label>
           </div>
         </div>
-      </div>
-
-      {/* Horizontal Filter Bar */}
-      <div className="flex flex-row flex-wrap items-center gap-4 w-full bg-white p-4 rounded-lg shadow-sm mb-6 border border-slate-100">
-        {/* Search Input */}
-        <div className="flex-grow flex items-center bg-slate-50 border border-slate-200 rounded-md px-3 py-2 min-w-[200px]">
-          <Search size={18} className="text-slate-400 mr-2" />
-          <input 
-            type="text" 
-            placeholder="Search by name or keywords..." 
-            className="bg-transparent border-none outline-none w-full text-sm text-slate-700"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        {/* Compact Dropdown for Rank/Role */}
-        <select 
-          className="border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-600 bg-white outline-none min-w-[160px] cursor-pointer hover:border-slate-300"
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-        >
-          <option value="">All Ranks / Roles</option>
-          <option value="deck">Deck Officers</option>
-          <option value="engineering">Engineering</option>
-          <option value="ratings">Ratings</option>
-          <option value="offshore">Offshore</option>
-        </select>
-
-        {/* Toggle/Checkbox for Immediate Availability */}
-        <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-slate-800">
-          <input 
-            type="checkbox" 
-            className="rounded border-slate-300 text-[#002b4e] focus:ring-[#002b4e] cursor-pointer"
-            checked={availabilityFilter}
-            onChange={(e) => setAvailabilityFilter(e.target.checked)}
-          />
-          <span className="font-medium">Immediate Availability</span>
-        </label>
       </div>
 
       {/* Full-Width Main Content - Grid */}

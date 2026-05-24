@@ -4,11 +4,13 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { Briefcase, MapPin, DollarSign, Clock, Building2, Search, Filter, Ship } from 'lucide-react';
 import Link from 'next/link';
+import JobCard from './JobCard';
 
 export default function JobBoard() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('recent');
   const supabase = createClient();
   const searchParams = useSearchParams();
@@ -17,7 +19,10 @@ export default function JobBoard() {
 
   const fetchJobs = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
+
+      let jobsQuery = supabase
         .from('jobs')
         .select(`
           id,
@@ -34,20 +39,52 @@ export default function JobBoard() {
         .in('status', ['Published', 'published', 'Open', 'open'])
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('⚠️ [PostgREST 406 Trace]:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-        throw error;
+      if (debouncedSearchTerm) {
+        jobsQuery = jobsQuery.or(`title.ilike.%${debouncedSearchTerm}%,location.ilike.%${debouncedSearchTerm}%,salary_range.ilike.%${debouncedSearchTerm}%,employment_type.ilike.%${debouncedSearchTerm}%`);
+      }
+
+      const [jobsResponse, appsResponse] = await Promise.all([
+        jobsQuery,
+        user 
+          ? supabase.from('applications').select('job_id, status').eq('applicant_id', user.id)
+          : Promise.resolve({ data: [] })
+      ]);
+
+      const jobsData = jobsResponse.data;
+      const jobsError = jobsResponse.error;
+      const appsData = appsResponse.data || [];
+
+      if (jobsError) {
+        console.error('⚠️ [PostgREST 406 Trace]:', JSON.stringify(jobsError, Object.getOwnPropertyNames(jobsError)));
+        throw jobsError;
       }
       
-      if (data) {
-        setJobs(data);
+      if (jobsData) {
+        const appsMap = {};
+        appsData.forEach(app => {
+          appsMap[app.job_id] = app;
+        });
+        
+        const jobsWithApps = jobsData.map(job => ({
+          ...job,
+          application: appsMap[job.id] || null
+        }));
+
+        setJobs(jobsWithApps);
       }
     } catch (err) {
       console.error('Error in fetchJobs:', err);
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, debouncedSearchTerm]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   useEffect(() => {
     fetchJobs();
@@ -68,14 +105,7 @@ export default function JobBoard() {
     }
   }, [jobIdFromUrl, router]);
 
-  const filteredJobs = jobs.filter(job => {
-    const matchesTitle = job.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCompany = (job.company?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTag = job.tags && job.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchesTitle || matchesCompany || matchesTag;
-  });
-
-  const sortedJobs = [...filteredJobs].sort((a, b) => {
+  const sortedJobs = [...jobs].sort((a, b) => {
     if (sortBy === 'recent') {
       return new Date(b.created_at) - new Date(a.created_at);
     }
@@ -129,71 +159,12 @@ export default function JobBoard() {
       ) : sortedJobs.length > 0 ? (
         <div className="jobs-grid">
           {sortedJobs.map(job => (
-            <div key={job.id} className="job-card card cursor-pointer" onClick={() => router.push(`/mservices/opportunity/${job.id}`)}>
-              <div className="job-card-header">
-                <div className="company-logo-wrapper">
-                  {job.company?.logo_url ? (
-                    <img src={job.company.logo_url} alt={job.company.name} />
-                  ) : (
-                    <div className="company-placeholder">
-                      {job.company?.name?.[0] || <Building2 size={24} />}
-                    </div>
-                  )}
-                </div>
-                <div className="job-title-group">
-                  <h3 className="job-title">{job.title}</h3>
-                  <p className="company-name">{job.company?.name || 'Private Poster'}</p>
-                </div>
-              </div>
-
-              <div className="job-details">
-                <div className="detail-item">
-                  <MapPin size={14} /> <span>{job.location || 'Not specified'}</span>
-                </div>
-                <div className="detail-item">
-                  <Clock size={14} /> <span>{job.employment_type}</span>
-                </div>
-                {job.salary_range && (
-                  <div className="detail-item">
-                    <DollarSign size={14} /> <span>{job.salary_range}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Job Tag Container */}
-              {job.tags && job.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {job.tags.slice(0, 4).map((tag, index) => (
-                    <span key={index} className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-md border border-blue-100 uppercase tracking-wide">
-                      {tag}
-                    </span>
-                  ))}
-                  {job.tags.length > 4 && (
-                    <span className="px-2.5 py-1 text-gray-500 text-xs font-medium">
-                      +{job.tags.length - 4} more
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {job.required_skills && job.required_skills.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2 mb-4">
-                  {job.required_skills.map((skill, index) => (
-                    <span 
-                      key={index} 
-                      className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-medium"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <div className="job-card-footer">
-                <span className="post-date">Posted {new Date(job.created_at).toLocaleDateString()}</span>
-                <button className="btn-apply" onClick={(e) => { e.stopPropagation(); router.push(`/mservices/opportunity/${job.id}`); }}>View Details</button>
-              </div>
-            </div>
+            <JobCard 
+              key={job.id} 
+              job={job} 
+              application={job.application} 
+              onClick={() => router.push(`/mservices/opportunity/${job.id}`)} 
+            />
           ))}
         </div>
       ) : (
@@ -286,7 +257,7 @@ export default function JobBoard() {
         .jobs-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-          gap: 24px;
+          gap: 5px;
         }
         .job-card {
           padding: 24px;

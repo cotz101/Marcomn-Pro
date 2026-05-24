@@ -3882,12 +3882,17 @@ body.liker-modal-active .btn-leave {
   border-radius: 0.75rem !important;
 }
 
+/* Stack filters vertically below 382px */
+@media (max-width: 382px) {
+  .xs\:flex-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+}
 
-
-
-
-
-
-
-
-
+/* Ensure container prevents bleeding */
+.search-container {
+  max-width: 100%;
+  box-sizing: border-box;
+}

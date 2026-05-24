@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 import GroupCard from './GroupCard';
 import CreateGroupModal from './CreateGroupModal';
+import GroupsHeader from './GroupsHeader';
 
 export default function GroupsDirectory() {
   const [groups, setGroups] = useState([]);
@@ -221,35 +222,11 @@ export default function GroupsDirectory() {
   return (
     <div className="relative w-full max-w-full h-screen overflow-x-hidden flex flex-col">
       {/* Fixed Header & Search Area */}
-      <div className="header-container w-full max-w-full px-4 sm:px-0 pt-4 pb-0 mb-4 bg-white flex-shrink-0">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start w-full mb-4 gap-4">
-          <div className="flex flex-col">
-            <h1 className="text-2xl font-bold text-[#0e2a4d]">Maritime Groups</h1>
-            <p className="text-sm text-gray-500">Connect with specialized maritime communities</p>
-          </div>
-          <button 
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#002b4e] text-white rounded-lg font-bold text-sm hover:bg-[#001f38] transition-all shadow-sm"
-          >
-            <Plus size={18} />
-            Create Group
-          </button>
-        </div>
-
-        {/* Search Bar */}
-        <div className="search-container px-4 sm:px-0 bg-white pb-[10px] pt-0">
-          <div className="search-bar-wrapper relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input 
-              type="text" 
-              placeholder="Search groups by name, rank, or specialty..." 
-              className="search-input w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
+      <GroupsHeader 
+        searchTerm={searchTerm} 
+        setSearchTerm={setSearchTerm} 
+        onCreateGroupClick={() => setIsCreateModalOpen(true)} 
+      />
 
       {/* Scrollable Zone */}
       <div className="flex-1 w-full overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mt-4">

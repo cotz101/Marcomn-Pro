@@ -5,17 +5,11 @@ import { MapPin } from 'lucide-react';
 
 export default function TalentCard({ profile }) {
   const router = useRouter();
-  const isAvailable = profile.open_to_work === true;
-  
-  // Safely handle skills array, take up to 4
-  const skillsList = Array.isArray(profile.skills) ? profile.skills : [];
-  const displaySkills = skillsList.slice(0, 3);
-
   return (
-    <div className="talent-card card w-full p-5 hover:shadow-md transition-all duration-300 flex flex-col items-center h-full bg-white border border-slate-200 rounded-xl text-center">
+    <div className="talent-card card w-full p-4 hover:shadow-md transition-shadow flex flex-col items-center gap-1 h-full bg-white rounded-xl shadow-sm border border-slate-100 text-center">
       
       {/* Avatar */}
-      <div className="mt-2 mb-3">
+      <div className="mt-2 mb-2">
         <img 
           src={profile.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
           alt={profile.name || 'Talent Avatar'} 
@@ -24,44 +18,35 @@ export default function TalentCard({ profile }) {
       </div>
       
       {/* Name */}
-      <h3 className="text-lg font-bold text-[#002b4e] leading-tight mb-1">
-        {profile.name || 'Anonymous User'}
+      <h3 className="text-lg font-bold text-[#002b4e] leading-tight">
+        {profile.name || 'Maritime Professional'}
       </h3>
       
-      {/* Role */}
-      <p className="text-sm text-slate-500 mb-3">
-        {profile.currentRole || profile.current_role || 'Maritime Professional'}
+      {/* Location */}
+      {profile.location && (
+        <span className="flex items-center gap-1 text-sm text-slate-500">
+          <MapPin size={12} />
+          {profile.location}
+        </span>
+      )}
+
+      {/* Secondary Detail (Conditional Switch) */}
+      <p className="text-sm text-slate-500">
+        {profile.yearsExperience ? `${profile.yearsExperience} years exp.` : profile.currentRole}
       </p>
 
-      {/* Availability Status */}
-      <div className="flex items-center justify-center gap-1.5 mb-2 text-sm font-medium">
-        <div className={`w-2.5 h-2.5 rounded-full ${isAvailable ? 'bg-green-500' : 'bg-slate-300'}`}></div>
-        <span className={isAvailable ? 'text-green-700' : 'text-slate-500'}>
-          {isAvailable ? 'Available Now' : 'Not Available'}
+      {/* 1st Skill Pill */}
+      {profile.skills && profile.skills.length > 0 && (
+        <span className="mt-2 inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-100">
+          {profile.skills[0]}
         </span>
-      </div>
-
-      {/* Experience */}
-      <div className="text-sm text-[#002b4e] font-medium mb-4">
-        {profile.years_experience || profile.yearsExperience || '0'}+ Years of Experience
-      </div>
-
-      {/* Skills */}
-      {displaySkills.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-2 mb-6">
-          {displaySkills.map((skill, idx) => (
-            <span key={idx} className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-medium">
-              {skill}
-            </span>
-          ))}
-        </div>
       )}
 
       {/* Footer CTA */}
-      <div className="mt-auto w-full pt-4 flex justify-center">
+      <div className="mt-auto w-full">
         <button 
           onClick={() => router.push(`/profile/${profile.id}`)}
-          className="w-auto px-5 py-1.5 text-sm font-medium text-blue-900 bg-white border border-blue-900 rounded-full hover:bg-blue-50 transition-colors"
+          className="w-full mt-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
         >
           View Profile
         </button>

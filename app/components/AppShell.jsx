@@ -114,38 +114,42 @@ export default function AppShell({ children, userEmail, userId }) {
     const supabase = createClient();
     const channel = supabase.channel(`notifications:${userId}`);
 
-    channel
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: `recipient_id=eq.${userId}`
-      }, (payload) => {
-        const newNotif = payload.new;
-        if (processedIds.has(newNotif.id)) return; // Skip if already processed
-        processedIds.add(newNotif.id);
+    try {
+      channel
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${userId}`
+        }, (payload) => {
+          const newNotif = payload.new;
+          if (processedIds.has(newNotif.id)) return; // Skip if already processed
+          processedIds.add(newNotif.id);
 
-        console.log('📡 [Notif Channel] Received new alert:', newNotif);
-        setNotifications(prev => [newNotif, ...prev]);
-      })
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'notifications',
-        filter: `recipient_id=eq.${userId}`
-      }, (payload) => {
-        // If a notification was marked as 'read', update local state instead of removing
-        if (payload.new.is_read === true) {
-          console.log('📡 [Notif Channel] Notification marked read remotely, updating:', payload.new.id);
-          setNotifications(prev => prev.map(n => n.id === payload.new.id ? { ...n, is_read: true } : n));
-        }
-      })
-      .subscribe((status) => {
-        console.log('📡 [Notif Channel] Connection Status:', status);
-        if (status === 'CHANNEL_ERROR') {
-           console.error('CRITICAL: Realtime connection rejected! Check RLS policies.');
-        }
-      });
+          console.log('📡 [Notif Channel] Received new alert:', newNotif);
+          setNotifications(prev => [newNotif, ...prev]);
+        })
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${userId}`
+        }, (payload) => {
+          // If a notification was marked as 'read', update local state instead of removing
+          if (payload.new.is_read === true) {
+            console.log('📡 [Notif Channel] Notification marked read remotely, updating:', payload.new.id);
+            setNotifications(prev => prev.map(n => n.id === payload.new.id ? { ...n, is_read: true } : n));
+          }
+        })
+        .subscribe((status, err) => {
+          console.log('📡 [Notif Channel] Connection Status:', status, err ? `Error: ${JSON.stringify(err)}` : '');
+          if (status === 'CHANNEL_ERROR') {
+             console.error('CRITICAL: Realtime connection rejected! Check RLS policies.', err);
+          }
+        });
+    } catch (err) {
+      console.error('📡 [Notif Channel] Exception during subscription setup:', err);
+    }
 
     // Cleanup to prevent duplicate listeners
     return () => {

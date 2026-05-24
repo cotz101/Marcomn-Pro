@@ -32,7 +32,6 @@ export default function SidebarRight() {
     const diffInYears = Math.floor(diffInDays / 365);
     return `${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`;
   };
-
   const [topLiked, setTopLiked] = useState([]);
   const [mostActive, setMostActive] = useState([]);
   const [mostShared, setMostShared] = useState([]);
@@ -42,6 +41,11 @@ export default function SidebarRight() {
   const [recentBlogsData, setRecentBlogsData] = useState([]);
   const [latestGroupsData, setLatestGroupsData] = useState([]);
   const [loadingWidgets, setLoadingWidgets] = useState(true);
+
+  // Groups Widget States
+  const [activeGroupsData, setActiveGroupsData] = useState([]);
+  const [recentGroupsData, setRecentGroupsData] = useState([]);
+  const [loadingGroupsWidgets, setLoadingGroupsWidgets] = useState(true);
 
   useEffect(() => {
     if (isMBlogPage) {
@@ -146,9 +150,53 @@ export default function SidebarRight() {
         setLoadingWidgets(false);
       }
     };
-
     fetchWidgets();
   }, []);
+
+  useEffect(() => {
+    if (!isGroupsPage) return;
+
+    const fetchGroupsWidgets = async () => {
+      setLoadingGroupsWidgets(true);
+      try {
+        // 1. Fetch active groups (joined with post counts)
+        const { data: activeData, error: activeErr } = await supabase
+          .from('groups')
+          .select('id, name, group_posts(id)');
+
+        if (!activeErr && activeData) {
+          const mapped = activeData.map(g => ({
+            id: g.id,
+            name: g.name,
+            postCount: g.group_posts?.length || 0
+          }));
+          mapped.sort((a, b) => b.postCount - a.postCount);
+          setActiveGroupsData(mapped.slice(0, 3));
+        } else if (activeErr) {
+          console.error('Error fetching active groups:', activeErr);
+        }
+
+        // 2. Fetch recently created groups
+        const { data: recentData, error: recentErr } = await supabase
+          .from('groups')
+          .select('id, name, created_at')
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (!recentErr && recentData) {
+          setRecentGroupsData(recentData);
+        } else if (recentErr) {
+          console.error('Error fetching recent groups:', recentErr);
+        }
+      } catch (err) {
+        console.error('Error fetching groups widgets:', err);
+      } finally {
+        setLoadingGroupsWidgets(false);
+      }
+    };
+
+    fetchGroupsWidgets();
+  }, [isGroupsPage]);
 
   const recentBlogs = [
     { id: 1, title: 'Sustainable Shipping in 2026', author: 'Capt. Sarah Miller', date: '2 days ago' },
@@ -162,17 +210,7 @@ export default function SidebarRight() {
     { id: 3, title: 'Maritime Safety Officer', company: 'Lloyd\'s Register', location: 'London' },
   ];
 
-  const activeGroups = [
-    { id: 1, name: 'Tanker Operations', members: '1.2k', activity: 'High' },
-    { id: 2, name: 'Maritime Safety Hub', members: '850', activity: 'High' },
-    { id: 3, name: 'Offshore Wind Energy', members: '420', activity: 'Moderate' },
-  ];
 
-  const recentGroups = [
-    { id: 4, name: 'LNG Carrier Pros', date: 'Created 2 days ago' },
-    { id: 5, name: 'Singapore Port Staff', date: 'Created 5 days ago' },
-    { id: 6, name: 'Cyber Security at Sea', date: 'Created 1 week ago' },
-  ];
 
   if (isMBlogPage) {
     return (
@@ -385,20 +423,32 @@ export default function SidebarRight() {
         </>
       ) : isGroupsPage ? (
         <>
+          {/* Widget 1: Most Active Groups */}
           <div className="card p-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-sm text-[#1b1c1c]">Most Active Groups</h3>
               <TrendingUp size={14} className="text-[#42474f]" />
             </div>
             <div className="flex flex-col gap-4">
-              {activeGroups.map(group => (
-                <div key={group.id} className="group cursor-pointer">
-                  <h4 className="text-sm font-semibold text-[#002b4e] group-hover:underline">
-                    {group.name}
-                  </h4>
-                  <p className="text-[11px] text-[#727780] mt-1">{group.members} Members • {group.activity} Activity</p>
-                </div>
-              ))}
+              {loadingGroupsWidgets ? (
+                [1, 2, 3].map(i => (
+                  <div key={i} className="animate-pulse">
+                    <div className="h-4 bg-gray-100 rounded w-full mb-2" />
+                    <div className="h-3 bg-gray-50 rounded w-2/3" />
+                  </div>
+                ))
+              ) : activeGroupsData.length === 0 ? (
+                <p className="text-xs text-gray-400">No active groups found.</p>
+              ) : (
+                activeGroupsData.map(group => (
+                  <div key={group.id} className="group cursor-pointer">
+                    <Link href={`/groups/${group.id}`} className="text-sm font-semibold text-[#002b4e] hover:underline block">
+                      {group.name}
+                    </Link>
+                    <p className="text-[11px] text-[#727780] mt-1">({group.postCount} Posts)</p>
+                  </div>
+                ))
+              )}
               <Link href="/groups?filter=active" className="text-xs font-bold text-[#004173] mt-2 hover:underline">
                 View all active groups
               </Link>
@@ -407,18 +457,32 @@ export default function SidebarRight() {
 
           <div className="sidebar-spacer"></div>
 
+          {/* Widget 2: Recently Created */}
           <div className="card p-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-sm text-[#1b1c1c]">Recently Created</h3>
               <Sparkles size={14} className="text-[#42474f]" />
             </div>
             <div className="flex flex-col gap-4">
-              {recentGroups.map(group => (
-                <div key={group.id} className="cursor-pointer hover:bg-[#f5f3f3] -mx-4 px-4 py-2 transition-colors">
-                  <p className="text-sm font-semibold text-[#1b1c1c]">{group.name}</p>
-                  <p className="text-xs text-[#42474f] mt-1">{group.date}</p>
-                </div>
-              ))}
+              {loadingGroupsWidgets ? (
+                [1, 2, 3].map(i => (
+                  <div key={i} className="animate-pulse">
+                    <div className="h-4 bg-gray-100 rounded w-full mb-2" />
+                    <div className="h-3 bg-gray-50 rounded w-1/2" />
+                  </div>
+                ))
+              ) : recentGroupsData.length === 0 ? (
+                <p className="text-xs text-gray-400">No new groups found.</p>
+              ) : (
+                recentGroupsData.map(group => (
+                  <div key={group.id} className="cursor-pointer hover:bg-[#f5f3f3] -mx-4 px-4 py-2 transition-colors">
+                    <Link href={`/groups/${group.id}`} className="text-sm font-semibold text-[#1b1c1c] hover:text-[#004173] block">
+                      {group.name}
+                    </Link>
+                    <p className="text-xs text-[#42474f] mt-1">{getRelativeTime(group.created_at)}</p>
+                  </div>
+                ))
+              )}
               <Link href="/groups?filter=recent" className="text-xs font-bold text-[#004173] mt-2 hover:underline">
                 Explore new groups
               </Link>
