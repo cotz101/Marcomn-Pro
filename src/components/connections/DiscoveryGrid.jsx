@@ -139,7 +139,7 @@ export default function DiscoveryGrid({ activeTab = 'discovery', searchTerm = ''
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 min-[471px]:grid-cols-2 lg:grid-cols-2 gap-4 mb-24" style={{ paddingBottom: '100px' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-24" style={{ paddingBottom: '100px' }}>
         {[1, 2, 3, 4, 5, 6].map(i => (
           <ProfessionalCardSkeleton key={i} />
         ))}
@@ -151,7 +151,7 @@ export default function DiscoveryGrid({ activeTab = 'discovery', searchTerm = ''
 
   return (
     <div className="pb-32">
-      <div className="grid grid-cols-1 min-[471px]:grid-cols-2 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredProfiles.map(profile => (
           <ProfessionalCard 
             key={profile.id} 
@@ -198,6 +198,16 @@ export default function DiscoveryGrid({ activeTab = 'discovery', searchTerm = ''
           </div>
           <h3 className="text-xl font-bold text-slate-800 mb-2">Following</h3>
           <p className="max-w-xs mx-auto text-slate-500">You aren't following anyone yet. People you follow will appear here.</p>
+        </div>
+      )}
+
+      {activeTab === 'discovery' && !loading && profiles.length === 0 && !searchTerm && (
+        <div className="card p-16 text-center text-gray-500 mt-8 border-dashed border-2 border-slate-100 bg-slate-50/50">
+          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <Users size={32} className="text-slate-300" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-800 mb-2">No connections found</h3>
+          <p className="max-w-xs mx-auto text-slate-500">There are no professionals in your network yet.</p>
         </div>
       )}
 

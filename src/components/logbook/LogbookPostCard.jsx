@@ -548,7 +548,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
   };
 
   return (
-    <div id={`post-${post.id}`} className="card border border-gray-100 bg-white hover:shadow-md transition-shadow duration-300 rounded-xl shadow-sm overflow-hidden p-4 mb-4 relative">
+    <div id={`post-${post.id}`} className="card border border-gray-100 bg-white hover:shadow-md transition-shadow duration-300 rounded-xl shadow-sm overflow-hidden p-4 md:p-6 mb-4 relative">
         
         {/* Post Author Info Header */}
         <div className="flex justify-between items-start mb-4">
@@ -580,7 +580,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium mt-0.5 truncate">
+              <div className="text-xs md:text-sm text-gray-500 flex items-center gap-1.5 font-medium mt-0.5 truncate">
                 <span className="truncate">{author.headline || 'MarComn Member'}</span>
                 <span className="flex-shrink-0 text-gray-400 font-normal">•</span>
                 <span className="flex-shrink-0 text-gray-400 font-normal">{getRelativeTime(post.created_at)}</span>
@@ -697,10 +697,10 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
 
                     {/* Content Section with breathing room padding */}
                     <div className="flex flex-col flex-1">
-                      <h4 className="text-xl font-bold text-[#0e2a4d] mb-2 leading-snug">
+                      <h4 className="text-lg md:text-2xl font-bold leading-snug md:leading-tight text-navy-900 mb-2">
                         {post.mblogs?.title || 'Shared Post'}
                       </h4>
-                      <p className="text-sm text-gray-700 leading-relaxed line-clamp-3">
+                      <p className="text-base md:text-base leading-relaxed text-gray-700 mt-2 line-clamp-3">
                         {post.mblogs?.content?.replace(/<[^>]*>?/gm, '') || 'No description available.'}
                       </p>
                       
@@ -725,13 +725,13 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                     {/* --- SURGICAL INSET ALIGNMENT --- */}
                     <div>
                       {/* 1. Title */}
-                    <h2 className={`font-extrabold text-[#0e2a4d] tracking-tight mt-1 mb-3 leading-snug ${isExpanded ? 'text-2xl md:text-3xl' : 'text-xl hover:text-blue-900 transition-colors'}`}>
+                    <h2 className="text-lg md:text-2xl font-bold leading-snug md:leading-tight text-navy-900">
                       {post.title}
                     </h2>
 
                     {/* 2. Content Body */}
                     {isExpanded ? (
-                      <div className="prose prose-sm max-w-none text-gray-800 text-[15px] leading-relaxed space-y-4">
+                      <div className="prose prose-sm max-w-none text-base md:text-base leading-relaxed text-gray-700 mt-2 space-y-4">
                         <div
                           dangerouslySetInnerHTML={{ __html: renderContentWithEmbeds(post.content) }}
                           className="article-full-html"
@@ -748,7 +748,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                     ) : (
                       <div>
                         {/* Excerpt */}
-                        <p className="text-gray-600 text-sm font-medium leading-relaxed mb-3 line-clamp-3">
+                        <p className="text-base md:text-base leading-relaxed text-gray-700 mt-2 line-clamp-3">
                           {post.excerpt || getPlainText(post.content).substring(0, 150) + '...'}
                         </p>
 
@@ -772,10 +772,10 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                     {isHtml(displayContent) ? (
                       <div
                         dangerouslySetInnerHTML={{ __html: displayContent }}
-                        className="prose prose-sm max-w-none text-gray-700 text-[15px] leading-relaxed"
+                        className="prose prose-sm max-w-none text-base md:text-base leading-relaxed text-gray-700 mt-2"
                       />
                     ) : (
-                      <div className="text-gray-700 text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                      <div className="text-base md:text-base leading-relaxed text-gray-700 mt-2 whitespace-pre-wrap break-words">
                         {displayContent}
                       </div>
                     )}
@@ -824,7 +824,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
               type="button"
               onClick={handleLike}
               disabled={isSubmitting}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-bold transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm md:text-sm font-medium transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
                 hasLiked
                   ? 'text-navy-900 bg-navy-50/50'
                   : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
@@ -838,7 +838,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
               type="button"
               onClick={() => setShowComments(!showComments)}
               disabled={isSubmitting}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm md:text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
                 showComments ? 'bg-gray-50/80 text-gray-800' : ''
               }`}
             >

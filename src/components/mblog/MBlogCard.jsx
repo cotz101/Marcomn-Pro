@@ -418,15 +418,20 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
     }
   };
 
-  const contentLimit = 300;
+  const contentLimit = 500;
   const plainText = getPlainText(article.content_html || '');
   const shouldTruncate = plainText.length > contentLimit;
 
   return (
     <div 
-      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 p-4 relative animate-in fade-in zoom-in-95 duration-300" 
+      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 p-4 md:p-6 relative animate-in fade-in zoom-in-95 duration-300 w-full h-auto" 
       ref={cardRef}
     >
+      {/* Title */}
+      <h2 className="text-lg md:text-2xl font-bold leading-snug md:leading-tight text-navy-900 mt-1 mb-4 hover:text-[#004173] transition-colors flex-1 w-full block">
+        {article.title}
+      </h2>
+
       {/* Post Author Info Header */}
       <div className="flex justify-between items-start mb-4">
         {/* Left: Avatar & Metadata */}
@@ -445,7 +450,7 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
             <span className="font-bold text-[#0e2a4d] hover:underline cursor-pointer block truncate">
               {article.author?.name || 'Anonymous'}
             </span>
-            <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium mt-0.5 truncate">
+            <div className="text-xs md:text-sm text-gray-500 flex items-center gap-1.5 font-medium mt-0.5 truncate">
               <span className="truncate">{article.author?.headline || 'Member'}</span>
               <span className="flex-shrink-0 text-gray-400 font-normal">•</span>
               <span className="flex-shrink-0 text-gray-400 font-normal">{getRelativeTime(article.created_at)}</span>
@@ -495,26 +500,21 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
         )}
       </div>
 
-        {/* Title */}
-        <h2 className="font-extrabold text-[#0e2a4d] tracking-tight mt-1 mb-3 leading-snug text-xl hover:text-[#004173] transition-colors flex-1">
-          {article.title}
-        </h2>
-
         {/* MEDIA THIRD - IMAGE ONLY (Video moved to footer) */}
         {article.media_url && (
-          <div className="mb-6 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-sm">
+          <div className="mb-6 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-sm w-full block">
             <img 
               src={article.media_url} 
               alt={article.title} 
-              className="w-full max-h-[400px] object-cover hover:scale-[1.01] transition-transform duration-700" 
+              className="w-full aspect-video object-cover hover:scale-[1.01] transition-transform duration-700 block" 
             />
           </div>
         )}
 
         {/* Share Overlay (Rest of modals below) */}
-        <div className="mblog-content-wrapper">
+        <div className="mblog-content-wrapper w-full block">
           <div 
-            className="rich-text text-gray-600 leading-relaxed text-[15px]"
+            className="rich-text text-base md:text-base leading-relaxed text-gray-700 mt-2 w-full"
             dangerouslySetInnerHTML={{ 
               __html: DOMPurify.sanitize(
                 isExpanded 
@@ -527,9 +527,9 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
           {shouldTruncate && (
             <button 
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-[#004173] hover:underline font-bold text-xs mt-1 focus:outline-none select-none"
+              className="text-[#004173] bg-white hover:bg-gray-50 font-bold text-sm mt-4 flex items-center justify-center border border-gray-200 rounded-lg block w-full h-10 transition-colors focus:outline-none select-none"
             >
-              {isExpanded ? '... Show less' : '... Show more'}
+              {isExpanded ? 'Show less' : 'Read full blog'}
             </button>
           )}
         </div>
@@ -558,7 +558,7 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
             <button
               type="button"
               onClick={handleLikeToggle}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-bold transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm md:text-sm font-medium transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
                 isLiked
                   ? 'text-[#0e2a4d] bg-blue-50/50'
                   : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
@@ -571,7 +571,7 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
             <button
               type="button"
               onClick={() => setShowComments(!showComments)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm md:text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
                 showComments ? 'bg-gray-50/80 text-gray-800' : ''
               }`}
             >

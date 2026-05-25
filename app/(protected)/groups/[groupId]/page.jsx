@@ -324,7 +324,7 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
   const handleDeleteComment = (cid) => setShowDeleteConfirm(cid);
 
   return (
-    <div key={post.id} className="bg-white rounded-xl shadow-sm px-4 card-container border border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-300 relative text-left">
+    <div key={post.id} className="w-full px-3 md:px-6 py-4 border-b border-gray-100 bg-white animate-in fade-in slide-in-from-bottom-2 duration-300 relative text-left">
       {/* Post Header */}
       {!isEditing && (isPostAuthor || isAdmin) && (
         <div className="absolute top-4 right-4 z-10">
@@ -448,7 +448,7 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
                       <div className="flex items-center gap-4 mt-1 ml-2">
                         <button 
                           onClick={() => handleDiveIntoLevel2(comment)} 
-                          className={`flex items-center gap-1 text-[11px] transition-colors ${
+                          className={`flex items-center justify-center gap-1 text-[11px] transition-colors min-h-[40px] px-2 -ml-2 ${
                             getReplyCount(comment.id) > 0 ? 'text-orange-500 font-bold' : 'text-gray-400'
                           }`}
                         >
@@ -546,7 +546,7 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
                 <div className="text-center py-10 text-xs font-bold text-gray-400 uppercase tracking-widest italic">No replies yet. Start the conversation!</div>
               ) : (
                 comments.filter(c => c.parent_id === activeThread.id).reverse().slice(0, visibleBatchCount).map((comment) => (
-                  <div key={comment.id} className="flex gap-3 items-start w-full animate-in slide-in-from-left-2">
+                  <div key={comment.id} className="flex gap-3 items-start w-full animate-in slide-in-from-left-2 mt-2 ml-4 md:ml-6">
                     <img src={comment.profiles?.avatar_url || '/default-avatar.png'} className="w-8 h-8 rounded-full object-cover shadow-sm border border-white mt-1 shrink-0" />
                     <div className="flex-1 flex flex-col items-start min-w-0">
                       {/* Text Bubble */}
@@ -583,7 +583,7 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
                       <div className="flex items-center gap-4 mt-1 ml-2">
                         <button 
                           onClick={() => handleDiveIntoLevel2(comment)} 
-                          className={`flex items-center gap-1 text-[11px] transition-colors ${
+                          className={`flex items-center justify-center gap-1 text-[11px] transition-colors min-h-[40px] px-2 -ml-2 ${
                             getReplyCount(comment.id) > 0 ? 'text-orange-500 font-bold' : 'text-gray-400'
                           }`}
                         >

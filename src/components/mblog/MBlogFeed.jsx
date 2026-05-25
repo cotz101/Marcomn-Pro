@@ -74,7 +74,7 @@ export default function MBlogFeed({ view, onEdit }) {
   }
 
   return (
-    <div className="flex flex-col gap-8 mt-4">
+    <div className="flex flex-col gap-8 mt-4 w-full">
       {articles.map(article => (
         <MBlogCard 
           key={article.id} 

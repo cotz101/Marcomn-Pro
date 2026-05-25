@@ -34,11 +34,11 @@ export default function GroupCard({ group, onAction }) {
     : membersList;
 
   return (
-    <div className={`w-full max-w-full bg-white border-y border-x-0 sm:border-x border-gray-200 rounded-none sm:rounded-lg overflow-hidden hover:shadow-md transition-all duration-300 p-4 relative ${isEntering ? 'opacity-60 scale-[0.98]' : ''}`}>
-      <div className="flex justify-between gap-4 w-full">
+    <div className={`w-full min-h-[140px] flex flex-col justify-between max-w-full bg-white border-y border-x-0 sm:border-x border-gray-200 rounded-none sm:rounded-lg overflow-hidden hover:shadow-md transition-all duration-300 p-4 md:p-6 pb-[max(1rem,env(safe-area-inset-bottom))] relative ${isEntering ? 'opacity-60 scale-[0.98]' : ''}`}>
+      <div className="flex flex-col md:flex-row justify-between gap-4 w-full">
         {/* Left Column: Group Title & Badge */}
         <div className="flex-1 min-w-0 flex flex-col items-start text-left">
-          <h3 className="font-bold text-lg text-[#0e2a4d] truncate w-full leading-tight">{group.name}</h3>
+          <h3 className="text-lg md:text-xl font-semibold leading-tight text-navy-900 truncate w-full">{group.name}</h3>
           <div className="mt-1">
             {isPublic ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider border border-green-200">
@@ -55,7 +55,7 @@ export default function GroupCard({ group, onAction }) {
         </div>
 
         {/* Right Column: Avatar Cluster & Member Count */}
-        <div className="flex flex-col items-end text-right flex-shrink-0 pt-1">
+        <div className="flex flex-col items-start md:items-end text-left md:text-right flex-shrink-0 pt-1">
           {membersList.length >= 2 ? (
             <div className="flex items-center -space-x-4 mb-1 flex-row-reverse">
               {/* Using flex-row-reverse for natural right-anchor cascade overlap */}
@@ -94,13 +94,13 @@ export default function GroupCard({ group, onAction }) {
           )}
 
           {/* Member Count Label aligned right */}
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight mt-1 whitespace-nowrap">
+          <div className="text-xs md:text-sm text-gray-500 mt-1">
             {group.member_count} Members
           </div>
         </div>
       </div>
 
-      <div className="flex justify-between items-end mt-6">
+      <div className="flex justify-between items-end mt-4">
         <div className="flex items-center">
           {/* Admin Pending Badge - Bottom Left */}
           {group.membershipRole === 'admin' && group.pendingCount > 0 && (
@@ -116,7 +116,7 @@ export default function GroupCard({ group, onAction }) {
               <button 
                 onClick={handleEnterGroup}
                 disabled={isEntering}
-                className={`inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-white text-gray-900 border border-gray-200 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all shadow-sm whitespace-nowrap gap-2 ${isEntering ? 'animate-btn-loading' : ''}`}
+                className={`inline-flex items-center justify-center w-max px-5 h-10 bg-white text-gray-900 border border-gray-200 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all shadow-sm whitespace-nowrap gap-2 ${isEntering ? 'animate-btn-loading' : ''}`}
               >
                 {isEntering ? (
                   <>
@@ -134,21 +134,21 @@ export default function GroupCard({ group, onAction }) {
           ) : isPending ? (
             <button 
               disabled
-              className="inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg font-medium text-sm cursor-not-allowed whitespace-nowrap gap-2"
+              className="inline-flex items-center justify-center w-max px-5 h-10 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg font-medium text-sm cursor-not-allowed whitespace-nowrap gap-2"
             >
               Request Sent
             </button>
           ) : isPublic ? (
             <button 
               onClick={() => onAction(group)}
-              className="inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-blue-950 text-white rounded-lg font-medium text-sm hover:bg-blue-900 transition-all shadow-sm whitespace-nowrap"
+              className="inline-flex items-center justify-center w-max px-5 h-10 bg-blue-950 text-white rounded-lg font-medium text-sm hover:bg-blue-900 transition-all shadow-sm whitespace-nowrap"
             >
               Join Group
             </button>
           ) : (
             <button 
               onClick={() => onAction(group)}
-              className="inline-flex items-center justify-center w-max !px-5 !py-1.5 bg-[#FAEADB] text-orange-900 hover:brightness-95 border border-transparent rounded-lg font-medium text-sm transition-all shadow-sm whitespace-nowrap"
+              className="inline-flex items-center justify-center w-max px-5 h-10 bg-[#FAEADB] text-orange-900 hover:brightness-95 border border-transparent rounded-lg font-medium text-sm transition-all shadow-sm whitespace-nowrap"
             >
               Ask to Join
             </button>

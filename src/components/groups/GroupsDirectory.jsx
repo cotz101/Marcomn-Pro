@@ -230,7 +230,7 @@ export default function GroupsDirectory() {
 
       {/* Scrollable Zone */}
       <div className="flex-1 w-full overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mt-4">
-        <div className="space-y-4 w-full">
+        <div className="flex flex-col gap-4 w-full px-4 sm:px-0">
           {loading && groups.length === 0 ? (
             // Skeletal Loading state (4 cards)
             <>

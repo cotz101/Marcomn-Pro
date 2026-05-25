@@ -385,7 +385,7 @@ export default function InboxPage() {
   const activePartner = activeConv ? getOtherParticipantProfile(activeConv) : null;
 
   return (
-    <div className="flex flex-row w-full h-[100dvh] md:h-[calc(100vh-80px)] overflow-hidden">
+    <div className="flex flex-row w-full h-[100dvh] md:h-[calc(100vh-80px)] overflow-hidden bg-white">
       <style dangerouslySetInnerHTML={{ __html: `
         .no-scrollbar::-webkit-scrollbar {
           display: none;
@@ -394,44 +394,17 @@ export default function InboxPage() {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-        @media (max-width: 767px) {
-          .mobile-chat-container {
-            position: fixed !important;
-            top: calc(56px + env(safe-area-inset-top)) !important;
-            bottom: calc(72px + env(safe-area-inset-bottom)) !important;
-            left: 0 !important;
-            right: 0 !important;
-            height: calc(100dvh - (56px + env(safe-area-inset-top)) - (72px + env(safe-area-inset-bottom))) !important;
-            width: 100vw !important;
-            z-index: 50 !important;
-            background-color: #ffffff !important;
-            display: flex !important;
-            flex-direction: column !important;
-            overflow: hidden !important;
-          }
-          .mobile-chat-feed {
-            flex: 1 !important;
-            overflow-y: auto !important;
-            -webkit-overflow-scrolling: touch !important;
-            overscroll-behavior-y: contain !important;
-          }
-          .mobile-chat-composer {
-            padding-top: 12px !important;
-            padding-bottom: 12px !important;
-            padding-left: 16px !important;
-            padding-right: 16px !important;
-            background-color: #ffffff !important;
-            border-top: 1px solid #f3f4f6 !important;
-          }
-        }
       ` }} />
 
       {/* Roster / Sidebar - Hidden on mobile if chat is active */}
       <div 
-        className={activeChatId ? "hidden md:flex flex-col w-1/3 max-w-[350px] min-w-[250px] border-r border-gray-200 h-full overflow-y-auto bg-white" : "flex flex-col w-full md:w-1/3 md:max-w-[350px] md:min-w-[250px] border-r border-gray-200 h-full overflow-y-auto bg-white"}
+        className={activeChatId 
+          ? "hidden md:grid md:grid-rows-[auto_1fr_auto] md:w-1/3 md:max-w-[350px] md:min-w-[250px] md:border-r md:border-gray-200 md:h-full md:overflow-hidden bg-white" 
+          : "grid h-[100dvh] grid-rows-[auto_1fr_auto] overflow-hidden bg-white pb-[var(--bottom-nav-height,64px)] w-full md:flex md:flex-col md:w-1/3 md:max-w-[350px] md:min-w-[250px] md:border-r md:border-gray-200 md:h-full md:pb-0"
+        }
       >
-        {/* Search header */}
-        <div className="p-4 border-b border-gray-100 flex-shrink-0">
+        {/* Search header - Row 1 */}
+        <div className="row-start-1 flex-none border-b p-4">
           <h1 className="text-xl font-extrabold text-[#002b4e] mb-4">Messages</h1>
           <div className="relative flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
             <Search size={18} className="text-gray-400 mr-2 flex-shrink-0" />
@@ -445,8 +418,8 @@ export default function InboxPage() {
           </div>
         </div>
 
-        {/* Conversation List */}
-        <div className="flex-1 overflow-y-auto no-scrollbar">
+        {/* Conversation List - Row 2 */}
+        <div className="row-start-2 overflow-y-auto flex flex-col no-scrollbar md:flex-1">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-400 space-y-3">
               <Loader2 className="animate-spin text-[#002b4e]" size={28} />
@@ -511,12 +484,15 @@ export default function InboxPage() {
 
       {/* Active Stage - Hidden on mobile if no active chat */}
       <div 
-        className={activeChatId ? "mobile-chat-container grid grid-rows-[auto_1fr_auto] h-[100dvh] md:h-full w-full md:flex-1 overflow-hidden bg-white min-w-0 pb-0" : "hidden md:grid md:grid-rows-[auto_1fr_auto] md:h-full md:flex-1 overflow-hidden bg-white min-w-0 md:pb-0"}
+        className={activeChatId 
+          ? "grid h-[100dvh] grid-rows-[auto_1fr_auto] overflow-hidden bg-white pb-[var(--bottom-nav-height,64px)] w-full md:flex md:flex-col md:h-full md:flex-1 md:pb-0 min-w-0" 
+          : "hidden md:grid md:grid-rows-[auto_1fr_auto] md:h-full md:flex-1 overflow-hidden bg-white min-w-0 md:pb-0"
+        }
       >
         {activeConv && activePartner ? (
           <>
-            {/* Chat stage header */}
-            <div className="row-start-1 flex-none border-b border-gray-200 bg-white p-4 z-20 flex items-center justify-between shadow-sm">
+            {/* Chat stage header - Row 1 */}
+            <div className="row-start-1 flex-none border-b p-4 bg-white z-20 flex items-center justify-between shadow-sm">
               <div className="flex items-center min-w-0">
                 {/* Back button on mobile */}
                 <button
@@ -560,8 +536,8 @@ export default function InboxPage() {
               </button>
             </div>
 
-            {/* Message Feed */}
-            <div className="mobile-chat-feed row-start-2 overflow-y-auto p-4 flex flex-col space-y-4 no-scrollbar">
+            {/* Message Feed - Row 2 */}
+            <div className="row-start-2 overflow-y-auto flex flex-col p-4 space-y-4 no-scrollbar">
               {loadingMessages ? (
                 <div className="flex flex-col items-center justify-center h-full py-12 text-gray-400 space-y-3">
                   <Loader2 className="animate-spin text-[#002b4e]" size={28} />
@@ -608,10 +584,10 @@ export default function InboxPage() {
               )}
             </div>
 
-            {/* Composer Footer */}
+            {/* Composer Footer - Row 3 */}
             <form 
               onSubmit={handleSendMessage}
-              className="mobile-chat-composer row-start-3 shrink-0 border-t border-gray-100 bg-white px-4 pt-4 pb-[100px] md:pb-4 z-20 flex items-center gap-3"
+              className="row-start-3 shrink-0 border-t p-4 bg-white z-20 flex items-center gap-3"
             >
               <input
                 type="text"
