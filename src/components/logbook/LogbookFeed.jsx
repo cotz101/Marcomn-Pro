@@ -214,7 +214,7 @@ export default function LogbookFeed() {
       <CreatePost onPostCreated={handlePostCreated} />
 
       {loading ? (
-        <div className="space-y-6">
+        <div className="space-y-3">
           <PostSkeleton />
           <PostSkeleton />
           <PostSkeleton />
@@ -230,7 +230,7 @@ export default function LogbookFeed() {
           </p>
         </div>
       ) : (
-        <div className="space-y-6 mt-6">
+        <div className="space-y-3 mt-6">
           {posts.map((post) => (
             <LogbookPostCard
               key={post.id}

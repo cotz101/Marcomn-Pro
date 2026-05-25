@@ -17,13 +17,14 @@ export default function ConnectionsHub() {
     <div className="connections-hub mx-auto w-full max-w-7xl px-4 py-4 md:py-8" style={{ paddingBottom: '100px' }}>
       
       {/* Sticky Search Bar */}
-      <div className="sticky top-0 z-40 bg-[#f4f7f6]/90 backdrop-blur-md pt-2 pb-4 mb-4 -mx-4 px-4 md:mx-0 md:px-0 w-full block">
+      <div className="sticky top-[calc(56px+env(safe-area-inset-top))] md:top-[64px] z-40 bg-[#f4f7f6]/95 backdrop-blur-md pt-2 pb-4 mb-4 -mx-4 px-4 md:mx-0 md:px-0 w-full block border-b border-gray-100">
           <div className="relative w-full max-w-full min-w-[300px]">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input 
               type="text" 
               placeholder="Search Connections..." 
-              className="w-full flex-grow bg-white border border-gray-200 text-gray-800 text-sm rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-[#002b4e] focus:border-transparent outline-none transition-all shadow-sm"
+              className="w-full flex-grow bg-white border border-gray-200 text-gray-800 text-sm rounded-xl pr-4 py-3 focus:ring-2 focus:ring-[#002b4e] focus:border-transparent outline-none transition-all shadow-sm"
+              style={{ paddingLeft: '3.5rem' }}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

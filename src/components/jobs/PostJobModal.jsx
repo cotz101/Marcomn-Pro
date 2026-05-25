@@ -238,14 +238,14 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
       maxWidth="800px"
       disableBackdropClick={true}
     >
-      <form onSubmit={handleSubmit} className="flex flex-col">
+      <form id="post-job-form" onSubmit={handleSubmit} className="flex flex-col">
         {/* Header Icon Section */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-900">
             <Briefcase size={20} />
           </div>
           <div>
-            <h3 className="text-base font-bold text-blue-900">{jobToEdit ? "Edit Enterprise Job Form" : "Enterprise Job Form"}</h3>
+            <h3 className="text-base font-bold text-blue-900">{jobToEdit ? "Edit Professional Job Form" : "Professional Job Form"}</h3>
             <p className="text-xs text-gray-500">Provide complete candidate, rate, and credential requirements.</p>
           </div>
         </div>
@@ -320,6 +320,11 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                 <option value="EUR">EUR</option>
                 <option value="GBP">GBP</option>
                 <option value="SGD">SGD</option>
+                <option value="PHP">PHP</option>
+                <option value="INR">INR</option>
+                <option value="KRW">KRW</option>
+                <option value="CNY">CNY</option>
+                <option value="JPY">JPY</option>
               </select>
             </div>
             <div>
@@ -470,7 +475,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           {/* Row 7: Job Description */}
           <div>
             <label className="text-sm font-semibold text-gray-700 block mb-1.5">Job Description</label>
-            <div className="border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-900 overflow-hidden rich-text-editor-container">
+            <div className="border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-900 overflow-hidden rich-text-editor-container min-h-[220px] leading-relaxed">
               <RichTextEditor
                 value={formData.description}
                 onChange={(val) => setFormData(prev => ({ ...prev, description: val }))}
@@ -482,7 +487,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           {/* Row 8: Responsibilities */}
           <div>
             <label className="text-sm font-semibold text-gray-700 block mb-1.5">Responsibilities</label>
-            <div className="border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-900 overflow-hidden rich-text-editor-container">
+            <div className="border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-900 overflow-hidden rich-text-editor-container min-h-[220px] leading-relaxed">
               <RichTextEditor
                 value={formData.responsibilities}
                 onChange={(val) => setFormData(prev => ({ ...prev, responsibilities: val }))}
@@ -494,7 +499,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         </div>
 
         {/* Footer Buttons Section */}
-        <div className="flex items-center justify-end gap-3 mt-8 pt-4 border-t border-[var(--outline)]">
+        <div className="flex items-center justify-end gap-3 mt-8 pt-4 border-t border-slate-200">
           <button 
             type="button"
             className="px-4 py-2 text-sm font-medium hover:bg-slate-100 rounded-lg text-gray-700" 

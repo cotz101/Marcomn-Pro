@@ -264,25 +264,31 @@ export default function AppShell({ children, userEmail, userId }) {
 
       <header className="header" style={{ borderTop: isCompany ? '4px solid var(--primary)' : 'none' }}>
         <div className="app-container">
-          {/* Desktop Header Content */}
-          <div className="header-content hidden sm:grid items-center py-1">
-            <div className="header-left flex items-center gap-3">
+          {/* Unified Responsive Header Content */}
+          <div className="w-full flex items-center justify-between py-2 px-4 h-[calc(56px+env(safe-area-inset-top))] md:h-auto md:min-h-[64px] pt-[calc(env(safe-area-inset-top)+8px)] md:pt-1">
+            
+            {/* LEFT: Logo / Back Button */}
+            <div className="flex items-center gap-3 flex-1 md:flex-none">
               {pathname === '/profile' ? (
-                <button 
-                  onClick={() => router.push('/network/connections')}
-                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                  title="Back to Network"
-                >
-                  <ArrowLeft size={22} className="text-[#002b4e]" />
-                </button>
+                <>
+                  <button 
+                    onClick={() => router.push('/network/connections')}
+                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                    title="Back to Network"
+                  >
+                    <ArrowLeft size={22} className="text-[#002b4e]" />
+                  </button>
+                  <span className="font-bold text-lg text-[#002b4e] md:hidden ml-2">Profile</span>
+                </>
               ) : (
-                <Link href="/" className="logo">
+                <Link href="/" className="logo font-semibold text-[#002b4e]">
                   Mar<span>Comn</span>
                 </Link>
               )}
             </div>
 
-            <div className="header-nav-center flex items-center justify-center !mt-[10px]">
+            {/* CENTER: Main Navigation (Desktop Only) */}
+            <div className="hidden md:flex items-center justify-center !mt-[10px] flex-1">
               {pathname === '/profile' ? (
                 <span className="font-bold text-xl text-[#002b4e]">Profile</span>
               ) : (
@@ -302,60 +308,67 @@ export default function AppShell({ children, userEmail, userId }) {
                 </>
               )}
             </div>
-            <div className="header-right">
-              <div className="header-actions-desktop flex items-center">
-                <button className="header-icon-btn" onClick={() => router.push('/messages')}><MessageSquare size={22} /></button>
-                <div className="relative" ref={notificationsRef} style={{ position: 'relative' }}>
-                  <button 
-                    ref={bellButtonRef}
-                    className={`header-icon-btn relative ${showNotifications ? 'text-indigo-600 bg-indigo-50/50' : ''}`}
-                    onClick={() => setShowNotifications(!showNotifications)}
-                  >
-                    <Bell size={22} />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border border-white shadow-sm animate-pulse">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </button>
 
-                  {showNotifications && (
-                    <NotificationDropdown 
-                      notifications={notifications}
-                      loading={loadingNotifications}
-                      onMarkAllAsRead={handleMarkAllAsRead}
-                      onClose={() => setShowNotifications(false)} 
-                      setNotifications={setNotifications}
-                      fetchNotifications={fetchNotifications}
-                    />
-                  )}
-                </div>
+            {/* RIGHT: Actions & Avatar */}
+            <div className="flex items-center gap-3 md:gap-2">
+              
+              {/* Message Icon (Mobile + Desktop) */}
+              <button className="header-icon-btn scale-110 md:scale-100" onClick={() => router.push('/messages')}>
+                <MessageSquare size={26} />
+              </button>
+
+              {/* Desktop-only Notifications */}
+              <div className="relative hidden md:block" ref={notificationsRef}>
                 <button 
-                   className="btn-primary-pill px-4 py-1.5 ml-2"
-                   style={{ backgroundColor: 'var(--primary-container)' }}
-                   onClick={() => openPostJobModal()}
+                  ref={bellButtonRef}
+                  className={`header-icon-btn relative ${showNotifications ? 'text-indigo-600 bg-indigo-50/50' : ''}`}
+                  onClick={() => setShowNotifications(!showNotifications)}
                 >
-                  <Briefcase size={16} className="mr-1" />
-                  <span className="font-bold text-sm">Post a Job</span>
+                  <Bell size={22} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border border-white shadow-sm animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
                 </button>
+
+                {showNotifications && (
+                  <NotificationDropdown 
+                    notifications={notifications}
+                    loading={loadingNotifications}
+                    onMarkAllAsRead={handleMarkAllAsRead}
+                    onClose={() => setShowNotifications(false)} 
+                    setNotifications={setNotifications}
+                    fetchNotifications={fetchNotifications}
+                  />
+                )}
               </div>
 
-              <div className="avatar-dropdown-container ml-2" style={{ position: 'relative' }} ref={avatarRef}>
-                <div className="avatar-dropdown flex" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ cursor: 'pointer' }}>
-                  <div className="flex items-center gap-1">
-                    <img 
-                       src={identityImage} 
-                       alt="Me" 
-                       className="avatar-img" 
-                       style={{ width: '34px', height: '34px', objectFit: 'cover', borderRadius: isCompany ? '8px' : '50%' }}
-                    />
-                    <ChevronDown size={14} />
-                  </div>
+              {/* Responsive Post a Job */}
+              <button 
+                 className="btn-primary-pill px-2.5 py-1.5 md:px-4 ml-1.5 md:ml-2 flex items-center justify-center mr-4 md:mr-0"
+                 style={{ backgroundColor: 'var(--primary-container)' }}
+                 onClick={() => openPostJobModal()}
+              >
+                <Briefcase size={16} className="md:mr-1" />
+                <span className="font-bold text-sm hidden md:inline">Post a Job</span>
+              </button>
+
+              {/* Avatar (Mobile + Desktop) */}
+              <div className="relative ml-3 md:ml-4 pr-2" ref={avatarRef}>
+                <div className="flex items-center gap-1 cursor-pointer" onClick={() => setDropdownOpen(!dropdownOpen)}>
+                  <img 
+                     src={identityImage} 
+                     alt="Me" 
+                     className="avatar-img" 
+                     style={{ width: '34px', height: '34px', objectFit: 'cover', borderRadius: isCompany ? '8px' : '50%' }}
+                  />
+                  <ChevronDown size={14} className="hidden md:block" />
                 </div>
 
                 {dropdownOpen && (
-                  <div className="identity-dropdown-anchor" style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 1000 }}>
-                    <div className="card shadow-xl p-2 min-w-[200px] bg-white">
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-[1000]">
+                    <div className="card shadow-xl p-2 min-w-[240px] bg-white">
                       <IdentitySwitcher 
                         onClose={() => setDropdownOpen(false)} 
                         onCreateCompany={() => { setDropdownOpen(false); setShowCreateCompany(true); }}
@@ -366,70 +379,13 @@ export default function AppShell({ children, userEmail, userId }) {
               </div>
             </div>
           </div>
-
-          {/* Mobile Notch-Safe Header */}
-          <div className="mobile-header sm:hidden">
-            <div className="mobile-header-inner">
-              {pathname === '/profile' ? (
-                <div className="flex items-center gap-3 flex-1">
-                  <button 
-                    onClick={() => router.push('/network/connections')}
-                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                  >
-                    <ArrowLeft size={22} className="text-[#002b4e]" />
-                  </button>
-                  <div className="flex-1 flex justify-center mr-8">
-                    <span className="font-bold text-lg text-[#002b4e]">Profile</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center px-4">
-                  <Link href="/" className="logo font-semibold text-[#002b4e]">
-                    Mar<span>Comn</span>
-                  </Link>
-                </div>
-              )}
-              <div className="flex items-center gap-3">
-                <button className="header-icon-btn" onClick={() => router.push('/messages')}>
-                  <MessageSquare size={22} />
-                </button>
-                <div className="mobile-avatar-container" style={{ position: 'relative' }}>
-                  <button 
-                    className="mobile-avatar" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setMobileDropdownOpen(!mobileDropdownOpen);
-                    }}
-                    style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
-                  >
-                    <img 
-                      src={identityImage} 
-                      alt="Me" 
-                      className="mobile-avatar-img" 
-                      style={{ borderRadius: isCompany ? '4px' : '50%' }}
-                    />
-                  </button>
-                  {mobileDropdownOpen && (
-                    <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, zIndex: 1000 }}>
-                      <div className="card shadow-xl p-2 min-w-[240px] bg-white">
-                        <IdentitySwitcher 
-                          onClose={() => setMobileDropdownOpen(false)} 
-                          onCreateCompany={() => { setMobileDropdownOpen(false); setShowCreateCompany(true); }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </header>
 
       {/* Sub-Navigation removed for Shell Refinement Stage 1 */}
 
       {/* Luminous Bottom Navigation (Fixed 4 Icons) */}
-      <nav className="mobile-bottom-nav sm:hidden" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}>
+      <nav className="mobile-bottom-nav md:hidden" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}>
         <Link 
           href="/logbook" 
           className={`mobile-nav-item ${(pathname?.includes('/logbook') || pathname?.includes('/network') || pathname?.includes('/connections') || pathname?.includes('/groups') || pathname?.includes('/talent')) ? 'active' : ''}`}

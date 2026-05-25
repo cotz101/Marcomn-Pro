@@ -10,6 +10,8 @@ import ProfileDetailModal from '../profile/ProfileDetailModal';
 export default function ProfessionalCard({ profile, currentUser, onFollow }) {
   const router = useRouter();
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowedBack, setIsFollowedBack] = useState(false);
+  const [messagePrivacy, setMessagePrivacy] = useState('connections');
   const [showConfirm, setShowConfirm] = useState(false);
   const isOnline = profile.isOnline ?? (profile.id.charCodeAt(0) % 2 === 0); // Mock logic for demo
   const supabase = createClient();
@@ -21,14 +23,31 @@ export default function ProfessionalCard({ profile, currentUser, onFollow }) {
       // Don't show follow button for self
       if (currentUser.id === profile.id) return;
 
-      const { data, error } = await supabase
+      const { data: followData } = await supabase
         .from('follows')
         .select('*')
         .eq('follower_id', currentUser.id)
         .eq('following_id', profile.id)
         .maybeSingle();
       
-      if (data) setIsFollowing(true);
+      if (followData) setIsFollowing(true);
+
+      const { data: followBackData } = await supabase
+        .from('follows')
+        .select('*')
+        .eq('follower_id', profile.id)
+        .eq('following_id', currentUser.id)
+        .maybeSingle();
+      
+      if (followBackData) setIsFollowedBack(true);
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('message_privacy')
+        .eq('id', profile.id)
+        .maybeSingle();
+
+      if (profileData) setMessagePrivacy(profileData.message_privacy || 'connections');
     }
 
     checkFollowStatus();
@@ -106,6 +125,67 @@ export default function ProfessionalCard({ profile, currentUser, onFollow }) {
     }
   };
 
+  const handleMessageClick = async () => {
+    if (!currentUser || !profile.id) return;
+    
+    // Privacy check: respect profile privacy configuration (connections or anyone)
+    const areConnected = isFollowing && isFollowedBack;
+    const canMessage = currentUser.id === profile.id || messagePrivacy === 'anyone' || areConnected;
+
+    if (!canMessage) {
+      alert('This user has restricted their inbox to connections only.');
+      return;
+    }
+
+    try {
+      // Query both combinations of direct conversations
+      const { data: conv1 } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('participant_one', currentUser.id)
+        .eq('participant_two', profile.id)
+        .maybeSingle();
+
+      if (conv1) {
+        router.push(`/messages?chat=${conv1.id}`);
+        return;
+      }
+
+      const { data: conv2 } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('participant_one', profile.id)
+        .eq('participant_two', currentUser.id)
+        .maybeSingle();
+
+      if (conv2) {
+        router.push(`/messages?chat=${conv2.id}`);
+        return;
+      }
+
+      // If it does not exist, insert a new conversation
+      const { data: newConv, error: insertError } = await supabase
+        .from('conversations')
+        .insert({
+          participant_one: currentUser.id,
+          participant_two: profile.id
+        })
+        .select('id')
+        .maybeSingle();
+
+      if (insertError) {
+        console.error('Error creating conversation:', insertError);
+        alert('Error starting conversation: ' + insertError.message);
+        return;
+      }
+
+      router.push(`/messages?chat=${newConv.id}`);
+    } catch (err) {
+      console.error('Error handling message click:', err);
+      alert('Failed to start chat');
+    }
+  };
+
   return (
     <>
       <div className="professional-card card w-full">
@@ -137,15 +217,18 @@ export default function ProfessionalCard({ profile, currentUser, onFollow }) {
                   className={`flex flex-col items-center gap-1.5 font-bold text-[11px] uppercase tracking-tighter transition-all hover:scale-105 ${isFollowing ? 'text-white' : 'text-[#004173]'}`}
                   onClick={handleFollowClick}
                 >
-                  <div className={`w-11 h-11 rounded-full border border-slate-100 flex items-center justify-center shadow-sm ${isFollowing ? 'bg-[#002b4e] text-white border-[#002b4e]' : 'bg-white text-[#004173]'}`}>
-                    {isFollowing ? <UserCheck size={20} /> : <UserPlus size={20} />}
+                  <div className={`w-12 h-12 rounded-full border border-slate-100 flex items-center justify-center shadow-sm ${isFollowing ? 'bg-[#002b4e] text-white border-[#002b4e]' : 'bg-white text-[#004173]'}`}>
+                    {isFollowing ? <UserCheck size={23} /> : <UserPlus size={23} />}
                   </div>
                   <span className={isFollowing ? 'text-[#002b4e]' : 'text-[#004173]'}>{isFollowing ? 'Following' : 'Follow'}</span>
                 </button>
                 
-                <button className="flex flex-col items-center gap-1.5 text-[#004173] font-bold text-[11px] uppercase tracking-tighter hover:opacity-80 transition-all hover:scale-105">
-                  <div className="w-11 h-11 rounded-full bg-white border border-slate-100 flex items-center justify-center text-[#004173] shadow-sm">
-                    <MessageSquare size={20} />
+                <button 
+                  onClick={handleMessageClick}
+                  className="flex flex-col items-center gap-1.5 text-[#004173] font-bold text-[11px] uppercase tracking-tighter hover:opacity-80 transition-all hover:scale-105"
+                >
+                  <div className="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center text-[#004173] shadow-sm">
+                    <MessageSquare size={23} />
                   </div>
                   <span>Message</span>
                 </button>
@@ -156,8 +239,8 @@ export default function ProfessionalCard({ profile, currentUser, onFollow }) {
               className="flex flex-col items-center gap-1.5 text-[#004173] font-bold text-[11px] uppercase tracking-tighter hover:opacity-80 transition-all hover:scale-105"
               onClick={() => router.push(`/profile/${profile.id}`)}
             >
-              <div className="w-11 h-11 rounded-full bg-white border border-slate-100 flex items-center justify-center text-[#004173] shadow-sm">
-                <Users size={20} />
+              <div className="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center text-[#004173] shadow-sm">
+                <Users size={23} />
               </div>
               <span>View ID</span>
             </button>

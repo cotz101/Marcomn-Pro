@@ -533,7 +533,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
             <img
               src={resolveMediaUrl(mediaUrl)}
               alt="Post media"
-              className="w-full rounded-lg"
+              className="w-full h-auto object-contain rounded-lg"
               onError={(e) => {
                 console.error('DEBUG: Image failed to load:', e.target.src);
                 e.target.style.display = 'none';
@@ -590,7 +590,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
           
           {/* Right: 3-Dot Menu */}
           {!isEditing && (
-            <div className="flex-shrink-0 relative z-20">
+            <div className="flex-shrink-0 relative z-20 flex items-center justify-center px-2">
               <LogbookActionBar
                 post={post}
                 userId={userId}
@@ -826,7 +826,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
               disabled={isSubmitting}
               className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm md:text-sm font-medium transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
                 hasLiked
-                  ? 'text-navy-900 bg-navy-50/50'
+                  ? 'text-blue-950 font-bold bg-navy-50/50'
                   : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
               }`}
             >
@@ -853,7 +853,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
           <div className="mt-4 pt-4 border-t border-gray-100 space-y-4 animate-fadeIn">
             
             {/* Comment Input Box */}
-            <form onSubmit={handleCommentSubmit} className="flex gap-3 items-start relative">
+            <form onSubmit={handleCommentSubmit} className="flex gap-3 items-start relative mb-5">
               {showMentionDropdown && filteredConnections.length > 0 && (
                 <div 
                   className="absolute bottom-full left-11 mb-2 w-64 max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1.5 animate-fadeIn"
@@ -927,7 +927,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
 
             {/* Comments List */}
             {commentsList.length > 0 ? (
-              <div className="flex flex-col space-y-3 max-h-[300px] overflow-y-auto pr-1">
+              <div className="flex flex-col gap-1.5 max-h-[300px] overflow-y-auto pr-1">
                 {commentsList.map((comment) => {
                   const commentAuthor = comment.profiles || { name: 'Maritime Professional', avatar_url: null };
                   return (
@@ -944,7 +944,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                         </div>
                       )}
                       
-                      <div className="flex-1 bg-gray-50 rounded-2xl px-3 py-2 border border-gray-100">
+                      <div className="flex-1 bg-gray-50 rounded-2xl px-3 py-2 border border-gray-100 ml-6">
                         <div className="flex justify-between items-center mb-0.5 flex-wrap gap-x-2">
                           <span className="font-extrabold text-[#0e2a4d] text-xs font-sans">
                             {commentAuthor.name}

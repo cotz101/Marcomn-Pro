@@ -27,18 +27,18 @@ export default function GroupCard({ group, onAction }) {
   // 1. Safe Extraction: Prioritize the 'members' array built by the Deep Fetch query
   const membersList = group.members || [];
   
-  // 2. Max 3 Constraint & Dynamic Randomization
-  // If 2+, randomize and slice to 3 for the display stack
+  // 2. Max 4 Constraint & Dynamic Randomization
+  // If 2+, randomize and slice to 4 for the display stack
   const displayMembers = membersList.length >= 2
-    ? [...membersList].sort(() => 0.5 - Math.random()).slice(0, 3) 
+    ? [...membersList].sort(() => 0.5 - Math.random()).slice(0, 4) 
     : membersList;
 
   return (
-    <div className={`w-full min-h-[140px] flex flex-col justify-between max-w-full bg-white border-y border-x-0 sm:border-x border-gray-200 rounded-none sm:rounded-lg overflow-hidden hover:shadow-md transition-all duration-300 p-4 md:p-6 pb-[max(1rem,env(safe-area-inset-bottom))] relative ${isEntering ? 'opacity-60 scale-[0.98]' : ''}`}>
-      <div className="flex flex-col md:flex-row justify-between gap-4 w-full">
+    <div className={`w-full min-h-[120px] grid grid-cols-2 gap-y-2 md:flex md:flex-col md:justify-between max-w-full bg-white border-y border-x-0 sm:border-x border-gray-200 rounded-none sm:rounded-lg overflow-hidden hover:shadow-md transition-all duration-300 p-4 md:p-6 pb-[max(1rem,env(safe-area-inset-bottom))] relative ${isEntering ? 'opacity-60 scale-[0.98]' : ''}`}>
+      <div className="col-span-2 contents md:flex md:flex-row md:justify-between md:gap-4 md:w-full">
         {/* Left Column: Group Title & Badge */}
-        <div className="flex-1 min-w-0 flex flex-col items-start text-left">
-          <h3 className="text-lg md:text-xl font-semibold leading-tight text-navy-900 truncate w-full">{group.name}</h3>
+        <div className="col-span-2 md:col-span-1 flex-grow min-w-0 flex flex-col items-start text-left">
+          <h3 className="text-xl md:text-2xl font-semibold leading-tight text-navy-900 truncate w-full">{group.name}</h3>
           <div className="mt-1">
             {isPublic ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider border border-green-200">
@@ -55,13 +55,13 @@ export default function GroupCard({ group, onAction }) {
         </div>
 
         {/* Right Column: Avatar Cluster & Member Count */}
-        <div className="flex flex-col items-start md:items-end text-left md:text-right flex-shrink-0 pt-1">
+        <div className="col-span-1 md:col-span-1 flex flex-row items-center gap-2 md:flex-col md:items-end text-left md:text-right flex-shrink-0 pt-1 mt-2.5 md:mt-0">
           {membersList.length >= 2 ? (
             <div className="flex items-center -space-x-4 mb-1 flex-row-reverse">
               {/* Using flex-row-reverse for natural right-anchor cascade overlap */}
-              {group.member_count > 3 && (
+              {group.member_count > 4 && (
                 <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-white bg-gray-100 text-[10px] font-semibold text-gray-600 relative z-0 shadow-sm first:ml-0 -ml-4">
-                  +{group.member_count - 3}
+                  +{group.member_count - 4}
                 </div>
               )}
               {[...displayMembers].reverse().map((member, i) => {
@@ -100,17 +100,17 @@ export default function GroupCard({ group, onAction }) {
         </div>
       </div>
 
-      <div className="flex justify-between items-end mt-4">
+      <div className="col-span-1 md:col-span-2 flex justify-between items-center mt-2.5 md:mt-4 z-10">
         <div className="flex items-center">
           {/* Admin Pending Badge - Bottom Left */}
           {group.membershipRole === 'admin' && group.pendingCount > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-100 text-sky-700 border border-sky-200 rounded-lg shadow-sm animate-bounce z-10">
+            <div className="flex items-center gap-1.5 px-5 py-1.5 bg-sky-100 text-sky-700 border border-sky-200 rounded-lg shadow-sm animate-bounce z-10">
               <span className="text-[10px] font-black uppercase tracking-wider">{group.pendingCount} Request{group.pendingCount > 1 ? 's' : ''}</span>
             </div>
           )}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 ml-auto">
           {group.isMember ? (
             <div className="flex gap-1.5">
               <button 
@@ -155,8 +155,6 @@ export default function GroupCard({ group, onAction }) {
           )}
         </div>
       </div>
-
-
     </div>
   );
 }

@@ -338,7 +338,7 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
         </div>
       )}
 
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex items-center gap-3 mb-3 pl-3 md:pl-4">
         {post.authorAvatar ? <img src={post.authorAvatar} className="w-9 h-9 rounded-full object-cover border border-gray-200" /> : <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center"><div className="w-5 h-5 bg-gray-300 rounded-full"></div></div>}
         <div>
           <div className="text-sm font-bold text-gray-900 leading-none">{post.authorName || 'MNetwork Member'}</div>
@@ -347,7 +347,7 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
       </div>
 
       {/* Post Body */}
-      <div className="space-y-3">
+      <div className="space-y-3 pl-3 md:pl-4 pr-3 md:pr-4">
         {isEditing ? (
           <div className="space-y-4 quill-composer">
             <RichTextEditor 
@@ -381,19 +381,28 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
       </div>
 
       {/* Post Actions */}
-      <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-1.5">
-            <button onClick={handleLikeToggle} className={`p-1.5 rounded-full transition-all ${userHasLiked ? 'text-red-500 bg-red-50' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}><Heart size={18} fill={userHasLiked ? "currentColor" : "none"} /></button>
-            {likesCount > 0 && <button onClick={() => setShowLikers(true)} className="text-xs font-black text-gray-400 hover:text-gray-600">{likesCount}</button>}
-          </div>
-          <button onClick={() => setIsExpanded(!isExpanded)} className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${isExpanded ? 'text-blue-600' : 'text-gray-400 hover:text-blue-500'}`}><MessageSquare size={16} /> <span>{comments.length > 0 ? comments.length : ''}</span></button>
-        </div>
-        <div className="flex flex-row items-center -space-x-2">
-          {[...new Set(comments.map(c => c.profiles?.avatar_url))].filter(Boolean).slice(0, 3).map((url, i) => (
-            <img key={i} src={url} className="w-6 h-6 rounded-full border-2 border-white shadow-sm object-cover" />
-          ))}
-        </div>
+      <div className="mt-4 pt-4 border-t border-gray-150 flex items-center gap-1 w-full pl-3 md:pl-4 pr-3 md:pr-4">
+        <button
+          onClick={handleLikeToggle}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm md:text-sm font-medium transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
+            userHasLiked
+              ? 'text-blue-950 font-bold bg-navy-50/50'
+              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+          }`}
+        >
+          <Heart size={18} fill={userHasLiked ? "currentColor" : "none"} className={userHasLiked ? 'text-blue-950 stroke-blue-950 fill-blue-950' : 'text-gray-500'} />
+          <span className="font-sans">Like {likesCount > 0 ? `(${likesCount})` : ''}</span>
+        </button>
+
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm md:text-sm font-medium transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
+            isExpanded ? 'bg-gray-50/80 text-gray-800 font-bold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+          }`}
+        >
+          <MessageSquare size={18} className={isExpanded ? 'text-blue-600' : 'text-gray-500'} />
+          <span className="font-sans">Comment {comments.length > 0 ? `(${comments.length})` : ''}</span>
+        </button>
       </div>
 
       {showLikers && <WhoLikedModal postId={post.id} onClose={() => setShowLikers(false)} />}
@@ -534,7 +543,7 @@ function DiscussionThread({ post, currentUserId, isAdmin, onDelete, onUpdate, up
 
             {/* Replies List */}
             <div 
-              className="flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4 pb-20 space-y-4 bg-slate-50/30 no-scrollbar modal-scroll-area" 
+              className="flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4 pb-20 space-y-6 bg-slate-50/30 no-scrollbar modal-scroll-area" 
               style={{ 
                 msOverflowStyle: 'none', 
                 scrollbarWidth: 'none', 
@@ -959,19 +968,18 @@ export default function GroupPage({ params: paramsPromise }) {
         </div>
       </div>
 
-      {/* Smart Hybrid Admin Modal */}
       {showManageModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border-t-4 border-blue-600">
-            <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h2 className="text-lg font-medium text-blue-950 pl-6">Manage Group Members</h2>
-              <button onClick={() => setShowManageModal(false)} className="text-gray-400 hover:text-red-500 transition-colors pr-4"><X size={24} /></button>
+            <div className="px-6 py-5 border-b border-gray-100 flex justify-center items-center bg-gray-50/50 relative">
+              <h2 className="text-lg font-bold text-blue-950 text-center uppercase tracking-wider">Manage Group Members</h2>
+              <button onClick={() => setShowManageModal(false)} className="text-gray-400 hover:text-red-500 transition-colors absolute right-4"><X size={24} /></button>
             </div>
             
             <div className="max-h-[70vh] overflow-y-auto">
               {/* Pinned: Pending Requests */}
-              <div className="p-6 pb-2 border-b border-gray-50 bg-blue-50/20">
-                <div className="flex items-center gap-2 mb-4 pl-6">
+              <div className="p-6 pb-6 border-b border-gray-50 bg-blue-50/20">
+                <div className="flex items-center gap-2 mb-6 pl-6">
                   <UserPlus size={16} className="text-blue-600" />
                   <h3 className="text-[11px] font-black text-blue-900 uppercase tracking-[0.2em]">Pending Requests ({pendingRequests.length})</h3>
                 </div>
@@ -997,7 +1005,7 @@ export default function GroupPage({ params: paramsPromise }) {
 
               {/* Scrollable: Current Members */}
               <div className="p-6">
-                <div className="flex items-center gap-2 mb-4 pl-6">
+                <div className="flex items-center gap-2 mb-6 pl-6">
                   <Users size={16} className="text-gray-400" />
                   {/* FIX: Absolute Floor for display count */}
                   <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em]">Current Members ({otherMembersCount > 0 ? otherMembersCount : '0'})</h3>
@@ -1124,8 +1132,8 @@ export default function GroupPage({ params: paramsPromise }) {
             <h3 className="text-xl font-bold mb-2 text-center">Leave Group?</h3>
             <p className="text-gray-600 mb-6 px-2 text-sm text-center">Are you sure you want to leave this group? You will lose access to all posts and discussions.</p>
             <div className="flex justify-center gap-4 w-full">
-              <button onClick={() => setShowLeaveModal(false)} className="px-6 py-2 text-gray-500 font-medium hover:bg-gray-100 rounded-lg text-sm transition-colors">Cancel</button>
-              <button onClick={confirmLeaveGroup} className="px-6 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 text-sm transition-colors">Leave</button>
+              <button onClick={() => setShowLeaveModal(false)} className="px-8 py-2.5 text-gray-500 font-bold hover:bg-gray-100 rounded-lg text-sm transition-colors">Cancel</button>
+              <button onClick={confirmLeaveGroup} className="px-8 py-2.5 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 text-sm transition-colors">Leave</button>
             </div>
           </div>
         </div>

@@ -385,7 +385,8 @@ export default function InboxPage() {
   const activePartner = activeConv ? getOtherParticipantProfile(activeConv) : null;
 
   return (
-    <div className="flex flex-row w-full h-[100dvh] md:h-[calc(100vh-80px)] overflow-hidden bg-white">
+    <div className="flex flex-col min-h-[calc(100vh-5rem)] w-full pb-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom))] md:pb-0">
+      <div className="flex flex-row flex-1 min-h-0 w-full bg-white">
       <style dangerouslySetInnerHTML={{ __html: `
         .no-scrollbar::-webkit-scrollbar {
           display: none;
@@ -396,15 +397,14 @@ export default function InboxPage() {
         }
       ` }} />
 
-      {/* Roster / Sidebar - Hidden on mobile if chat is active */}
       <div 
         className={activeChatId 
-          ? "hidden md:grid md:grid-rows-[auto_1fr_auto] md:w-1/3 md:max-w-[350px] md:min-w-[250px] md:border-r md:border-gray-200 md:h-full md:overflow-hidden bg-white" 
-          : "grid h-[100dvh] grid-rows-[auto_1fr_auto] overflow-hidden bg-white pb-[var(--bottom-nav-height,64px)] w-full md:flex md:flex-col md:w-1/3 md:max-w-[350px] md:min-w-[250px] md:border-r md:border-gray-200 md:h-full md:pb-0"
+          ? "hidden md:flex flex-col w-1/3 lg:w-1/4 border-r border-gray-200 overflow-hidden bg-white h-full" 
+          : "flex flex-col w-full md:w-1/3 lg:w-1/4 border-r border-gray-200 overflow-hidden bg-white h-full"
         }
       >
-        {/* Search header - Row 1 */}
-        <div className="row-start-1 flex-none border-b p-4">
+        {/* Search header */}
+        <div className="flex-none border-b p-4">
           <h1 className="text-xl font-extrabold text-[#002b4e] mb-4">Messages</h1>
           <div className="relative flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
             <Search size={18} className="text-gray-400 mr-2 flex-shrink-0" />
@@ -413,23 +413,23 @@ export default function InboxPage() {
               placeholder="Search conversations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none border-none"
+              className="w-full bg-transparent text-base text-gray-700 placeholder-gray-400 outline-none border-none"
             />
           </div>
         </div>
 
-        {/* Conversation List - Row 2 */}
-        <div className="row-start-2 overflow-y-auto flex flex-col no-scrollbar md:flex-1">
+        {/* Conversation List */}
+        <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-400 space-y-3">
               <Loader2 className="animate-spin text-[#002b4e]" size={28} />
-              <span className="text-sm font-medium">Loading conversations...</span>
+              <span className="text-base font-medium">Loading conversations...</span>
             </div>
           ) : filteredConversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center text-gray-400 mt-12">
               <MessageSquare size={44} className="text-gray-300 mb-3" />
-              <p className="text-sm font-semibold text-gray-600">No conversations</p>
-              <p className="text-xs text-gray-400 mt-1">Start messaging from a partner profile or connections directory.</p>
+              <p className="text-base font-semibold text-gray-600">No conversations</p>
+              <p className="text-sm text-gray-400 mt-1">Start messaging from a partner profile or connections directory.</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">
@@ -463,14 +463,14 @@ export default function InboxPage() {
                     {/* Meta info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <h2 className="text-sm font-bold text-[#002b4e] truncate">
+                        <h2 className="text-base font-bold text-[#002b4e] truncate">
                           {partner.name}
                         </h2>
-                        <span className="text-[10px] text-gray-400 font-medium">
+                        <span className="text-xs text-gray-400 font-medium">
                           {new Date(conv.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 truncate mt-0.5">
+                      <p className="text-sm text-gray-500 truncate mt-0.5">
                         {lastMessages[conv.id] || partner.currentRole || 'No messages yet'}
                       </p>
                     </div>
@@ -482,97 +482,88 @@ export default function InboxPage() {
         </div>
       </div>
 
-      {/* Active Stage - Hidden on mobile if no active chat */}
       <div 
         className={activeChatId 
-          ? "grid h-[100dvh] grid-rows-[auto_1fr_auto] overflow-hidden bg-white pb-[var(--bottom-nav-height,64px)] w-full md:flex md:flex-col md:h-full md:flex-1 md:pb-0 min-w-0" 
-          : "hidden md:grid md:grid-rows-[auto_1fr_auto] md:h-full md:flex-1 overflow-hidden bg-white min-w-0 md:pb-0"
+          ? "flex-1 flex flex-col h-full bg-white w-full overflow-hidden" 
+          : "hidden md:flex flex-1 flex-col h-full bg-white overflow-hidden"
         }
       >
         {activeConv && activePartner ? (
           <>
-            {/* Chat stage header - Row 1 */}
-            <div className="row-start-1 flex-none border-b p-4 bg-white z-20 flex items-center justify-between shadow-sm">
-              <div className="flex items-center min-w-0">
-                {/* Back button on mobile */}
-                <button
+            {/* Chat stage header */}
+            <header className="flex-none h-20 w-full bg-white border-b border-gray-200 z-10 flex items-center justify-between px-4">
+              <div className="flex items-center min-w-0 ml-4">
+                <button 
                   onClick={() => router.push('/messages')}
-                  className="md:hidden mr-2 p-2 text-gray-500 hover:text-[#002b4e] rounded-lg hover:bg-gray-100 transition-colors"
+                  className="mr-2 p-1 text-gray-500 hover:text-[#002b4e] md:hidden"
                 >
-                  <ArrowLeft size={20} />
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                  </svg>
                 </button>
-
-                {/* Partner Identity */}
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-3">
                   {activePartner.avatar_url ? (
-                    <img
-                      src={activePartner.avatar_url}
-                      alt={activePartner.name}
-                      className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-sm"
+                    <img 
+                      src={activePartner.avatar_url} 
+                      alt="User Avatar" 
+                      className="h-10 w-10 rounded-full object-cover" 
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 text-gray-500 font-bold">
+                    <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 text-gray-500 font-bold">
                       {activePartner.name.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <div className="min-w-0">
-                    <h2 className="text-sm font-bold text-[#002b4e] truncate flex items-center gap-1.5">
-                      {activePartner.name}
-                    </h2>
-                    <p className="text-xs text-gray-500 truncate mt-0.5">
-                      {activePartner.currentRole || 'Maritime Member'}
-                    </p>
+                  <div className="flex flex-col min-w-0">
+                    <h2 className="text-base font-bold text-[#002b4e] truncate">{activePartner.name}</h2>
+                    <p className="text-sm text-gray-500 truncate">{activePartner.currentRole || 'Maritime Member'}</p>
                   </div>
                 </div>
               </div>
-
-              {/* View Profile Action */}
-              <button
+              <button 
                 onClick={() => router.push(`/profile/${activePartner.id}`)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-[#002b4e] text-xs font-bold rounded-lg border border-gray-200/80 transition-colors"
+                className="mr-[10px] rounded-lg border border-gray-200 bg-gray-50 px-5 py-2.5 text-base font-bold text-gray-600 transition-colors hover:bg-gray-100 hover:text-[#002b4e] shrink-0"
               >
-                <span>View Profile</span>
-                <ExternalLink size={12} />
+                View profile
               </button>
-            </div>
+            </header>
 
-            {/* Message Feed - Row 2 */}
-            <div className="row-start-2 overflow-y-auto flex flex-col p-4 space-y-4 no-scrollbar">
+            {/* Message Feed */}
+            <main className="flex-1 min-h-0 overflow-y-auto w-full bg-gray-50 p-4 scroll-smooth flex flex-col space-y-4 no-scrollbar">
               {loadingMessages ? (
                 <div className="flex flex-col items-center justify-center h-full py-12 text-gray-400 space-y-3">
                   <Loader2 className="animate-spin text-[#002b4e]" size={28} />
-                  <span className="text-sm font-medium">Loading messages...</span>
+                  <span className="text-base font-medium">Loading messages...</span>
                 </div>
               ) : messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full py-12 text-center text-gray-400">
                   <MessageSquare size={36} className="text-gray-300 mb-2" />
-                  <p className="text-sm font-semibold text-gray-500">No messages yet</p>
-                  <p className="text-xs text-gray-400 mt-1">Send a message to start the conversation.</p>
+                  <p className="text-base font-semibold text-gray-500">No messages yet</p>
+                  <p className="text-sm text-gray-400 mt-1">Send a message to start the conversation.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="flex flex-col gap-1.5">
                   {messages.map((message) => {
                     const isOwn = message.sender_id === currentUser.id;
                     
                     return (
                       <div
                         key={message.id}
-                        className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                        className={`flex w-full px-2 ${isOwn ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div className={`max-w-[70%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                        <div className={`max-w-[85%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
                           {/* Message bubble */}
                           <div
-                            className={`p-3.5 text-sm leading-relaxed shadow-sm transition-all break-words whitespace-pre-wrap ${
+                            className={`px-4 py-2 text-[1.1rem] leading-relaxed shadow-sm transition-all break-words whitespace-pre-wrap ${
                               isOwn
-                                ? 'bg-blue-900 text-white rounded-2xl rounded-br-none'
-                                : 'bg-gray-100 text-gray-800 rounded-2xl rounded-bl-none'
+                                ? 'bg-blue-950 text-white rounded-2xl rounded-tr-none'
+                                : 'bg-gray-100 text-gray-900 rounded-2xl rounded-tl-none'
                             }`}
                           >
                             <p className="whitespace-pre-wrap break-words">{message.body}</p>
                           </div>
                           
                           {/* Timestamp */}
-                          <span className="text-[10px] text-gray-400 mt-1.5 font-medium px-1">
+                          <span className="text-xs text-gray-400 mt-0.5 font-medium px-1">
                             {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
@@ -582,12 +573,12 @@ export default function InboxPage() {
                   <div ref={chatEndRef} />
                 </div>
               )}
-            </div>
+            </main>
 
-            {/* Composer Footer - Row 3 */}
+            {/* Composer Footer */}
             <form 
               onSubmit={handleSendMessage}
-              className="row-start-3 shrink-0 border-t p-4 bg-white z-20 flex items-center gap-3"
+              className="flex-none w-full bg-white p-4 pb-safe border-t border-gray-200 z-20 flex items-center gap-3"
             >
               <input
                 type="text"
@@ -595,12 +586,12 @@ export default function InboxPage() {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 disabled={sending}
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-[#002b4e] transition-colors"
+                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-700 placeholder-gray-400 outline-none focus:border-[#002b4e] transition-colors"
               />
               <button
                 type="submit"
                 disabled={!newMessage.trim() || sending}
-                className="p-3 bg-[#002b4e] hover:bg-[#001e38] text-white rounded-xl transition-all duration-150 shadow-sm flex items-center justify-center disabled:opacity-40 disabled:hover:bg-[#002b4e] cursor-pointer"
+                className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full min-w-[50px] min-h-[50px] flex items-center justify-center font-bold transition-all duration-150 shadow-sm disabled:opacity-40 cursor-pointer"
               >
                 {sending ? (
                   <Loader2 className="animate-spin" size={18} />
@@ -612,16 +603,17 @@ export default function InboxPage() {
           </>
         ) : (
           /* Empty / Default Active Stage */
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50/50">
+          <div className="row-start-1 row-span-3 flex flex-col items-center justify-center p-8 text-center bg-gray-50/50 md:flex-1 md:min-h-0">
             <div className="w-16 h-16 rounded-full bg-blue-50/80 flex items-center justify-center border border-blue-100 text-[#002b4e] mb-4 shadow-sm animate-pulse">
               <MessageSquare size={32} />
             </div>
-            <h2 className="text-lg font-bold text-[#002b4e] mb-1">Your Inbox</h2>
-            <p className="text-sm text-gray-500 max-w-sm leading-relaxed">
+            <h2 className="text-xl font-bold text-[#002b4e] mb-1">Your Inbox</h2>
+            <p className="text-base text-gray-500 max-w-sm leading-relaxed">
               Select a conversation from the sidebar roster or visit a partner profile to start a new chat.
             </p>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
