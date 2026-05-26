@@ -2772,6 +2772,48 @@ body {
       padding-right: 16px !important; /* Symmetrical right screen padding to prevent UI border touches */
       box-sizing: border-box !important;
     }
+    
+    /* 💬 Group Thread Discussion Mobile Symmetrical Alignment & Spacing Overrides (≤440px) */
+    /* Target comment item blocks to behave like Teams channel threads */
+    .bg-gray-50\/70 {
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+    }
+    /* Thread Item spacing - Clean vertical flow */
+    .bg-gray-50\/70 .relative > div {
+      margin-top: 10px !important; /* Proper vertical separation between parent comments */
+      margin-bottom: 4px !important;
+    }
+    /* Left-align text content & match avatar alignment precisely */
+    .bg-white.rounded-xl.px-4.py-3.border {
+      padding: 10px 14px !important; /* Comfortable internal breathing padding */
+      border-radius: 8px !important; /* Tight Microsoft Teams-style bubble card */
+      box-shadow: none !important;
+    }
+    /* Nested Replies Thread - structured left indentation and connection line */
+    .ml-8.md\:ml-12.mt-1.space-y-2.border-l-2.pl-4 {
+      margin-left: 1.5rem !important; /* Symmetrical left reply offset */
+      padding-left: 10px !important;
+      border-left-width: 2px !important;
+      border-left-color: #e5e7eb !important; /* Solid light gray thread indicator line */
+    }
+    /* Paragraph typography lines - readable spacing and line-heights */
+    .bg-white.rounded-xl.px-4.py-3.border p.text-xs.font-bold {
+      font-size: 12px !important;
+      color: #002b4e !important;
+      margin-bottom: 2px !important;
+    }
+    .bg-white.rounded-xl.px-4.py-3.border p.text-\[11px\] {
+      font-size: 10px !important;
+      color: #9ca3af !important;
+      margin-bottom: 4px !important;
+    }
+    .bg-white.rounded-xl.px-4.py-3.border p.text-\[14px\],
+    .bg-white.rounded-xl.px-4.py-3.border p.text-\[13px\] {
+      font-size: 13px !important;
+      line-height: 1.5 !important;
+      color: #374151 !important;
+    }
   }
 
 }
