@@ -604,6 +604,16 @@ a {
   gap: 12px;
 }
 
+/* 📱 Symmetrical button horizontal padding increase for screens >= 440px in Group cards */
+@media (min-width: 440px) {
+  /* Increase padding inside Group Card buttons to avoid label compression */
+  .group-card button.inline-flex.items-center.justify-center.w-max,
+  .group-card button.inline-flex.items-center.w-max {
+    padding-left: 2rem !important;  /* px-8 horizontal padding */
+    padding-right: 2rem !important; /* Visual breathing space for Enter / Join Group / Ask to Join labels */
+  }
+}
+
 .group-icon {
   width: 80px;
   height: 80px;
