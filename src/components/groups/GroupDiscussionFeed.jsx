@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * @deprecated
+ * This file is deprecated/orphaned.
+ * The production path now uses the unified, Teams-style chat architecture in GroupPage.jsx.
+ * Kept temporarily for rollback safety.
+ */
+
 import { useState, useRef } from 'react';
 import { ImagePlus, FileText, X, Send } from 'lucide-react';
 import DiscussionPost from './DiscussionPost';

@@ -1,0 +1,48 @@
+/* Mobile polish overrides – applied only on screens ≤ 767px */
+@media (max-width: 767px) {
+  /* Header adjustments */
+  .app-header {
+    /* Ensure safe‑area top padding on iOS devices */
+    padding-top: env(safe-area-inset-top);
+    padding-left: 1rem;
+    padding-right: 1rem;
+    height: auto; /* allow content‑driven height */
+    background-color: var(--background-header, #fff);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Notification overlay – full‑screen mobile panel */
+  .notification-dropdown .sm\:hidden {
+    /* The overlay already takes whole screen; ensure proper padding */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Profile cards – about and experience sections */
+  .profile-card {
+    padding: 1.25rem; /* 20px for breathing space */
+    border-radius: 0.75rem; /* subtle rounding */
+    background: var(--card-bg, #fff);
+    margin-bottom: 1rem;
+  }
+
+  .profile-card.about-card {
+    margin-bottom: 0.75rem; /* tighter gap before experience */
+  }
+
+  .profile-card.about-card p,
+  .profile-card.experience-section-container p {
+    margin-bottom: 0.5rem; /* space between paragraphs */
+    line-height: 1.5;
+  }
+
+  .experience-section-container {
+    margin-top: 0.5rem;
+  }
+
+  /* Ensure modal close button is comfortably tappable */
+  .modal-close-btn {
+    padding: 0.5rem;
+    top: env(safe-area-inset-top);
+  }
+}

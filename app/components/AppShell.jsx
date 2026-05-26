@@ -262,7 +262,7 @@ export default function AppShell({ children, userEmail, userId }) {
         />
       )}
 
-      <header className="header" style={{ borderTop: isCompany ? '4px solid var(--primary)' : 'none' }}>
+      <header className="header app-header" style={{ borderTop: isCompany ? '4px solid var(--primary)' : 'none' }}>
         <div className="app-container">
           {/* Unified Responsive Header Content */}
           <div className="w-full flex items-center justify-between py-2 px-4 h-[calc(56px+env(safe-area-inset-top))] md:h-auto md:min-h-[64px] pt-[calc(env(safe-area-inset-top)+8px)] md:pt-1">
