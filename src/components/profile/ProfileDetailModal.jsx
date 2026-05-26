@@ -19,7 +19,7 @@ export default function ProfileDetailModal({ isOpen, onClose, profile, isSelf })
           <div className="relative mb-6">
             <div className="relative w-28 h-28">
               <img 
-                src={profile.avatar_url || '/profile_pic.png'} 
+                src={profile.avatar_url || '/avatar_placeholder.png'} 
                 alt={profile.name} 
                 className="w-full h-full rounded-full object-cover border-4 border-white shadow-xl"
               />

@@ -191,7 +191,7 @@ export default function ProfessionalCard({ profile, currentUser, onFollow }) {
       <div className="professional-card card w-full">
         <div className="card-avatar-wrapper relative">
           <img 
-            src={profile.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
+            src={profile.avatar_url || '/avatar_placeholder.png'} 
             alt={profile.name} 
             className="professional-avatar"
           />

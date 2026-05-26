@@ -18,7 +18,7 @@ const DEFAULT_PROFILE = {
   headline: 'IT Specialist',
   about: 'Passionate IT Specialist with expertise in network infrastructure, system administration, and technical support. Dedicated to optimizing IT operations and ensuring seamless technology experiences. Always eager to learn new technologies and solve complex technical challenges.',
   location: 'Global • Open to work',
-  profilePic: '/profile_pic.png',
+  profilePic: '/avatar_placeholder.png',
   coverPhoto: '/cover_photo.png'
 }
 

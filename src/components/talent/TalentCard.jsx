@@ -11,7 +11,7 @@ export default function TalentCard({ profile }) {
       {/* Avatar */}
       <div className="mt-2 mb-2">
         <img 
-          src={profile.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
+          src={profile.avatar_url || '/avatar_placeholder.png'} 
           alt={profile.name || 'Talent Avatar'} 
           className="w-20 h-20 rounded-full border-2 border-slate-100 object-cover"
         />

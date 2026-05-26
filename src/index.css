@@ -2628,6 +2628,183 @@ body {
   }
 }
 
+/* 📱 MOBILE VIEW POLISH OVERRIDES (<= 767px) */
+@media (max-width: 767px) {
+  /* 1. Mobile Top Header Polish */
+  .header {
+    min-height: 68px !important; /* Increase visual height slightly */
+  }
+  .header .app-container > div {
+    height: 68px !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+  /* Shift top-right actions slightly to the left to prevent edge-crowding */
+  .header .flex.items-center.gap-3.md\:gap-2 {
+    padding-right: 8px !important;
+  }
+  /* Increase Avatar and Logo size proportionally */
+  .header .avatar-img {
+    width: 38px !important;
+    height: 38px !important;
+  }
+  .header .logo {
+    font-size: 22px !important;
+  }
+
+  /* 2. Notifications Mobile Page Customizations */
+  /* Top Bar Height, Padding, and Readability */
+  .fixed.inset-0.w-full.h-full.bg-white.z-\[9999\] .sticky.top-0 {
+    min-height: 64px !important;
+    padding: 16px 20px !important;
+  }
+  .fixed.inset-0.w-full.h-full.bg-white.z-\[9999\] .sticky.top-0 .text-lg.font-bold {
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+  }
+  /* View All Notifications Button - Shift upward ~2% relative to screen height */
+  .fixed.inset-0.w-full.h-full.bg-white.z-\[9999\] .sticky.bottom-0 {
+    padding-bottom: 24px !important; /* Proper bottom padding */
+    transform: translateY(-2vh) !important; /* Shift upward by ~2% screen height */
+    background: transparent !important;
+    box-shadow: none !important;
+    border-top: none !important;
+  }
+
+  /* 3. Profile Section Fixes (Bottom Safe Spacing) */
+  /* Remove excessive bottom padding and enforce strict content-driven heights on all layout wrapper containers */
+  .profile-page-wrapper,
+  .profile-layout-container {
+    height: auto !important;
+    min-height: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  
+  /* Standardize safety clearance margins directly on the very last profile card block to clear mobile bottom navigation perfectly */
+  .profile-page-wrapper .profile-card:last-child,
+  .profile-layout-container .profile-card:last-child,
+  .experience-section-container:last-of-type,
+  .app-layout:has(.profile-card) {
+    padding-bottom: 0 !important;
+    margin-bottom: 15px !important; /* Content-driven safe-gap of exactly 15px as required */
+  }
+
+  /* 4. Mobile Top Header Polishing Adjustments */
+  /* Move suitcase button to the left slightly and ensure proper gaps with the message button */
+  .header button.btn-primary-pill {
+    margin-right: 12px !important; /* Spacing between suitcase and avatar */
+  }
+  .header .header-icon-btn {
+    margin-right: 4px !important; /* Proper gutter between message icon and suitcase button */
+  }
+  /* Increase Avatar container width slightly and ensure balanced right margins from screen border */
+  .header .relative.ml-3.md\:ml-4.pr-2 {
+    margin-left: 8px !important;
+    padding-right: 12px !important; /* Balanced safety margin away from right screen border */
+  }
+
+  /* 5. Mobile Profile Screen Polish overrides */
+  /* Reduce cover background header height by 40% (200px to 120px) on mobile */
+  .cover-photo-container {
+    height: 120px !important;
+  }
+  /* Increase touch usability/height of Follow and Message buttons on mobile */
+  .profile-info button.flex-1.md\:flex-initial {
+    height: 48px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  /* Vertical Spacing between Follow/Message Buttons and Professional Overview */
+  .profile-info .mt-6.pt-6.border-t.border-slate-100 {
+    margin-top: 32px !important; /* Increased top spacing */
+    padding-top: 24px !important;
+  }
+  
+  /* 📍 SPECIFIC PROFILE SECTIONS SPACING POLISH (Mobile & Tablet <=1024px) */
+  /* Enforce exactly 15px spacing between all profile cards, eliminating inconsistent gaps */
+  .profile-page-wrapper,
+  .profile-layout-container {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important; /* Managed explicitly by children margins */
+  }
+  
+  /* Apply strict 12px margin to Profile card components on mobile & tablet viewports */
+  .profile-page-wrapper .profile-card,
+  .profile-layout-container .profile-card,
+  .about-section-container,
+  .experience-section-container {
+    margin-top: 12px !important; /* Set tighter, consistent vertical gap of exactly 12px */
+    margin-bottom: 0 !important;
+    height: auto !important; /* Content-driven height only */
+    min-height: 0 !important; /* Prevent minimum height space reservation */
+    flex-grow: 0 !important; /* Prevent vertical flex stretching leakage */
+  }
+  
+  /* Specific mobile/tablet optimizations to resolve phantom height and provide internal text breathing space */
+  .about-section-container,
+  .experience-section-container {
+    padding: 16px 20px 26px 20px !important; /* Compact balanced mobile padding with 10px safe bottom breathing space */
+    overflow: hidden !important;
+  }
+  
+  /* First profile card in the layout has no top spacing (remains snapped to top) */
+  .profile-page-wrapper .profile-card:first-child,
+  .profile-layout-container .profile-card:first-child {
+    margin-top: 0 !important;
+  }
+  
+  /* 📱 Symmetrical Side Padding Guard for ultra-small mobile screen sizes (<= 440px) */
+  @media (max-width: 440px) {
+    .talent-directory {
+      padding-left: 16px !important;  /* Enforce consistent left screen padding */
+      padding-right: 16px !important; /* Symmetrical right screen padding to prevent UI border touches */
+      box-sizing: border-box !important;
+    }
+  }
+
+}
+
+/* Global Desktop/Tablet adjustments for profile polish */
+@media (min-width: 768px) {
+  /* Reduce cover background height slightly to optimize viewport (200px to 150px) */
+  .cover-photo-container {
+    height: 150px !important;
+  }
+  /* Height polish for buttons on tablet/desktop */
+  .profile-info button.flex-1.md\:flex-initial,
+  .profile-info .btn-secondary {
+    height: 40px !important;
+  }
+  
+  /* Desktop overrides for paragraph spacing to support layout density */
+  .experience-section-container p,
+  .about-section-container p {
+    margin-bottom: 0 !important;
+  }
+}
+
+/* 📱 Base Mobile-First Paragraph spacing standards for Experience & About cards */
+.experience-section-container p,
+.about-section-container p {
+  margin-bottom: 10px !important; /* Base global breathing spacer on mobile to prevent text-to-border touches */
+}
+
+/* 📍 Global Modal & Forms Spacing Standardizations (Desktop + Tablet + Mobile) */
+/* Ensure left icon in any relative form input group NEVER overlaps placeholder/input text */
+.relative > svg + input,
+.relative > svg + .form-input,
+.relative > .lucide + input {
+  padding-left: 2.75rem !important; /* Standardize safe indentation */
+}
+/* Ensure absolute position of left icon inside inputs is beautifully centered */
+.relative > svg.absolute {
+  left: 0.85rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
 /* Speed Dial FAB Styles */
 .mobile-fab-container {
   position: fixed;
@@ -3044,18 +3221,17 @@ body {
 }
 
 .discovery-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); /* Strict 2 columns on mobile/tablet */
+  display: grid !important;
+  grid-template-columns: 1fr !important; /* ≤ 823px → strict SINGLE COLUMN layout */
   gap: 12px;
   width: 100%;
   padding-bottom: 32px;
   box-sizing: border-box;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 824px) {
   .discovery-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important; /* Forced 2-column desktop grid */
+    grid-template-columns: repeat(2, 1fr) !important; /* ≥ 824px → strict TWO COLUMN grid layout */
     gap: 24px !important;
     width: 100%;
   }

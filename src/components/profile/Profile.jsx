@@ -344,16 +344,6 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
   return (
     <div className="profile-page-wrapper">
       <div className="profile-layout-container">
-        {/* Navigation / Back Button */}
-        <div className="mb-4">
-          <button 
-            onClick={() => router.back()} 
-            className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#002b4e] transition-colors"
-          >
-            <ArrowLeft size={16} /> Back
-          </button>
-        </div>
-
         {/* ── Profile Card ── */}
         <section className="profile-card">
           <div 
@@ -374,7 +364,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
             <div className="profile-header-top">
               {/* Avatar with real upload */}
               <div className="profile-pic-container" style={{ position: 'relative' }}>
-                <img src={profile.profilePic || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} alt={profile.name} className="profile-pic" />
+                <img src={profile.profilePic || '/avatar_placeholder.png'} alt={profile.name} className="profile-pic" />
                 {isOwnProfile && (
                   <>
                     <button
@@ -402,7 +392,17 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
               )}
             </div>
 
-            <h1 className="profile-name">{profile.name}</h1>
+            <div className="flex items-center justify-between w-full gap-4">
+              <h1 className="profile-name m-0 leading-tight">{profile.name}</h1>
+              {/* Minimal right-aligned Back Button */}
+              <button 
+                onClick={(e) => { e.stopPropagation(); router.back(); }} 
+                className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#002b4e] bg-slate-100/80 hover:bg-slate-200/80 px-2.5 py-1 rounded-md transition-all shadow-sm active:scale-[0.97]"
+                title="Back"
+              >
+                <ArrowLeft size={14} strokeWidth={2.5} /> <span>Back</span>
+              </button>
+            </div>
             <h2 className="profile-headline">{profile.currentRole}</h2>
 
 
@@ -414,17 +414,10 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
                 </p>
               )}
 
-              {isOwnProfile ? (
-                <button 
-                  className="btn-secondary w-auto px-4 py-1.5 text-sm inline-flex items-center gap-2 font-semibold" 
-                  onClick={handleOpenModal}
-                >
-                  <Edit3 size={16} /> Edit Profile
-                </button>
-              ) : (
-                <div className="flex flex-row gap-2">
+              {isOwnProfile ? null : (
+                <div className="flex flex-row gap-2 mt-4 md:mt-0 w-full md:w-auto">
                   <button 
-                    className="w-auto px-4 py-1.5 text-sm inline-flex items-center gap-2 bg-blue-900 text-white font-bold rounded-lg transition-all shadow-sm active:scale-[0.98]"
+                    className="flex-1 md:flex-initial w-auto px-5 py-2.5 md:px-4 md:py-1.5 text-sm md:text-xs inline-flex items-center justify-center gap-2 bg-blue-900 text-white font-bold rounded-lg transition-all shadow-sm active:scale-[0.98]"
                     onClick={handleFollow}
                   >
                     {isFollowing ? <Check size={16} /> : <Plus size={16} />}
@@ -438,9 +431,9 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
                       return (
                         <button 
                           onClick={handleMessageClick}
-                          className="w-auto px-4 py-1.5 text-sm inline-flex items-center gap-2 bg-[#002b4e] hover:bg-[#001e38] text-white font-bold rounded-lg transition-all shadow-sm active:scale-[0.98]"
+                          className="flex-1 md:flex-initial w-auto px-5 py-2.5 md:px-4 md:py-1.5 text-sm md:text-xs inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-[#002b4e] border-2 border-[#002b4e] font-bold rounded-lg transition-all shadow-sm active:scale-[0.98]"
                         >
-                          <MessageSquare size={16} />
+                          <MessageSquare size={16} className="text-[#002b4e]" />
                           Message
                         </button>
                       );
@@ -448,7 +441,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
                       return (
                         <button 
                           disabled
-                          className="w-auto px-4 py-1.5 text-sm inline-flex items-center gap-2 bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed font-medium rounded-lg shadow-sm"
+                          className="flex-1 md:flex-initial w-auto px-5 py-2.5 md:px-4 md:py-1.5 text-sm md:text-xs inline-flex items-center justify-center gap-2 bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed font-medium rounded-lg shadow-sm"
                         >
                           <Lock size={16} />
                           Inbox Private
@@ -503,7 +496,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
 
         {/* ── About Card ── */}
         {(profile.bio || profile.about) && (
-          <section className="profile-card about-card" style={{ marginTop: '16px' }}>
+          <section className="profile-card about-card about-section-container" style={{ marginTop: '15px' }}>
             <h2 className="section-title">About</h2>
             <p className="about-text">{profile.bio || profile.about}</p>
           </section>
@@ -516,7 +509,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
           <div className="modal-content max-w-2xl" onClick={e => e.stopPropagation()}>
             <div className="modal-header" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                <h2 className="text-xl font-bold text-[#002b4e]">Edit profile</h2>
+                <h2 className="text-xl font-bold text-white">Edit profile</h2>
                 <button className="btn-close" onClick={handleCloseModal}><X size={20} /></button>
               </div>
             </div>
@@ -528,7 +521,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
                   <div className="media-section flex flex-col items-center justify-center p-6 bg-slate-50 rounded-xl border border-dashed border-slate-300">
                     <div className="relative group">
                       <img 
-                        src={profile.profilePic || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
+                        src={profile.profilePic || '/avatar_placeholder.png'} 
                         alt="Preview" 
                         className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg" 
                       />
@@ -675,7 +668,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
                             checked={editIsSailing}
                             onChange={(e) => setEditIsSailing(e.target.checked)}
                           />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#002b4e]"></div>
+                          <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-7 peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#002b4e]"></div>
                         </label>
                       </div>
 
@@ -756,7 +749,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
             <div className="modal-footer">
               <button className="btn-secondary" onClick={handleCloseModal}>Cancel</button>
               <button className="btn-primary px-8" onClick={handleSaveModal} disabled={saving}>
-                {saving ? 'Saving...' : <><Check size={16} style={{ marginRight: 6 }} /> Save Changes</>}
+                {saving ? 'Saving...' : <><Check size={16} style={{ marginRight: 6 }} /> Save</>}
               </button>
             </div>
           </div>

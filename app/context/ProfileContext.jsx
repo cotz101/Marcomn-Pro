@@ -10,7 +10,7 @@ export const DEFAULT_PROFILE = {
   currentRole: '',
   bio: '',
   location: 'Global',
-  profilePic: '/profile_pic.png',
+  profilePic: '/avatar_placeholder.png',
   coverPhoto: '/cover_photo.png',
   isSailing: false,
   vesselName: '',

@@ -156,7 +156,7 @@ export default function ExperienceSection({ userId, isOwnProfile }) {
   };
 
   return (
-    <section className="profile-card about-card">
+    <section className="profile-card about-card experience-section-container" style={{ marginTop: '15px' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2 className="section-title" style={{ margin: 0 }}>

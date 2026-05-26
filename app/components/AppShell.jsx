@@ -222,7 +222,7 @@ export default function AppShell({ children, userEmail, userId }) {
 
 
   const isCompany = currentIdentity?.type === 'company';
-  const identityImage = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (profile?.profilePic || '/profile_pic.png');
+  const identityImage = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (profile?.profilePic || '/avatar_placeholder.png');
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F4F4F4]">
@@ -467,7 +467,7 @@ export default function AppShell({ children, userEmail, userId }) {
       )}
 
       {/* Contextual Speed Dial FAB */}
-      {!pathname?.startsWith('/messages') && (
+      {!pathname?.startsWith('/messages') && !pathname?.startsWith('/profile') && (
         <>
           {isFabExpanded && (
             <div className="fab-overlay show" onClick={() => setIsFabExpanded(false)}></div>
