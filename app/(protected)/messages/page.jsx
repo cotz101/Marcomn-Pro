@@ -387,15 +387,7 @@ export default function InboxPage() {
   return (
     <div className="flex flex-col w-full bg-white overflow-x-hidden" style={{ height: '100dvh', maxHeight: '100dvh' }}>
       <div className="flex flex-row flex-1 min-h-0 w-full bg-white overflow-hidden">
-      <style dangerouslySetInnerHTML={{ __html: `
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      ` }} />
+
 
       <div 
         className={activeChatId 
