@@ -385,8 +385,8 @@ export default function InboxPage() {
   const activePartner = activeConv ? getOtherParticipantProfile(activeConv) : null;
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-5rem)] w-full pb-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom))] md:pb-0">
-      <div className="flex flex-row flex-1 min-h-0 w-full bg-white">
+    <div className="flex flex-col w-full bg-white overflow-x-hidden" style={{ height: '100dvh', maxHeight: '100dvh' }}>
+      <div className="flex flex-row flex-1 min-h-0 w-full bg-white overflow-hidden">
       <style dangerouslySetInnerHTML={{ __html: `
         .no-scrollbar::-webkit-scrollbar {
           display: none;
@@ -490,8 +490,15 @@ export default function InboxPage() {
       >
         {activeConv && activePartner ? (
           <>
-            {/* Chat stage header */}
-            <header className="flex-none h-20 w-full bg-white border-b border-gray-200 z-10 flex items-center justify-between px-4">
+            {/* Chat stage header – must clear iPhone Dynamic Island on mobile */}
+            <header
+              className="flex-none w-full bg-white border-b border-gray-200 z-10 flex items-center justify-between px-4"
+              style={{
+                paddingTop: 'max(12px, env(safe-area-inset-top))',
+                paddingBottom: '12px',
+                minHeight: 'calc(64px + env(safe-area-inset-top))'
+              }}
+            >
               <div className="flex items-center min-w-0 ml-4">
                 <button 
                   onClick={() => router.push('/messages')}
@@ -575,10 +582,11 @@ export default function InboxPage() {
               )}
             </main>
 
-            {/* Composer Footer */}
+            {/* Composer Footer – must sit above the mobile bottom nav + iOS safe-area */}
             <form 
               onSubmit={handleSendMessage}
-              className="flex-none w-full bg-white p-4 pb-safe border-t border-gray-200 z-20 flex items-center gap-3"
+              className="flex-none w-full bg-white border-t border-gray-200 z-20 flex items-center gap-3 px-4 pt-3"
+              style={{ paddingBottom: 'calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom) + 8px)' }}
             >
               <input
                 type="text"

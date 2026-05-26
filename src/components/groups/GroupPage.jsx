@@ -917,9 +917,19 @@ export default function GroupPage({ groupId: propGroupId }) {
 
   // --- RENDER THREAD CHAT ROOM ---
   return (
-    <div className="h-screen bg-slate-50 flex flex-col pt-[50px] md:pt-0 w-full overflow-hidden relative">
-      {/* Immersive Chat Header */}
-      <div className="bg-white border-b border-slate-200 px-4 py-3 flex items-center shadow-sm z-10 shrink-0">
+    <div
+      className="bg-slate-50 flex flex-col w-full overflow-hidden relative"
+      style={{ height: '100dvh' }}
+    >
+      {/* Immersive Chat Header – clears Dynamic Island / notch on mobile */}
+      <div
+        className="bg-white border-b border-slate-200 px-4 flex items-center shadow-sm z-10 shrink-0"
+        style={{
+          paddingTop: 'max(12px, env(safe-area-inset-top))',
+          paddingBottom: '12px',
+          minHeight: 'calc(56px + env(safe-area-inset-top))'
+        }}
+      >
         <button 
           onClick={closeThread}
           className="mr-3 p-1.5 hover:bg-slate-100 rounded-full text-slate-600 transition-colors shrink-0 cursor-pointer"
@@ -1030,8 +1040,12 @@ export default function GroupPage({ groupId: propGroupId }) {
         <div ref={messagesEndRef} className="h-4" />
       </div>
 
-      {/* Chat Composer Input at screen bottom with safe area margin */}
-      <div className="bg-white border-t border-slate-200 p-2 md:p-3 shrink-0 pb-[calc(8px+env(safe-area-inset-bottom))] shadow-lg z-20">
+      {/* Chat Composer Input – always visible above mobile bottom nav */}
+      {/* Bottom padding = mobile bottom nav height + iOS safe-area + 8px gutter */}
+      <div
+        className="bg-white border-t border-slate-200 p-2 md:p-3 shrink-0 shadow-lg z-20"
+        style={{ paddingBottom: 'calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom) + 8px)' }}
+      >
         <div className="max-w-4xl mx-auto flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-xl p-1 pr-1.5 md:pr-2">
           <textarea
             ref={composerRef}

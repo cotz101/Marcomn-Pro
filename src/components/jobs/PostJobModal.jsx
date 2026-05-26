@@ -250,8 +250,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           </div>
         </div>
 
-        {/* Form Fields Stack (Scrollable Container to protect smaller screens) */}
-        <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-4">
+        {/* Form Fields Stack (Scrollable Container) - overflow-x-hidden prevents horizontal scrollbar on mobile */}
+        <div className="max-h-[60vh] overflow-y-auto overflow-x-hidden pr-2 space-y-4 w-full">
           
           {/* Row 1: Job Title */}
           <div>
@@ -267,8 +267,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             />
           </div>
 
-          {/* Row 2: Location and Start Date */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Row 2: Location and Start Date - stack on mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Job Location</label>
               <input 
@@ -294,8 +294,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             </div>
           </div>
 
-          {/* Row 3: Pay Rate Amount, Currency, Pay Rate Frequency */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* Row 3: Pay Rate Amount, Currency, Pay Rate Frequency - stack on mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Pay Rate Amount</label>
               <input 
@@ -343,8 +343,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             </div>
           </div>
 
-          {/* Row 4: Job Type and Experience Level */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Row 4: Job Type and Experience Level - stack on mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Job Type</label>
               <select 
@@ -375,8 +375,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             </div>
           </div>
 
-          {/* Row 5: Position Status and Posting Status */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Row 5: Position Status and Posting Status - stack on mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Position Status</label>
               <select 
@@ -499,7 +499,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         </div>
 
         {/* Footer Buttons Section */}
-        <div className="flex items-center justify-end gap-3 mt-8 pt-4 border-t border-slate-200">
+        <div className="flex flex-wrap items-center justify-end gap-3 mt-8 pt-4 border-t border-slate-200 w-full">
           <button 
             type="button"
             className="px-4 py-2 text-sm font-medium hover:bg-slate-100 rounded-lg text-gray-700" 

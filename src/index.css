@@ -2640,14 +2640,19 @@ body {
 
 /* 📱 MOBILE VIEW POLISH OVERRIDES (<= 767px) */
 @media (max-width: 767px) {
-  /* 1. Mobile Top Header Polish */
+  /* 1. Mobile Top Header Polish – honour Dynamic Island / notch safe area */
+  /* The inline style in AppShell already sets pt-[calc(env(safe-area-inset-top)+8px)].
+     We must NOT override it with a fixed height/padding-top here, or the header
+     will slide behind the iPhone clock. Instead we let the header grow with its content. */
   .header {
-    min-height: 68px !important; /* Increase visual height slightly */
+    min-height: calc(56px + env(safe-area-inset-top)) !important;
   }
+  /* Remove the previous hard-coded 68px / 4px override that clobbered safe-area padding */
   .header .app-container > div {
-    height: 68px !important;
-    padding-top: 4px !important;
+    height: auto !important;
+    min-height: calc(56px + env(safe-area-inset-top)) !important;
     padding-bottom: 4px !important;
+    /* padding-top comes from the inline Tailwind class pt-[calc(env(safe-area-inset-top)+8px)] */
   }
   /* Shift top-right actions slightly to the left to prevent edge-crowding */
   .header .flex.items-center.gap-3.md\:gap-2 {
@@ -2662,11 +2667,13 @@ body {
     font-size: 22px !important;
   }
 
-  /* 2. Notifications Mobile Page Customizations */
-  /* Top Bar Height, Padding, and Readability */
+  /* 2. Notifications Mobile Panel – title bar must clear Dynamic Island */
   .fixed.inset-0.w-full.h-full.bg-white.z-\[9999\] .sticky.top-0 {
-    min-height: 64px !important;
-    padding: 16px 20px !important;
+    min-height: calc(64px + env(safe-area-inset-top)) !important;
+    padding-top: calc(env(safe-area-inset-top) + 16px) !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    padding-bottom: 12px !important;
   }
   .fixed.inset-0.w-full.h-full.bg-white.z-\[9999\] .sticky.top-0 .text-lg.font-bold {
     font-size: 1.25rem !important;
@@ -2682,35 +2689,30 @@ body {
   }
 
   /* 3. Profile Section Fixes (Bottom Safe Spacing) */
-  /* Remove excessive bottom padding and enforce strict content-driven heights on all layout wrapper containers */
   .profile-page-wrapper,
   .profile-layout-container {
     height: auto !important;
     min-height: 0 !important;
     padding-bottom: 0 !important;
   }
-  
-  /* Standardize safety clearance margins directly on the very last profile card block to clear mobile bottom navigation perfectly */
   .profile-page-wrapper .profile-card:last-child,
   .profile-layout-container .profile-card:last-child,
   .experience-section-container:last-of-type,
   .app-layout:has(.profile-card) {
     padding-bottom: 0 !important;
-    margin-bottom: 15px !important; /* Content-driven safe-gap of exactly 15px as required */
+    margin-bottom: 15px !important;
   }
 
   /* 4. Mobile Top Header Polishing Adjustments */
-  /* Move suitcase button to the left slightly and ensure proper gaps with the message button */
   .header button.btn-primary-pill {
-    margin-right: 12px !important; /* Spacing between suitcase and avatar */
+    margin-right: 12px !important;
   }
   .header .header-icon-btn {
-    margin-right: 4px !important; /* Proper gutter between message icon and suitcase button */
+    margin-right: 4px !important;
   }
-  /* Increase Avatar container width slightly and ensure balanced right margins from screen border */
   .header .relative.ml-3.md\:ml-4.pr-2 {
     margin-left: 8px !important;
-    padding-right: 12px !important; /* Balanced safety margin away from right screen border */
+    padding-right: 12px !important;
   }
 
   /* 5. Mobile Profile Screen Polish overrides */
@@ -2860,7 +2862,8 @@ body {
 /* Speed Dial FAB Styles */
 .mobile-fab-container {
   position: fixed;
-  bottom: 96px; /* bottom-24 equivalent to clear safe area */
+  /* Clear mobile bottom nav (--mobile-nav-height) + iOS safe-area-inset-bottom + 24px breathing room */
+  bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 24px);
   right: 16px;
   z-index: 1001;
   display: flex;
@@ -3028,11 +3031,15 @@ body {
   justify-content: center;
   z-index: 10000 !important; /* Higher than FAB stack (9999) */
   padding: 16px;
+  /* Prevent any child content from leaking outside the modal on mobile */
+  overflow-x: hidden;
 }
 
 .modal-content-standard {
   background: white;
   width: 100%;
+  /* Ensure the modal never exceeds the viewport width on small screens */
+  max-width: min(100%, calc(100vw - 32px));
   border-radius: 16px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.2);
   overflow: hidden;
