@@ -577,8 +577,7 @@ export default function InboxPage() {
             {/* Composer Footer – must sit above the mobile bottom nav + iOS safe-area */}
             <form 
               onSubmit={handleSendMessage}
-              className="flex-none w-full bg-white border-t border-gray-200 z-20 flex items-center gap-3 px-5 pt-4 pb-2"
-              style={{ paddingBottom: 'calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom) + 12px)' }}
+              className="flex-none w-full bg-white border-t border-gray-200 z-20 flex items-center gap-3 px-5 pt-4 pb-2 messages-composer"
             >
               <input
                 type="text"

@@ -7,7 +7,7 @@ export default function CreatePost() {
 
   return (
     <div 
-      className="bg-white rounded-xl border border-gray-100 px-2 sm:px-4 py-5 mb-6 shadow-sm flex flex-col gap-3 w-full max-w-3xl mx-auto"
+      className="bg-white rounded-xl border border-gray-100 px-2 sm:px-4 py-5 mb-6 shadow-sm flex flex-col gap-3 w-full max-w-3xl mx-auto logbook-create-post-sticky"
       style={{ paddingTop: '20px', paddingBottom: '20px' }}
     >
       {/* Avatar + Rounded Trigger Button */}
