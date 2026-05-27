@@ -95,7 +95,7 @@ export default function Header() {
                 </div>
               </div>
             ) : (
-              <img src={activeIdentity.avatar} alt="Me" className="avatar-img" />
+              <img src={activeIdentity.avatar} alt="Me" className="header-avatar-img" />
             )}
             {dropdownOpen && <IdentitySwitcher onClose={() => setDropdownOpen(false)} />}
           </div>

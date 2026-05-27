@@ -310,15 +310,15 @@ export default function AppShell({ children, userEmail, userId }) {
             </div>
 
             {/* RIGHT: Actions & Avatar */}
-            <div className="flex items-center gap-1.5 md:gap-2">
+            <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
               
               {/* Message Icon (Mobile + Desktop) */}
-              <button className="header-icon-btn scale-110 md:scale-100" onClick={() => router.push('/messages')}>
+              <button className="header-icon-btn scale-110 md:scale-100 flex-shrink-0" onClick={() => router.push('/messages')}>
                 <MessageSquare size={26} />
               </button>
 
               {/* Desktop-only Notifications */}
-              <div className="relative hidden md:block" ref={notificationsRef}>
+              <div className="relative hidden md:block flex-shrink-0" ref={notificationsRef}>
                 <button 
                   ref={bellButtonRef}
                   className={`header-icon-btn relative ${showNotifications ? 'text-indigo-600 bg-indigo-50/50' : ''}`}
@@ -346,24 +346,24 @@ export default function AppShell({ children, userEmail, userId }) {
 
               {/* Responsive Post a Job */}
               <button 
-                 className="btn-primary-pill px-2.5 py-1.5 md:px-4 ml-1.5 md:ml-2 flex items-center justify-center mr-1 md:mr-0"
+                 className="btn-primary-pill px-2.5 py-1.5 md:px-5 ml-1.5 md:ml-3 flex items-center justify-center mr-1 md:mr-3 flex-shrink-0"
                  style={{ backgroundColor: 'var(--primary-container)' }}
                  onClick={() => openPostJobModal()}
               >
-                <Briefcase size={16} className="md:mr-1" />
-                <span className="font-bold text-sm hidden md:inline">Post a Job</span>
+                <Briefcase size={16} className="md:mr-2" />
+                <span className="font-bold text-sm hidden md:inline whitespace-nowrap">Post a Job</span>
               </button>
 
               {/* Avatar (Mobile + Desktop) */}
-              <div className="relative ml-3 md:ml-4 pr-2" ref={avatarRef}>
-                <div className="flex items-center gap-1 cursor-pointer" onClick={() => setDropdownOpen(!dropdownOpen)}>
+              <div className="relative ml-1 md:ml-2 pr-2 flex-shrink-0" ref={avatarRef}>
+                <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => setDropdownOpen(!dropdownOpen)}>
                   <img 
                      src={identityImage} 
                      alt="Me" 
-                     className="avatar-img" 
+                     className="header-avatar-img flex-shrink-0" 
                      style={{ width: '34px', height: '34px', objectFit: 'cover', borderRadius: isCompany ? '8px' : '50%' }}
                   />
-                  <ChevronDown size={14} className="hidden md:block" />
+                  <ChevronDown size={14} className="hidden md:block flex-shrink-0" />
                 </div>
 
                 {dropdownOpen && (
