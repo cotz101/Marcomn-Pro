@@ -570,7 +570,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
             
             <div className="flex flex-col justify-center min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <h4 className="font-bold text-[#0e2a4d] text-sm sm:text-base leading-tight truncate">
+                <h4 className="font-semibold text-[#0e2a4d] text-[15px] sm:text-base leading-tight truncate">
                   {author.name || 'Maritime Professional'}
                 </h4>
                 {isArticle && (
@@ -580,10 +580,10 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                   </span>
                 )}
               </div>
-              <div className="text-xs md:text-sm text-gray-500 flex items-center gap-1.5 font-medium mt-0.5 truncate">
+              <div className="text-[12px] sm:text-[13px] text-gray-400 flex items-center gap-1.5 font-normal mt-0.5 truncate">
                 <span className="truncate">{author.headline || 'MarComn Member'}</span>
-                <span className="flex-shrink-0 text-gray-400 font-normal">•</span>
-                <span className="flex-shrink-0 text-gray-400 font-normal">{getRelativeTime(post.created_at)}</span>
+                <span className="flex-shrink-0 text-gray-300 font-normal">•</span>
+                <span className="flex-shrink-0 text-gray-300 font-normal">{getRelativeTime(post.created_at)}</span>
               </div>
             </div>
           </div>
@@ -700,7 +700,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                       <h4 className="text-lg md:text-2xl font-bold leading-snug md:leading-tight text-navy-900 mb-2">
                         {post.mblogs?.title || 'Shared Post'}
                       </h4>
-                      <p className="text-base md:text-base leading-relaxed text-gray-700 mt-2 line-clamp-3">
+                      <p className="text-[15px] sm:text-base leading-[1.45] sm:leading-relaxed text-gray-700 mt-2 line-clamp-3">
                         {post.mblogs?.content?.replace(/<[^>]*>?/gm, '') || 'No description available.'}
                       </p>
                       
@@ -731,7 +731,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
 
                     {/* 2. Content Body */}
                     {isExpanded ? (
-                      <div className="prose prose-sm max-w-none text-base md:text-base leading-relaxed text-gray-700 mt-2 space-y-4">
+                      <div className="prose prose-sm max-w-none text-[15px] sm:text-base leading-[1.45] sm:leading-relaxed text-gray-700 mt-2 space-y-4">
                         <div
                           dangerouslySetInnerHTML={{ __html: renderContentWithEmbeds(post.content) }}
                           className="article-full-html"
@@ -740,7 +740,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                         <button
                           type="button"
                           onClick={() => setIsExpanded(false)}
-                          className="text-[#004173] hover:text-blue-800 font-extrabold text-xs mt-4 flex items-center gap-1 select-none focus:outline-none"
+                          className="text-[#004173] hover:text-blue-800 font-extrabold text-[14px] sm:text-xs mt-4 flex items-center gap-1 select-none focus:outline-none"
                         >
                           <span>Read less</span>
                         </button>
@@ -748,14 +748,14 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                     ) : (
                       <div>
                         {/* Excerpt */}
-                        <p className="text-base md:text-base leading-relaxed text-gray-700 mt-2 line-clamp-3">
+                        <p className="text-[15px] sm:text-base leading-[1.45] sm:leading-relaxed text-gray-700 mt-2 line-clamp-3">
                           {post.excerpt || getPlainText(post.content).substring(0, 150) + '...'}
                         </p>
 
                         <button
                           type="button"
                           onClick={() => setIsExpanded(true)}
-                          className="text-[#004173] hover:text-blue-800 font-extrabold text-xs flex items-center gap-1 select-none focus:outline-none"
+                          className="text-[#004173] hover:text-blue-800 font-extrabold text-[14px] sm:text-xs flex items-center gap-1 select-none focus:outline-none"
                         >
                           <span>Read More</span>
                         </button>
@@ -772,10 +772,10 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                     {isHtml(displayContent) ? (
                       <div
                         dangerouslySetInnerHTML={{ __html: displayContent }}
-                        className="prose prose-sm max-w-none text-base md:text-base leading-relaxed text-gray-700 mt-2"
+                        className="prose prose-sm max-w-none text-[15px] sm:text-base leading-[1.45] sm:leading-relaxed text-gray-700 mt-2"
                       />
                     ) : (
-                      <div className="text-base md:text-base leading-relaxed text-gray-700 mt-2 whitespace-pre-wrap break-words">
+                      <div className="text-[15px] sm:text-base leading-[1.45] sm:leading-relaxed text-gray-700 mt-2 whitespace-pre-wrap break-words">
                         {displayContent}
                       </div>
                     )}
@@ -784,7 +784,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                       <button
                         type="button"
                         onClick={() => setIsExpanded(!isExpanded)}
-                        className="text-[#004173] hover:underline font-bold text-xs mt-1 focus:outline-none select-none"
+                        className="text-[#004173] hover:underline font-bold text-[14px] sm:text-xs mt-1 focus:outline-none select-none"
                       >
                         {isExpanded ? '... Show less' : '... Show more'}
                       </button>
@@ -824,7 +824,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
               type="button"
               onClick={handleLike}
               disabled={isSubmitting}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm md:text-sm font-medium transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
+              className={`flex-1 flex items-center justify-center gap-2 min-h-[44px] py-2.5 px-3 rounded-lg text-[14px] sm:text-sm font-medium transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
                 hasLiked
                   ? 'text-blue-950 font-bold bg-navy-50/50'
                   : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
@@ -838,7 +838,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
               type="button"
               onClick={() => setShowComments(!showComments)}
               disabled={isSubmitting}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm md:text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
+              className={`flex-1 flex items-center justify-center gap-2 min-h-[44px] py-2.5 px-3 rounded-lg text-[14px] sm:text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
                 showComments ? 'bg-gray-50/80 text-gray-800' : ''
               }`}
             >
