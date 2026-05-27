@@ -331,25 +331,52 @@ export default function OpportunityDetailsPage() {
     <div className="max-w-4xl w-full mx-auto px-3 sm:px-6 md:px-8 py-8 space-y-6">
       {/* Bullet styling override for rich-text lists */}
       <style dangerouslySetInnerHTML={{__html: `
-        .rich-text-content ul {
+        .rich-text-content,
+        .rich-text-content * {
+          box-sizing: border-box;
+        }
+        .rich-text-content ul,
+        .prose .rich-text-content ul {
           list-style-type: disc !important;
-          padding-left: 1.5rem !important;
+          padding-left: 1.75rem !important;
           margin-top: 0.5rem !important;
           margin-bottom: 0.5rem !important;
         }
-        .rich-text-content ol {
+        .rich-text-content ol,
+        .prose .rich-text-content ol {
           list-style-type: decimal !important;
-          padding-left: 1.5rem !important;
+          padding-left: 1.75rem !important;
           margin-top: 0.5rem !important;
           margin-bottom: 0.5rem !important;
         }
-        .rich-text-content li {
-          margin-bottom: 0.375rem !important;
+        .rich-text-content li,
+        .prose .rich-text-content li {
           display: list-item !important;
+          margin-bottom: 0.35rem !important;
+          padding-left: 0.25rem !important;
         }
-        .rich-text-content p {
+        .rich-text-content li::before {
+          display: none !important;
+        }
+        .rich-text-content li p,
+        .prose .rich-text-content li p {
+          margin: 0 !important;
+          display: inline !important;
+        }
+        .rich-text-content p,
+        .prose .rich-text-content p {
           margin-bottom: 0.75rem !important;
+          min-height: 1em;
         }
+        .rich-text-content p:last-child {
+          margin-bottom: 0 !important;
+        }
+        .rich-text-content strong { font-weight: 700 !important; }
+        .rich-text-content em { font-style: italic !important; }
+        /* Quill indent levels */
+        .rich-text-content .ql-indent-1 { padding-left: 2rem !important; }
+        .rich-text-content .ql-indent-2 { padding-left: 4rem !important; }
+        .rich-text-content .ql-indent-3 { padding-left: 6rem !important; }
       `}} />
 
       {/* Back button link */}
@@ -365,7 +392,7 @@ export default function OpportunityDetailsPage() {
       <div className="bg-white !rounded-none shadow-sm border border-slate-200 overflow-hidden flex flex-col" style={{ borderRadius: '0' }}>
         
         {/* Profile/Company Header Block (Flat, integrated layout) */}
-        <div className="border-b border-slate-100 py-6 px-4 sm:px-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/30 !rounded-none" style={{ borderRadius: '0' }}>
+        <div className="border-b border-slate-100 pt-8 sm:pt-10 pb-6 px-5 sm:px-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 bg-slate-50/30 !rounded-none" style={{ borderRadius: '0' }}>
           <div className="flex gap-4 items-center">
             {/* Dynamic Logo Container (integrated and flat) */}
             <div className="w-16 h-16 bg-white border border-gray-100 !rounded-none flex items-center justify-center flex-shrink-0 shadow-sm" style={{ borderRadius: '0' }}>
@@ -404,11 +431,11 @@ export default function OpportunityDetailsPage() {
         </div>
 
         {/* Core Content Body */}
-        <div className="p-4 sm:p-8 space-y-8">
+        <div className="p-5 sm:p-8 space-y-8 sm:space-y-10">
           
           {/* Overview Grid */}
-          <div className="bg-gray-50/50 rounded-lg p-6 border border-gray-100">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Job Overview</h3>
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 sm:p-7 shadow-sm mx-1 sm:mx-2">
+            <h3 className="text-[13px] font-black text-slate-500 uppercase tracking-widest mb-5">Job Overview</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-900 flex-shrink-0">
@@ -454,13 +481,13 @@ export default function OpportunityDetailsPage() {
 
           {/* Skill Tag Pills */}
           {tags.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-sm sm:text-base font-bold text-gray-700 block">Required Skills & Credentials</label>
-              <div className="flex flex-wrap gap-2">
+            <div className="space-y-3 px-2 sm:px-4">
+              <label className="text-[15px] sm:text-base font-bold text-slate-800 block mb-1">Required Skills & Credentials</label>
+              <div className="flex flex-wrap gap-2.5">
                 {tags.map((tag, index) => (
                   <span 
                     key={index} 
-                    className="bg-blue-50/80 text-blue-700 px-3.5 py-1.5 rounded-lg text-xs font-bold border border-blue-100 shadow-2xs"
+                    className="bg-blue-50/80 text-blue-800 px-4 py-2 rounded-lg text-[13px] font-bold border border-blue-100 shadow-sm"
                   >
                     {tag}
                   </span>
@@ -471,11 +498,11 @@ export default function OpportunityDetailsPage() {
 
           {/* Rich Description */}
           {job.description && (
-            <div className="space-y-2">
-              <label className="text-sm sm:text-base font-bold text-gray-700 block">Job Description</label>
-              <div className="bg-white border border-gray-100 rounded-lg p-5 shadow-2xs">
+            <div className="space-y-3 px-2 sm:px-4">
+              <label className="text-[15px] sm:text-base font-bold text-slate-800 block mb-1">Job Description</label>
+              <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-sm">
                 <div 
-                  className="prose prose-sm max-w-none text-gray-700 text-sm leading-relaxed rich-text-content"
+                  className="text-slate-700 text-[15px] leading-[1.75] rich-text-content"
                   dangerouslySetInnerHTML={{ __html: job.description }}
                 />
               </div>
@@ -484,11 +511,11 @@ export default function OpportunityDetailsPage() {
 
           {/* Rich Responsibilities */}
           {job.responsibilities && (
-            <div className="space-y-2">
-              <label className="text-sm sm:text-base font-bold text-gray-700 block">Responsibilities</label>
-              <div className="bg-white border border-gray-100 rounded-lg p-5 shadow-2xs">
+            <div className="space-y-3 px-2 sm:px-4">
+              <label className="text-[15px] sm:text-base font-bold text-slate-800 block mb-1">Responsibilities</label>
+              <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-sm">
                 <div 
-                  className="prose prose-sm max-w-none text-gray-700 text-sm leading-relaxed rich-text-content"
+                  className="text-slate-700 text-[15px] leading-[1.75] rich-text-content"
                   dangerouslySetInnerHTML={{ __html: job.responsibilities }}
                 />
               </div>
@@ -498,7 +525,7 @@ export default function OpportunityDetailsPage() {
         </div>
 
         {/* Premium Control Sticky Footer Action Bar */}
-        <div className="flex items-center justify-end gap-3 py-5 px-4 sm:px-8 border-t border-slate-100 bg-slate-50">
+        <div className="flex items-center justify-end gap-3 py-6 sm:py-8 px-4 sm:px-8 border-t border-slate-100 bg-slate-50 mt-4 sm:mt-8">
           {isOwner ? (
             <>
               <button 

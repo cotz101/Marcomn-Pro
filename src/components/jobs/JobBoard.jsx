@@ -204,34 +204,63 @@ export default function JobBoard() {
 
   return (
     <div className="job-board-container w-full max-w-5xl mx-auto">
-      <header className="job-board-header mb-6 flex flex-col max-[440px]:bg-white max-[440px]:border max-[440px]:border-slate-200 max-[440px]:p-5 max-[440px]:rounded-2xl max-[440px]:shadow-sm">
+      <header className="job-board-header mb-6 flex flex-col bg-white border border-slate-200 p-5 md:p-6 rounded-2xl shadow-sm">
         {/* Top Row: Title/Subtitle */}
-        <div className="flex flex-col justify-start gap-1 mb-5 max-[440px]:mb-4 order-1">
+        <div className="flex flex-col justify-start gap-1 mb-5 max-[440px]:mb-4 order-1 px-2 md:px-4">
           <div className="w-full text-left">
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Opportunity</h1>
+            <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight" style={{ color: '#000050' }}>Opportunity</h1>
             <p className="text-slate-500 text-sm mt-1">Discover top maritime talent and specialized service providers.</p>
           </div>
         </div>
 
         {/* Search Bar (Directly below subtitle) */}
-        <div className="flex items-center w-full bg-white border border-slate-200 rounded-full shadow-sm overflow-hidden mb-16 max-[440px]:mb-12 order-3 min-[441px]:order-2">
-          <div className="pl-5 text-slate-400">
-            <Search size={18} />
+        <div className="w-full px-2 md:px-4 mb-[28px] max-[440px]:mb-5 order-3 min-[441px]:order-2">
+          <div
+            className="flex items-center w-full overflow-hidden"
+            style={{
+              backgroundColor: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '9999px',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+            }}
+          >
+            <div className="pl-4 sm:pl-5 flex-shrink-0" style={{ color: '#94a3b8' }}>
+              <Search size={18} />
+            </div>
+            <input
+              type="text"
+              placeholder="Search by job title, company, location, or keywords..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 min-w-0 outline-none bg-transparent max-[320px]:placeholder:text-[11px] placeholder:text-slate-400"
+              style={{
+                padding: '0.75rem 1rem',
+                fontSize: '14px',
+                color: '#334155',
+                border: 'none',
+              }}
+            />
+            <button
+              className="flex-shrink-0 font-bold cursor-pointer transition-colors max-[320px]:px-3 px-6 sm:px-7"
+              style={{
+                backgroundColor: '#002b4e',
+                color: '#ffffff',
+                fontSize: '0.875rem',
+                fontWeight: 700,
+                border: 'none',
+                height: '100%',
+                minHeight: '46px',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#001f38')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#002b4e')}
+            >
+              Search
+            </button>
           </div>
-          <input 
-            type="text" 
-            placeholder="Search by job title, company, location, or keywords..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 px-4 py-4 md:py-3.5 min-h-[48px] text-[15px] text-slate-700 placeholder-slate-400 outline-none bg-transparent"
-          />
-          <button className="bg-[#002b4e] hover:bg-[#001f38] text-white px-5 min-[441px]:px-8 py-4 md:py-3.5 text-sm font-bold transition-colors h-full min-h-[48px] cursor-pointer">
-            Search
-          </button>
         </div>
 
         {/* Filter & Sort Row (Under Search Bar, visible on all viewports) */}
-        <div className="flex flex-row items-center gap-3 w-full justify-start mb-4 order-4">
+        <div className="flex flex-row items-center gap-3 w-full justify-start mb-4 order-4 px-2 md:px-4 mt-[10px]">
           <button 
             onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
             className="flex items-center justify-center gap-2 px-5 py-3 min-h-[44px] bg-white border border-slate-200 rounded-full text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors cursor-pointer flex-1 sm:flex-none"
@@ -302,7 +331,7 @@ export default function JobBoard() {
 
         {/* Required Skills Pill Filter (Outside Filter Panel) */}
         {filterOptions.skills.length > 0 && (
-          <div className="mb-2 md:mb-6 order-6 min-[441px]:order-4">
+          <div className="mb-2 md:mb-6 order-6 min-[441px]:order-4 px-2 md:px-4">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Job Tags & Required Skills</span>
               {selectedSkillPill && (
