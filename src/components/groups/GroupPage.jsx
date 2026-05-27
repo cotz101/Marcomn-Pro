@@ -711,7 +711,7 @@ export default function GroupPage({ groupId: propGroupId }) {
               </div>
             </div>
 
-            <div className="avatar-section flex flex-col items-start md:items-end shrink-0 pl-6 md:pl-0">
+            <div className="avatar-section flex flex-col items-start shrink-0 pl-6">
               <div className="avatar-cascade flex items-center -space-x-2">
                 {memberAvatars.map((url, i) => (
                   <img 
@@ -727,7 +727,7 @@ export default function GroupPage({ groupId: propGroupId }) {
                   </div>
                 )}
               </div>
-              <div className="member-count mt-2 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 md:pl-0">
+              <div className="member-count mt-2 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">
                 {memberCount} Members
               </div>
             </div>

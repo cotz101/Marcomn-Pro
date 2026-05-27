@@ -4035,14 +4035,6 @@ body {
   padding-left: 24px !important; /* Move away from left edge */
 }
 
-/* On mobile screens, also indent the avatar section and member count so they align on the left */
-@media (max-width: 767px) {
-  .avatar-section {
-    align-items: flex-start !important;
-    padding-left: 24px !important;
-    margin-right: 0 !important;
-  }
-}
 
 .main-title {
   font-size: 1.625rem !important; /* Large, premium 26px font */
@@ -4072,17 +4064,9 @@ body {
 .avatar-section {
   display: flex !important;
   flex-direction: column !important;
-  align-items: flex-start !important; /* Left-align by default for clean mobile/tablet columns */
-  padding-left: 24px !important; /* Move away from left edge, matching title */
+  align-items: flex-start !important; /* Left-align by default for clean columns across all screens */
+  padding-left: 24px !important; /* Move away from left edge, matching title spacing */
   margin-right: 0 !important;
-}
-
-@media (min-width: 768px) {
-  .avatar-section {
-    align-items: flex-end !important; /* Right-align only on desktop screens */
-    padding-left: 0 !important;
-    margin-right: 24px !important; /* Move away from extreme right edge on desktop */
-  }
 }
 
 .avatar-cascade {
