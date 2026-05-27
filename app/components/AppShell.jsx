@@ -564,9 +564,9 @@ export default function AppShell({ children, userEmail, userId }) {
       )}
 
       <main className="flex-1 flex flex-col">
-        <div className={pathname === '/messages' ? 'w-full flex-1 flex flex-col' : 'app-container'}>
-          {pathname === '/messages' ? (
-            <div className="w-full flex-1 flex flex-col">
+        <div className={pathname === '/messages' || pathname?.match(/^\/groups\/[^/]+$/) ? 'w-full flex-1 flex flex-col overflow-hidden' : 'app-container'}>
+          {pathname === '/messages' || pathname?.match(/^\/groups\/[^/]+$/) ? (
+            <div className="w-full flex-1 flex flex-col overflow-hidden">
               {children}
             </div>
           ) : (
