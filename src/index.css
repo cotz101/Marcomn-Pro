@@ -4031,14 +4031,29 @@ body {
 }
 
 /* Title and Subtitle Alignment */
-.main-title, .sub-title, .button-container {
+.main-title, .sub-title, .button-container, .group-button-row {
   padding-left: 24px !important; /* Move away from left edge */
 }
 
+/* On mobile screens, also indent the avatar section and member count so they align on the left */
+@media (max-width: 767px) {
+  .avatar-section {
+    align-items: flex-start !important;
+    padding-left: 24px !important;
+    margin-right: 0 !important;
+  }
+}
+
 .main-title {
-  font-size: 1.125rem !important;
-  font-weight: 700 !important;
-  color: #1e1b4b !important; /* text-blue-950 */
+  font-size: 1.625rem !important; /* Large, premium 26px font */
+  font-weight: 900 !important;
+  color: #0f172a !important; /* Slate-900 for modern branding */
+}
+
+@media (min-width: 768px) {
+  .main-title {
+    font-size: 1.875rem !important; /* Elegant 30px on desktop */
+  }
 }
 
 .sub-title {
@@ -4057,8 +4072,17 @@ body {
 .avatar-section {
   display: flex !important;
   flex-direction: column !important;
-  align-items: flex-end !important;
-  margin-right: 24px !important; /* Move away from extreme right edge */
+  align-items: flex-start !important; /* Left-align by default for clean mobile/tablet columns */
+  padding-left: 24px !important; /* Move away from left edge, matching title */
+  margin-right: 0 !important;
+}
+
+@media (min-width: 768px) {
+  .avatar-section {
+    align-items: flex-end !important; /* Right-align only on desktop screens */
+    padding-left: 0 !important;
+    margin-right: 24px !important; /* Move away from extreme right edge on desktop */
+  }
 }
 
 .avatar-cascade {
@@ -4399,3 +4423,55 @@ body.liker-modal-active .btn-leave {
     line-height: 1.8 !important;
   }
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   GROUP THREAD RESPONSIVE LAYOUT & ACTIVE VIEW OVERRIDES
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Mobile Thread View (Full Screen Overlay) */
+@media (max-width: 767px) {
+  .group-thread-container {
+    position: fixed !important;
+    top: var(--header-height, 76px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 40 !important;
+    background: #f8fafc !important;
+    height: auto !important;
+  }
+  
+  /* Hide global mobile FAB and bottom navigation when in active group thread discussion */
+  body.in-group-thread-active .mobile-fab-container,
+  body.in-group-thread-active .main-fab,
+  body.in-group-thread-active .fab-overlay,
+  body.in-group-thread-active .fab-btn,
+  body.in-group-thread-active .fab-container,
+  body.in-group-thread-active .bottom-nav-mobile {
+    display: none !important;
+  }
+}
+
+/* Tablet & Desktop Thread View (Standard inline center feed widget layout) */
+@media (min-width: 768px) {
+  .group-thread-container {
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    height: calc(100vh - var(--header-height, 64px) - 24px) !important;
+    border-radius: 1rem !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05) !important;
+    background: #ffffff !important;
+    overflow: hidden !important;
+  }
+  
+  /* Decouple footer bottom spacing to sit cleanly at base of widget */
+  .group-thread-container .composer-footer {
+    padding-bottom: 12px !important;
+    box-shadow: 0 -1px 4px rgba(0,0,0,0.04) !important;
+  }
+}
+

@@ -231,24 +231,27 @@ export default function GroupPage({ groupId: propGroupId }) {
     }
   }, [messages]);
 
-  // Lock body/html scroll when viewing a thread on mobile/desktop
+  // Lock body/html scroll and add active class when viewing a thread on mobile/desktop
   useEffect(() => {
     if (view === 'thread') {
       document.body.style.overflow = 'hidden';
       document.body.style.height = '100vh';
       document.documentElement.style.overflow = 'hidden';
       document.documentElement.style.height = '100vh';
+      document.body.classList.add('in-group-thread-active');
     } else {
       document.body.style.overflow = '';
       document.body.style.height = '';
       document.documentElement.style.overflow = '';
       document.documentElement.style.height = '';
+      document.body.classList.remove('in-group-thread-active');
     }
     return () => {
       document.body.style.overflow = '';
       document.body.style.height = '';
       document.documentElement.style.overflow = '';
       document.documentElement.style.height = '';
+      document.body.classList.remove('in-group-thread-active');
     };
   }, [view]);
 
@@ -469,13 +472,20 @@ export default function GroupPage({ groupId: propGroupId }) {
           });
 
       // DUAL WRITE: A. Write to the new primary normalized table `group_thread_messages`
+      const replyContext = replyTarget ? {
+        reply_to_message_id: replyTarget.id,
+        reply_author_name: replyTarget.author,
+        reply_preview: replyTarget.snippet
+      } : {};
+
       const { data: newMessage, error: newMessageError } = await supabase
         .from('group_thread_messages')
         .insert([{
           id: messageId,
           thread_id: activeThread.id,
           user_id: user.id,
-          content: messageContent
+          content: messageContent,
+          ...replyContext
         }])
         .select()
         .maybeSingle();
@@ -503,7 +513,8 @@ export default function GroupPage({ groupId: propGroupId }) {
         thread_id: activeThread.id,
         user_id: user.id,
         content: messageContent,
-        created_at: newMessage.created_at
+        created_at: newMessage ? newMessage.created_at : new Date().toISOString(),
+        ...replyContext
       };
 
       setMessages(prev => {
@@ -659,24 +670,31 @@ export default function GroupPage({ groupId: propGroupId }) {
   if (view === 'list') {
     return (
       <div className="w-full max-w-2xl mx-auto py-[0.75rem] overflow-y-auto min-h-screen px-4">
-        <div className="bg-white border-b border-gray-100 mb-6 rounded-xl shadow-sm p-5">
+        <div className="bg-white border-b border-gray-100 mb-6 rounded-xl shadow-sm p-6">
           <div className="header-container flex flex-col md:flex-row md:items-start justify-between gap-6">
-                <div className="title-section flex-1 min-w-0">
-                  <a href="/groups" className="bg-slate-900 text-white hover:bg-slate-800 py-2 px-4 rounded-lg transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.1em] border border-transparent shadow-sm cursor-pointer mr-2">
-                    ← Back
-                  </a>
-                  <h1 className="main-title text-2xl font-black text-slate-900 mb-1 leading-tight break-words">
-                    {groupName}
-                  </h1>
+            <div className="title-section flex-1 min-w-0 pl-2 md:pl-3">
+              <h1 className="main-title text-[26px] font-black text-slate-900 mb-1.5 leading-tight break-words">
+                {groupName}
+              </h1>
               <p className="sub-title text-xs font-semibold text-slate-500 mb-4 leading-relaxed break-words">
                 {groupDescription}
               </p>
               
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-3 mt-4 group-button-row">
+                {/* Standard Back Button */}
+                <a 
+                  href="/groups" 
+                  className="bg-white hover:bg-slate-50 text-[#004173] hover:text-[#002f54] border border-[#004173]/25 py-2 px-4 rounded-lg shadow-sm font-black text-[10px] uppercase tracking-[0.1em] transition-all flex items-center gap-1.5 cursor-pointer"
+                  style={{ minHeight: '36px' }}
+                >
+                  ← Back
+                </a>
+                
                 {isAdmin && (
                   <button 
                     onClick={() => setShowManageModal(true)} 
-                    className="bg-slate-900 text-white hover:bg-slate-800 py-2 px-4 rounded-lg transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.1em] border border-transparent shadow-sm cursor-pointer"
+                    className="bg-[#002b4e] hover:bg-[#001f38] text-white py-2 px-4 rounded-lg transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.1em] border border-transparent shadow-sm cursor-pointer"
+                    style={{ minHeight: '36px' }}
                   >
                     <Settings size={14} strokeWidth={2.5} /> Manage Group
                   </button>
@@ -684,7 +702,8 @@ export default function GroupPage({ groupId: propGroupId }) {
                 {!isAdmin && isMember && (
                   <button 
                     onClick={() => setShowLeaveModal(true)}
-                     className="bg-red-600 text-white hover:bg-red-700 border border-transparent rounded-lg py-2 px-4 text-[10px] font-black uppercase tracking-[0.1em] shadow-sm cursor-pointer transition-all flex items-center gap-2"
+                    className="bg-red-600 text-white hover:bg-red-700 border border-transparent rounded-lg py-2 px-4 text-[10px] font-black uppercase tracking-[0.1em] shadow-sm cursor-pointer transition-all flex items-center gap-2"
+                    style={{ minHeight: '36px' }}
                   >
                     <LogOut size={12} /> Leave Group
                   </button>
@@ -692,7 +711,7 @@ export default function GroupPage({ groupId: propGroupId }) {
               </div>
             </div>
 
-            <div className="avatar-section flex flex-col items-start md:items-end shrink-0">
+            <div className="avatar-section flex flex-col items-start md:items-end shrink-0 pl-6 md:pl-0">
               <div className="avatar-cascade flex items-center -space-x-2">
                 {memberAvatars.map((url, i) => (
                   <img 
@@ -708,7 +727,7 @@ export default function GroupPage({ groupId: propGroupId }) {
                   </div>
                 )}
               </div>
-              <div className="member-count mt-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              <div className="member-count mt-2 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 md:pl-0">
                 {memberCount} Members
               </div>
             </div>
@@ -721,7 +740,7 @@ export default function GroupPage({ groupId: propGroupId }) {
           </h2>
           <button 
             onClick={() => setIsCreatingThread(!isCreatingThread)}
-            className="bg-slate-900 text-white hover:bg-slate-800 px-4 py-2 rounded-lg text-[12px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer border border-transparent shadow-sm min-h-[44px]"
+            className="bg-[#002b4e] hover:bg-[#001f38] text-white px-4 py-2 rounded-lg text-[12px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer border border-transparent shadow-sm min-h-[44px]"
           >
             {isCreatingThread ? 'Cancel' : <><Plus size={12}/> Start a Thread</>}
           </button>
@@ -746,13 +765,13 @@ export default function GroupPage({ groupId: propGroupId }) {
               className="w-full border border-slate-200 bg-slate-50 rounded-lg px-4 py-2.5 text-xs mb-4 focus:outline-none focus:border-blue-500 resize-none min-h-[90px] text-slate-700 focus:bg-white transition-all shadow-inner"
             />
             <div className="flex justify-end">
-              <button
-                onClick={handleCreateThread}
-                disabled={!newThreadTitle.trim() || isSending}
-                className="bg-blue-600 text-white hover:bg-blue-700 px-5 py-2 rounded-lg text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all w-full sm:w-auto shadow-md"
-              >
-                {isSending ? 'Creating...' : 'Create Thread'}
-              </button>
+                <button
+                  onClick={handleCreateThread}
+                  disabled={!newThreadTitle.trim() || isSending}
+                  className="bg-[#002b4e] hover:bg-[#001f38] text-white px-6 py-2.5 rounded-lg text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all w-full sm:w-auto shadow-md flex items-center justify-center min-h-[44px]"
+                >
+                  {isSending ? 'Creating...' : 'Create Thread'}
+                </button>
             </div>
           </div>
         )}
@@ -905,19 +924,8 @@ export default function GroupPage({ groupId: propGroupId }) {
   // Using fixed positioning and body scroll lock guarantees no parent page drift.
   return (
     <div
-      className="bg-slate-50 w-full overflow-hidden"
-      style={{
-        position: 'fixed',
-        top: 'var(--header-height, 64px)',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: '#f8fafc',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        zIndex: 40
-      }}
+      className="group-thread-container bg-slate-50 w-full overflow-hidden"
+      style={{ display: 'flex', flexDirection: 'column' }}
     >
       {/* ── ThreadHeader ─────────────────────────────────────────────────────
           shrink-0 → never scrolls. Sits at top of the flex column. */}
@@ -938,7 +946,7 @@ export default function GroupPage({ groupId: propGroupId }) {
           ThreadHeader and ComposerFooter are siblings, not parents/children. */}
       <div
         style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch' }}
-        className="px-2 sm:px-4 py-4 bg-slate-50 w-full"
+        className="message-scroll-area px-2 sm:px-4 py-4 bg-slate-50 w-full"
       >
         <div className="space-y-3">
           {messages.map((msg) => {
@@ -966,6 +974,22 @@ export default function GroupPage({ groupId: propGroupId }) {
                         : { backgroundColor: '#ffffff', color: '#1e293b', border: '1px solid #e2e8f0', borderBottomLeftRadius: '6px' }
                       }
                     >
+                      {msg.reply_preview && (
+                        <div 
+                          className="mb-2 p-2 rounded-lg text-xs leading-normal border-l-4"
+                          style={isMe
+                            ? { backgroundColor: 'rgba(255, 255, 255, 0.12)', borderLeftColor: 'rgba(255, 255, 255, 0.5)', color: 'rgba(255, 255, 255, 0.9)' }
+                            : { backgroundColor: '#f1f5f9', borderLeftColor: '#004173', color: '#475569' }
+                          }
+                        >
+                          <div className="font-bold mb-0.5">
+                            Replying to {msg.reply_author_name || 'Member'}
+                          </div>
+                          <div className="italic truncate line-clamp-1 break-all">
+                            {msg.reply_preview}
+                          </div>
+                        </div>
+                      )}
                       {msg.content}
                     </div>
                     <button
@@ -989,7 +1013,7 @@ export default function GroupPage({ groupId: propGroupId }) {
           shrink-0 → never scrolls. Sits at bottom of the flex column.
           paddingBottom clears the bottom nav + safe area. */}
       <div
-        className="bg-white border-t border-slate-200 px-2 pt-2"
+        className="composer-footer bg-white border-t border-slate-200 px-2 pt-2"
         style={{
           flexShrink: 0,
           zIndex: 2,
@@ -1007,31 +1031,41 @@ export default function GroupPage({ groupId: propGroupId }) {
             </button>
           </div>
         )}
-        <div className="max-w-4xl mx-auto flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-xl p-1 pr-1.5 md:pr-2">
-          <textarea
-            ref={composerRef}
-            className="flex-1 bg-transparent border-none focus:ring-0 text-sm resize-none max-h-[120px] py-2 px-3 focus:outline-none font-medium text-slate-700"
-            placeholder="Type your message..."
-            value={chatInput}
-            onChange={(e) => {
-              setChatInput(e.target.value);
-              e.target.style.height = 'auto';
-              e.target.style.height = (e.target.scrollHeight < 150 ? e.target.scrollHeight : 150) + 'px';
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-          />
+        <div className="max-w-4xl mx-auto flex items-center gap-3 w-full px-1">
+          {/* Input container */}
+          <div className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl flex items-center min-h-[44px] md:min-h-[48px] py-0.5">
+            <textarea
+              ref={composerRef}
+              className="flex-1 bg-transparent border-none focus:ring-0 text-sm resize-none max-h-[120px] py-2 px-4 focus:outline-none font-medium text-slate-700 leading-normal"
+              placeholder="Type your message..."
+              value={chatInput}
+              onChange={(e) => {
+                setChatInput(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = (e.target.scrollHeight < 150 ? e.target.scrollHeight : 150) + 'px';
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              style={{ height: '36px' }}
+            />
+          </div>
+          
+          {/* Circular Send Button */}
           <button
             onClick={handleSendMessage}
             disabled={!chatInput.trim() || isSending}
-            className="p-2 mb-0.5 text-white rounded-lg disabled:opacity-50 transition-all shrink-0 cursor-pointer shadow-sm"
-            style={{ backgroundColor: '#004173' }}
+            className="w-11 h-11 md:w-12 md:h-12 rounded-full text-white flex items-center justify-center shadow-md hover:brightness-105 active:scale-95 transition-all shrink-0 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+            style={{ 
+              backgroundColor: '#0284c7', // Soft premium light blue matching specifications
+              minWidth: '44px',
+              minHeight: '44px'
+            }}
           >
-            <Send size={14} className={chatInput.trim() ? 'translate-x-[0.5px] -translate-y-[0.5px]' : ''} />
+            <Send size={18} className="translate-x-[0.5px] -translate-y-[0.5px]" />
           </button>
         </div>
       </div>

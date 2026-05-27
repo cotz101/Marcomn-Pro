@@ -24,7 +24,7 @@ function CommentItem({ comment, isReply, postAuthor, onReplyAction }) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(comment.likes || 0);
   const avatarSize = isReply ? "w-8 h-8" : "w-10 h-10";
-  const textSize = isReply ? "text-[13px]" : "text-[14px]";
+  const textSize = isReply ? "text-[14px]" : "text-[15px]";
 
   const toggleLike = () => {
     setLiked(prev => !prev);
@@ -46,7 +46,7 @@ function CommentItem({ comment, isReply, postAuthor, onReplyAction }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className={`bg-white rounded-xl px-4 py-3 border border-gray-100 shadow-sm ${isReply ? 'bg-gray-50/30' : ''}`}>
-            <p className="text-xs font-bold text-[#002b4e] flex items-center gap-1.5">
+            <p className="font-semibold text-base text-[#002b4e] flex items-center gap-1.5">
               {comment.author}
               {isAuthor && (
                 <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">Author</span>
@@ -56,19 +56,17 @@ function CommentItem({ comment, isReply, postAuthor, onReplyAction }) {
             <p className={`${textSize} text-gray-700 leading-relaxed`}>{comment.text}</p>
           </div>
           {/* Actions */}
-          <div className="flex gap-4 mt-1.5 pl-2">
+          <div className="flex gap-4 mt-2 pl-2">
             <button
               onClick={toggleLike}
-              className={`text-[11px] font-semibold transition-colors flex items-center gap-1 ${
-                liked ? 'text-blue-600' : 'text-gray-400 hover:text-blue-600'
-              }`}
+              className={`text-sm font-semibold transition-colors flex items-center gap-2 ${ liked ? 'text-blue-600' : 'text-gray-400 hover:text-blue-600' }`}
             >
               <ThumbsUp size={12} className={liked ? 'fill-blue-600' : ''} />
               {likeCount > 0 ? likeCount : 'Like'}
             </button>
             <button
               onClick={handleReplyClick}
-              className="text-[11px] font-semibold text-gray-400 hover:text-blue-600 transition-colors"
+              className="text-sm font-semibold text-gray-400 hover:text-blue-600 transition-colors"
             >
               Reply
             </button>
@@ -388,14 +386,14 @@ export default function DiscussionPost({ post, groupId }) {
   console.log("Discussion Thread Status -> Top Level:", topLevelComments.length, "Total Comments:", comments?.length);
 
   return (
-    <article className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
+    <article className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow overflow-x-hidden">
       {/* Post Header */}
       <div className="flex items-start gap-3 p-4 pb-0">
         <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#0a4b8a] to-[#002b4e] flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm">
           {post.author.charAt(0)}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm text-[#002b4e] truncate">{post.author}</p>
+            <p className="font-semibold text-base text-[#002b4e] truncate">{post.author}</p>
           <p className="text-xs text-gray-500 truncate">{post.role} · {post.timestamp}</p>
         </div>
         <button className="p-1.5 rounded-full hover:bg-gray-100 transition-colors text-gray-400">
@@ -416,7 +414,7 @@ export default function DiscussionPost({ post, groupId }) {
       <div className="flex items-center justify-around w-full py-3 border-t border-gray-100">
         <button
           onClick={handleLike}
-          className={`flex items-center gap-2 px-4 py-1 rounded-lg text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-lg text-sm font-semibold transition-all ${
             liked 
               ? 'text-blue-600 hover:bg-blue-50' 
               : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
@@ -428,7 +426,7 @@ export default function DiscussionPost({ post, groupId }) {
         </button>
         <button
           onClick={handleToggleComments}
-          className={`flex items-center gap-2 px-4 py-1 rounded-lg text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-lg text-sm font-semibold transition-all ${
             showComments
               ? 'text-[#002b4e] hover:bg-gray-100'
               : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
@@ -479,7 +477,7 @@ export default function DiscussionPost({ post, groupId }) {
           </div>
 
           {/* Main reply input — always at the bottom */}
-          <div className="flex gap-2 mt-4 items-center relative">
+          <div className="flex gap-2 mt-4 items-center relative min-h-[44px]">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-[#002b4e] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
               {profile?.fullName?.charAt(0) || 'Y'}
             </div>
