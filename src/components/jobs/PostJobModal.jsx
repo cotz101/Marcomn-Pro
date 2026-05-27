@@ -136,6 +136,15 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
     setLoading(true);
     const supabase = createClient();
 
+    // Auto-commit any lingering skill input if the user forgot to press Enter
+    let finalSkills = [...skills];
+    const lingeringSkill = skillInput.trim();
+    if (lingeringSkill && finalSkills.length < 5 && !finalSkills.includes(lingeringSkill)) {
+      finalSkills.push(lingeringSkill);
+      setSkills(finalSkills);
+      setSkillInput('');
+    }
+
     const formattedTags = tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
 
     const payload = {
@@ -149,7 +158,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
       experienceLevel: formData.experienceLevel,
       positionStatus: formData.positionStatus,
       postingStatus: formData.postingStatus,
-      skills: skills,
+      skills: finalSkills,
       description: formData.description,
       responsibilities: formData.responsibilities,
       tags: formattedTags
@@ -167,7 +176,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           salary_range: `${formData.currency} ${formData.payAmount}/${formData.payRate}`,
           employment_type: formData.jobType,
           status: formData.postingStatus,
-          required_skills: skills,
+          required_skills: finalSkills,
           priority: formData.positionStatus === 'Active Position',
           withdrawal_limit: parseInt(withdrawalLimit, 10),
           tags: formattedTags,
@@ -177,11 +186,20 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         .maybeSingle();
 
       if (jobError) {
+        console.error('Update job error:', jobError);
         alert('Error updating job: ' + jobError.message);
         setLoading(false);
         return;
       }
 
+      if (!jobData) {
+        console.error('Update job returned no data (possibly blocked by RLS or incorrect ID). Job ID:', jobToEdit.id);
+        alert('Update failed: Could not save changes. You may not have permission to edit this job.');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Update job success:', jobData);
       setLoading(false);
       onComplete(jobData);
     } else {
@@ -197,7 +215,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           company_id: isCompany ? currentIdentity.id : null,
           poster_id: userId,
           status: formData.postingStatus,
-          required_skills: skills,
+          required_skills: finalSkills,
           priority: formData.positionStatus === 'Active Position',
           withdrawal_limit: parseInt(withdrawalLimit, 10),
           tags: formattedTags,

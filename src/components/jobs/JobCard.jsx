@@ -188,6 +188,18 @@ export default function JobCard({ job, application, onClick }) {
             padding-right: 0; 
           }
         }
+
+        @media (max-width: 323px) {
+          .job-card {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            padding: 40px 10px 15px 10px !important;
+          }
+          .job-details {
+            margin-left: 0 !important;
+            padding-top: 10px !important;
+          }
+        }
       `}</style>
     </>
   );

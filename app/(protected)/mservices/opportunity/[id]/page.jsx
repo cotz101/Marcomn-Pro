@@ -328,7 +328,30 @@ export default function OpportunityDetailsPage() {
   };
 
   return (
-    <div className="max-w-4xl w-full mx-auto px-4 md:px-8 py-8 space-y-6">
+    <div className="max-w-4xl w-full mx-auto px-3 sm:px-6 md:px-8 py-8 space-y-6">
+      {/* Bullet styling override for rich-text lists */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .rich-text-content ul {
+          list-style-type: disc !important;
+          padding-left: 1.5rem !important;
+          margin-top: 0.5rem !important;
+          margin-bottom: 0.5rem !important;
+        }
+        .rich-text-content ol {
+          list-style-type: decimal !important;
+          padding-left: 1.5rem !important;
+          margin-top: 0.5rem !important;
+          margin-bottom: 0.5rem !important;
+        }
+        .rich-text-content li {
+          margin-bottom: 0.375rem !important;
+          display: list-item !important;
+        }
+        .rich-text-content p {
+          margin-bottom: 0.75rem !important;
+        }
+      `}} />
+
       {/* Back button link */}
       <button 
         onClick={() => router.push('/mservices')}
@@ -338,34 +361,50 @@ export default function OpportunityDetailsPage() {
         Back to Opportunity Feed
       </button>
 
-      {/* Main Premium Card */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden flex flex-col">
+      {/* Main Premium Card (Sharp modernist corners) */}
+      <div className="bg-white !rounded-none shadow-sm border border-slate-200 overflow-hidden flex flex-col" style={{ borderRadius: '0' }}>
         
-        {/* Profile/Company Header Block */}
-        <div className="border-b border-gray-100 py-6 px-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/30">
+        {/* Profile/Company Header Block (Flat, integrated layout) */}
+        <div className="border-b border-slate-100 py-6 px-4 sm:px-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/30 !rounded-none" style={{ borderRadius: '0' }}>
           <div className="flex gap-4 items-center">
-            {/* Dynamic Logo Container */}
-            <div className="w-16 h-16 bg-white border border-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+            {/* Dynamic Logo Container (integrated and flat) */}
+            <div className="w-16 h-16 bg-white border border-gray-100 !rounded-none flex items-center justify-center flex-shrink-0 shadow-sm" style={{ borderRadius: '0' }}>
               {getCompanyIcon(job.company)}
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold text-blue-900 leading-tight tracking-tight">{job.title}</h1>
-              <p className="text-sm font-semibold text-gray-700 mt-1">{companyName}</p>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight tracking-tight">{job.title}</h1>
+              <p className="text-sm font-semibold text-slate-500 mt-1.5">{companyName}</p>
             </div>
           </div>
           
-          {/* Status Badge */}
-          <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-            job.status?.toLowerCase() === 'draft' 
-              ? 'bg-amber-50 text-amber-700 border border-amber-100'
-              : 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-          }`}>
-            {job.status || 'Active'}
-          </span>
+          {/* Application Status badge */}
+          <div className="flex items-center gap-2">
+            {isOwner ? (
+              <span className="px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider bg-blue-50 text-[#002b4e] border border-blue-100 flex items-center gap-1.5">
+                <Briefcase size={13} /> Posting Owner
+              </span>
+            ) : myApplication ? (
+              myApplication.status === 'Pending' ? (
+                <span className="px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-none bg-emerald-500 animate-pulse"></span>
+                  Applied
+                </span>
+              ) : (
+                <span className="px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider bg-red-50 text-red-700 border border-red-100 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-none bg-red-500"></span>
+                  Withdrawn
+                </span>
+              )
+            ) : (
+              <span className="px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1.5">
+                Not Applied
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Core Content Body */}
-        <div className="p-8 space-y-8">
+        <div className="p-4 sm:p-8 space-y-8">
           
           {/* Overview Grid */}
           <div className="bg-gray-50/50 rounded-lg p-6 border border-gray-100">
@@ -376,7 +415,7 @@ export default function OpportunityDetailsPage() {
                   <DollarSign size={20} />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-semibold">Compensation</p>
+                  <p className="text-sm text-gray-500 font-semibold">Compensation</p>
                   <p className="text-sm font-bold text-gray-800">{salaryRange}</p>
                 </div>
               </div>
@@ -386,7 +425,7 @@ export default function OpportunityDetailsPage() {
                   <MapPin size={20} />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-semibold">Location</p>
+                  <p className="text-sm text-gray-500 font-semibold">Location</p>
                   <p className="text-sm font-bold text-gray-800">{location}</p>
                 </div>
               </div>
@@ -396,7 +435,7 @@ export default function OpportunityDetailsPage() {
                   <Clock size={20} />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-semibold">Employment Type</p>
+                  <p className="text-sm text-gray-500 font-semibold">Employment Type</p>
                   <p className="text-sm font-bold text-gray-800">{jobType}</p>
                 </div>
               </div>
@@ -406,7 +445,7 @@ export default function OpportunityDetailsPage() {
                   <Award size={20} />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-semibold">Experience Level</p>
+                  <p className="text-sm text-gray-500 font-semibold">Experience Level</p>
                   <p className="text-sm font-bold text-gray-800">{experienceLevel}</p>
                 </div>
               </div>
@@ -416,7 +455,7 @@ export default function OpportunityDetailsPage() {
           {/* Skill Tag Pills */}
           {tags.length > 0 && (
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 block">Required Skills & Credentials</label>
+              <label className="text-sm sm:text-base font-bold text-gray-700 block">Required Skills & Credentials</label>
               <div className="flex flex-wrap gap-2">
                 {tags.map((tag, index) => (
                   <span 
@@ -433,7 +472,7 @@ export default function OpportunityDetailsPage() {
           {/* Rich Description */}
           {job.description && (
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 block">Job Description</label>
+              <label className="text-sm sm:text-base font-bold text-gray-700 block">Job Description</label>
               <div className="bg-white border border-gray-100 rounded-lg p-5 shadow-2xs">
                 <div 
                   className="prose prose-sm max-w-none text-gray-700 text-sm leading-relaxed rich-text-content"
@@ -446,7 +485,7 @@ export default function OpportunityDetailsPage() {
           {/* Rich Responsibilities */}
           {job.responsibilities && (
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 block">Responsibilities</label>
+              <label className="text-sm sm:text-base font-bold text-gray-700 block">Responsibilities</label>
               <div className="bg-white border border-gray-100 rounded-lg p-5 shadow-2xs">
                 <div 
                   className="prose prose-sm max-w-none text-gray-700 text-sm leading-relaxed rich-text-content"
@@ -459,21 +498,21 @@ export default function OpportunityDetailsPage() {
         </div>
 
         {/* Premium Control Sticky Footer Action Bar */}
-        <div className="flex items-center justify-end gap-3 py-5 px-8 border-t border-gray-100 bg-slate-50">
+        <div className="flex items-center justify-end gap-3 py-5 px-4 sm:px-8 border-t border-slate-100 bg-slate-50">
           {isOwner ? (
             <>
               <button 
-                className="px-5 py-2.5 bg-red-50 text-red-600 hover:bg-red-100 text-sm font-bold rounded-lg transition-colors flex items-center gap-2 mr-auto"
+                className="h-10 px-5 bg-red-50 text-red-600 hover:bg-red-100 text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 mr-auto"
                 onClick={() => setIsDeleteConfirmOpen(true)}
               >
                 <Trash2 size={16} /> Delete Posting
               </button>
               
               <button 
-                className="px-6 py-2.5 bg-blue-900 hover:bg-blue-850 text-white text-sm font-bold rounded-lg transition-all shadow-sm flex items-center gap-2"
+                className="h-10 px-6 bg-[#002b4e] hover:bg-[#001f38] text-white text-sm font-bold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2"
                 onClick={() => openPostJobModal(job)}
               >
-                <Edit3 size={16} /> Edit Opportunity
+                <Edit3 size={16} /> Edit Job Posting
               </button>
             </>
           ) : (
@@ -543,29 +582,29 @@ export default function OpportunityDetailsPage() {
                       disabled={isApplying || selectedFiles.length === 0}
                       className={
                         isApplying
-                          ? 'px-8 py-3 bg-blue-900 opacity-70 text-white cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto'
+                          ? 'h-10 px-8 bg-[#002b4e] opacity-70 text-white cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center'
                           : selectedFiles.length === 0
-                          ? 'px-8 py-3 bg-blue-300 text-white cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto'
-                          : 'px-8 py-3 bg-blue-900 hover:bg-blue-800 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all w-full sm:w-auto'
+                          ? 'h-10 px-8 bg-[#002b4e]/40 text-white/70 cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center'
+                          : 'h-10 px-8 bg-[#002b4e] hover:bg-[#001f38] text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all w-full sm:w-auto flex items-center justify-center'
                       }
                     >
                       {isApplying ? `Uploading ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...` : 'Quick Apply to Position'}
                     </button>
                   )}
 
-                  {/* State B — Pending: Applied + Withdraw */}
+                  {/* State B — Pending: Applied + Withdraw side-by-side */}
                   {isPending && (
-                    <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
+                    <div className="flex flex-row items-center gap-3 w-full sm:w-auto">
                       <button
                         disabled
-                        className="px-8 py-3 bg-gray-300 text-gray-500 cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto"
+                        className="h-10 px-6 bg-emerald-50 text-emerald-700 border border-emerald-250 cursor-not-allowed rounded-lg text-sm font-bold flex items-center justify-center gap-1.5"
                       >
                         Applied ✓
                       </button>
                       <button
                         onClick={handleWithdraw}
                         disabled={isWithdrawing}
-                        className="text-xs font-semibold text-red-600 hover:text-red-800 transition-colors bg-transparent border-none cursor-pointer underline underline-offset-2 self-end"
+                        className="h-10 px-5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
                       >
                         {isWithdrawing ? 'Withdrawing...' : 'Withdraw Application'}
                       </button>
@@ -576,7 +615,7 @@ export default function OpportunityDetailsPage() {
                   {isLocked && (
                     <button
                       disabled
-                      className="px-8 py-3 bg-gray-200 text-gray-400 cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto"
+                      className="h-10 px-8 bg-gray-200 text-gray-400 cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center"
                     >
                       Withdrawal Limit Reached
                     </button>
@@ -589,10 +628,10 @@ export default function OpportunityDetailsPage() {
                       disabled={isApplying || selectedFiles.length === 0}
                       className={
                         isApplying
-                          ? 'px-8 py-3 bg-blue-900 opacity-70 text-white cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto'
+                          ? 'h-10 px-8 bg-[#002b4e] opacity-70 text-white cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center'
                           : selectedFiles.length === 0
-                          ? 'px-8 py-3 bg-blue-300 text-white cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto'
-                          : 'px-8 py-3 bg-blue-900 hover:bg-blue-800 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all w-full sm:w-auto'
+                          ? 'h-10 px-8 bg-[#002b4e]/40 text-white/70 cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center'
+                          : 'h-10 px-8 bg-[#002b4e] hover:bg-[#001f38] text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all w-full sm:w-auto flex items-center justify-center'
                       }
                     >
                       {isApplying ? `Uploading ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...` : 'Re-Apply to Position'}
@@ -610,7 +649,7 @@ export default function OpportunityDetailsPage() {
       {/* Delete Confirmation Modal Overlay */}
       {isDeleteConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="max-w-md w-full bg-white rounded-xl p-6 shadow-2xl flex flex-col relative z-10 animate-in fade-in zoom-in duration-200">
+          <div className="max-w-md w-full bg-white rounded-none p-6 shadow-2xl flex flex-col relative z-10 animate-in fade-in zoom-in duration-200">
             <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Job Posting?</h3>
             <p className="text-sm text-gray-600 mb-6">
               Are you sure you want to permanently delete this opportunity? This action cannot be undone.
@@ -618,14 +657,14 @@ export default function OpportunityDetailsPage() {
             <div className="flex items-center justify-end gap-3">
               <button 
                 onClick={() => setIsDeleteConfirmOpen(false)}
-                className="px-4 py-2 text-sm font-medium hover:bg-slate-100 rounded-lg text-gray-700"
+                className="h-10 px-4 text-sm font-medium hover:bg-slate-100 rounded-lg text-gray-700"
                 disabled={isDeleting}
               >
                 Cancel
               </button>
               <button 
                 onClick={handleDeleteJob}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
+                className="bg-red-600 hover:bg-red-700 text-white h-10 px-6 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
                 disabled={isDeleting}
               >
                 {isDeleting ? 'Deleting...' : 'Confirm Delete'}
