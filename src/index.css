@@ -2616,9 +2616,15 @@ body {
   transition: transform 0.3s ease;
 }
 
+.mobile-nav-item.active {
+  color: #002b4e !important;
+}
+
 .mobile-nav-item.active .mobile-nav-icon {
   transform: translateY(-2px);
   filter: drop-shadow(0 0 2px rgba(0, 43, 78, 0.2));
+  stroke: #002b4e !important;
+  color: #002b4e !important;
 }
 
 .mobile-nav-label {
@@ -2640,19 +2646,22 @@ body {
 
 /* 📱 MOBILE VIEW POLISH OVERRIDES (<= 767px) */
 @media (max-width: 767px) {
+  :root {
+    --header-height: calc(76px + env(safe-area-inset-top));
+  }
   /* 1. Mobile Top Header Polish – honour Dynamic Island / notch safe area */
-  /* The inline style in AppShell already sets pt-[calc(env(safe-area-inset-top)+8px)].
+  /* The inline style in AppShell already sets pt-[calc(env(safe-area-inset-top)+20px)].
      We must NOT override it with a fixed height/padding-top here, or the header
      will slide behind the iPhone clock. Instead we let the header grow with its content. */
   .header {
-    min-height: calc(56px + env(safe-area-inset-top)) !important;
+    min-height: calc(76px + env(safe-area-inset-top)) !important;
   }
   /* Remove the previous hard-coded 68px / 4px override that clobbered safe-area padding */
   .header .app-container > div {
     height: auto !important;
-    min-height: calc(56px + env(safe-area-inset-top)) !important;
+    min-height: calc(76px + env(safe-area-inset-top)) !important;
     padding-bottom: 4px !important;
-    /* padding-top comes from the inline Tailwind class pt-[calc(env(safe-area-inset-top)+8px)] */
+    /* padding-top comes from the inline Tailwind class pt-[calc(env(safe-area-inset-top)+20px)] */
   }
   /* Shift top-right actions slightly to the left to prevent edge-crowding */
   .header .flex.items-center.gap-3.md\:gap-2 {

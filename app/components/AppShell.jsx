@@ -265,7 +265,7 @@ export default function AppShell({ children, userEmail, userId }) {
       <header className="header app-header" style={{ borderTop: isCompany ? '4px solid var(--primary)' : 'none' }}>
         <div className="app-container">
           {/* Unified Responsive Header Content */}
-          <div className="w-full flex items-center justify-between py-2 px-4 h-[calc(56px+env(safe-area-inset-top))] md:h-auto md:min-h-[64px] pt-[calc(env(safe-area-inset-top)+8px)] md:pt-1">
+          <div className="w-full flex items-center justify-between py-2 px-4 h-[calc(76px+env(safe-area-inset-top))] md:h-auto md:min-h-[64px] pt-[calc(env(safe-area-inset-top)+20px)] md:pt-1">
             
             {/* LEFT: Logo / Back Button */}
             <div className="flex items-center gap-3 flex-1 md:flex-none">
@@ -310,7 +310,7 @@ export default function AppShell({ children, userEmail, userId }) {
             </div>
 
             {/* RIGHT: Actions & Avatar */}
-            <div className="flex items-center gap-3 md:gap-2">
+            <div className="flex items-center gap-1.5 md:gap-2">
               
               {/* Message Icon (Mobile + Desktop) */}
               <button className="header-icon-btn scale-110 md:scale-100" onClick={() => router.push('/messages')}>
@@ -346,7 +346,7 @@ export default function AppShell({ children, userEmail, userId }) {
 
               {/* Responsive Post a Job */}
               <button 
-                 className="btn-primary-pill px-2.5 py-1.5 md:px-4 ml-1.5 md:ml-2 flex items-center justify-center mr-4 md:mr-0"
+                 className="btn-primary-pill px-2.5 py-1.5 md:px-4 ml-1.5 md:ml-2 flex items-center justify-center mr-1 md:mr-0"
                  style={{ backgroundColor: 'var(--primary-container)' }}
                  onClick={() => openPostJobModal()}
               >
