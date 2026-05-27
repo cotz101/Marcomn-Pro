@@ -801,9 +801,9 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
         {!isArticle && !isEditing && renderMedia(post.media_url, post.media_type, post.video_url)}
 
         {/* Footer Actions */}
-        <div className="pt-4">
+        <div className="pt-3.5 mt-3.5 border-t border-gray-100/70">
           {/* Action badges bar (Likes/Comments count) */}
-          <div className="flex justify-between items-center text-gray-500 text-xs font-medium select-none mb-3">
+          <div className="flex justify-between items-center text-gray-400 text-[12px] font-medium select-none mb-2.5">
             <div className="flex items-center gap-4 font-sans">
               <span
                 onClick={handleLikeCountClick}
