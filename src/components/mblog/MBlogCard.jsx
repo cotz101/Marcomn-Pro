@@ -424,11 +424,11 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
 
   return (
     <div 
-      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 p-4 md:p-6 relative animate-in fade-in zoom-in-95 duration-300 w-full h-auto" 
+      className="mblog-card bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 p-4 md:p-6 relative animate-in fade-in zoom-in-95 duration-300 w-full h-auto" 
       ref={cardRef}
     >
       {/* Title */}
-      <h2 className="text-lg md:text-2xl font-bold leading-snug md:leading-tight text-navy-900 mt-1 mb-4 hover:text-[#004173] transition-colors flex-1 w-full block">
+      <h2 className="text-[18px] sm:text-2xl font-bold leading-snug md:leading-tight text-navy-900 mt-1 mb-4 hover:text-[#004173] transition-colors flex-1 w-full block">
         {article.title}
       </h2>
 
@@ -447,13 +447,13 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
           </div>
           
           <div className="flex flex-col justify-center min-w-0 flex-1">
-            <span className="font-bold text-[#0e2a4d] hover:underline cursor-pointer block truncate">
+            <h4 className="font-semibold text-[#0e2a4d] text-[15px] sm:text-base leading-tight truncate hover:underline cursor-pointer">
               {article.author?.name || 'Anonymous'}
-            </span>
-            <div className="text-xs md:text-sm text-gray-500 flex items-center gap-1.5 font-medium mt-0.5 truncate">
+            </h4>
+            <div className="text-[12px] sm:text-[13px] text-gray-400 flex items-center gap-1.5 font-normal mt-0.5 truncate">
               <span className="truncate">{article.author?.headline || 'Member'}</span>
-              <span className="flex-shrink-0 text-gray-400 font-normal">•</span>
-              <span className="flex-shrink-0 text-gray-400 font-normal">{getRelativeTime(article.created_at)}</span>
+              <span className="flex-shrink-0 text-gray-300 font-normal">•</span>
+              <span className="flex-shrink-0 text-gray-300 font-normal">{getRelativeTime(article.created_at)}</span>
             </div>
           </div>
         </div>
@@ -514,7 +514,7 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
         {/* Share Overlay (Rest of modals below) */}
         <div className="mblog-content-wrapper w-full block">
           <div 
-            className="rich-text text-base md:text-base leading-relaxed text-gray-700 mt-2 w-full"
+            className="rich-text text-[15px] sm:text-base leading-[1.45] sm:leading-relaxed text-gray-700 mt-2 w-full"
             dangerouslySetInnerHTML={{ 
               __html: DOMPurify.sanitize(
                 isExpanded 
@@ -553,25 +553,24 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
           </div>
 
           {/* Interactive Action Buttons Bar (Like & Comment triggers & 3-dot Menu) */}
-          {/* Interactive Action Buttons Bar (Like & Comment triggers & 3-dot Menu) */}
           <div className="flex items-center gap-1 w-full">
             <button
               type="button"
               onClick={handleLikeToggle}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm md:text-sm font-medium transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
+              className={`flex-1 flex items-center justify-center gap-2 min-h-[44px] py-2.5 px-3 rounded-lg text-[14px] sm:text-sm font-medium transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
                 isLiked
-                  ? 'text-[#0e2a4d] bg-blue-50/50'
+                  ? 'text-blue-950 font-bold bg-navy-50/50'
                   : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
               }`}
             >
-              <ThumbsUp size={18} className={isLiked ? 'fill-[#0e2a4d] stroke-[#0e2a4d]' : 'text-gray-500'} />
+              <ThumbsUp size={18} className={isLiked ? 'fill-navy-900 stroke-navy-900' : 'text-gray-500'} />
               <span className="font-sans">Like</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowComments(!showComments)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm md:text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
+              className={`flex-1 flex items-center justify-center gap-2 min-h-[44px] py-2.5 px-3 rounded-lg text-[14px] sm:text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none focus:ring-0 font-sans ${
                 showComments ? 'bg-gray-50/80 text-gray-800' : ''
               }`}
             >

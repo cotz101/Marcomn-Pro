@@ -71,7 +71,7 @@ export default function SidebarRight() {
           author:profiles(name),
           likes:mblog_article_likes(id),
           comments:mblog_article_comments(id),
-          shares:posts!shared_article_id(id)
+          shares:logbook_posts!shared_article_id(id)
         `);
 
       if (error) throw error;
@@ -84,12 +84,12 @@ export default function SidebarRight() {
           shareCount: a.shares?.length || 0,
         }));
 
-        setTopLiked([...processed].sort((a, b) => b.likeCount - a.likeCount).slice(0, 3));
-        setMostActive([...processed].sort((a, b) => b.commentCount - a.commentCount).slice(0, 3));
-        setMostShared([...processed].sort((a, b) => b.shareCount - a.shareCount).slice(0, 3));
+        setTopLiked([...processed].filter(a => a.likeCount > 0).sort((a, b) => b.likeCount - a.likeCount).slice(0, 3));
+        setMostActive([...processed].filter(a => a.commentCount > 0).sort((a, b) => b.commentCount - a.commentCount).slice(0, 3));
+        setMostShared([...processed].filter(a => a.shareCount > 0).sort((a, b) => b.shareCount - a.shareCount).slice(0, 3));
       }
     } catch (err) {
-      console.log('DEBUG: MBlog stats fetch not applicable or skipped:', err.message || err);
+      console.log('DEBUG: MBlog stats fetch error:', err.message || err);
     } finally {
       setLoadingMBlogStats(false);
     }
@@ -233,7 +233,7 @@ export default function SidebarRight() {
                   </div>
                 ))
               ) : topLiked.length === 0 ? (
-                 <p className="text-xs text-gray-400 p-2">No articles yet.</p>
+                 <p className="text-xs text-gray-400 p-2">No liked articles yet.</p>
               ) : (
                 topLiked.map(article => (
                   <Link 
@@ -276,7 +276,7 @@ export default function SidebarRight() {
                   </div>
                 ))
               ) : mostActive.length === 0 ? (
-                 <p className="text-xs text-gray-400 p-2">No articles yet.</p>
+                 <p className="text-xs text-gray-400 p-2">No active articles yet.</p>
               ) : (
                 mostActive.map(article => (
                   <Link 
@@ -319,7 +319,7 @@ export default function SidebarRight() {
                   </div>
                 ))
               ) : mostShared.length === 0 ? (
-                 <p className="text-xs text-gray-400 p-2">No articles yet.</p>
+                 <p className="text-xs text-gray-400 p-2">No shared articles yet.</p>
               ) : (
                 mostShared.map(article => (
                   <Link 

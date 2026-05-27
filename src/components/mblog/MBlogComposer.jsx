@@ -156,37 +156,19 @@ export default function MBlogComposer({ onClose, onArticleCreated, initialData }
     return (
       <div className="article-editor-overlay w-full overflow-x-hidden" onClick={onClose}>
         <div className="article-editor-container" onClick={e => e.stopPropagation()}>
-          <div className="article-editor-header flex-wrap px-3 sm:px-6">
-            <div className="flex items-center gap-4">
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" onClick={onClose}>
-                <X size={24} />
-              </button>
-              <h2 className="font-bold text-xl text-[#0e2a4d]">
-                {initialData ? 'Edit Article' : 'Create New Article'}
-              </h2>
-            </div>
-  
-            <div className="flex items-center flex-wrap gap-2 sm:gap-4">
-              {uploadProgress && (
-                <span className="text-sm text-blue-600 font-medium animate-pulse mr-2">{uploadProgress}</span>
-              )}
-              <button 
-                className="px-8 py-2 rounded-lg font-bold text-gray-500 hover:bg-gray-50 transition-all active:scale-95 border border-gray-200"
-                onClick={onClose}
-              >
-                Cancel
-              </button>
-              <button 
-                className="bg-[#002b4e] text-white px-8 py-2 rounded-lg font-bold shrink-0 disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-blue-900/10"
-                onClick={handleSubmit}
-                disabled={!canPublish}
-              >
-                {submitting 
-                  ? (initialData ? 'Updating...' : 'Publishing...') 
-                  : (initialData ? 'Save Changes' : 'Publish Article')
-                }
-              </button>
-            </div>
+          {/* Standardized Centered Navy Blue Header */}
+          <div className="mblog-modal-header bg-[#002b4e] text-white relative px-4 py-4 flex items-center justify-center border-b border-navy-950/20 shrink-0">
+            <button 
+              type="button" 
+              className="absolute left-4 p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors focus:outline-none" 
+              onClick={onClose}
+              aria-label="Close modal"
+            >
+              <X size={20} />
+            </button>
+            <h2 className="font-bold text-[18px] sm:text-xl text-white text-center">
+              {initialData ? 'Edit Article' : 'Create New Article'}
+            </h2>
           </div>
 
         <div className="article-editor-content">
@@ -277,6 +259,31 @@ export default function MBlogComposer({ onClose, onArticleCreated, initialData }
             </div>
           </div>
         </div>
+
+        {/* Visually Grouped Modal Action Footer at the Bottom */}
+        <div className="mblog-modal-footer px-4 py-4 bg-gray-50 border-t border-gray-150 flex items-center justify-end gap-3 sm:gap-4 shrink-0 flex-nowrap">
+          {uploadProgress && (
+            <span className="text-xs text-blue-600 font-semibold animate-pulse absolute bottom-20 left-4">{uploadProgress}</span>
+          )}
+          <button 
+            type="button"
+            className="px-6 py-2 rounded-xl font-bold text-gray-600 bg-white border border-gray-250 hover:bg-gray-50 transition-all active:scale-[0.98] select-none text-xs sm:text-sm cursor-pointer shadow-xs text-center outline-none focus:outline-none min-w-[100px] sm:min-w-[120px] whitespace-nowrap"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button 
+            type="button"
+            className="bg-[#002b4e] hover:bg-[#004173] text-white px-8 py-2 rounded-xl font-bold transition-all active:scale-[0.98] select-none text-xs sm:text-sm cursor-pointer shadow-md disabled:opacity-55 disabled:cursor-not-allowed text-center outline-none focus:outline-none min-w-[120px] sm:min-w-[140px] shrink-0 whitespace-nowrap"
+            onClick={handleSubmit}
+            disabled={!canPublish}
+          >
+            {submitting 
+              ? (initialData ? 'Updating...' : 'Publishing...') 
+              : (initialData ? 'Save' : 'Publish')
+            }
+          </button>
+        </div>
       </div>
 
       <style jsx>{`
@@ -285,6 +292,14 @@ export default function MBlogComposer({ onClose, onArticleCreated, initialData }
           font-size: 18px;
           line-height: 1.8;
           color: #2d3748;
+        }
+        @media (max-width: 767px) {
+          .article-body-editor :global(.ql-editor),
+          .article-body-editor :global(.ql-editor.ql-blank) {
+            min-height: 320px !important;
+            font-size: 16px !important;
+            line-height: 1.6 !important;
+          }
         }
       `}</style>
     </div>

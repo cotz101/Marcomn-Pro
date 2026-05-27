@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import MBlogFeed from '@/src/components/mblog/MBlogFeed';
 import MBlogComposer from '@/src/components/mblog/MBlogComposer';
-import { SquarePen } from 'lucide-react';
+import { SquarePen, Search, Plus } from 'lucide-react';
 
 function MBlogPageContent() {
   const [view, setView] = useState('all'); // 'all' or 'my'
@@ -12,6 +12,7 @@ function MBlogPageContent() {
   const [editingArticle, setEditingArticle] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [toast, setToast] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -47,19 +48,36 @@ function MBlogPageContent() {
 
   return (
     <div className="mblog-shell w-full max-w-full min-h-screen">
-      {/* Header Area */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-bold text-[#0e2a4d]">Maritime Blog</h1>
-          <p className="text-sm text-gray-500 font-medium">Professional insights and technical articles from the industry</p>
+      {/* Header Container Wrapper */}
+      <div className="mblog-header-container">
+        {/* Header Area */}
+        <div className="mblog-header flex justify-between items-center w-full">
+          <div className="flex flex-col flex-1 min-w-0 mr-4">
+            <h1 className="text-2xl font-bold text-[#0e2a4d] m-0">MBlog</h1>
+            <p className="text-sm text-gray-500 font-medium mblog-header-sub">Maritime industry articles and updates</p>
+          </div>
+          <button 
+            onClick={() => setShowComposer(true)}
+            className="mblog-header-post-btn flex items-center gap-2 px-4 py-2 bg-[#002b4e] text-white rounded-lg font-bold text-sm hover:bg-[#001f38] transition-all shadow-sm border-none cursor-pointer whitespace-nowrap"
+          >
+            <Plus size={18} />
+            <span>Post a Blog</span>
+          </button>
         </div>
-        <button 
-          onClick={() => setShowComposer(true)}
-          className="bg-[#002b4e] text-white px-6 py-2.5 rounded-md font-bold flex items-center gap-2 hover:bg-[#004173] transition-all active:scale-95 shadow-md shadow-blue-900/10"
-        >
-          <SquarePen size={18} />
-          <span>Post a Blog</span>
-        </button>
+      </div>
+
+      {/* MBlog Search Bar Container (Sibling to Header for perfect independent sticky behavior) */}
+      <div className="mblog-search-container flex items-center justify-between gap-4 w-full relative">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-5 top-[50%] -translate-y-1/2 text-[#9ca3af] pointer-events-none flex items-center justify-center h-5 w-5" size={20} />
+          <input 
+            type="text" 
+            placeholder="Search blogs by title, content, or author..." 
+            className="search-input w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm outline-none bg-white"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* Sub-Navigation Tabs */}
@@ -84,6 +102,7 @@ function MBlogPageContent() {
           key={`${view}-${refreshKey}`} 
           view={view} 
           onEdit={handleEdit}
+          searchTerm={searchTerm}
         />
       </div>
 

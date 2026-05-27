@@ -372,10 +372,21 @@ a {
   border: none !important;
 }
 
+
 .post-card {
   padding: 16px;
   margin-bottom: 13px !important;
   position: relative; /* Ensure absolute children like menu icons work correctly */
+}
+
+@media (max-width: 324px) {
+  .card, .post-card, .mblog-card {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-radius: 4px !important;
+  }
 }
 
 .action-btn {
@@ -4228,5 +4239,163 @@ body.liker-modal-active .btn-leave {
 @media (max-height: 480px) or (orientation: landscape) {
   .messages-composer {
     padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ---------------------------------------------------- */
+/* MBLOG DESKTOP/TABLET HEADER CONTAINER STYLING        */
+/* ---------------------------------------------------- */
+.mblog-header-container {
+  background-color: #ffffff !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 24px 0 0 0 !important;
+  margin-bottom: 0 !important;
+  box-shadow: none !important;
+  width: 100% !important;
+}
+
+.mblog-header-container .mblog-header {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Sibling search container sitting cleanly below header container on desktop */
+.mblog-search-container {
+  background-color: #ffffff !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 0 16px 0 !important;
+  margin-bottom: 16px !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin-top: 0 !important;
+}
+
+/* MBlog Mobile UI Polish (440px and below) */
+@media (max-width: 440px) {
+  .mblog-header-container {
+    background-color: #ffffff !important;
+    border: 1px solid #E0E0E0 !important;
+    border-radius: 8px 8px 0 0 !important;
+    border-bottom: none !important;
+    padding: 16px !important;
+    margin-bottom: 0 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+    display: block !important;
+    margin-top: -12px !important;
+  }
+
+  .mblog-header-post-btn {
+    display: none !important;
+  }
+  
+  .mblog-header {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .mblog-header h1 {
+    font-size: 20px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .mblog-header p.mblog-header-sub {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Sticky search bar on scroll - Unified card box sitting cleanly below */
+  .mblog-search-container {
+    position: sticky !important;
+    top: calc(76px + env(safe-area-inset-top) - 1px) !important; /* Dock perfectly under the top bar */
+    z-index: 100 !important;
+    background-color: #ffffff !important;
+    padding: 12px 16px !important;
+    border: 1px solid #E0E0E0 !important;
+    border-radius: 0 0 8px 8px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin-bottom: 16px !important;
+    transition: all 0.2s ease-in-out !important;
+    margin-top: 0 !important;
+  }
+
+  /* Search input padding & centered search icon */
+  .mblog-search-container .search-icon {
+    left: 20px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    margin-top: 0 !important;
+    color: #9ca3af !important;
+  }
+
+  .mblog-search-container .search-input {
+    padding-left: 52px !important;
+  }
+
+  /* Make sure top-grid gap is minimal */
+  .main-grid {
+    margin-top: 10px !important;
+  }
+}
+
+/* Polish for MBlog create modal layout spacing on ultra-small screens */
+@media (max-width: 480px) {
+  .article-editor-overlay {
+    padding: 10px !important;
+  }
+  .article-editor-container {
+    max-height: 95vh !important;
+    border-radius: 8px !important;
+  }
+}
+
+/* Visually obvious larger mobile editor area */
+@media (max-width: 767px) {
+  .quill-wrapper .ql-editor,
+  .quill-wrapper .ql-editor.ql-blank,
+  .article-body-editor .ql-editor,
+  .article-body-editor .ql-editor.ql-blank {
+    min-height: 380px !important;
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+  }
+}
+
+/* MBlog desktop/tablet visual spacing corrections (width 441px and above) */
+@media (min-width: 441px) {
+  .mblog-header-container .mblog-header {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+  .mblog-search-container {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+}
+
+/* MBlog desktop/tablet composer height correction (width 768px and above) */
+@media (min-width: 768px) {
+  .quill-wrapper .ql-editor,
+  .quill-wrapper .ql-editor.ql-blank,
+  .article-body-editor .ql-editor,
+  .article-body-editor .ql-editor.ql-blank {
+    min-height: 400px !important;
+    height: auto !important;
+    font-size: 18px !important;
+    line-height: 1.8 !important;
   }
 }

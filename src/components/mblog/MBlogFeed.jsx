@@ -6,7 +6,7 @@ import { useProfile } from '@/app/context/ProfileContext';
 import { BookOpen, Calendar, User, ExternalLink, FileText, Play } from 'lucide-react';
 import MBlogCard from './MBlogCard';
 
-export default function MBlogFeed({ view, onEdit }) {
+export default function MBlogFeed({ view, onEdit, searchTerm }) {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
@@ -59,15 +59,24 @@ export default function MBlogFeed({ view, onEdit }) {
     );
   }
 
-  if (articles.length === 0) {
+  const filteredArticles = articles.filter(article => {
+    if (!searchTerm || !searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    const titleMatch = (article.title || '').toLowerCase().includes(term);
+    const contentMatch = (article.content_html || '').toLowerCase().includes(term);
+    const authorMatch = (article.author?.name || '').toLowerCase().includes(term);
+    return titleMatch || contentMatch || authorMatch;
+  });
+
+  if (filteredArticles.length === 0) {
     return (
       <div className="text-center py-20 bg-white border border-gray-100 rounded-xl shadow-sm mt-4">
         <div className="flex justify-center mb-4">
           <BookOpen size={48} className="text-gray-200" />
         </div>
         <h3 className="text-xl font-bold text-[#0e2a4d]">No articles found</h3>
-        <p className="text-gray-500 mt-2 max-w-xs mx-auto">
-          {view === 'my' ? "You haven't written any articles yet." : "Be the first to share professional insights with the MarComn community."}
+        <p className="text-gray-500 mt-2 max-w-xs mx-auto font-medium">
+          {searchTerm ? `No articles matched your search query: "${searchTerm}"` : (view === 'my' ? "You haven't written any articles yet." : "Be the first to share professional insights with the MarComn community.")}
         </p>
       </div>
     );
@@ -75,7 +84,7 @@ export default function MBlogFeed({ view, onEdit }) {
 
   return (
     <div className="flex flex-col gap-8 mt-4 w-full">
-      {articles.map(article => (
+      {filteredArticles.map(article => (
         <MBlogCard 
           key={article.id} 
           article={article} 
