@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { Globe, Briefcase, MapPin, Edit3, X, Check, Trash2, AlertTriangle, Camera } from 'lucide-react';
+import { Globe, Briefcase, MapPin, Edit3, X, Check, Trash2, AlertTriangle, Camera, ArrowLeft } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import { useRef } from 'react';
 
@@ -24,6 +24,15 @@ export default function CompanyProfile({ company, role, onUpdate }) {
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
+  };
+
+  const handleBack = (e) => {
+    e.stopPropagation();
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/mservices/partners');
+    }
   };
 
   const handleInputChange = (e) => {
@@ -197,7 +206,16 @@ export default function CompanyProfile({ company, role, onUpdate }) {
             )}
           </div>
 
-          <h1 className="profile-name">{company.name}</h1>
+          <div className="flex items-center justify-between w-full gap-4">
+            <h1 className="profile-name m-0 leading-tight">{company.name}</h1>
+            <button 
+              onClick={handleBack} 
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#002b4e] bg-slate-100/80 hover:bg-slate-200/80 px-2.5 py-1 rounded-md transition-all shadow-sm active:scale-[0.97]"
+              title="Back"
+            >
+              <ArrowLeft size={14} strokeWidth={2.5} /> <span>Back</span>
+            </button>
+          </div>
           <h2 className="profile-headline">{company.industry}</h2>
 
           <div className="company-meta">
@@ -304,10 +322,11 @@ export default function CompanyProfile({ company, role, onUpdate }) {
         .company-logo-img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
           border-radius: 12px;
           border: 4px solid white;
           background: white;
+          padding: 4px;
         }
         .company-logo-placeholder {
           width: 100%;

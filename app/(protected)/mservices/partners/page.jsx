@@ -96,6 +96,36 @@ export default function PartnersDirectory() {
           .partners-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
           }
+          .partner-card {
+            align-items: center !important;
+            text-align: center !important;
+            padding: 30px 24px !important;
+          }
+          .partner-card > .flex {
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 16px !important;
+            width: 100% !important;
+          }
+          .partner-card > .flex > .flex-1 {
+            width: 100% !important;
+            padding-left: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+          }
+          .partner-card > .flex > .flex-1 > .flex-wrap {
+            justify-content: center !important;
+          }
+          .partner-card > p {
+            padding-left: 0 !important;
+            text-align: center !important;
+            width: 100% !important;
+          }
+          .partner-card > div {
+            padding-left: 0 !important;
+            width: 100% !important;
+          }
         }
         
         @media (min-width: 441px) {
@@ -245,7 +275,7 @@ export default function PartnersDirectory() {
                 <div className="h-3 bg-slate-100 rounded w-full"></div>
                 <div className="h-3 bg-slate-100 rounded w-5/6"></div>
               </div>
-              <div className="w-full mt-[34px] flex justify-center">
+              <div className="w-full mt-[40px] flex justify-center">
                 <div className="h-10 bg-slate-100 rounded-xl w-32"></div>
               </div>
             </div>
@@ -276,7 +306,7 @@ export default function PartnersDirectory() {
                     <img 
                       src={company.logo_url} 
                       alt={company.name} 
-                      className="w-16 h-16 rounded-xl object-cover border border-slate-100 shadow-sm flex-shrink-0" 
+                      className="w-16 h-16 rounded-xl object-contain bg-white p-1 border border-slate-100 shadow-sm flex-shrink-0" 
                     />
                   ) : (
                     <div className="w-16 h-16 rounded-xl bg-blue-50 flex items-center justify-center border border-slate-100 shadow-sm flex-shrink-0 text-blue-700">
@@ -312,13 +342,13 @@ export default function PartnersDirectory() {
 
                 {/* Action Section with extra vertical gap */}
                 {hasWebsite && (
-                  <div className="mt-[34px] pl-2 flex justify-center">
+                  <div className="mt-[40px] pl-2 flex justify-center">
                     <a 
                       href={siteUrl.startsWith('http') ? siteUrl : `https://${siteUrl}`}
                       target="_blank" 
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="px-6 py-2.5 bg-white hover:bg-slate-50 text-[#002b4e] text-sm font-semibold rounded-xl border border-slate-200 transition-colors inline-flex items-center justify-center gap-1.5 shadow-sm"
+                      className="px-8 py-2.5 bg-white hover:bg-slate-50 text-[#002b4e] text-sm font-semibold rounded-xl border border-slate-200 transition-colors inline-flex items-center justify-center gap-1.5 shadow-sm"
                     >
                       <span>Visit Website</span>
                       <ExternalLink size={14} />
