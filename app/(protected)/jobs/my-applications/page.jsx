@@ -206,7 +206,7 @@ export default function MyApplicationsPage() {
                   {getStatusBadge(app.status)}
 
                   <Link
-                    href={`/mservices/opportunity/${app.job_id}`}
+                    href={`/mservices/opportunity/${app.job_id}?source=my-applications`}
                     className="px-4 py-2 text-sm font-semibold text-blue-900 border border-blue-900 rounded-lg hover:bg-blue-50 transition-colors w-full sm:w-auto text-center"
                   >
                     View Job

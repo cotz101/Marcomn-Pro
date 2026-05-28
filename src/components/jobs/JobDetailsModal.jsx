@@ -73,12 +73,12 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center max-md:pt-[72px] max-md:pb-[80px] max-md:px-4 p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center pt-[72px] md:pt-[90px] pb-[80px] md:pb-[40px] px-4 bg-black/50 backdrop-blur-xs transition-opacity duration-300">
       {/* Backdrop Closer */}
       <div className="absolute inset-0 cursor-default" onClick={onClose}></div>
 
       {/* Modal Container */}
-      <div className="relative z-10 max-w-3xl w-full bg-white rounded-xl shadow-2xl overflow-hidden max-h-[calc(100dvh-160px)] md:max-h-[90vh] flex flex-col transform transition-all duration-300 scale-100">
+      <div className="relative z-10 max-w-3xl w-full bg-white rounded-xl shadow-2xl overflow-hidden max-h-[calc(100dvh-160px)] md:max-h-[calc(100vh-130px)] flex flex-col transform transition-all duration-300 scale-100">
         
         {/* Dark Navy Sticky Header */}
         <div className="bg-[#002b4e] text-white py-4 sm:py-5 px-5 sm:px-8 flex justify-between items-center gap-4 sticky top-0 z-10 shadow-sm">

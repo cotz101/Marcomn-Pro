@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useProfile } from '@/app/context/ProfileContext';
 import { createClient } from '@/lib/supabase';
 import { 
@@ -22,7 +22,9 @@ import {
 export default function OpportunityDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params?.id;
+  const source = searchParams?.get('source');
   
   const { userId, openPostJobModal, showToast } = useProfile();
   
@@ -132,10 +134,16 @@ export default function OpportunityDetailsPage() {
           {error || 'This job opportunity may have been removed, closed, or is temporarily unavailable.'}
         </p>
         <button 
-          onClick={() => router.push('/mservices')}
+          onClick={() => {
+            if (source === 'my-applications') {
+              router.push('/jobs/my-applications');
+            } else {
+              router.push('/mservices');
+            }
+          }}
           className="inline-flex items-center gap-2 bg-blue-900 hover:bg-blue-800 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm"
         >
-          <ArrowLeft size={16} /> Back to Opportunity Feed
+          <ArrowLeft size={16} /> {source === 'my-applications' ? 'Back to My Applications' : 'Back to Opportunity Feed'}
         </button>
       </div>
     );
@@ -381,11 +389,17 @@ export default function OpportunityDetailsPage() {
 
       {/* Back button link */}
       <button 
-        onClick={() => router.push('/mservices')}
+        onClick={() => {
+          if (source === 'my-applications') {
+            router.push('/jobs/my-applications');
+          } else {
+            router.push('/mservices');
+          }
+        }}
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-900 transition-colors font-medium mb-2 group"
       >
         <ArrowLeft size={16} className="transform group-hover:-translate-x-1 transition-transform" /> 
-        Back to Opportunity Feed
+        {source === 'my-applications' ? 'Back to My Applications' : 'Back to Opportunity Feed'}
       </button>
 
       {/* Main Premium Card (Sharp modernist corners) */}
