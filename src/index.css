@@ -594,14 +594,14 @@ a {
 }
 
 /* Grids */
-.groups-grid, .discovery-grid {
+.groups-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 24px;
 }
 
 @media (min-width: 768px) {
-  .groups-grid, .discovery-grid {
+  .groups-grid {
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -2717,9 +2717,12 @@ body {
   }
   .profile-page-wrapper .profile-card:last-child,
   .profile-layout-container .profile-card:last-child,
-  .experience-section-container:last-of-type,
   .app-layout:has(.profile-card) {
     padding-bottom: 0 !important;
+    margin-bottom: 15px !important;
+  }
+  .experience-section-container:last-of-type {
+    padding-bottom: calc(var(--mobile-nav-height, 72px) + env(safe-area-inset-bottom) + 24px) !important;
     margin-bottom: 15px !important;
   }
 
@@ -4244,7 +4247,13 @@ body.liker-modal-active .btn-leave {
   }
 }
 
-@media (max-height: 480px) or (orientation: landscape) {
+@media (max-height: 480px) and (orientation: portrait) {
+  .messages-composer {
+    padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  }
+}
+
+@media (max-height: 250px) and (orientation: landscape) {
   .messages-composer {
     padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
   }

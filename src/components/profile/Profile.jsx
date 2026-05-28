@@ -464,7 +464,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
                     {profile.skills.map((skill, index) => (
                       <span 
                         key={index} 
-                        className="px-3 py-1 bg-gray-100 text-[#002b4e] rounded-full text-sm font-medium border border-gray-200"
+                        className="px-3 py-1 bg-blue-50/80 text-blue-900 rounded-full text-sm font-semibold border border-blue-100/80 shadow-sm transition-all hover:bg-blue-100/50"
                       >
                         {skill}
                       </span>

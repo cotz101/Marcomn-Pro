@@ -96,36 +96,6 @@ export default function PartnersDirectory() {
           .partners-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
           }
-          .partner-card {
-            align-items: center !important;
-            text-align: center !important;
-            padding: 30px 24px !important;
-          }
-          .partner-card > .flex {
-            flex-direction: column !important;
-            align-items: center !important;
-            gap: 16px !important;
-            width: 100% !important;
-          }
-          .partner-card > .flex > .flex-1 {
-            width: 100% !important;
-            padding-left: 0 !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-          }
-          .partner-card > .flex > .flex-1 > .flex-wrap {
-            justify-content: center !important;
-          }
-          .partner-card > p {
-            padding-left: 0 !important;
-            text-align: center !important;
-            width: 100% !important;
-          }
-          .partner-card > div {
-            padding-left: 0 !important;
-            width: 100% !important;
-          }
         }
         
         @media (min-width: 441px) {
@@ -143,16 +113,13 @@ export default function PartnersDirectory() {
           }
         }
 
-        @media (min-width: 441px) and (max-width: 767px) {
+        @media (max-width: 767px) {
           .partners-container {
-            padding-bottom: 150px !important; /* Prevent bottom nav overlap */
+            padding-bottom: calc(var(--mobile-nav-height, 72px) + env(safe-area-inset-bottom) + 32px) !important; /* Prevent bottom nav overlap cleanly */
           }
         }
 
         @media (max-width: 440px) {
-          .partners-container {
-            padding-bottom: 120px !important; /* Prevent bottom nav overlap */
-          }
           .partners-grid {
             gap: 14px !important;
             margin-top: 24px !important; /* Keep mobile spacing identical */
@@ -163,7 +130,6 @@ export default function PartnersDirectory() {
           .partners-container {
             padding-left: 6px !important;
             padding-right: 6px !important;
-            padding-bottom: 140px !important;
           }
           .partner-card {
             padding: 16px 16px 16px 20px !important;
@@ -342,7 +308,7 @@ export default function PartnersDirectory() {
 
                 {/* Action Section with extra vertical gap */}
                 {hasWebsite && (
-                  <div className="flex justify-center" style={{ marginTop: '24px', width: '100%', paddingLeft: 0 }}>
+                  <div className="flex justify-center" style={{ marginTop: '29px', width: '100%', paddingLeft: 0 }} onClick={(e) => e.stopPropagation()}>
                     <a 
                       href={siteUrl.startsWith('http') ? siteUrl : `https://${siteUrl}`}
                       target="_blank" 

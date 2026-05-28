@@ -385,14 +385,14 @@ export default function InboxPage() {
   const activePartner = activeConv ? getOtherParticipantProfile(activeConv) : null;
 
   return (
-    <div className="flex flex-col w-full bg-white overflow-x-hidden" style={{ height: 'calc(100dvh - var(--header-height, 64px))', maxHeight: 'calc(100dvh - var(--header-height, 64px))' }}>
+    <div className="flex flex-col w-full h-full flex-1 bg-white overflow-hidden">
       <div className="flex flex-row flex-1 min-h-0 w-full bg-white overflow-hidden">
 
 
       <div 
         className={activeChatId 
-          ? "hidden md:flex flex-col w-1/3 lg:w-1/4 border-r border-gray-200 overflow-hidden bg-white h-full" 
-          : "flex flex-col w-full md:w-1/3 lg:w-1/4 border-r border-gray-200 overflow-hidden bg-white h-full"
+          ? "hidden md:flex flex-col w-1/3 lg:w-1/4 border-r border-gray-200 overflow-hidden bg-white h-full min-h-0" 
+          : "flex flex-col w-full md:w-1/3 lg:w-1/4 border-r border-gray-200 overflow-hidden bg-white h-full min-h-0"
         }
       >
         {/* Search header */}
@@ -476,21 +476,14 @@ export default function InboxPage() {
 
       <div 
         className={activeChatId 
-          ? "flex-1 flex flex-col h-full bg-white w-full overflow-hidden" 
-          : "hidden md:flex flex-1 flex-col h-full bg-white overflow-hidden"
+          ? "flex-1 flex flex-col h-full bg-white w-full overflow-hidden min-h-0" 
+          : "hidden md:flex flex-1 flex-col h-full bg-white overflow-hidden min-h-0"
         }
       >
         {activeConv && activePartner ? (
           <>
-            {/* Chat stage header – must clear iPhone Dynamic Island on mobile */}
-            <header
-              className="flex-none w-full bg-white border-b border-gray-200 z-10 flex items-center justify-between px-4"
-              style={{
-                paddingTop: 'max(12px, env(safe-area-inset-top))',
-                paddingBottom: '12px',
-                minHeight: 'calc(64px + env(safe-area-inset-top))'
-              }}
-            >
+            {/* Chat stage header – sits cleanly below the sticky app header */}
+            <header className="flex-none w-full bg-white border-b border-gray-200 z-10 flex items-center justify-between px-4 py-3 min-h-[64px]">
               <div className="flex items-center min-w-0 ml-4">
                 <button 
                   onClick={() => router.push('/messages')}

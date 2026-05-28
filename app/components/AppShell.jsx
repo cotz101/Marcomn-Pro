@@ -225,7 +225,7 @@ export default function AppShell({ children, userEmail, userId }) {
   const identityImage = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (profile?.profilePic || '/avatar_placeholder.png');
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F4F4F4]">
+    <div className={`flex flex-col ${pathname === '/messages' ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'} bg-[#F4F4F4]`}>
       {!onboardingCompleted && (
         <OnboardingModal 
           userId={userId} 
@@ -563,10 +563,10 @@ export default function AppShell({ children, userEmail, userId }) {
         </>
       )}
 
-      <main className="flex-1 flex flex-col">
-        <div className={pathname === '/messages' ? 'w-full flex-1 flex flex-col overflow-hidden' : 'app-container'}>
+      <main className={`flex-1 flex flex-col ${pathname === '/messages' ? 'min-h-0 overflow-hidden' : ''}`}>
+        <div className={pathname === '/messages' ? 'w-full flex-1 flex flex-col overflow-hidden min-h-0' : 'app-container'}>
           {pathname === '/messages' ? (
-            <div className="w-full flex-1 flex flex-col overflow-hidden">
+            <div className="w-full flex-1 flex flex-col overflow-hidden min-h-0">
               {children}
             </div>
           ) : (

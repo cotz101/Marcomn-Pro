@@ -62,23 +62,14 @@ export default function LogbookFeed() {
       if (articleIds.length > 0) {
         try {
           const { data, error: mblogError } = await supabase
-            .from('mblogs')
+            .from('mblog_articles')
             .select('*')
             .in('id', articleIds);
           if (!mblogError && data) {
             articles = data;
-          } else {
-            throw mblogError || new Error('No data');
           }
         } catch (mblogsErr) {
-          console.warn('DEBUG: Falling back to mblog_articles query due to:', mblogsErr);
-          const { data, error: fallbackError } = await supabase
-            .from('mblog_articles')
-            .select('*')
-            .in('id', articleIds);
-          if (!fallbackError && data) {
-            articles = data;
-          }
+          console.error('Error fetching mblog_articles:', mblogsErr);
         }
       }
 

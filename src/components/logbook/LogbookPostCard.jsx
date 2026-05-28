@@ -700,7 +700,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                       <h4 className="text-lg md:text-2xl font-bold leading-snug md:leading-tight text-navy-900 mb-2">
                         {post.mblogs?.title || 'Shared Post'}
                       </h4>
-                      <p className="text-[15px] sm:text-base leading-[1.45] sm:leading-relaxed text-gray-700 mt-2 line-clamp-3">
+                      <p className="text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2 line-clamp-3">
                         {post.mblogs?.content?.replace(/<[^>]*>?/gm, '') || 'No description available.'}
                       </p>
                       
@@ -728,10 +728,10 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                     <h2 className="text-lg md:text-2xl font-bold leading-snug md:leading-tight text-navy-900">
                       {post.title}
                     </h2>
-
+ 
                     {/* 2. Content Body */}
                     {isExpanded ? (
-                      <div className="prose prose-sm max-w-none text-[15px] sm:text-base leading-[1.45] sm:leading-relaxed text-gray-700 mt-2 space-y-4">
+                      <div className="prose prose-sm max-w-none text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2 space-y-4">
                         <div
                           dangerouslySetInnerHTML={{ __html: renderContentWithEmbeds(post.content) }}
                           className="article-full-html"
@@ -748,10 +748,10 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                     ) : (
                       <div>
                         {/* Excerpt */}
-                        <p className="text-[15px] sm:text-base leading-[1.45] sm:leading-relaxed text-gray-700 mt-2 line-clamp-3">
+                        <p className="text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2 line-clamp-3">
                           {post.excerpt || getPlainText(post.content).substring(0, 150) + '...'}
                         </p>
-
+ 
                         <button
                           type="button"
                           onClick={() => setIsExpanded(true)}
@@ -762,7 +762,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                       </div>
                     )}
                     </div>
-
+ 
                     {/* 3. Media (Image/Video/Embed) */}
                     {!isEditing && renderMedia(post.cover_media_url, post.media_type, post.video_url)}
                   </div>
@@ -772,14 +772,14 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                     {isHtml(displayContent) ? (
                       <div
                         dangerouslySetInnerHTML={{ __html: displayContent }}
-                        className="prose prose-sm max-w-none text-[15px] sm:text-base leading-[1.45] sm:leading-relaxed text-gray-700 mt-2"
+                        className="prose prose-sm max-w-none text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2"
                       />
                     ) : (
-                      <div className="text-[15px] sm:text-base leading-[1.45] sm:leading-relaxed text-gray-700 mt-2 whitespace-pre-wrap break-words">
+                      <div className="text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2 whitespace-pre-wrap break-words">
                         {displayContent}
                       </div>
                     )}
-
+ 
                     {shouldTruncate && (
                       <button
                         type="button"
