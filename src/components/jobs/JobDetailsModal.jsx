@@ -78,7 +78,7 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
       <div className="absolute inset-0 cursor-default" onClick={onClose}></div>
 
       {/* Modal Container */}
-      <div className="relative z-10 max-w-3xl w-full bg-white rounded-xl shadow-2xl overflow-hidden max-h-[calc(100dvh-160px)] md:max-h-[90vh] flex flex-col transform transition-all duration-300 scale-100">
+      <div className="relative z-10 max-w-3xl w-full bg-white rounded-xl shadow-2xl overflow-hidden max-h-[calc(100dvh-160px)] md:max-h-[90vh] flex flex-col transform transition-all duration-300 scale-100 border-8 border-red-600">
         
         {/* Dark Navy Sticky Header */}
         <div className="bg-[#002b4e] text-white py-4 sm:py-5 px-5 sm:px-8 flex justify-between items-center gap-4 sticky top-0 z-10 shadow-sm">
@@ -88,6 +88,7 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
               {getCompanyIcon(job.company)}
             </div>
             <div>
+              <div className="text-red-500 font-black text-xl animate-bounce">TEMP JOB DETAILS MODAL TEST</div>
               <h3 className="text-[19px] sm:text-[20px] font-extrabold leading-tight text-white">{job.title}</h3>
               <p className="text-[14px] sm:text-[15px] font-semibold text-slate-200 mt-1">{companyName}</p>
             </div>
