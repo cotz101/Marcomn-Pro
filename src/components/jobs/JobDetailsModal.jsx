@@ -73,23 +73,23 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center max-md:pt-[72px] max-md:pb-[80px] max-md:px-4 p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-300">
       {/* Backdrop Closer */}
       <div className="absolute inset-0 cursor-default" onClick={onClose}></div>
 
       {/* Modal Container */}
-      <div className="relative z-10 max-w-3xl w-full bg-white rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transform transition-all duration-300 scale-100">
+      <div className="relative z-10 max-w-3xl w-full bg-white rounded-xl shadow-2xl overflow-hidden max-h-[calc(100dvh-160px)] md:max-h-[90vh] flex flex-col transform transition-all duration-300 scale-100">
         
         {/* Dark Navy Sticky Header */}
-        <div className="bg-[#002b4e] text-white py-5 px-8 flex justify-between items-center gap-4 sticky top-0 z-10 shadow-sm">
+        <div className="bg-[#002b4e] text-white py-4 sm:py-5 px-5 sm:px-8 flex justify-between items-center gap-4 sticky top-0 z-10 shadow-sm">
           <div className="flex gap-4 items-center">
             {/* Logo box */}
-            <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0 border border-white/20">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0 border border-white/20">
               {getCompanyIcon(job.company)}
             </div>
             <div>
-              <h3 className="text-lg sm:text-xl font-extrabold leading-tight text-white">{job.title}</h3>
-              <p className="text-xs sm:text-sm font-semibold text-slate-200 mt-0.5">{companyName}</p>
+              <h3 className="text-lg max-md:text-[19px] sm:text-xl font-extrabold leading-tight text-white">{job.title}</h3>
+              <p className="text-xs max-md:text-[14px] sm:text-sm font-semibold text-slate-200 mt-0.5">{companyName}</p>
             </div>
           </div>
           <button 
@@ -102,19 +102,19 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
         </div>
 
         {/* Scrollable Body */}
-        <div className="overflow-y-auto p-6 sm:p-8 flex-1 space-y-6">
+        <div className="overflow-y-auto overscroll-contain p-5 sm:p-8 flex-1 space-y-6">
           
           {/* Meta Grid */}
-          <div className="bg-gray-50/50 rounded-lg p-5 border border-gray-100">
-            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Job Overview</h4>
+          <div className="bg-gray-50/50 rounded-lg p-4 sm:p-5 border border-gray-100">
+            <h4 className="text-xs max-md:text-[13px] font-bold text-gray-400 uppercase tracking-wider mb-4 pl-[10px]">Job Overview</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-900 flex-shrink-0">
                   <DollarSign size={18} />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">Compensation</p>
-                  <p className="text-sm font-bold text-gray-800">{salaryRange}</p>
+                  <p className="text-xs max-md:text-[13px] text-gray-500 font-medium">Compensation</p>
+                  <p className="text-sm max-md:text-[15px] font-bold text-gray-800">{salaryRange}</p>
                 </div>
               </div>
 
@@ -123,8 +123,8 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
                   <MapPin size={18} />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">Location</p>
-                  <p className="text-sm font-bold text-gray-800">{location}</p>
+                  <p className="text-xs max-md:text-[13px] text-gray-500 font-medium">Location</p>
+                  <p className="text-sm max-md:text-[15px] font-bold text-gray-800">{location}</p>
                 </div>
               </div>
 
@@ -133,8 +133,8 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
                   <Clock size={18} />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">Job Type</p>
-                  <p className="text-sm font-bold text-gray-800">{jobType}</p>
+                  <p className="text-xs max-md:text-[13px] text-gray-500 font-medium">Job Type</p>
+                  <p className="text-sm max-md:text-[15px] font-bold text-gray-800">{jobType}</p>
                 </div>
               </div>
 
@@ -143,8 +143,8 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
                   <Award size={18} />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">Experience Level</p>
-                  <p className="text-sm font-bold text-gray-800">{experienceLevel}</p>
+                  <p className="text-xs max-md:text-[13px] text-gray-500 font-medium">Experience Level</p>
+                  <p className="text-sm max-md:text-[15px] font-bold text-gray-800">{experienceLevel}</p>
                 </div>
               </div>
             </div>
@@ -156,12 +156,12 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
               {/* Required Skills Column */}
               {requiredSkills.length > 0 && (
                 <div>
-                  <label className="text-sm font-semibold text-gray-700 block mb-1.5 pl-4">Required Skills</label>
+                  <label className="text-sm max-md:text-[14px] font-bold text-gray-700 block mb-1.5 pl-[10px]">Required Skills</label>
                   <div className="bg-white border border-gray-100 rounded-lg p-4 flex flex-wrap gap-2.5 min-h-[60px] items-center">
                     {requiredSkills.map((tag, index) => (
                       <span 
                         key={index} 
-                        className="bg-blue-50 text-blue-700 px-3.5 py-1.5 rounded-md text-xs font-semibold border border-blue-100 shadow-2xs"
+                        className="bg-blue-50 text-blue-700 px-3.5 py-1.5 rounded-md text-xs max-md:text-[13px] font-semibold border border-blue-100 shadow-2xs"
                       >
                         {tag}
                       </span>
@@ -173,12 +173,12 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
               {/* Job Tags Column */}
               {jobTags.length > 0 && (
                 <div>
-                  <label className="text-sm font-semibold text-gray-700 block mb-1.5 pl-4">Job Tags</label>
+                  <label className="text-sm max-md:text-[14px] font-bold text-gray-700 block mb-1.5 pl-[10px]">Job Tags</label>
                   <div className="bg-white border border-gray-100 rounded-lg p-4 flex flex-wrap gap-2.5 min-h-[60px] items-center">
                     {jobTags.map((tag, index) => (
                       <span 
                         key={index} 
-                        className="bg-emerald-50 text-emerald-700 px-3.5 py-1.5 rounded-full text-xs font-semibold border border-emerald-100 shadow-2xs"
+                        className="bg-emerald-50 text-emerald-700 px-3.5 py-1.5 rounded-full text-xs max-md:text-[13px] font-semibold border border-emerald-100 shadow-2xs"
                       >
                         {tag}
                       </span>
@@ -192,10 +192,10 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
           {/* Job Description */}
           {job.description && (
             <div>
-              <label className="text-sm font-semibold text-gray-700 block mb-1.5 pl-4">Job Description</label>
+              <label className="text-sm max-md:text-[14px] font-bold text-gray-700 block mb-1.5 pl-[10px]">Job Description</label>
               <div className="bg-white border border-gray-100 rounded-lg p-4">
                 <div 
-                  className="prose prose-sm max-w-none text-gray-700 text-sm leading-relaxed rich-text-content"
+                  className="prose prose-sm max-w-none text-gray-700 text-sm max-md:text-[15px] leading-relaxed max-md:leading-relaxed rich-text-content"
                   dangerouslySetInnerHTML={{ __html: job.description }}
                 />
               </div>
@@ -205,10 +205,10 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
           {/* Responsibilities */}
           {job.responsibilities && (
             <div>
-              <label className="text-sm font-semibold text-gray-700 block mb-1.5 pl-4">Responsibilities</label>
+              <label className="text-sm max-md:text-[14px] font-bold text-gray-700 block mb-1.5 pl-[10px]">Responsibilities</label>
               <div className="bg-white border border-gray-100 rounded-lg p-4">
                 <div 
-                  className="prose prose-sm max-w-none text-gray-700 text-sm leading-relaxed rich-text-content"
+                  className="prose prose-sm max-w-none text-gray-700 text-sm max-md:text-[15px] leading-relaxed max-md:leading-relaxed rich-text-content"
                   dangerouslySetInnerHTML={{ __html: job.responsibilities }}
                 />
               </div>
@@ -218,10 +218,10 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
         </div>
 
         {/* Sticky Footer */}
-        <div className="flex items-center justify-end gap-3 pt-4 pb-6 px-6 border-t border-[var(--outline)] bg-gray-50 sticky bottom-0 z-10">
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 sm:gap-3 py-4 px-4 sm:px-8 border-t border-gray-100 bg-gray-50 sticky bottom-0 z-10">
           {isOwner && (
             <button 
-              className="px-6 py-2.5 bg-red-50 text-red-600 hover:bg-red-100 text-sm font-semibold rounded-lg transition-colors mr-auto"
+              className="px-4 sm:px-6 py-2.5 bg-red-50 text-red-600 hover:bg-red-100 text-sm font-semibold rounded-lg transition-colors mr-auto max-sm:w-full max-sm:mb-1"
               onClick={() => setIsDeleteConfirmOpen(true)}
             >
               Delete Posting
@@ -229,14 +229,14 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
           )}
           <button 
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium hover:bg-slate-100 rounded-lg text-gray-700"
+            className="px-4 py-2.5 text-sm font-medium hover:bg-slate-100 rounded-lg text-gray-700 max-sm:flex-1 text-center"
           >
             Cancel
           </button>
           {isOwner ? (
             <button 
-              className="btn-primary-pill px-6 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-[#42474f]"
-              style={{ backgroundColor: '#f3f4f6', color: '#42474f' }}
+              className="btn-primary-pill px-4 sm:px-6 max-sm:flex-1"
+              style={{ backgroundColor: '#f3f4f6', color: '#42474f', border: '1px solid #d1d5db' }}
               onClick={() => {
                 if (onEdit) {
                   // Parent's bridge: closes this modal + sets jobToEdit + opens PostJobModal
@@ -253,7 +253,7 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
           ) : (
             <button 
               onClick={handleApplyClick}
-              className="btn-primary-pill px-6"
+              className="btn-primary-pill px-4 sm:px-6 max-sm:flex-1"
             >
               Quick Apply
             </button>
