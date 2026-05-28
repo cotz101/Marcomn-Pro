@@ -304,7 +304,7 @@ export default function EmployerDashboardPage() {
       `}} />
 
       {/* Standard premium Page Header with Tabs inside */}
-      <header className="mb-8 flex flex-col bg-white border border-slate-200 p-5 md:p-6 rounded-2xl shadow-sm">
+      <header className="mt-[5px] mb-8 flex flex-col bg-white border border-slate-200 p-5 md:p-6 rounded-2xl shadow-sm">
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6 px-2 md:px-4 mb-6">
           <div className="flex-1">
             <h1 className="text-3xl font-extrabold tracking-tight leading-none mb-3" style={{ color: '#000050' }}>
