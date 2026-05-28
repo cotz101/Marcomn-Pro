@@ -304,10 +304,10 @@ export default function EmployerDashboardPage() {
       `}} />
 
       {/* Standard premium Page Header with Tabs inside */}
-      <header className="mb-8 flex flex-col bg-white border border-slate-200 p-5 md:p-6 rounded-2xl shadow-sm">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6 px-2 md:px-4 mb-6">
+      <header className="-mt-[15px] mb-8 pb-[30px] md:pb-[34px] flex flex-col bg-white border border-slate-200 pt-5 px-5 md:pt-6 md:px-6 rounded-2xl shadow-sm">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6 px-0 mb-6">
           <div className="flex-1">
-            <h1 className="text-3xl font-extrabold tracking-tight leading-none mb-3" style={{ color: '#000050' }}>
+            <h1 className="text-3xl font-extrabold tracking-tight leading-none mt-[5px] mb-3" style={{ color: '#000050' }}>
               My Job Postings
             </h1>
             <p className="text-slate-500 text-sm leading-relaxed max-w-xl">
@@ -317,7 +317,7 @@ export default function EmployerDashboardPage() {
         </div>
 
         {/* Status Tabs inside header container */}
-        <div className="w-full flex items-center gap-2 border-t border-slate-100 pt-4 px-2 md:px-4 overflow-x-auto no-scrollbar">
+        <div className="w-full flex items-center gap-2 border-t border-slate-100 pt-4 px-0 overflow-x-auto no-scrollbar">
           {[
             { id: 'published', label: 'Published', count: publishedJobs.length },
             { id: 'draft', label: 'Draft', count: draftJobs.length },
@@ -343,13 +343,13 @@ export default function EmployerDashboardPage() {
 
       {/* Main List panel */}
       {loading ? (
-        <div className="space-y-3 px-2 md:px-4">
+        <div className="mt-[10px] space-y-3 px-0 flex flex-col">
           <SkeletonRow />
           <SkeletonRow />
           <SkeletonRow />
         </div>
       ) : jobs.length === 0 ? (
-        <div className="text-center p-10 bg-white border border-gray-200 rounded-lg mx-2 md:mx-4">
+        <div className="mt-[10px] text-center p-10 bg-white border border-gray-200 rounded-lg mx-0 px-0 flex flex-col">
           <div className="text-gray-400 mb-3 flex justify-center">
             <Briefcase size={40} />
           </div>
@@ -357,7 +357,7 @@ export default function EmployerDashboardPage() {
           <p className="text-gray-500 mb-5">Create your first opportunity to find top maritime talent.</p>
         </div>
       ) : (
-        <div className="space-y-4 px-2 md:px-4">
+        <div className="mt-[10px] space-y-[21px] px-0 flex flex-col">
           {activeJobsList.length > 0 ? (
             activeJobsList.map(renderJobRow)
           ) : (
