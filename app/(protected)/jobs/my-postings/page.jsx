@@ -175,42 +175,35 @@ export default function EmployerDashboardPage() {
     <div 
       key={job.id} 
       onClick={() => setSelectedJob(job)}
-      className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between gap-4 cursor-pointer"
+      className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer"
     >
       {/* Left: Job Title (bold) and Location (gray text) */}
-      <div className="flex-1 min-w-0">
-        <h3 className="text-base font-bold text-blue-900 truncate">
+      <div className="flex-1 min-w-0 pl-2">
+        <h3 className="text-base sm:text-lg font-bold text-blue-900 leading-snug break-words">
           {job.title}
         </h3>
-        <p className="text-sm text-gray-500 mt-1 flex items-center gap-1.5">
+        <p className="text-sm text-gray-500 mt-1 flex flex-wrap items-center gap-1.5">
           <MapPin size={14} className="text-gray-400 flex-shrink-0" />
-          <span className="truncate">{job.location || 'Location unspecified'}</span>
+          <span>{job.location || 'Location unspecified'}</span>
+          <span className="text-gray-300 hidden md:inline">•</span>
+          <span className="text-xs text-gray-400 md:inline">
+            Created {getFormattedDate(job.created_at)}
+          </span>
         </p>
       </div>
 
-      {/* Center: Posting Status badge */}
-      <div className="flex-shrink-0">
-        {getStatusBadge(job.status)}
-      </div>
-
-      {/* Right: Created Date & Applicants CTA */}
-      <div className="flex items-center gap-5 flex-shrink-0">
-        <div className="text-right hidden sm:block">
-          <p className="text-xs text-gray-400 font-medium">Created Date</p>
-          <p className="text-sm font-semibold text-gray-700 mt-0.5">
-            {getFormattedDate(job.created_at)}
-          </p>
-        </div>
-
+      {/* Right: Actions Container */}
+      <div className="flex flex-wrap items-center gap-3 w-full md:w-auto mt-2 md:mt-0 justify-end md:justify-start px-2 md:px-0">
         {((job.status || '').toLowerCase() === 'published' || (job.status || '').toLowerCase() === 'open' || (job.status || '').toLowerCase() === 'active') && (
           <button 
             onClick={(e) => {
               e.stopPropagation();
               handleCloseJob(job);
             }}
-            className="text-sm font-semibold text-red-600 hover:text-red-800 bg-red-50 px-4 py-2 rounded-md transition-colors"
+            className="flex-1 md:flex-initial text-center text-sm font-semibold text-red-600 hover:text-red-800 bg-red-50 border border-red-100 px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
           >
-            Close Job
+            <span className="block max-[440px]:hidden">Close Job</span>
+            <span className="hidden max-[440px]:block">Close</span>
           </button>
         )}
 
@@ -219,9 +212,10 @@ export default function EmployerDashboardPage() {
             e.stopPropagation();
             router.push(`/jobs/my-postings/${job.id}/applicants`);
           }}
-          className="px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 text-sm font-semibold rounded-lg transition-colors"
+          className="flex-1 md:flex-initial text-center px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 text-sm font-semibold rounded-lg border border-blue-100 transition-colors whitespace-nowrap"
         >
-          View Applicants
+          <span className="block max-[440px]:hidden">View Applicants</span>
+          <span className="hidden max-[440px]:block">Applicants</span>
         </button>
       </div>
     </div>
@@ -247,9 +241,9 @@ export default function EmployerDashboardPage() {
         }
       `}} />
 
-      {/* Standard premium Page Header */}
+      {/* Standard premium Page Header with Tabs inside */}
       <header className="mb-8 flex flex-col bg-white border border-slate-200 p-5 md:p-6 rounded-2xl shadow-sm">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6 px-2 md:px-4">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6 px-2 md:px-4 mb-6">
           <div className="flex-1">
             <h1 className="text-3xl font-extrabold tracking-tight leading-none mb-3" style={{ color: '#000050' }}>
               My Job Postings
@@ -259,31 +253,31 @@ export default function EmployerDashboardPage() {
             </p>
           </div>
         </div>
-      </header>
 
-      {/* Status Tabs */}
-      <div className="w-full flex items-center gap-2 border-b border-slate-200 pb-3 mb-6 px-2 md:px-4">
-        {[
-          { id: 'published', label: 'Published', count: publishedJobs.length },
-          { id: 'draft', label: 'Draft', count: draftJobs.length },
-          { id: 'closed', label: 'Closed', count: closedJobs.length }
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-              activeTab === tab.id
-                ? 'bg-[#002b4e] text-white shadow-sm'
-                : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <span>{tab.label}</span>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
-              {tab.count}
-            </span>
-          </button>
-        ))}
-      </div>
+        {/* Status Tabs inside header container */}
+        <div className="w-full flex items-center gap-2 border-t border-slate-100 pt-4 px-2 md:px-4 overflow-x-auto no-scrollbar">
+          {[
+            { id: 'published', label: 'Published', count: publishedJobs.length },
+            { id: 'draft', label: 'Draft', count: draftJobs.length },
+            { id: 'closed', label: 'Closed', count: closedJobs.length }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                activeTab === tab.id
+                  ? 'bg-[#002b4e] text-white shadow-sm'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </header>
 
       {/* Main List panel */}
       {loading ? (
