@@ -105,7 +105,7 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
         <div className="overflow-y-auto overscroll-contain p-5 sm:p-8 flex-1 space-y-6">
           
           {/* Meta Grid */}
-          <div className="bg-gray-50/50 rounded-lg p-4 sm:p-5 border border-gray-150 shadow-2xs">
+          <div className="bg-gray-50/50 rounded-lg p-4 sm:p-5 shadow-2xs">
             <h4 className="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 pl-[10px]">Job Overview</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
@@ -153,8 +153,8 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Required Skills Column */}
               {requiredSkills.length > 0 && (
-                <div className="py-2.5 flex flex-col w-full">
-                  <label className="text-[14px] font-bold text-gray-700 mb-2 pl-[10px] pr-[10px] block">Required Skills</label>
+                <div className="flex flex-col w-full px-4 sm:px-5 py-2">
+                  <label className="text-[14px] font-bold text-gray-700 mb-2 block">Required Skills</label>
                   <div className="px-[10px] flex flex-wrap gap-2 items-center">
                     {requiredSkills.map((tag, index) => (
                       <span 
@@ -170,8 +170,8 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
 
               {/* Job Tags Column */}
               {jobTags.length > 0 && (
-                <div className="py-2.5 flex flex-col w-full">
-                  <label className="text-[14px] font-bold text-gray-700 mb-2 pl-[10px] pr-[10px] block">Job Tags</label>
+                <div className="flex flex-col w-full px-4 sm:px-5 py-2">
+                  <label className="text-[14px] font-bold text-gray-700 mb-2 block">Job Tags</label>
                   <div className="px-[10px] flex flex-wrap gap-2 items-center">
                     {jobTags.map((tag, index) => (
                       <span 
@@ -189,8 +189,8 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
 
           {/* Job Description */}
           {job.description && (
-            <div className="py-2.5 flex flex-col w-full">
-              <label className="text-[14px] font-bold text-gray-700 mb-2 pl-[10px] pr-[10px] block">Job Description</label>
+            <div className="flex flex-col w-full mt-[5px] px-4 sm:px-5 py-2">
+              <label className="text-[14px] font-bold text-gray-700 mb-2 block">Job Description</label>
               <div className="px-[10px] w-full">
                 <div 
                   className="prose prose-sm max-w-none text-gray-700 text-[16px] leading-relaxed rich-text-content"
@@ -202,8 +202,8 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
 
           {/* Responsibilities */}
           {job.responsibilities && (
-            <div className="py-2.5 flex flex-col w-full">
-              <label className="text-[14px] font-bold text-gray-700 mb-2 pl-[10px] pr-[10px] block">Responsibilities</label>
+            <div className="flex flex-col w-full mt-[10px] px-4 sm:px-5 py-2">
+              <label className="text-[14px] font-bold text-gray-700 mb-2 block">Responsibilities</label>
               <div className="px-[10px] w-full">
                 <div 
                   className="prose prose-sm max-w-none text-gray-700 text-[16px] leading-relaxed rich-text-content"

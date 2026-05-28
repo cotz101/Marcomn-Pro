@@ -179,21 +179,22 @@ export default function EmployerDashboardPage() {
     >
       {/* Left: Job Title (bold) and Location (gray text) */}
       <div className="flex-1 min-w-0 pl-2">
-        <h3 className="text-base sm:text-lg font-bold text-blue-900 leading-snug break-words">
+        <h3 className="text-[17px] sm:text-[20px] font-bold text-blue-900 leading-snug break-words">
           {job.title}
         </h3>
-        <p className="text-sm text-gray-500 mt-1 flex flex-wrap items-center gap-1.5">
-          <MapPin size={14} className="text-gray-400 flex-shrink-0" />
-          <span>{job.location || 'Location unspecified'}</span>
-          <span className="text-gray-300 hidden md:inline">•</span>
-          <span className="text-xs text-gray-400 md:inline">
+        <div className="mt-2.5 flex flex-wrap items-center gap-2 sm:gap-3">
+          <span className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1 rounded-full text-slate-600 text-xs font-semibold max-w-full">
+            <MapPin size={14} className="text-slate-400 flex-shrink-0" />
+            <span className="truncate">{job.location || 'Location unspecified'}</span>
+          </span>
+          <span className="text-xs text-gray-400 font-medium">
             Created {getFormattedDate(job.created_at)}
           </span>
-        </p>
+        </div>
       </div>
 
       {/* Right: Actions Container */}
-      <div className="flex flex-wrap items-center gap-3 w-full md:w-auto mt-2 md:mt-0 justify-end md:justify-start px-2 md:px-0">
+      <div className="flex flex-wrap items-center gap-3 w-full md:w-auto mt-2 md:-mt-[5px] justify-end md:justify-start mb-1.5">
         {((job.status || '').toLowerCase() === 'published' || (job.status || '').toLowerCase() === 'open' || (job.status || '').toLowerCase() === 'active') && (
           <button 
             onClick={(e) => {
@@ -231,7 +232,7 @@ export default function EmployerDashboardPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-4 sm:p-6 pb-24">
+    <main className="max-w-5xl mx-auto p-4 sm:p-6 pb-24">
       {/* 2-Column layout style override inside index.css grid structure */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media (min-width: 768px) {
@@ -240,7 +241,7 @@ export default function EmployerDashboardPage() {
           }
         }
 
-        /* Width 441px to 767px Overrides */
+        /* Width 441px to 767px Overrides (Containers) */
         @media (min-width: 441px) and (max-width: 767px) {
           .max-w-5xl {
             padding-left: 20px !important;
@@ -253,6 +254,10 @@ export default function EmployerDashboardPage() {
           .max-w-5xl .space-y-4 {
             margin-top: 15px !important;
           }
+        }
+
+        /* 441px and Above - Job List Card Style Base */
+        @media (min-width: 441px) {
           .max-w-5xl .space-y-4 > div {
             flex-direction: row !important;
             align-items: center !important;
@@ -304,10 +309,10 @@ export default function EmployerDashboardPage() {
       `}} />
 
       {/* Standard premium Page Header with Tabs inside */}
-      <header className="-mt-[15px] mb-8 pb-[30px] md:pb-[34px] flex flex-col bg-white border border-slate-200 pt-5 px-5 md:pt-6 md:px-6 rounded-2xl shadow-sm">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6 px-0 mb-6">
+      <header className="mb-8 flex flex-col bg-white border border-slate-200 p-5 md:px-6 md:py-10 rounded-2xl shadow-sm">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6 px-2 md:px-4 mb-6">
           <div className="flex-1">
-            <h1 className="text-3xl font-extrabold tracking-tight leading-none mt-[5px] mb-3" style={{ color: '#000050' }}>
+            <h1 className="text-3xl font-extrabold tracking-tight leading-none mb-3 text-[#000050]">
               My Job Postings
             </h1>
             <p className="text-slate-500 text-sm leading-relaxed max-w-xl">
@@ -317,7 +322,7 @@ export default function EmployerDashboardPage() {
         </div>
 
         {/* Status Tabs inside header container */}
-        <div className="w-full flex items-center gap-2 border-t border-slate-100 pt-4 px-0 overflow-x-auto no-scrollbar">
+        <div className="w-full flex items-center gap-2 border-t border-slate-100 pt-4 mb-1.5 px-2 md:px-4 overflow-x-auto no-scrollbar">
           {[
             { id: 'published', label: 'Published', count: publishedJobs.length },
             { id: 'draft', label: 'Draft', count: draftJobs.length },
@@ -343,13 +348,13 @@ export default function EmployerDashboardPage() {
 
       {/* Main List panel */}
       {loading ? (
-        <div className="mt-[10px] space-y-3 px-0 flex flex-col">
+        <div className="space-y-3 md:mt-[20px]">
           <SkeletonRow />
           <SkeletonRow />
           <SkeletonRow />
         </div>
       ) : jobs.length === 0 ? (
-        <div className="mt-[10px] text-center p-10 bg-white border border-gray-200 rounded-lg mx-0 px-0 flex flex-col">
+        <div className="text-center p-10 bg-white border border-gray-200 rounded-lg md:mt-[20px]">
           <div className="text-gray-400 mb-3 flex justify-center">
             <Briefcase size={40} />
           </div>
@@ -357,7 +362,7 @@ export default function EmployerDashboardPage() {
           <p className="text-gray-500 mb-5">Create your first opportunity to find top maritime talent.</p>
         </div>
       ) : (
-        <div className="mt-[10px] space-y-[21px] px-0 flex flex-col">
+        <div className="space-y-4 mt-[20px]">
           {activeJobsList.length > 0 ? (
             activeJobsList.map(renderJobRow)
           ) : (
@@ -394,6 +399,6 @@ export default function EmployerDashboardPage() {
           }}
         />
       )}
-    </div>
+    </main>
   );
 }
