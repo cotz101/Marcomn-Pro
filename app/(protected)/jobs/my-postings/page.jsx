@@ -29,6 +29,7 @@ export default function EmployerDashboardPage() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [jobToEdit, setJobToEdit] = useState(null);
   const [isPostJobModalOpen, setIsPostJobModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('published');
 
   // The cascade close logic
   const handleCloseJob = async (job) => {
@@ -166,6 +167,10 @@ export default function EmployerDashboardPage() {
     return s !== 'published' && s !== 'open' && s !== 'closed' && s !== 'inactive';
   });
 
+  const activeJobsList = activeTab === 'published' ? publishedJobs 
+                       : activeTab === 'closed' ? closedJobs 
+                       : draftJobs;
+
   const renderJobRow = (job) => (
     <div 
       key={job.id} 
@@ -232,24 +237,63 @@ export default function EmployerDashboardPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      {/* Header bar */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-blue-900">Employer Dashboard</h1>
-        <p className="text-sm text-gray-600 mt-1">
-          Manage your maritime job postings, draft new listings, and review applicant details.
-        </p>
+    <div className="max-w-5xl mx-auto p-4 sm:p-6 pb-24">
+      {/* 2-Column layout style override inside index.css grid structure */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (min-width: 768px) {
+          .main-grid.hide-sidebar-right {
+            grid-template-columns: 240px 1fr !important;
+          }
+        }
+      `}} />
+
+      {/* Standard premium Page Header */}
+      <header className="mb-8 flex flex-col bg-white border border-slate-200 p-5 md:p-6 rounded-2xl shadow-sm">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6 px-2 md:px-4">
+          <div className="flex-1">
+            <h1 className="text-3xl font-extrabold tracking-tight leading-none mb-3" style={{ color: '#000050' }}>
+              My Job Postings
+            </h1>
+            <p className="text-slate-500 text-sm leading-relaxed max-w-xl">
+              Manage your published, draft, and closed job postings.
+            </p>
+          </div>
+        </div>
+      </header>
+
+      {/* Status Tabs */}
+      <div className="w-full flex items-center gap-2 border-b border-slate-200 pb-3 mb-6 px-2 md:px-4">
+        {[
+          { id: 'published', label: 'Published', count: publishedJobs.length },
+          { id: 'draft', label: 'Draft', count: draftJobs.length },
+          { id: 'closed', label: 'Closed', count: closedJobs.length }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+              activeTab === tab.id
+                ? 'bg-[#002b4e] text-white shadow-sm'
+                : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <span>{tab.label}</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+              {tab.count}
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* Main List panel */}
       {loading ? (
-        <div className="space-y-3">
+        <div className="space-y-3 px-2 md:px-4">
           <SkeletonRow />
           <SkeletonRow />
           <SkeletonRow />
         </div>
       ) : jobs.length === 0 ? (
-        <div className="text-center p-10 bg-white border border-gray-200 rounded-lg">
+        <div className="text-center p-10 bg-white border border-gray-200 rounded-lg mx-2 md:mx-4">
           <div className="text-gray-400 mb-3 flex justify-center">
             <Briefcase size={40} />
           </div>
@@ -257,44 +301,16 @@ export default function EmployerDashboardPage() {
           <p className="text-gray-500 mb-5">Create your first opportunity to find top maritime talent.</p>
         </div>
       ) : (
-        <div className="space-y-10">
-          {/* Active / Published */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4 mt-8">Active Postings</h3>
-            {publishedJobs.length > 0 ? (
-              <div className="space-y-3">
-                {publishedJobs.map(renderJobRow)}
-              </div>
-            ) : (
-              <div className="p-6 bg-gray-50 rounded-lg text-center text-sm text-gray-500 border border-gray-100">
-                No active postings available
-              </div>
-            )}
-          </div>
-
-          {/* Drafts */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4 mt-8">Drafts</h3>
-            {draftJobs.length > 0 ? (
-              <div className="space-y-3">
-                {draftJobs.map(renderJobRow)}
-              </div>
-            ) : (
-              <div className="p-6 bg-gray-50 rounded-lg text-center text-sm text-gray-500 border border-gray-100">
-                No drafts available
-              </div>
-            )}
-          </div>
-
-          {/* Closed */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4 mt-8">Closed Postings</h3>
-            {closedJobs.length > 0 ? (
-              <div className="space-y-3">
-                {closedJobs.map(renderJobRow)}
-              </div>
-            ) : null}
-          </div>
+        <div className="space-y-4 px-2 md:px-4">
+          {activeJobsList.length > 0 ? (
+            activeJobsList.map(renderJobRow)
+          ) : (
+            <div className="p-12 bg-white rounded-xl text-center text-sm text-gray-500 border border-slate-200 shadow-sm flex flex-col items-center justify-center">
+              <Briefcase size={36} className="text-slate-350 mb-3" />
+              <p className="font-semibold text-slate-700">No postings available</p>
+              <p className="text-xs text-slate-400 mt-1">There are no jobs currently listed under the "{activeTab}" status.</p>
+            </div>
+          )}
         </div>
       )}
 

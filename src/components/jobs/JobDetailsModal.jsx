@@ -43,7 +43,8 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
   const location = job.location || 'N/A';
   const jobType = job.employment_type || job.jobType || job.job_type || 'Full-time';
   const experienceLevel = job.experienceLevel || job.experience_level || 'Mid';
-  const tags = job.required_skills || job.tags || [];
+  const requiredSkills = job.required_skills || [];
+  const jobTags = job.tags || [];
 
   const handleApplyClick = () => {
     console.log('Applying for Job ID:', job.id);
@@ -150,14 +151,31 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
           </div>
 
           {/* Required Skills Tags */}
-          {tags.length > 0 && (
+          {requiredSkills.length > 0 && (
             <div>
-              <label className="text-sm font-semibold text-gray-700 block mb-1.5">Required Skills</label>
-              <div className="flex flex-wrap gap-2">
-                {tags.map((tag, index) => (
+              <label className="text-sm font-semibold text-gray-700 block mb-1.5 pl-4">Required Skills</label>
+              <div className="bg-white border border-gray-100 rounded-lg p-4 flex flex-wrap gap-2.5 min-h-[60px] items-center">
+                {requiredSkills.map((tag, index) => (
                   <span 
                     key={index} 
-                    className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-md text-xs font-semibold border border-blue-100 shadow-2xs"
+                    className="bg-blue-50 text-blue-700 px-3.5 py-1.5 rounded-md text-xs font-semibold border border-blue-100 shadow-2xs"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Job Tags Display */}
+          {jobTags.length > 0 && (
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-1.5 pl-4">Job Tags</label>
+              <div className="bg-white border border-gray-100 rounded-lg p-4 flex flex-wrap gap-2.5 min-h-[60px] items-center">
+                {jobTags.map((tag, index) => (
+                  <span 
+                    key={index} 
+                    className="bg-emerald-50 text-emerald-700 px-3.5 py-1.5 rounded-full text-xs font-semibold border border-emerald-100 shadow-2xs"
                   >
                     {tag}
                   </span>
@@ -169,7 +187,7 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
           {/* Job Description */}
           {job.description && (
             <div>
-              <label className="text-sm font-semibold text-gray-700 block mb-1.5">Job Description</label>
+              <label className="text-sm font-semibold text-gray-700 block mb-1.5 pl-4">Job Description</label>
               <div className="bg-white border border-gray-100 rounded-lg p-4">
                 <div 
                   className="prose prose-sm max-w-none text-gray-700 text-sm leading-relaxed rich-text-content"
@@ -182,7 +200,7 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
           {/* Responsibilities */}
           {job.responsibilities && (
             <div>
-              <label className="text-sm font-semibold text-gray-700 block mb-1.5">Responsibilities</label>
+              <label className="text-sm font-semibold text-gray-700 block mb-1.5 pl-4">Responsibilities</label>
               <div className="bg-white border border-gray-100 rounded-lg p-4">
                 <div 
                   className="prose prose-sm max-w-none text-gray-700 text-sm leading-relaxed rich-text-content"
@@ -242,26 +260,35 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
       {/* Delete Confirmation Modal */}
       {isDeleteConfirmOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="max-w-md w-full bg-white rounded-xl p-6 shadow-2xl flex flex-col relative z-10">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Job Posting?</h3>
-            <p className="text-sm text-gray-600 mb-6">
-              Are you sure you want to permanently delete this opportunity? This action cannot be undone.
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button 
-                onClick={() => setIsDeleteConfirmOpen(false)}
-                className="px-4 py-2 text-sm font-medium hover:bg-slate-100 rounded-lg text-gray-700"
-                disabled={isDeleting}
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleDeleteJob}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors"
-                disabled={isDeleting}
-              >
-                {isDeleting ? 'Deleting...' : 'Confirm Delete'}
-              </button>
+          <div className="max-w-md w-full bg-white rounded-xl shadow-2xl flex flex-col relative z-10 overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Header Area with Navy Blue background */}
+            <div className="bg-[#002b4e] text-white py-4 px-6 text-center">
+              <h3 className="text-lg font-bold">Delete Job Posting?</h3>
+            </div>
+            
+            {/* Body Area */}
+            <div className="p-8 text-center flex flex-col items-center">
+              <p className="text-sm text-gray-600 leading-relaxed mb-6 max-w-sm">
+                Are you sure you want to permanently delete this opportunity? This action cannot be undone.
+              </p>
+              
+              {/* Buttons Row with centering and clear margins */}
+              <div className="flex items-center justify-center gap-4 w-full mt-2">
+                <button 
+                  onClick={() => setIsDeleteConfirmOpen(false)}
+                  className="px-5 py-2.5 border border-gray-300 hover:bg-gray-50 rounded-lg text-sm font-semibold text-gray-700 transition-colors cursor-pointer w-1/2"
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleDeleteJob}
+                  className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors cursor-pointer w-1/2 flex items-center justify-center"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Confirm Delete'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

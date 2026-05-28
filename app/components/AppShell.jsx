@@ -570,12 +570,12 @@ export default function AppShell({ children, userEmail, userId }) {
               {children}
             </div>
           ) : (
-            <div className="main-grid">
+            <div className={`main-grid ${pathname === '/jobs/my-postings' ? 'hide-sidebar-right' : ''}`}>
               <SidebarLeft />
               <div className="center-feed">
                 {children}
               </div>
-              <SidebarRight />
+              {pathname !== '/jobs/my-postings' && <SidebarRight />}
             </div>
           )}
         </div>
