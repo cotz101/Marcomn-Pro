@@ -107,6 +107,7 @@ export default function PartnersDirectory() {
           }
           .partner-card {
             display: flex !important; /* Ensure card is displayed and flexes details */
+            flex-direction: column !important;
             visibility: visible !important;
             opacity: 1 !important;
           }
@@ -114,7 +115,7 @@ export default function PartnersDirectory() {
 
         @media (min-width: 441px) and (max-width: 767px) {
           .partners-container {
-            padding-bottom: 120px !important; /* Prevent bottom nav overlap */
+            padding-bottom: 150px !important; /* Prevent bottom nav overlap */
           }
         }
 
@@ -244,8 +245,8 @@ export default function PartnersDirectory() {
                 <div className="h-3 bg-slate-100 rounded w-full"></div>
                 <div className="h-3 bg-slate-100 rounded w-5/6"></div>
               </div>
-              <div className="w-full mt-5 pt-4 border-t border-slate-50">
-                <div className="h-10 bg-slate-100 rounded-xl w-full"></div>
+              <div className="w-full mt-[34px] flex justify-center">
+                <div className="h-10 bg-slate-100 rounded-xl w-32"></div>
               </div>
             </div>
           ))}
@@ -311,7 +312,7 @@ export default function PartnersDirectory() {
 
                 {/* Action Section with extra vertical gap */}
                 {hasWebsite && (
-                  <div className="mt-[29px] pt-4 border-t border-slate-100 pl-2 flex justify-center">
+                  <div className="mt-[34px] pl-2 flex justify-center">
                     <a 
                       href={siteUrl.startsWith('http') ? siteUrl : `https://${siteUrl}`}
                       target="_blank" 
