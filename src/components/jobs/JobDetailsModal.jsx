@@ -156,12 +156,12 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
               {/* Required Skills Column */}
               {requiredSkills.length > 0 && (
                 <div className="px-[10px] py-2 flex flex-col">
-                  <label className="text-[14px] sm:text-[15px] font-bold text-gray-700 block mb-2 pl-4 sm:pl-5">Required Skills</label>
-                  <div className="bg-white border border-gray-100 rounded-lg p-4 flex flex-wrap gap-2.5 min-h-[60px] items-center">
+                  <label className="text-[14px] font-bold text-gray-700 mb-2 pl-4">Required Skills</label>
+                  <div className="bg-white border border-gray-100 rounded-lg p-4 min-h-[60px] flex flex-wrap gap-2 items-center">
                     {requiredSkills.map((tag, index) => (
                       <span 
                         key={index} 
-                        className="bg-blue-50 text-blue-700 px-3.5 py-1.5 rounded-md text-[13px] sm:text-sm font-semibold border border-blue-100 shadow-2xs"
+                        className="bg-blue-50 text-blue-700 px-3.5 py-1.5 rounded-md text-sm font-semibold border border-blue-100 shadow-2xs"
                       >
                         {tag}
                       </span>
@@ -173,12 +173,12 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
               {/* Job Tags Column */}
               {jobTags.length > 0 && (
                 <div className="px-[10px] py-2 flex flex-col">
-                  <label className="text-[14px] sm:text-[15px] font-bold text-gray-700 block mb-2 pl-4 sm:pl-5">Job Tags</label>
-                  <div className="bg-white border border-gray-100 rounded-lg p-4 flex flex-wrap gap-2.5 min-h-[60px] items-center">
+                  <label className="text-[14px] font-bold text-gray-700 mb-2 pl-4">Job Tags</label>
+                  <div className="bg-white border border-gray-100 rounded-lg p-4 min-h-[60px] flex flex-wrap gap-2 items-center">
                     {jobTags.map((tag, index) => (
                       <span 
                         key={index} 
-                        className="bg-emerald-50 text-emerald-700 px-3.5 py-1.5 rounded-full text-[13px] sm:text-sm font-semibold border border-emerald-100 shadow-2xs"
+                        className="bg-emerald-50 text-emerald-700 px-3.5 py-1.5 rounded-full text-sm font-semibold border border-emerald-100 shadow-2xs"
                       >
                         {tag}
                       </span>
@@ -191,11 +191,11 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
 
           {/* Job Description */}
           {job.description && (
-            <div className="px-[10px] py-2 flex flex-col">
-              <label className="text-[14px] sm:text-[15px] font-bold text-gray-700 block mb-2 pl-4 sm:pl-5">Job Description</label>
+            <div className="ml-[10px] px-[10px] py-2 flex flex-col">
+              <label className="text-[14px] font-bold text-gray-700 mb-2 pl-4">Job Description</label>
               <div className="bg-white border border-gray-100 rounded-lg p-4">
                 <div 
-                  className="prose prose-sm max-w-none text-gray-700 text-[15px] sm:text-[16px] leading-relaxed rich-text-content"
+                  className="prose prose-sm max-w-none text-gray-750 text-[16px] leading-relaxed rich-text-content"
                   dangerouslySetInnerHTML={{ __html: job.description }}
                 />
               </div>
@@ -204,11 +204,11 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
 
           {/* Responsibilities */}
           {job.responsibilities && (
-            <div className="px-[10px] py-2 flex flex-col">
-              <label className="text-[14px] sm:text-[15px] font-bold text-gray-700 block mb-2 pl-4 sm:pl-5">Responsibilities</label>
+            <div className="ml-[10px] px-[10px] py-2 flex flex-col">
+              <label className="text-[14px] font-bold text-gray-700 mb-2 pl-4">Responsibilities</label>
               <div className="bg-white border border-gray-100 rounded-lg p-4">
                 <div 
-                  className="prose prose-sm max-w-none text-gray-700 text-[15px] sm:text-[16px] leading-relaxed rich-text-content"
+                  className="prose prose-sm max-w-none text-gray-750 text-[16px] leading-relaxed rich-text-content"
                   dangerouslySetInnerHTML={{ __html: job.responsibilities }}
                 />
               </div>
