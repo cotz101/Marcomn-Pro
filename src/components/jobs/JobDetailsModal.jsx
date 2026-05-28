@@ -78,7 +78,7 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
       <div className="absolute inset-0 cursor-default" onClick={onClose}></div>
 
       {/* Modal Container */}
-      <div className="relative z-10 max-w-3xl w-full bg-white rounded-xl shadow-2xl overflow-hidden max-h-[calc(100dvh-160px)] md:max-h-[90vh] flex flex-col transform transition-all duration-300 scale-100 border-8 border-red-600">
+      <div className="relative z-10 max-w-3xl w-full bg-white rounded-xl shadow-2xl overflow-hidden max-h-[calc(100dvh-160px)] md:max-h-[90vh] flex flex-col transform transition-all duration-300 scale-100">
         
         {/* Dark Navy Sticky Header */}
         <div className="bg-[#002b4e] text-white py-4 sm:py-5 px-5 sm:px-8 flex justify-between items-center gap-4 sticky top-0 z-10 shadow-sm">
@@ -88,7 +88,6 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
               {getCompanyIcon(job.company)}
             </div>
             <div>
-              <div className="text-red-500 font-black text-xl animate-bounce">TEMP JOB DETAILS MODAL TEST</div>
               <h3 className="text-[19px] sm:text-[20px] font-extrabold leading-tight text-white">{job.title}</h3>
               <p className="text-[14px] sm:text-[15px] font-semibold text-slate-200 mt-1">{companyName}</p>
             </div>
@@ -106,7 +105,7 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
         <div className="overflow-y-auto overscroll-contain p-5 sm:p-8 flex-1 space-y-6">
           
           {/* Meta Grid */}
-          <div className="bg-gray-50/50 rounded-lg p-4 sm:p-5 border border-gray-100">
+          <div className="bg-gray-50/50 rounded-lg p-4 sm:p-5 border border-gray-150 shadow-2xs">
             <h4 className="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 pl-[10px]">Job Overview</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
@@ -158,7 +157,7 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
               {requiredSkills.length > 0 && (
                 <div className="px-[10px] py-2 flex flex-col">
                   <label className="text-[14px] font-bold text-gray-700 mb-2 pl-4">Required Skills</label>
-                  <div className="bg-white border border-gray-100 rounded-lg p-4 min-h-[60px] flex flex-wrap gap-2 items-center">
+                  <div className="bg-white border border-gray-250 rounded-lg p-4 min-h-[60px] flex flex-wrap gap-2 items-center shadow-xs">
                     {requiredSkills.map((tag, index) => (
                       <span 
                         key={index} 
@@ -175,7 +174,7 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
               {jobTags.length > 0 && (
                 <div className="px-[10px] py-2 flex flex-col">
                   <label className="text-[14px] font-bold text-gray-700 mb-2 pl-4">Job Tags</label>
-                  <div className="bg-white border border-gray-100 rounded-lg p-4 min-h-[60px] flex flex-wrap gap-2 items-center">
+                  <div className="bg-white border border-gray-250 rounded-lg p-4 min-h-[60px] flex flex-wrap gap-2 items-center shadow-xs">
                     {jobTags.map((tag, index) => (
                       <span 
                         key={index} 
@@ -194,7 +193,7 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
           {job.description && (
             <div className="ml-[10px] px-[10px] py-2 flex flex-col">
               <label className="text-[14px] font-bold text-gray-700 mb-2 pl-4">Job Description</label>
-              <div className="bg-white border border-gray-100 rounded-lg p-4">
+              <div className="bg-white border border-gray-255 rounded-lg p-4 shadow-xs">
                 <div 
                   className="prose prose-sm max-w-none text-gray-750 text-[16px] leading-relaxed rich-text-content"
                   dangerouslySetInnerHTML={{ __html: job.description }}
@@ -207,7 +206,7 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
           {job.responsibilities && (
             <div className="ml-[10px] px-[10px] py-2 flex flex-col">
               <label className="text-[14px] font-bold text-gray-700 mb-2 pl-4">Responsibilities</label>
-              <div className="bg-white border border-gray-100 rounded-lg p-4">
+              <div className="bg-white border border-gray-255 rounded-lg p-4 shadow-xs">
                 <div 
                   className="prose prose-sm max-w-none text-gray-750 text-[16px] leading-relaxed rich-text-content"
                   dangerouslySetInnerHTML={{ __html: job.responsibilities }}
