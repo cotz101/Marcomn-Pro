@@ -239,6 +239,68 @@ export default function EmployerDashboardPage() {
             grid-template-columns: 240px 1fr !important;
           }
         }
+
+        /* Width 441px to 767px Overrides */
+        @media (min-width: 441px) and (max-width: 767px) {
+          .max-w-5xl {
+            padding-left: 20px !important;
+            padding-right: 20px !important;
+          }
+          .max-w-5xl header {
+            margin-bottom: 15px !important;
+            padding-bottom: 22px !important;
+          }
+          .max-w-5xl .space-y-4 {
+            margin-top: 15px !important;
+          }
+          .max-w-5xl .space-y-4 > div {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 20px !important;
+          }
+          .max-w-5xl .space-y-4 > div > div:last-child {
+            flex-direction: column !important;
+            align-items: flex-end !important;
+            justify-content: center !important;
+            width: auto !important;
+            margin-top: 0 !important;
+            gap: 8px !important;
+            flex-shrink: 0 !important;
+          }
+          .max-w-5xl .space-y-4 > div > div:last-child button {
+            width: 160px !important;
+            flex: none !important;
+          }
+        }
+
+        /* Width 440px and Below Overrides */
+        @media (max-width: 440px) {
+          .max-w-5xl {
+            padding-left: 20px !important;
+            padding-right: 20px !important;
+          }
+          .max-w-5xl header {
+            margin-bottom: 15px !important;
+            padding-bottom: 22px !important;
+          }
+          .max-w-5xl .space-y-4 {
+            margin-top: 15px !important;
+          }
+          .max-w-5xl .space-y-4 > div {
+            padding-top: 25px !important;
+            padding-bottom: 25px !important;
+          }
+          .max-w-5xl .space-y-4 > div + div {
+            margin-top: 10px !important;
+          }
+          .max-w-5xl .space-y-4 > div h3 {
+            padding-left: 10px !important;
+          }
+          .max-w-5xl .space-y-4 > div p {
+            padding-left: 10px !important;
+          }
+        }
       `}} />
 
       {/* Standard premium Page Header with Tabs inside */}
