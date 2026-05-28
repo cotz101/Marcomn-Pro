@@ -155,8 +155,8 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Required Skills Column */}
               {requiredSkills.length > 0 && (
-                <div>
-                  <label className="text-[14px] sm:text-[15px] font-bold text-gray-700 block mb-1.5 pl-[26px] sm:pl-[30px]">Required Skills</label>
+                <div className="px-[10px] py-2 flex flex-col">
+                  <label className="text-[14px] sm:text-[15px] font-bold text-gray-700 block mb-2 pl-4 sm:pl-5">Required Skills</label>
                   <div className="bg-white border border-gray-100 rounded-lg p-4 flex flex-wrap gap-2.5 min-h-[60px] items-center">
                     {requiredSkills.map((tag, index) => (
                       <span 
@@ -172,8 +172,8 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
 
               {/* Job Tags Column */}
               {jobTags.length > 0 && (
-                <div>
-                  <label className="text-[14px] sm:text-[15px] font-bold text-gray-700 block mb-1.5 pl-[26px] sm:pl-[30px]">Job Tags</label>
+                <div className="px-[10px] py-2 flex flex-col">
+                  <label className="text-[14px] sm:text-[15px] font-bold text-gray-700 block mb-2 pl-4 sm:pl-5">Job Tags</label>
                   <div className="bg-white border border-gray-100 rounded-lg p-4 flex flex-wrap gap-2.5 min-h-[60px] items-center">
                     {jobTags.map((tag, index) => (
                       <span 
@@ -191,8 +191,8 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
 
           {/* Job Description */}
           {job.description && (
-            <div>
-              <label className="text-[14px] sm:text-[15px] font-bold text-gray-700 block mb-1.5 pl-[26px] sm:pl-[30px]">Job Description</label>
+            <div className="px-[10px] py-2 flex flex-col">
+              <label className="text-[14px] sm:text-[15px] font-bold text-gray-700 block mb-2 pl-4 sm:pl-5">Job Description</label>
               <div className="bg-white border border-gray-100 rounded-lg p-4">
                 <div 
                   className="prose prose-sm max-w-none text-gray-700 text-[15px] sm:text-[16px] leading-relaxed rich-text-content"
@@ -204,8 +204,8 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
 
           {/* Responsibilities */}
           {job.responsibilities && (
-            <div>
-              <label className="text-[14px] sm:text-[15px] font-bold text-gray-700 block mb-1.5 pl-[26px] sm:pl-[30px]">Responsibilities</label>
+            <div className="px-[10px] py-2 flex flex-col">
+              <label className="text-[14px] sm:text-[15px] font-bold text-gray-700 block mb-2 pl-4 sm:pl-5">Responsibilities</label>
               <div className="bg-white border border-gray-100 rounded-lg p-4">
                 <div 
                   className="prose prose-sm max-w-none text-gray-700 text-[15px] sm:text-[16px] leading-relaxed rich-text-content"
