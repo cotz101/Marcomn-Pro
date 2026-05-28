@@ -220,23 +220,18 @@ export default function CompanyProfile({ company, role, onUpdate }) {
 
           <div className="company-meta">
             {company.location && (
-              <p className="profile-location">
-                <MapPin size={14} /> {company.location}
+              <p className="profile-location" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <MapPin size={14} style={{ flexShrink: 0 }} /> <span>{company.location}</span>
               </p>
             )}
             {company.website && (
-              <p className="profile-location">
-                <Globe size={14} /> 
+              <p className="profile-location" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <Globe size={14} style={{ flexShrink: 0 }} /> 
                 <a href={company.website} target="_blank" rel="noopener noreferrer" style={{ color: '#00B4D8' }}>
                   {company.website.replace(/^https?:\/\//, '')}
                 </a>
               </p>
             )}
-          </div>
-
-          <div className="action-buttons">
-            <button className="btn-primary">Follow</button>
-            <button className="btn-secondary">Message</button>
           </div>
         </div>
       </section>
