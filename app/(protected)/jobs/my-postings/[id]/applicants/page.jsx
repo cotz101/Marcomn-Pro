@@ -40,6 +40,8 @@ export default function ApplicantsPage() {
   const [applicants, setApplicants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+const [selectedApplicant, setSelectedApplicant] = useState(null);
+const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!userId || !id) return;
@@ -103,6 +105,7 @@ export default function ApplicantsPage() {
       });
 
       setApplicants(merged);
+    if (merged.length > 0) setSelectedApplicant(merged[0]);
     } catch (err) {
       console.error('Error loading applicants page:', err.message || err);
       setError('Something went wrong while loading applicants. Please try again.');
@@ -156,15 +159,15 @@ export default function ApplicantsPage() {
   const getStatusStyles = (status) => {
     switch (status) {
       case 'Accepted':
-        return 'border-emerald-300 bg-emerald-50 text-emerald-700 focus:ring-emerald-500 focus:border-emerald-500';
+        return 'border-emerald-200 bg-emerald-50 text-emerald-700 focus:ring-emerald-500 focus:border-emerald-500';
       case 'Shortlisted':
-        return 'border-amber-300 bg-amber-50 text-amber-700 focus:ring-amber-500 focus:border-amber-500';
+        return 'border-indigo-200 bg-indigo-50 text-indigo-700 focus:ring-indigo-500 focus:border-indigo-500';
       case 'Under Review':
-        return 'border-blue-300 bg-blue-50 text-blue-700 focus:ring-blue-500 focus:border-blue-500';
+        return 'border-sky-200 bg-sky-50 text-sky-700 focus:ring-sky-500 focus:border-sky-500';
       case 'Rejected':
-        return 'border-rose-300 bg-rose-50 text-rose-700 focus:ring-rose-500 focus:border-rose-500';
+        return 'border-rose-200 bg-rose-50 text-rose-700 focus:ring-rose-500 focus:border-rose-500';
       default: // 'Pending'
-        return 'border-gray-300 bg-gray-50 text-gray-700 focus:ring-gray-500 focus:border-gray-500';
+        return 'border-amber-200 bg-amber-50 text-amber-700 focus:ring-amber-500 focus:border-amber-500';
     }
   };
 
@@ -208,172 +211,344 @@ export default function ApplicantsPage() {
     );
   }
 
+  const stripHtml = (value = '') => value.replace(/<[^>]*>/g, '').trim();
+  const rawDescription = job?.description || job?.requirements || '';
+  const cleanDescription = stripHtml(rawDescription);
+
   // ── Main render ────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-5xl mx-auto py-8 px-6">
-      {/* Back nav */}
-      <Link
-        href="/jobs/my-postings"
-        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-700 font-medium transition-colors mb-8 group"
-      >
-        <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
-        Back to Job Postings
-      </Link>
-
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-bold text-blue-900">
-              Applicants for{' '}
-              <span className="text-blue-700">{job?.title}</span>
-            </h1>
-            <div className="flex items-center gap-4 mt-2 flex-wrap">
-              {job?.company && (
-                <span className="inline-flex items-center gap-1.5 text-sm text-gray-500">
-                  <Building2 size={13} className="text-gray-400" />
-                  {job.company}
+    <div className="w-full max-w-7xl mx-auto py-4 px-4 lg:py-8 lg:px-8">
+      <div className={`grid grid-cols-1 ${applicants.length > 0 ? 'lg:grid-cols-[minmax(420px,0.95fr)_minmax(360px,1.05fr)]' : 'lg:grid-cols-1 max-w-4xl mx-auto'} gap-6 lg:gap-8 items-start`}>
+        
+        {/* Left Column: Header + Applicants Roster */}
+        <div className="flex flex-col gap-6 lg:gap-8 w-full min-w-0">
+          
+          {/* Universal Header (Mobile & Desktop) */}
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-5 lg:p-6 flex flex-col gap-6">
+            <Link
+              href="/jobs/my-postings"
+              className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-blue-700 font-medium transition-colors w-fit -mb-2 lg:mb-0"
+            >
+              <ArrowLeft size={15} />
+              Back to Job Postings
+            </Link>
+            
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+              <div className="flex flex-col gap-2.5 text-left min-w-0 flex-1">
+                <p className="text-[11px] lg:text-xs font-bold text-gray-400 uppercase tracking-[0.15em] lg:tracking-wide">
+                  Applicants for
+                </p>
+                <h1 className="text-3xl lg:text-[24px] font-bold text-blue-900 leading-tight">
+                  {job?.title}
+                </h1>
+                
+                <div className="flex flex-wrap items-center gap-2 mt-2 lg:mt-1">
+                  {job?.location && (
+                    <span className="inline-flex items-center px-3 py-1.5 lg:px-2.5 lg:py-1 rounded-full text-[11px] lg:text-[10px] font-bold bg-slate-100 text-slate-700 tracking-wide uppercase">
+                      {job.location}
+                    </span>
+                  )}
+                  {job?.company && (
+                    <span className="inline-flex items-center px-3 py-1.5 lg:px-2.5 lg:py-1 rounded-full text-[11px] lg:text-[10px] font-bold bg-slate-100 text-slate-700 tracking-wide uppercase">
+                      {job.company}
+                    </span>
+                  )}
+                  
+                  {/* Tags / Skills compact display */}
+                  {(job?.skills?.length > 0 || job?.tags?.length > 0) && (
+                    <>
+                      {[...(job?.skills || []), ...(job?.tags || [])].slice(0, 3).map((item, i) => (
+                        <span key={i} className="inline-flex items-center px-3 py-1.5 lg:px-2.5 lg:py-1 rounded-full text-[11px] lg:text-[10px] font-bold bg-blue-100 text-blue-800 tracking-wide uppercase">
+                          {item}
+                        </span>
+                      ))}
+                      {([...(job?.skills || []), ...(job?.tags || [])].length > 3) && (
+                        <span className="inline-flex items-center px-3 py-1.5 lg:px-2.5 lg:py-1 rounded-full text-[11px] lg:text-[10px] font-bold bg-slate-200 text-slate-700 tracking-wide uppercase">
+                          +{([...(job?.skills || []), ...(job?.tags || [])].length - 3)}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+                
+                {/* Job Description Preview (1025px+) */}
+                {cleanDescription && (
+                  <p className="hidden lg:block text-sm text-slate-600 leading-relaxed mt-3 line-clamp-2 pr-4">
+                    {cleanDescription}
+                  </p>
+                )}
+              </div>
+              
+              {/* Applicant Count Card */}
+              <div className="bg-slate-50 border border-slate-100 rounded-xl py-5 px-8 lg:px-3 lg:py-3 lg:w-[96px] flex flex-col items-center justify-center gap-2 shrink-0 lg:self-start lg:ml-auto">
+                <span className="text-5xl lg:text-3xl font-bold text-blue-700 leading-none">{applicants.length}</span>
+                <span className="text-sm lg:text-[10px] font-bold text-blue-700 uppercase tracking-wide mt-1 lg:mt-0">
+                  {applicants.length === 1 ? 'Applicant' : 'Applicants'}
                 </span>
-              )}
-              {job?.location && (
-                <span className="inline-flex items-center gap-1.5 text-sm text-gray-500">
-                  <MapPin size={13} className="text-gray-400" />
-                  {job.location}
-                </span>
-              )}
+              </div>
             </div>
           </div>
-          <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-2.5 text-center shrink-0">
-            <p className="text-2xl font-bold text-blue-700">{applicants.length}</p>
-            <p className="text-xs text-blue-500 font-medium mt-0.5">
-              {applicants.length === 1 ? 'Applicant' : 'Applicants'}
-            </p>
+
+          {/* Applicants Roster */}
+          {applicants.length === 0 ? (
+            <div className="bg-white border border-gray-100 rounded-xl p-14 text-center shadow-sm">
+              <Users className="mx-auto text-gray-200 mb-4" size={52} />
+              <h3 className="text-lg font-bold text-gray-800 mb-1">No applications received yet</h3>
+              <p className="text-sm text-gray-500 max-w-sm mx-auto leading-relaxed">
+                Once candidates click the Quick Apply action on your listing, their profiles will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+            {applicants.map((app) => {
+              const profile = app.profile || {};
+              const name = profile.name || profile.full_name || 'Anonymous Applicant';
+              const headline = profile.currentRole || profile.headline || profile.bio || 'Maritime Professional';
+              const avatar = profile.avatar_url || null;
+              const appliedDate = getFormattedDate(app.applied_at);
+              const initials = name.split(' ').map((n) => n[0]).slice(0, 2).join('');
+              const isSelected = selectedApplicant?.id === app.id;
+              
+              return (
+                <div 
+                  className={`flex flex-col border rounded-2xl cursor-pointer transition-all relative overflow-hidden ${isSelected ? 'border-l-4 border-l-blue-800 border-y-slate-100 border-r-slate-100 bg-slate-50 lg:border-l lg:border-blue-500 lg:bg-blue-50/20 lg:shadow-md lg:ring-1 lg:ring-blue-500/10' : 'border-slate-100 bg-slate-50 lg:bg-white shadow-sm hover:border-blue-300 hover:shadow-md'}`} 
+                  key={app.id}
+                  onClick={() => {
+                    setSelectedApplicant(app);
+                    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                      setMobilePreviewOpen(true);
+                    }
+                  }}
+                >
+                  <div className="flex flex-col w-full p-4 sm:p-5 pt-6">
+                    {/* Top Row: Avatar + Info */}
+                    <div className="flex items-start gap-3 w-full pr-12">
+                      <div className="shrink-0 relative">
+                        {avatar ? (
+                          <img src={avatar} alt={name} className="w-14 h-14 rounded-xl object-cover border border-slate-200 shadow-sm" />
+                        ) : (
+                          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-100 shadow-sm flex items-center justify-center text-blue-700 font-bold text-base">
+                            {initials || '?'}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1 pt-0.5">
+                        <h3 className="text-[17px] font-bold text-slate-900 truncate">{name}</h3>
+                        <p className="text-[13px] text-slate-600 leading-snug mt-0.5 line-clamp-2">{headline}</p>
+                        
+                        {/* Location and Date directly below headline */}
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-[11px] text-slate-500 font-medium uppercase tracking-wide">
+                          {profile?.location ? (
+                            <span>{profile.location}</span>
+                          ) : (
+                            <span>Global</span>
+                          )}
+                          <span className="text-slate-300">•</span>
+                          <span>{appliedDate}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Status Bookmark */}
+                    <div className="absolute top-0 right-0" onClick={(e) => e.stopPropagation()}>
+                      {app.status === 'Withdrawn' ? (
+                        <span className="inline-flex items-center px-3 py-1.5 rounded-bl-xl text-[10px] font-bold uppercase tracking-widest bg-slate-100 text-slate-500 border-b border-l border-slate-200 shadow-sm">Withdrawn</span>
+                      ) : (
+                        <select value={app.status || 'Pending'} onChange={(e) => handleStatusChange(app.id, e.target.value)} className={`appearance-none text-center rounded-bl-xl text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 border-b border-l focus:outline-none cursor-pointer shadow-sm ${getStatusStyles(app.status || 'Pending')}`}>
+                          <option value="Pending">Pending</option>
+                          <option value="Under Review">Under Review</option>
+                          <option value="Shortlisted">Shortlisted</option>
+                          <option value="Accepted">Accepted</option>
+                          <option value="Rejected">Rejected</option>
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Bottom Row: Skills */}
+                    {profile?.skills?.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t border-slate-200/70">
+                        {profile.skills.slice(0, 3).map((skill, idx) => (
+                          <span key={idx} className="px-3 py-1 rounded-full bg-[#EAF3FA] border border-blue-100 text-[10px] font-bold text-[#004173] uppercase tracking-wide">
+                            {skill}
+                          </span>
+                        ))}
+                        {profile.skills.length > 3 && (
+                          <span className="px-3 py-1 rounded-full bg-[#EAF3FA] border border-blue-100 text-[10px] font-bold text-[#004173] uppercase tracking-wide">
+                            +{profile.skills.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
+          )}
         </div>
-        <div className="mt-4 h-px bg-gray-100" />
+
+        {/* Right Column: Desktop preview (lg+) */}
+        {applicants.length > 0 && (
+          <aside className="hidden lg:block w-full">
+            <div className="sticky top-[90px] min-h-[calc(100vh-120px)] max-h-[calc(100vh-120px)] overflow-y-auto border border-gray-100 rounded-xl p-6 bg-white shadow-sm flex flex-col">
+              {selectedApplicant ? (
+                <div>
+                  <div className="flex flex-col items-center text-center gap-3 mb-5 pb-5 border-b border-gray-100">
+                    <div className="shrink-0 relative pt-2.5">
+                      {selectedApplicant.profile?.avatar_url ? (
+                        <img src={selectedApplicant.profile.avatar_url} alt={selectedApplicant.profile?.name || 'Applicant'} className="w-20 h-20 rounded-full object-cover border-2 border-white shadow-md" />
+                      ) : (
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 border-2 border-white shadow-md flex items-center justify-center text-blue-700 font-bold text-2xl">
+                          {(selectedApplicant.profile?.name || '').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase() || '?'}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-blue-950">{selectedApplicant.profile?.name || selectedApplicant.profile?.full_name || 'Anonymous Applicant'}</h3>
+                      <p className="text-sm text-gray-500 mt-1">{selectedApplicant.profile?.currentRole || selectedApplicant.profile?.headline || selectedApplicant.profile?.bio}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-[14px] text-[#004173] font-medium flex items-center justify-center gap-1.5"><Calendar size={14} /> Applied {getFormattedDate(selectedApplicant.applied_at)}</p>
+                    </div>
+
+                    {(selectedApplicant.application_message || selectedApplicant.message || selectedApplicant.cover_letter || selectedApplicant.intent) && (
+                      <div className="pl-[10px] pt-1">
+                        <h4 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2.5">Application Message</h4>
+                        <p className="text-[13px] text-gray-700 leading-relaxed bg-slate-50 border border-gray-100 p-4 rounded-xl">
+                          {selectedApplicant.application_message || selectedApplicant.message || selectedApplicant.cover_letter || selectedApplicant.intent}
+                        </p>
+                      </div>
+                    )}
+
+                    {Array.isArray(selectedApplicant.documents) && selectedApplicant.documents.length > 0 && (
+                      <div className="pl-[10px] mt-8">
+                        <h4 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2.5">Documents</h4>
+                        <div className="flex flex-col gap-2.5">
+                          {selectedApplicant.documents.map((doc, i) => (
+                            <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-100 text-sm font-medium rounded-xl transition-colors group" title={doc.name}>
+                              <FileText size={20} className="text-gray-400 group-hover:text-blue-500 shrink-0" />
+                              <span className="truncate">{doc.name}</span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex justify-center mt-6">
+                      <button onClick={() => router.push(`/profile/${selectedApplicant.applicant_id}`)} className="inline-flex items-center justify-center gap-2 bg-white text-[#004173] border border-[#004173]/30 hover:bg-blue-50 px-6 py-3 min-h-[44px] rounded-xl font-semibold shadow-sm w-[calc(100%-10px)] transition-all duration-200">
+                        View Full Profile<ExternalLink size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <p className="text-sm">Select an applicant to preview</p>
+                </div>
+              )}
+            </div>
+          </aside>
+        )}
       </div>
 
-      {/* Applicants Roster */}
-      {applicants.length === 0 ? (
-        <div className="bg-white border border-gray-100 rounded-xl p-14 text-center shadow-sm">
-          <Users className="mx-auto text-gray-200 mb-4" size={52} />
-          <h3 className="text-lg font-bold text-gray-800 mb-1">No applications received yet</h3>
-          <p className="text-sm text-gray-500 max-w-sm mx-auto leading-relaxed">
-            Once candidates click the Quick Apply action on your listing, their profiles will appear here.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {applicants.map((app) => {
-            const profile = app.profile || {};
-            const name = profile.name || profile.full_name || 'Anonymous Applicant';
-            const headline =
-              profile.currentRole || profile.headline || profile.bio || 'Maritime Professional';
-            const avatar = profile.avatar_url || null;
-            const appliedDate = getFormattedDate(app.applied_at);
-            const initials = name
-              .split(' ')
-              .map((n) => n[0])
-              .slice(0, 2)
-              .join('')
-              .toUpperCase();
-
-            return (
-              <div
-                key={app.id}
-                className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-blue-100 transition-all duration-200 flex items-center justify-between gap-4"
-              >
-                {/* Left: Avatar + Info */}
-                <div className="flex items-center gap-4 min-w-0">
-                  {/* Avatar */}
-                  <div className="shrink-0 relative">
-                    {avatar ? (
-                      <img
-                        src={avatar}
-                        alt={name}
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                        className="w-14 h-14 rounded-full object-cover border border-gray-100 shadow-sm"
-                      />
-                    ) : null}
-                    <div
-                      className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-100 shadow-sm flex items-center justify-center text-blue-700 font-bold text-base"
-                      style={{ display: avatar ? 'none' : 'flex' }}
-                    >
-                      {initials || '?'}
-                    </div>
+      {/* Mobile preview modal */}
+      {mobilePreviewOpen && selectedApplicant && (
+            <div className="lg:hidden fixed inset-0 bg-white z-[9999] overflow-y-auto pt-[env(safe-area-inset-top)] flex flex-col">
+              <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between shadow-sm z-10">
+                <h2 className="font-bold text-blue-950">Applicant Preview</h2>
+                <button onClick={() => setMobilePreviewOpen(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-full transition-colors font-bold text-lg">✕</button>
+              </div>
+              <div className="pt-6 pb-[calc(env(safe-area-inset-bottom)+120px)] flex-1">
+                <div className="flex items-start gap-4 mb-6 px-4 sm:px-5 pl-6 sm:pl-7">
+                  <div className="shrink-0 relative mt-1">
+                    {selectedApplicant.profile?.avatar_url ? (
+                      <img src={selectedApplicant.profile.avatar_url} alt={selectedApplicant.profile?.name || 'Applicant'} className="w-16 h-16 rounded-full object-cover border border-gray-100 shadow-sm" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-100 shadow-sm flex items-center justify-center text-blue-700 font-bold text-xl">
+                        {(selectedApplicant.profile?.name || '').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase() || '?'}
+                      </div>
+                    )}
                   </div>
-
-                  {/* Info */}
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-bold text-blue-950 truncate">{name}</h3>
-                    <p className="text-xs text-gray-500 truncate mt-0.5 font-medium">{headline}</p>
-                    <p className="inline-flex items-center gap-1 text-[11px] text-gray-400 mt-1.5">
-                      <Calendar size={10} />
-                      Applied {appliedDate}
-                    </p>
+                  <div>
+                    <h3 className="text-[17px] font-bold text-blue-950 leading-snug">{selectedApplicant.profile?.name || selectedApplicant.profile?.full_name || 'Anonymous Applicant'}</h3>
+                    <p className="text-[15px] text-gray-600 mt-1">{selectedApplicant.profile?.currentRole || selectedApplicant.profile?.headline || selectedApplicant.profile?.bio}</p>
+                    {selectedApplicant.profile?.location && (
+                      <p className="text-sm text-gray-500 mt-1.5 flex items-center gap-1.5"><MapPin size={14} className="shrink-0" /> {selectedApplicant.profile.location}</p>
+                    )}
                   </div>
                 </div>
-
-                {/* Right: Status + Actions */}
-                <div className="flex flex-col items-end gap-2.5 shrink-0">
-
-                  {/* Status badge / select */}
-                  {app.status === 'Withdrawn' ? (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-100 self-end">
-                      Withdrawn
-                    </span>
-                  ) : (
-                    <select
-                      value={app.status || 'Pending'}
-                      onChange={(e) => handleStatusChange(app.id, e.target.value)}
-                      className={`bg-white border text-xs font-semibold rounded-md px-3 py-1 focus:outline-none transition-all duration-200 self-end ${getStatusStyles(
-                        app.status || 'Pending'
-                      )}`}
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Under Review">Under Review</option>
-                      <option value="Shortlisted">Shortlisted</option>
-                      <option value="Accepted">Accepted</option>
-                      <option value="Rejected">Rejected</option>
-                    </select>
+                
+                <div className="px-4 sm:px-5">
+                  <div className="flex items-center justify-between bg-gray-50/50 border border-gray-100 rounded-xl p-4 mb-6">
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Applied Date</p>
+                      <p className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5"><Calendar size={14} /> {getFormattedDate(selectedApplicant.applied_at)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Status</p>
+                      {selectedApplicant.status === 'Withdrawn' ? (
+                        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide bg-rose-50 text-rose-700 border border-rose-200">Withdrawn</span>
+                      ) : (
+                        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide ${getStatusStyles(selectedApplicant.status || 'Pending')}`}>
+                          {selectedApplicant.status || 'Pending'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {selectedApplicant.profile?.skills?.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Skills</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedApplicant.profile.skills.map((skill, i) => (
+                          <span key={i} className="px-3 py-1 rounded-full border border-blue-100 bg-[#EAF3FA] text-xs font-semibold text-[#004173] tracking-wide uppercase">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )}
-
-                  {/* Document pills */}
-                  {Array.isArray(app.documents) && app.documents.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 justify-end max-w-xs">
-                      {app.documents.map((doc, i) => (
-                        <a
-                          key={i}
-                          href={doc.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs font-semibold rounded-full transition-colors"
-                          title={doc.name}
-                        >
-                          <FileText size={11} />
-                          <span className="max-w-[100px] truncate">{doc.name}</span>
-                        </a>
-                      ))}
+                  
+                  {selectedApplicant.profile?.bio && (
+                    <div className="mb-6">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">About</h4>
+                      <p className="text-[15px] text-gray-700 leading-relaxed bg-white border border-gray-100 shadow-sm p-4 rounded-2xl">{selectedApplicant.profile.bio}</p>
                     </div>
                   )}
 
-                  {/* Profile CTA */}
-                  <button
-                    onClick={() => router.push(`/profile/${app.applicant_id}`)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
-                  >
-                    View Full Profile
-                    <ExternalLink size={13} />
-                  </button>
+                  {(selectedApplicant.application_message || selectedApplicant.message || selectedApplicant.cover_letter) && (
+                    <div className="mb-6">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Application Message</h4>
+                      <p className="text-[15px] text-gray-700 leading-relaxed bg-white border border-gray-100 shadow-sm p-4 rounded-2xl">
+                        {selectedApplicant.application_message || selectedApplicant.message || selectedApplicant.cover_letter}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {Array.isArray(selectedApplicant.documents) && selectedApplicant.documents.length > 0 && (
+                    <div className="mb-8 text-center">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 text-left">Documents</h4>
+                      <div className="flex flex-wrap justify-center gap-3">
+                        {selectedApplicant.documents.map((doc, i) => (
+                          <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2.5 px-6 py-3 bg-[#EAF3FA] text-[#004173] active:bg-blue-100 text-[14px] font-semibold rounded-xl transition-colors" title={doc.name}>
+                            <FileText size={20} className="shrink-0" />
+                            <span className="truncate max-w-[160px]">{doc.name}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-center mt-12 mb-6">
+                    <button onClick={() => router.push(`/profile/${selectedApplicant.applicant_id}`)} className="inline-flex items-center justify-center gap-2 px-8 py-3 min-h-[44px] bg-white text-[#004173] border border-[#004173]/30 hover:bg-[#EAF3FA] active:bg-blue-100 text-[15px] font-bold rounded-xl shadow-sm transition-colors w-fit">
+                      View Full Profile<ExternalLink size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          )}
     </div>
   );
 }
