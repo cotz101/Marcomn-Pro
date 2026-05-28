@@ -275,8 +275,8 @@ export default function PartnersDirectory() {
                 <div className="h-3 bg-slate-100 rounded w-full"></div>
                 <div className="h-3 bg-slate-100 rounded w-5/6"></div>
               </div>
-              <div className="w-full mt-[40px] flex justify-center">
-                <div className="h-10 bg-slate-100 rounded-xl w-32"></div>
+              <div className="flex justify-center" style={{ marginTop: '24px', width: '100%' }}>
+                <div className="h-10 bg-slate-100 rounded-xl" style={{ width: '150px' }}></div>
               </div>
             </div>
           ))}
@@ -342,16 +342,24 @@ export default function PartnersDirectory() {
 
                 {/* Action Section with extra vertical gap */}
                 {hasWebsite && (
-                  <div className="mt-[40px] pl-2 flex justify-center">
+                  <div className="flex justify-center" style={{ marginTop: '24px', width: '100%', paddingLeft: 0 }}>
                     <a 
                       href={siteUrl.startsWith('http') ? siteUrl : `https://${siteUrl}`}
                       target="_blank" 
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="px-8 py-2.5 bg-white hover:bg-slate-50 text-[#002b4e] text-sm font-semibold rounded-xl border border-slate-200 transition-colors inline-flex items-center justify-center gap-1.5 shadow-sm"
+                      className="bg-white hover:bg-slate-50 text-[#002b4e] text-sm font-semibold rounded-xl border border-slate-200 transition-colors shadow-sm"
+                      style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        padding: '10px 24px', 
+                        width: 'auto',
+                        minWidth: '150px'
+                      }}
                     >
-                      <span>Visit Website</span>
-                      <ExternalLink size={14} />
+                      <span style={{ marginRight: '6px' }}>Visit Website</span>
+                      <ExternalLink size={14} style={{ flexShrink: 0 }} />
                     </a>
                   </div>
                 )}
