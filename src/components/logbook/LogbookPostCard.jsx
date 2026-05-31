@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, memo } from 'react';
+import Link from 'next/link';
 import { User, Calendar, ThumbsUp, MessageSquare, Save, X, Loader2, BookOpen } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
@@ -555,23 +556,36 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
           {/* Left: Avatar & Metadata */}
           <div className="flex items-start gap-3 min-w-0 flex-1 pr-4">
             <div className="flex-shrink-0">
-              {author.avatar_url ? (
-                <img
-                  src={author.avatar_url}
-                  alt={author.name}
-                  className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-xs"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-100">
-                  <User size={18} className="text-gray-400" />
-                </div>
-              )}
+              <Link
+                href={`/profile/${post.user_id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="shrink-0 cursor-pointer block"
+                aria-label="Open poster profile"
+              >
+                {author.avatar_url ? (
+                  <img
+                    src={author.avatar_url}
+                    alt={author.name}
+                    className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-xs hover:opacity-90 transition-opacity"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-100 hover:bg-gray-200 transition-colors">
+                    <User size={18} className="text-gray-400" />
+                  </div>
+                )}
+              </Link>
             </div>
             
             <div className="flex flex-col justify-center min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="font-semibold text-[#0e2a4d] text-[15px] sm:text-base leading-tight truncate">
-                  {author.name || 'Maritime Professional'}
+                  <Link
+                    href={`/profile/${post.user_id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="hover:underline cursor-pointer"
+                  >
+                    {author.name || 'Maritime Professional'}
+                  </Link>
                 </h4>
                 {isArticle && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-extrabold tracking-wider bg-emerald-50 text-emerald-950 rounded-full border border-emerald-100 uppercase select-none flex-shrink-0">

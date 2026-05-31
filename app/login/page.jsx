@@ -61,7 +61,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.verifyOtp({
       email,
       token,
-      type: 'magiclink'
+      type: 'email'
     });
     if (error) { setError(error.message); setStep('otp'); }
     else router.push('/logbook');
