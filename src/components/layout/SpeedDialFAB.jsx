@@ -31,10 +31,10 @@ export default function SpeedDialFAB() {
       case '/mblog':
         return {
           color: 'var(--primary)',
-          primaryAction: 'Post a Blog',
+          primaryAction: 'Post an MBlog',
           primaryPath: '/mblog?compose=true',
           shortcuts: [
-            { label: 'MBlogs', icon: BookOpen, path: '/mblog?view=my' },
+            { label: 'My MBlogs', icon: BookOpen, path: '/mblog?view=my' },
           ]
         };
       default: // MNetwork

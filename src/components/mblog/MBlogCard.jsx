@@ -529,7 +529,7 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
               onClick={() => setIsExpanded(!isExpanded)}
               className="text-[#004173] bg-white hover:bg-gray-50 font-bold text-sm mt-4 flex items-center justify-center border border-gray-200 rounded-lg block w-full h-10 transition-colors focus:outline-none select-none"
             >
-              {isExpanded ? 'Show less' : 'Read full blog'}
+              {isExpanded ? 'Show less' : 'Read Full MBlog'}
             </button>
           )}
         </div>
