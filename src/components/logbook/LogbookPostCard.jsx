@@ -781,18 +781,18 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                     {!isEditing && renderMedia(post.cover_media_url, post.media_type, post.video_url)}
                   </div>
                 ) : (
-                  /* QUICK STATUS VIEW */
-                  <div>
-                    {isHtml(displayContent) ? (
-                      <div
-                        dangerouslySetInnerHTML={{ __html: displayContent }}
-                        className="prose prose-sm max-w-none text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2"
-                      />
-                    ) : (
-                      <div className="text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2 whitespace-pre-wrap break-words">
-                        {displayContent}
-                      </div>
-                    )}
+                   /* QUICK STATUS VIEW */
+                   <div>
+                     {isHtml(displayContent) || /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})[^\s<]*)/g.test(displayContent) ? (
+                       <div
+                         dangerouslySetInnerHTML={{ __html: renderContentWithEmbeds(displayContent) }}
+                         className="prose prose-sm max-w-none text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2"
+                       />
+                     ) : (
+                       <div className="text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2 whitespace-pre-wrap break-words">
+                         {displayContent}
+                       </div>
+                     )}
  
                     {shouldTruncate && (
                       <button

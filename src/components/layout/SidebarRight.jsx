@@ -39,7 +39,7 @@ export default function SidebarRight() {
 
   // Widget States
   const [recentBlogsData, setRecentBlogsData] = useState([]);
-  const [latestGroupsData, setLatestGroupsData] = useState([]);
+  const [latestOpportunitiesData, setLatestOpportunitiesData] = useState([]);
   const [loadingWidgets, setLoadingWidgets] = useState(true);
 
   // Groups Widget States
@@ -113,36 +113,27 @@ export default function SidebarRight() {
           setRecentBlogsData(bData);
         }
 
-        // 2. Latest Groups
-        let query = supabase.from('groups').select('*');
-        // Match active schema structure: 'type' holds public/private string
-        query = query.neq('type', 'private')
-                     .order('created_at', { ascending: false })
-                     .limit(3);
+        // 2. MServices (Latest Opportunities)
+        const { data: oData, error: oErr } = await supabase
+          .from('jobs')
+          .select(`
+            id,
+            title,
+            location,
+            created_at,
+            company:companies(name),
+            poster:profiles(name)
+          `)
+          .in('status', ['Published', 'published', 'Open', 'open'])
+          .order('created_at', { ascending: false })
+          .limit(3);
 
-        const { data: gData, error: gErr } = await query;
-
-        if (gErr) {
-          console.log('🚨 [Latest Groups Debug] Error occurred fetching data rows:', gErr);
+        if (oErr) {
+          console.log('🚨 [MServices Widget Debug] Error fetching jobs:', oErr);
         }
 
-        if (!gErr && gData) {
-          const mappedGroups = await Promise.all(gData.map(async (group) => {
-            const { count, error: countErr } = await supabase
-              .from('group_members')
-              .select('*', { count: 'exact', head: true })
-              .eq('group_id', group.id);
-
-            if (countErr) {
-              console.log('🚨 [Latest Groups Debug] Error occurred fetching count rows:', countErr);
-            }
-
-            return {
-              ...group,
-              actualMemberCount: count || 0
-            };
-          }));
-          setLatestGroupsData(mappedGroups);
+        if (!oErr && oData) {
+          setLatestOpportunitiesData(oData);
         }
       } catch (err) {
         console.error('Error fetching widgets:', err);
@@ -491,10 +482,10 @@ export default function SidebarRight() {
         </>
       ) : (
         <>
-          {/* Upper Container: Recent Blogs */}
+          {/* Upper Container: MBlogs */}
           <div className="card p-4">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-sm text-[#1b1c1c]">Recent Blogs</h3>
+              <h3 className="font-bold text-sm text-[#1b1c1c]">MBlogs</h3>
               <Info size={14} className="text-[#42474f] cursor-pointer" />
             </div>
             <div className="flex flex-col gap-4">
@@ -522,17 +513,17 @@ export default function SidebarRight() {
                 })
               )}
               <Link href="/mblog" className="text-xs font-bold text-[#004173] mt-2 hover:underline">
-                View all articles
+                View All MBlogs
               </Link>
             </div>
           </div>
 
           <div className="sidebar-spacer"></div>
 
-          {/* Lower Container: Latest Groups */}
+          {/* Lower Container: MServices (Opportunities) */}
           <div className="card p-4">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-sm text-[#1b1c1c]">Latest Groups</h3>
+              <h3 className="font-bold text-sm text-[#1b1c1c]">MServices</h3>
               <Sparkles size={14} className="text-[#42474f]" />
             </div>
             <div className="flex flex-col gap-4">
@@ -543,22 +534,29 @@ export default function SidebarRight() {
                     <div className="h-3 bg-gray-50 rounded w-1/2" />
                   </div>
                 ))
-              ) : latestGroupsData.length === 0 ? (
-                <p className="text-xs text-gray-400">No groups found.</p>
+              ) : latestOpportunitiesData.length === 0 ? (
+                <p className="text-xs text-gray-400">No opportunities found.</p>
               ) : (
-                latestGroupsData.map(group => (
-                  <div key={group.id} className="group cursor-pointer">
-                    <Link href={`/groups/${group.id}`} className="text-sm font-medium text-blue-950 group-hover:underline truncate block">
-                      {group.name}
-                    </Link>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {group.actualMemberCount} {(group.actualMemberCount === 1) ? 'member' : 'Members'}
-                    </p>
-                  </div>
-                ))
+                latestOpportunitiesData.map(opp => {
+                  const companyName = opp.company?.name || opp.poster?.name || 'Private Poster';
+                  return (
+                    <div key={opp.id} className="group cursor-pointer">
+                      <Link href={`/services?jobId=${opp.id}`} className="text-sm font-medium text-blue-950 group-hover:underline truncate block">
+                        {opp.title}
+                      </Link>
+                      <p className="text-xs text-gray-800 font-semibold mt-0.5 truncate">
+                        {companyName}
+                      </p>
+                      <div className="flex justify-between items-center text-[10px] text-gray-400 mt-1">
+                        <span>{opp.location}</span>
+                        <span>{getRelativeTime(opp.created_at)}</span>
+                      </div>
+                    </div>
+                  );
+                })
               )}
-              <Link href="/groups" className="text-xs font-bold text-[#004173] mt-2 hover:underline">
-                View all groups
+              <Link href="/services" className="text-xs font-bold text-[#004173] mt-2 hover:underline">
+                View All Opportunities
               </Link>
             </div>
           </div>

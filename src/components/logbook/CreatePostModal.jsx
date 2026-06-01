@@ -259,32 +259,6 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }) {
           </button>
         </div>
 
-        {/* Tabbed Posting Gate integrated into the top bar */}
-        <div className="flex border-b border-gray-150 gap-6 bg-gray-50 flex-shrink-0 justify-center px-0 animate-fadeIn" style={{ justifyContent: "center", paddingLeft: "0", paddingRight: "0" }}>
-          <button
-            type="button"
-            onClick={() => setPostMode('quick')}
-            className={`py-3 px-1 text-sm font-bold transition-all select-none cursor-pointer border-b-2 outline-none focus:outline-none ${
-              postMode === 'quick'
-                ? 'border-navy-900 text-navy-900'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            Quick Post
-          </button>
-          <button
-            type="button"
-            onClick={() => setPostMode('article')}
-            className={`py-3 px-1 text-sm font-bold transition-all select-none cursor-pointer border-b-2 outline-none focus:outline-none ${
-              postMode === 'article'
-                ? 'border-navy-900 text-navy-900'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            Write Article
-          </button>
-        </div>
-
         {/* Form using flex-col h-full */}
         <form onSubmit={handlePost} className="flex flex-col flex-1 min-h-0 bg-white">
           
@@ -311,97 +285,44 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }) {
             {/* Input Container */}
             <div className="flex-1 max-w-2xl flex flex-col min-h-0">
               
-              {/* User Audience Picker */}
+              {/* User Audience Picker (Visibility selector UI is hidden) */}
               <div className="flex items-center gap-1.5 mb-4 text-xs text-gray-500 font-medium select-none">
                 <span className="font-semibold text-gray-800 font-sans">{profile?.name || 'Maritime Professional'}</span>
-                <span className="text-gray-300">•</span>
-                <div className="flex items-center gap-1 px-2.5 py-0.5 bg-gray-50 border border-gray-200 rounded-full text-[10px] font-bold text-gray-600 hover:bg-gray-100 cursor-pointer transition-colors">
-                  <span className="font-sans">Post to Anyone</span>
-                  <span className="text-[7px] font-extrabold text-gray-500">▼</span>
-                </div>
               </div>
 
               {/* Content Switcher Area */}
-              {postMode === 'quick' ? (
-                /* QUICK POST */
-                <div className="flex-1 flex flex-col min-h-0 animate-fadeIn transition-all duration-300">
-                  <textarea
+              <div className="flex-1 flex flex-col min-h-0 animate-fadeIn transition-all duration-300">
+                <div className="article-editor-wrapper min-h-[220px] border border-gray-150 rounded-xl overflow-hidden bg-white flex-1 flex flex-col min-h-0 shadow-3xs">
+                  <RichTextEditor
                     value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder="What's on your mind?"
-                    className="w-full text-base placeholder-gray-400 placeholder:font-sans placeholder:font-normal font-sans font-normal resize-none border-0 focus:ring-0 focus:outline-none outline-none leading-relaxed flex-1 text-gray-800 bg-transparent min-h-[200px]"
+                    onChange={setContent}
+                    placeholder="What's on your mind? You can also include @mentions."
+                    className="article-body-quill border-0 flex-1"
                   />
-
-                  {/* Attachment Preview */}
-                  {mediaPreview && (
-                    <div className="relative mt-4 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 max-h-[220px] flex items-center justify-center flex-shrink-0">
-                      {mediaType === 'video' ? (
-                        <video src={mediaPreview} controls className="max-h-[220px] w-auto" />
-                      ) : (
-                        <img src={mediaPreview} alt="Selected attachment" className="max-h-[220px] w-auto object-contain" />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedFile(null);
-                          setMediaPreview(null);
-                          setMediaType(null);
-                        }}
-                        className="absolute top-2.5 right-2.5 p-1.5 bg-black/60 hover:bg-black/85 text-white rounded-full transition-colors cursor-pointer"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  )}
                 </div>
-              ) : (
-                /* WRITE ARTICLE */
-                <div className="flex-1 flex flex-col min-h-0 animate-fadeIn">
-                  <div className="flex gap-4 items-start border-b border-gray-100 pb-2 mb-4 flex-shrink-0">
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        value={articleTitle}
-                        onChange={(e) => setArticleTitle(e.target.value)}
-                        placeholder="Title"
-                        className="w-full text-2xl font-bold border-none focus:ring-0 focus:outline-none outline-none bg-transparent placeholder-gray-400"
-                      />
-                    </div>
 
-                    {/* Inline Cover Thumbnail */}
-                    {mediaPreview && (
-                      <div className="h-16 w-16 flex-shrink-0 rounded border border-gray-200 overflow-hidden relative bg-gray-50 flex items-center justify-center group animate-fadeIn">
-                        {mediaType === 'video' ? (
-                          <video src={mediaPreview} className="w-full h-full object-cover" />
-                        ) : (
-                          <img src={mediaPreview} alt="Article Cover" className="w-full h-full object-cover" />
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedFile(null);
-                            setMediaPreview(null);
-                            setMediaType(null);
-                          }}
-                          className="absolute inset-0 bg-black/40 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer animate-fadeIn"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
+                {/* Attachment Preview */}
+                {mediaPreview && (
+                  <div className="relative mt-4 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 max-h-[220px] flex items-center justify-center flex-shrink-0">
+                    {mediaType === 'video' ? (
+                      <video src={mediaPreview} controls className="max-h-[220px] w-auto" />
+                    ) : (
+                      <img src={mediaPreview} alt="Selected attachment" className="max-h-[220px] w-auto object-contain" />
                     )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedFile(null);
+                        setMediaPreview(null);
+                        setMediaType(null);
+                      }}
+                      className="absolute top-2.5 right-2.5 p-1.5 bg-black/60 hover:bg-black/85 text-white rounded-full transition-colors cursor-pointer"
+                    >
+                      <X size={14} />
+                    </button>
                   </div>
-
-                  {/* Rich Text Editor */}
-                  <div className="article-editor-wrapper min-h-[220px] border border-gray-150 rounded-xl overflow-hidden bg-white flex-1 flex flex-col min-h-0 shadow-3xs">
-                    <RichTextEditor
-                      value={articleContent}
-                      onChange={setArticleContent}
-                      placeholder="Write here. You can also include @mentions."
-                      className="article-body-quill border-0 flex-1"
-                    />
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {uploadProgress && (
                 <div className="mt-4 flex items-center gap-2 justify-center text-xs font-semibold text-blue-600 bg-blue-50 py-2.5 rounded-lg border border-blue-100 flex-shrink-0 animate-pulse">
