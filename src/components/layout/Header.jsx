@@ -12,9 +12,31 @@ export default function Header() {
   const dropdownRef = useRef(null);
   const supabase = createClient();
   const [groupName, setGroupName] = useState('');
+  const [brandLogoDesktop, setBrandLogoDesktop] = useState('');
+  const [brandLogoMobile, setBrandLogoMobile] = useState('');
 
   const groupIdMatch = location.pathname.match(/\/groups\/([^\/]+)/);
   const groupId = groupIdMatch ? groupIdMatch[1] : null;
+
+  useEffect(() => {
+    const fetchLogos = async () => {
+      try {
+        const { data } = await supabase
+          .from('platform_settings')
+          .select('*')
+          .in('key', ['brand_logo_desktop', 'brand_logo_mobile']);
+        if (data) {
+          const desktop = data.find(item => item.key === 'brand_logo_desktop')?.value || '';
+          const mobile = data.find(item => item.key === 'brand_logo_mobile')?.value || '';
+          setBrandLogoDesktop(desktop);
+          setBrandLogoMobile(mobile);
+        }
+      } catch (err) {
+        console.error('Failed to fetch logos in Header:', err);
+      }
+    };
+    fetchLogos();
+  }, [supabase]);
 
   useEffect(() => {
     if (groupId) {
@@ -54,8 +76,27 @@ export default function Header() {
       <div className="header-container">
         <div className="header-left">
           <Link to="/" className="brand-logo">
-            <Ship size={28} />
-            {groupName || 'MarComn'}
+            {brandLogoDesktop ? (
+              <img 
+                src={brandLogoDesktop} 
+                alt={groupName || 'MarComn'} 
+                className="hidden md:block h-7 w-auto object-contain max-w-[140px]" 
+              />
+            ) : (
+              <>
+                <Ship size={28} />
+                <span className="hidden md:inline">{groupName || 'MarComn'}</span>
+              </>
+            )}
+            {brandLogoMobile ? (
+              <img 
+                src={brandLogoMobile} 
+                alt={groupName || 'MarComn'} 
+                className="block md:hidden h-7 w-auto object-contain max-w-[90px]" 
+              />
+            ) : (
+              <span className="block md:hidden font-bold">{groupName || 'MarComn'}</span>
+            )}
           </Link>
           <div className="search-bar">
             <Search size={18} className="search-icon" />

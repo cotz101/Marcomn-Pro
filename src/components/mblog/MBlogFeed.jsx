@@ -74,9 +74,9 @@ export default function MBlogFeed({ view, onEdit, searchTerm }) {
         <div className="flex justify-center mb-4">
           <BookOpen size={48} className="text-gray-200" />
         </div>
-        <h3 className="text-xl font-bold text-[#0e2a4d]">No articles found</h3>
+        <h3 className="text-xl font-bold text-[#0e2a4d]">No MBlogs found</h3>
         <p className="text-gray-500 mt-2 max-w-xs mx-auto font-medium">
-          {searchTerm ? `No articles matched your search query: "${searchTerm}"` : (view === 'my' ? "You haven't written any articles yet." : "Be the first to share professional insights with the MarComn community.")}
+          {searchTerm ? `No MBlogs matched your search query: "${searchTerm}"` : (view === 'my' ? "You haven't written any MBlogs yet." : "Be the first to share professional insights with the MarComn community.")}
         </p>
       </div>
     );

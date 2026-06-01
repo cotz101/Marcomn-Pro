@@ -37,8 +37,8 @@ function MBlogPageContent() {
   const handleArticleCreated = () => {
     setRefreshKey(prev => prev + 1);
     setEditingArticle(null);
-    setView('all'); // Redirect to 'All Articles' as requested
-    showToast(editingArticle ? 'Article updated successfully!' : 'Article published successfully!');
+    setView('all'); // Redirect to 'All MBlogs' as requested
+    showToast(editingArticle ? 'MBlog updated successfully!' : 'MBlog published successfully!');
   };
 
   const handleEdit = (article) => {
@@ -53,15 +53,15 @@ function MBlogPageContent() {
         {/* Header Area */}
         <div className="mblog-header flex justify-between items-center w-full">
           <div className="flex flex-col flex-1 min-w-0 mr-4">
-            <h1 className="text-2xl font-bold text-[#0e2a4d] m-0">MBlog</h1>
-            <p className="text-sm text-gray-500 font-medium mblog-header-sub">Maritime industry articles and updates</p>
+            <h1 className="text-2xl font-bold text-[#0e2a4d] m-0">MBlogs</h1>
+            <p className="text-sm text-gray-500 font-medium mblog-header-sub">Maritime industry MBlogs and updates</p>
           </div>
           <button 
             onClick={() => setShowComposer(true)}
             className="mblog-header-post-btn flex items-center gap-2 px-4 py-2 bg-[#002b4e] text-white rounded-lg font-bold text-sm hover:bg-[#001f38] transition-all shadow-sm border-none cursor-pointer whitespace-nowrap"
           >
             <Plus size={18} />
-            <span>Post a Blog</span>
+            <span>Post an MBlog</span>
           </button>
         </div>
       </div>
@@ -72,7 +72,7 @@ function MBlogPageContent() {
           <Search className="absolute left-5 top-[50%] -translate-y-1/2 text-[#9ca3af] pointer-events-none flex items-center justify-center h-5 w-5" size={20} />
           <input 
             type="text" 
-            placeholder="Search blogs by title, content, or author..." 
+            placeholder="Search MBlogs by title, content, or author..." 
             className="search-input w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm outline-none bg-white"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -86,13 +86,13 @@ function MBlogPageContent() {
           onClick={() => setView('all')}
           className={`tab-btn ${view === 'all' ? 'active' : ''}`}
         >
-          All Articles
+          All MBlogs
         </button>
         <button 
           onClick={() => setView('my')}
           className={`tab-btn ${view === 'my' ? 'active' : ''}`}
         >
-          My Articles
+          My MBlogs
         </button>
       </div>
 

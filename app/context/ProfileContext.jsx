@@ -69,6 +69,24 @@ export function ProfileProvider({ children, userId, userEmail }) {
     }
   };
 
+  const [brandLogoDesktop, setBrandLogoDesktop] = useState('');
+  const [brandLogoMobile, setBrandLogoMobile] = useState('');
+
+  const fetchGlobalSettings = useCallback(async () => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('platform_settings')
+      .select('*')
+      .in('key', ['brand_logo_desktop', 'brand_logo_mobile']);
+    
+    if (data && !error) {
+      const desktop = data.find(item => item.key === 'brand_logo_desktop')?.value || '';
+      const mobile = data.find(item => item.key === 'brand_logo_mobile')?.value || '';
+      setBrandLogoDesktop(desktop);
+      setBrandLogoMobile(mobile);
+    }
+  }, []);
+
   const fetchProfile = useCallback(async () => {
     if (!userId) {
       setLoading(false);
@@ -85,6 +103,7 @@ export function ProfileProvider({ children, userId, userEmail }) {
     if (data && !error) {
       setOnboardingCompleted(data.onboarding_completed ?? false);
       setProfileState({
+        id: data.id,
         name: data.name || userEmail?.split('@')[0] || 'User',
         currentRole: data.currentRole || '',
         bio: data.bio || '',
@@ -98,6 +117,7 @@ export function ProfileProvider({ children, userId, userEmail }) {
         yearsExperience: data.yearsExperience || 0,
         openToWork: data.openToWork || 'Not Available',
         message_privacy: data.message_privacy || 'connections',
+        global_role: data.global_role || 'guest_user',
       });
     } else {
       setOnboardingCompleted(false);
@@ -132,7 +152,8 @@ export function ProfileProvider({ children, userId, userEmail }) {
   useEffect(() => {
     fetchProfile();
     fetchCompanies();
-  }, [fetchProfile, fetchCompanies]);
+    fetchGlobalSettings();
+  }, [fetchProfile, fetchCompanies, fetchGlobalSettings]);
 
   const setProfile = (newProfile) => {
     setProfileState(prev => ({ ...prev, ...newProfile }));
@@ -152,7 +173,10 @@ export function ProfileProvider({ children, userId, userEmail }) {
       showToast: (message, type = 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
-      }
+      },
+      brandLogoDesktop,
+      brandLogoMobile,
+      refreshGlobalSettings: fetchGlobalSettings
     }}>
       {children}
     </ProfileContext.Provider>

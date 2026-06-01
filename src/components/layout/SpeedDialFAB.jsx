@@ -34,7 +34,7 @@ export default function SpeedDialFAB() {
           primaryAction: 'Post a Blog',
           primaryPath: '/mblog?compose=true',
           shortcuts: [
-            { label: 'My Articles', icon: BookOpen, path: '/mblog?view=my' },
+            { label: 'MBlogs', icon: BookOpen, path: '/mblog?view=my' },
           ]
         };
       default: // MNetwork

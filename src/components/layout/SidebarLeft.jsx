@@ -159,8 +159,8 @@ export default function SidebarLeft() {
   } else if (pathname?.includes('/mblog')) {
     sidebarTitle = "Manage my insights";
     navLinks = [
-      { name: 'All Articles', href: '/mblog?view=all', icon: Library },
-      { name: 'My Articles', href: '/mblog?view=my', icon: BookOpen },
+      { name: 'All MBlogs', href: '/mblog?view=all', icon: Library },
+      { name: 'My MBlogs', href: '/mblog?view=my', icon: BookOpen },
     ];
     showStats = false; // Will show Contributors instead
   } else {

@@ -179,24 +179,25 @@ export default function OpportunityDetailsPage() {
       router.push('/login');
       return;
     }
-    if (selectedFiles.length === 0) return;
 
     setIsApplying(true);
     try {
       const supabase = createClient();
       const uploadedDocs = [];
 
-      for (const file of selectedFiles) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${currentUser.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('resumes').upload(fileName, file);
-        if (uploadError) {
-          if (showToast) showToast(`Upload failed for "${file.name}": ` + uploadError.message, 'error');
-          setIsApplying(false);
-          return;
+      if (selectedFiles.length > 0) {
+        for (const file of selectedFiles) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${currentUser.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const { error: uploadError } = await supabase.storage.from('resumes').upload(fileName, file);
+          if (uploadError) {
+            if (showToast) showToast(`Upload failed for "${file.name}": ` + uploadError.message, 'error');
+            setIsApplying(false);
+            return;
+          }
+          const { data: pubData } = supabase.storage.from('resumes').getPublicUrl(fileName);
+          uploadedDocs.push({ name: file.name, url: pubData?.publicUrl || '' });
         }
-        const { data: pubData } = supabase.storage.from('resumes').getPublicUrl(fileName);
-        uploadedDocs.push({ name: file.name, url: pubData?.publicUrl || '' });
       }
 
       const { data: appData, error: applyError } = await supabase
@@ -260,24 +261,25 @@ export default function OpportunityDetailsPage() {
 
   const handleReApply = async () => {
     if (!currentUser || !myApplication) return;
-    if (selectedFiles.length === 0) return;
 
     setIsApplying(true);
     try {
       const supabase = createClient();
       const uploadedDocs = [];
 
-      for (const file of selectedFiles) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${currentUser.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('resumes').upload(fileName, file);
-        if (uploadError) {
-          if (showToast) showToast(`Upload failed for "${file.name}": ` + uploadError.message, 'error');
-          setIsApplying(false);
-          return;
+      if (selectedFiles.length > 0) {
+        for (const file of selectedFiles) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${currentUser.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const { error: uploadError } = await supabase.storage.from('resumes').upload(fileName, file);
+          if (uploadError) {
+            if (showToast) showToast(`Upload failed for "${file.name}": ` + uploadError.message, 'error');
+            setIsApplying(false);
+            return;
+          }
+          const { data: pubData } = supabase.storage.from('resumes').getPublicUrl(fileName);
+          uploadedDocs.push({ name: file.name, url: pubData?.publicUrl || '' });
         }
-        const { data: pubData } = supabase.storage.from('resumes').getPublicUrl(fileName);
-        uploadedDocs.push({ name: file.name, url: pubData?.publicUrl || '' });
       }
 
       const { data: updated, error } = await supabase
@@ -575,7 +577,7 @@ export default function OpportunityDetailsPage() {
                     <div className="w-full">
                       <label htmlFor="docs-upload" className="block text-xs font-semibold text-gray-500 mb-1.5">
                         Attach Documents{' '}
-                        <span className="font-normal text-gray-400">(PDF, DOC, DOCX — required)</span>
+                        <span className="font-normal text-gray-400">(PDF, DOC, DOCX — optional)</span>
                       </label>
                       <input
                         id="docs-upload"
@@ -610,9 +612,6 @@ export default function OpportunityDetailsPage() {
                           ))}
                         </ul>
                       )}
-                      {selectedFiles.length === 0 && (
-                        <p className="text-[11px] text-amber-600 font-medium mt-1.5">⚠ At least one document is required to apply.</p>
-                      )}
                     </div>
                   )}
 
@@ -620,16 +619,14 @@ export default function OpportunityDetailsPage() {
                   {!myApplication && (
                     <button
                       onClick={handleApply}
-                      disabled={isApplying || selectedFiles.length === 0}
+                      disabled={isApplying}
                       className={
                         isApplying
                           ? 'h-10 px-8 bg-[#002b4e] opacity-70 text-white cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center'
-                          : selectedFiles.length === 0
-                          ? 'h-10 px-8 bg-[#002b4e]/40 text-white/70 cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center'
                           : 'h-10 px-8 bg-[#002b4e] hover:bg-[#001f38] text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all w-full sm:w-auto flex items-center justify-center'
                       }
                     >
-                      {isApplying ? `Uploading ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...` : 'Quick Apply to Position'}
+                      {isApplying ? (selectedFiles.length > 0 ? `Uploading ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...` : 'Applying...') : 'Quick Apply to Position'}
                     </button>
                   )}
 
@@ -666,16 +663,14 @@ export default function OpportunityDetailsPage() {
                   {canReApply && (
                     <button
                       onClick={handleReApply}
-                      disabled={isApplying || selectedFiles.length === 0}
+                      disabled={isApplying}
                       className={
                         isApplying
                           ? 'h-10 px-8 bg-[#002b4e] opacity-70 text-white cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center'
-                          : selectedFiles.length === 0
-                          ? 'h-10 px-8 bg-[#002b4e]/40 text-white/70 cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center'
                           : 'h-10 px-8 bg-[#002b4e] hover:bg-[#001f38] text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all w-full sm:w-auto flex items-center justify-center'
                       }
                     >
-                      {isApplying ? `Uploading ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...` : 'Re-Apply to Position'}
+                      {isApplying ? (selectedFiles.length > 0 ? `Uploading ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...` : 'Applying...') : 'Re-Apply to Position'}
                     </button>
                   )}
 

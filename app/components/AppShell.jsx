@@ -48,7 +48,8 @@ export default function AppShell({ children, userEmail, userId }) {
     companies, refreshCompanies, currentIdentity, setCurrentIdentity,
     toast, setToast,
     showPostJob, jobToEdit, openPostJobModal, closePostJobModal,
-    showCreatePost, setShowCreatePost
+    showCreatePost, setShowCreatePost,
+    brandLogoDesktop, brandLogoMobile
   } = useProfile();
   
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -281,8 +282,25 @@ export default function AppShell({ children, userEmail, userId }) {
                   <span className="font-bold text-lg text-[#002b4e] md:hidden ml-2">Profile</span>
                 </>
               ) : (
-                <Link href="/" className="logo font-semibold text-[#002b4e]">
-                  Mar<span>Comn</span>
+                <Link href="/" className="logo font-semibold text-[#002b4e] flex items-center">
+                  {brandLogoDesktop ? (
+                    <img 
+                      src={brandLogoDesktop} 
+                      alt="MarComn Desktop Logo" 
+                      className="hidden md:block h-8 w-auto object-contain max-h-[32px] max-w-[150px]" 
+                    />
+                  ) : (
+                    <span className="hidden md:block">Mar<span>Comn</span></span>
+                  )}
+                  {brandLogoMobile ? (
+                    <img 
+                      src={brandLogoMobile} 
+                      alt="MarComn Mobile Logo" 
+                      className="block md:hidden h-8 w-auto object-contain max-h-[32px] max-w-[100px]" 
+                    />
+                  ) : (
+                    <span className="block md:hidden">Mar<span>Comn</span></span>
+                  )}
                 </Link>
               )}
             </div>
@@ -303,7 +321,7 @@ export default function AppShell({ children, userEmail, userId }) {
                   </Link>
                   <Link href="/mblog" className={`nav-link ${pathname === '/mblog' ? 'active' : ''}`}>
                     <Newspaper size={24} />
-                    <span>MBlog</span>
+                    <span>MBlogs</span>
                   </Link>
                 </>
               )}
@@ -408,7 +426,7 @@ export default function AppShell({ children, userEmail, userId }) {
           style={{ '--active-color': '#002b4e' }}
         >
           <Newspaper size={24} className="mobile-nav-icon" />
-          <span className="mobile-nav-label">MBlog</span>
+          <span className="mobile-nav-label">MBlogs</span>
         </Link>
         <button 
           onClick={(e) => {
@@ -520,7 +538,7 @@ export default function AppShell({ children, userEmail, userId }) {
                   {pathname?.includes('/mblog') && (
                     <>
                       <div className="speed-dial-shortcut-item" onClick={() => { setIsFabExpanded(false); router.push('/mblog?view=my'); }}>
-                        <span className="shortcut-label">My Articles</span>
+                        <span className="shortcut-label">My MBlogs</span>
                         <div className="shortcut-icon-wrapper"><BookOpen size={18} /></div>
                       </div>
                     </>
@@ -541,7 +559,7 @@ export default function AppShell({ children, userEmail, userId }) {
                   )}
                   {pathname?.includes('/mblog') && (
                     <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); router.push('/mblog?compose=true'); }}>
-                      Post a Blog
+                      Post an MBlog
                     </button>
                   )}
                 </div>

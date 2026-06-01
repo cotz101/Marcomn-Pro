@@ -577,6 +577,18 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
               <MessageSquare size={18} />
               <span className="font-sans">Comment</span>
             </button>
+
+            {article.youtube_id && (
+              <a
+                href={`https://www.youtube.com/watch?v=${extractYouTubeId(article.youtube_id)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-2 min-h-[44px] py-2.5 px-3 rounded-lg text-[14px] sm:text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-all cursor-pointer select-none active:scale-[0.98] outline-none focus:outline-none font-sans"
+              >
+                <Play size={18} className="text-red-600" />
+                <span className="font-sans">Watch Video</span>
+              </a>
+            )}
           </div>
         </div>
 
@@ -705,17 +717,6 @@ export default function MBlogCard({ article, userId, isEditable, onEdit, onDelet
             >
               <Paperclip size={12} />
               DOCUMENT
-            </a>
-          )}
-          {article.youtube_id && (
-            <a 
-              href={`https://www.youtube.com/watch?v=${extractYouTubeId(article.youtube_id)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-[10px] font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-100 hover:bg-red-100 transition-colors"
-            >
-              <PlayCircle size={12} />
-              WATCH VIDEO
             </a>
           )}
           

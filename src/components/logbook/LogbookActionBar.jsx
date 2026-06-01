@@ -68,17 +68,19 @@ export default function LogbookActionBar({ post, userId, onEditClick, onDeleteSu
 
       {isOpen && (
         <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1 flex flex-col animate-fadeIn">
-          <button
-            type="button"
-            onClick={() => {
-              setIsOpen(false);
-              onEditClick();
-            }}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-          >
-            <Edit2 size={14} />
-            <span className="font-sans font-medium">Edit Post</span>
-          </button>
+          {!(post.article_id || post.shared_article_id || post.media_type === 'article_share') && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                onEditClick();
+              }}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+            >
+              <Edit2 size={14} />
+              <span className="font-sans font-medium">Edit Post</span>
+            </button>
+          )}
           
           <button
             type="button"

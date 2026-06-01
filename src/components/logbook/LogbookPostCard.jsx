@@ -19,6 +19,45 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
   const supabase = createClient();
   const { profile } = useProfile();
 
+  const [editFile, setEditFile] = useState(null);
+  const [editMediaPreview, setEditMediaPreview] = useState(post.media_url ? resolveMediaUrl(post.media_url) : null);
+  const [editMediaType, setEditMediaType] = useState(post.media_type || null);
+  const [editUploadProgress, setEditUploadProgress] = useState(false);
+  const editFileInputRef = React.useRef(null);
+
+  const handleEditFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setEditFile(file);
+      const isVideo = file.type.startsWith('video/');
+      setEditMediaType(isVideo ? 'video' : 'image');
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditMediaPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleWatchVideo = () => {
+    const videoElement = document.getElementById(`post-video-${post.id}`);
+    if (videoElement) {
+      videoElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      videoElement.classList.add('animate-pulse');
+      setTimeout(() => videoElement.classList.remove('animate-pulse'), 2000);
+    }
+  };
+
+  const handleShare = () => {
+    const postUrl = `${window.location.origin}/logbook?post=${post.id}`;
+    navigator.clipboard.writeText(postUrl).then(() => {
+      alert('Post link copied to clipboard!');
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+    });
+  };
+
   // Reactive states for optimistic updates
   const [likesList, setLikesList] = useState(post.likes || []);
   const [commentsList, setCommentsList] = useState(post.comments || []);
@@ -447,11 +486,41 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
     }
     setSaving(true);
     try {
+      let mediaPath = post.media_url;
+
+      if (editFile) {
+        const fileExt = editFile.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random()}.${fileExt}`;
+        const filePath = `uploads/${fileName}`;
+        
+        setEditUploadProgress(true);
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('logbook-media')
+          .upload(filePath, editFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Storage Upload Error:', uploadError);
+          alert('Failed to upload attachment: ' + uploadError.message);
+          setEditUploadProgress(false);
+          setSaving(false);
+          return;
+        }
+        mediaPath = uploadData.path;
+        setEditUploadProgress(false);
+      } else if (!editMediaPreview) {
+        mediaPath = null;
+      }
+
       console.log('DEBUG: Updating post content via API for id:', post.id);
       
       const updateData = { 
         content: editContent.trim(),
-        excerpt: isArticle ? getPlainText(editContent).substring(0, 150).trim() + '...' : null
+        excerpt: isArticle ? getPlainText(editContent).substring(0, 150).trim() + '...' : null,
+        media_url: isArticle ? null : mediaPath,
+        media_type: isArticle ? null : (mediaPath ? editMediaType : null)
       };
       
       if (isArticle) {
@@ -504,7 +573,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
   const renderMedia = (mediaUrl, mediaType, videoUrl) => {
     if (videoUrl) {
       return (
-        <div className="mt-4 w-full">
+        <div id={`post-video-${post.id}`} className="mt-4 w-full">
           <iframe
             src={`https://www.youtube.com/embed/${videoUrl}`}
             title="YouTube video player"
@@ -520,7 +589,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
     if (mediaUrl) {
       if (mediaType === 'video') {
         return (
-          <div className="mt-4 w-full">
+          <div id={`post-video-${post.id}`} className="mt-4 w-full">
             <video
               src={resolveMediaUrl(mediaUrl)}
               controls
@@ -611,6 +680,9 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                 onEditClick={() => {
                   setEditContent(post.content || '');
                   setEditTitle(post.title || '');
+                  setEditFile(null);
+                  setEditMediaPreview(post.media_url ? resolveMediaUrl(post.media_url) : null);
+                  setEditMediaType(post.media_type || null);
                   setIsEditing(true);
                 }}
                 onDeleteSuccess={onPostDeleted}
@@ -642,40 +714,103 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                 />
               </div>
             ) : (
-              <textarea
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                className="w-full min-h-[120px] text-gray-800 border border-gray-250 focus:border-blue-300 focus:outline-none rounded-xl p-3 resize-none text-[15px] leading-relaxed transition-all bg-gray-50"
-              />
+              <div className="border border-gray-250 rounded-xl overflow-hidden min-h-[160px] bg-white">
+                <RichTextEditor
+                  value={editContent}
+                  onChange={setEditContent}
+                  placeholder="Edit your post..."
+                  className="article-body-quill border-0"
+                />
+              </div>
             )}
 
-            <div className="flex items-center gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  setEditContent(post.content || '');
-                  setEditTitle(post.title || '');
-                  setIsEditing(false);
-                }}
-                disabled={saving}
-                className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:opacity-50 select-none"
-              >
-                <X size={13} />
-                <span>Cancel</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleUpdate}
-                disabled={saving || !editContent.trim() || editContent === '<p><br></p>'}
-                className="flex items-center gap-1.5 px-5 py-2 bg-[#002b4e] hover:bg-[#004173] text-white rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:opacity-50 select-none"
-              >
-                {saving ? (
-                  <Loader2 size={13} className="animate-spin" />
+            {/* Media Preview inside Edit Mode */}
+            {editMediaPreview && (
+              <div className="relative mt-4 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 max-h-[220px] flex items-center justify-center flex-shrink-0">
+                {editMediaType === 'video' ? (
+                  <video src={editMediaPreview} controls className="max-h-[220px] w-auto" />
                 ) : (
-                  <Save size={13} />
+                  <img src={editMediaPreview} alt="Selected attachment" className="max-h-[220px] w-auto object-contain" />
                 )}
-                <span>Save Changes</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditFile(null);
+                    setEditMediaPreview(null);
+                    setEditMediaType(null);
+                  }}
+                  className="absolute top-2.5 right-2.5 p-1.5 bg-black/60 hover:bg-black/85 text-white rounded-full transition-colors cursor-pointer"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
+            {editUploadProgress && (
+              <div className="mt-4 flex items-center gap-2 justify-center text-xs font-semibold text-blue-600 bg-blue-50 py-2.5 rounded-lg border border-blue-100 flex-shrink-0 animate-pulse">
+                <Loader2 size={14} className="animate-spin" />
+                <span>Uploading attachment...</span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 justify-between w-full">
+              {/* Left: Media Button */}
+              {!isArticle ? (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (editFileInputRef.current) {
+                        editFileInputRef.current.accept = 'image/*,video/mp4';
+                        editFileInputRef.current.click();
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 rounded-lg text-gray-500 hover:text-gray-800 font-bold text-xs transition-all cursor-pointer active:scale-95 border border-gray-200 select-none bg-white shadow-3xs outline-none focus:outline-none font-sans"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-navy-900"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                    <span>Media</span>
+                  </button>
+                  <input
+                    type="file"
+                    ref={editFileInputRef}
+                    onChange={handleEditFileChange}
+                    className="hidden"
+                  />
+                </div>
+              ) : <div />}
+
+              {/* Right: Actions */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditContent(post.content || '');
+                    setEditTitle(post.title || '');
+                    setEditFile(null);
+                    setEditMediaPreview(post.media_url ? resolveMediaUrl(post.media_url) : null);
+                    setEditMediaType(post.media_type || null);
+                    setIsEditing(false);
+                  }}
+                  disabled={saving || editUploadProgress}
+                  className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:opacity-50 select-none"
+                >
+                  <X size={13} />
+                  <span>Cancel</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUpdate}
+                  disabled={saving || editUploadProgress || !editContent.trim() || editContent === '<p><br></p>'}
+                  className="flex items-center gap-1.5 px-5 py-2 bg-[#002b4e] hover:bg-[#004173] text-white rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:opacity-50 select-none"
+                >
+                  {saving || editUploadProgress ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <Save size={13} />
+                  )}
+                  <span>Save Changes</span>
+                </button>
+              </div>
             </div>
           </div>
         ) : (
@@ -723,7 +858,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                           href={`/mblog`}
                           className="text-blue-900 font-semibold text-sm hover:underline cursor-pointer"
                         >
-                          Read full blog
+                          Read Full MBlog
                         </a>
                       </div>
                     </div>
@@ -748,7 +883,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                       <div className="prose prose-sm max-w-none text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2 space-y-4">
                         <div
                           dangerouslySetInnerHTML={{ __html: renderContentWithEmbeds(post.content) }}
-                          className="article-full-html"
+                          className="article-full-html rich-text-content"
                         />
                         
                         <button
@@ -786,7 +921,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                      {isHtml(displayContent) || /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})[^\s<]*)/g.test(displayContent) ? (
                        <div
                          dangerouslySetInnerHTML={{ __html: renderContentWithEmbeds(displayContent) }}
-                         className="prose prose-sm max-w-none text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2"
+                         className="prose prose-sm max-w-none text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2 rich-text-content"
                        />
                      ) : (
                        <div className="text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2 whitespace-pre-wrap break-words">
