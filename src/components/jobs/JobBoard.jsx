@@ -260,7 +260,7 @@ export default function JobBoard() {
         </div>
 
         {/* Filter & Sort Row (Under Search Bar, visible on all viewports) */}
-        <div className="flex flex-row items-center gap-3 w-full justify-start mb-4 order-4 px-2 md:px-4 mt-[10px]">
+        <div className="flex flex-row items-center gap-3 w-full justify-start mb-4 order-4 px-2 md:px-4 mt-[15px] py-2 my-auto">
           <button 
             onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
             className="flex items-center justify-center gap-2 px-5 py-3 min-h-[44px] bg-white border border-slate-200 rounded-full text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors cursor-pointer flex-1 sm:flex-none"
