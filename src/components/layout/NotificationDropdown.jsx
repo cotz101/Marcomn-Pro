@@ -29,6 +29,98 @@ export default function NotificationDropdown({
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
+  // Filter and Type states
+  const [selectedFilter, setSelectedFilter] = useState('All');
+
+  // Type Mapping helper
+  const mapNotificationType = (type) => {
+    const t = (type || '').toLowerCase();
+    
+    if (['mention', 'comment_mention', 'group_mention'].includes(t)) {
+      return 'Mentions';
+    }
+    if (['message', 'direct_message', 'group_message'].includes(t)) {
+      return 'Messages';
+    }
+    if (['application', 'job_application', 'application_status'].includes(t)) {
+      return 'Applications';
+    }
+    if (['job', 'job_posting', 'job_offer', 'job_status'].includes(t)) {
+      return 'Jobs';
+    }
+    if (['group', 'group_invite', 'group_thread', 'group_like', 'group_join_request', 'group_join_accept', 'group_post'].includes(t)) {
+      return 'Groups';
+    }
+    if (['blog', 'mblog', 'article', 'article_like', 'article_comment'].includes(t)) {
+      return 'MBlogs';
+    }
+    return 'System'; // Default fallback mapping
+  };
+
+  const getMappedCategory = (notification) => {
+    return mapNotificationType(notification.type);
+  };
+
+  // Compute counts
+  const categoriesWithCounts = React.useMemo(() => {
+    const counts = { All: notifications.length };
+    notifications.forEach(n => {
+      const cat = getMappedCategory(n);
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    return counts;
+  }, [notifications]);
+
+  // Determine active filters (All is always shown, others only if count > 0)
+  const activeFilters = React.useMemo(() => {
+    const order = ['All', 'Mentions', 'Messages', 'Applications', 'Jobs', 'Groups', 'MBlogs', 'System'];
+    return order.filter(f => f === 'All' || (categoriesWithCounts[f] && categoriesWithCounts[f] > 0));
+  }, [categoriesWithCounts]);
+
+  // Filtered notifications
+  const filteredNotifications = React.useMemo(() => {
+    if (selectedFilter === 'All') return notifications;
+    return notifications.filter(n => getMappedCategory(n) === selectedFilter);
+  }, [notifications, selectedFilter]);
+
+  const renderPills = () => {
+    if (activeFilters.length <= 1) return null;
+    return (
+      <div className="flex gap-1.5 overflow-x-auto px-4 py-2 bg-white border-b border-gray-100 shrink-0 scroll-smooth no-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <style>{`
+          .no-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
+        {activeFilters.map(filter => {
+          const isSelected = selectedFilter === filter;
+          const count = categoriesWithCounts[filter] || 0;
+          return (
+            <button
+              key={filter}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedFilter(filter);
+              }}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap outline-none focus:outline-none ${
+                isSelected 
+                  ? 'bg-[#002b4e] text-white shadow-3xs'
+                  : 'bg-gray-100 hover:bg-gray-200 text-slate-600'
+              }`}
+            >
+              <span>{filter}</span>
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                isSelected ? 'bg-white/20 text-white' : 'bg-gray-200 text-slate-500'
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   // Feed-Centric Notification Handler
   // Instead of navigating to dead /logbook/[id] routes, we route to the
   // feed with a ?focus= query param so LogbookFeed can scroll-to-post.
@@ -131,7 +223,15 @@ export default function NotificationDropdown({
       );
     }
 
-    return notifications.map((notification) => {
+    if (filteredNotifications.length === 0) {
+      return (
+        <div className="p-8 text-center text-gray-400 text-xs">
+          No notifications of this type yet.
+        </div>
+      );
+    }
+
+    return filteredNotifications.map((notification) => {
       const isMilestone = notification.type === 'milestone';
       const isRead = notification.is_read;
       
@@ -235,6 +335,7 @@ export default function NotificationDropdown({
               </button>
             </div>
           </div>
+          {renderPills()}
 
           {/* Scrollable zone */}
           <div className="flex-1 overflow-y-auto divide-y divide-gray-50 pb-[80px]">
@@ -247,7 +348,7 @@ export default function NotificationDropdown({
               className="w-full py-3 bg-[#002b4e] hover:bg-[#001e36] text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2"
               onClick={(e) => {
                 e.stopPropagation();
-                router.push('/messages');
+                router.push('/notifications');
                 if (onClose) onClose();
               }}
             >
@@ -282,6 +383,7 @@ export default function NotificationDropdown({
             Mark all as read
           </button>
         </div>
+        {renderPills()}
 
         {/* Scrollable zone */}
         <div className="overflow-y-auto max-h-[360px] divide-y divide-gray-50">
@@ -294,7 +396,7 @@ export default function NotificationDropdown({
             className="text-[11px] font-bold text-gray-700 hover:text-indigo-600 transition-colors inline-flex items-center gap-1"
             onClick={(e) => {
               e.stopPropagation();
-              router.push('/messages');
+              router.push('/notifications');
               if (onClose) onClose();
             }}
           >

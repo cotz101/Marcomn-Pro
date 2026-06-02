@@ -67,7 +67,6 @@ export default function AppShell({ children, userEmail, userId }) {
   const notificationsRef = useRef(null);
   const bellButtonRef = useRef(null);
 
-  // Function to fetch notifications, defined using useCallback
   const fetchNotifications = useCallback(async () => {
     if (!userId) return;
     const supabase = createClient();
@@ -75,15 +74,22 @@ export default function AppShell({ children, userEmail, userId }) {
     try {
       const { data, error } = await supabase
         .from('notifications')
-        .select('*, sender:profiles(id, name, avatar_url)')
+        .select('*, sender:profiles!sender_id(id, name, avatar_url)')
         .eq('recipient_id', userId)
         .order('created_at', { ascending: false });
       
-      if (!error && data) {
+      if (error) throw error;
+      if (data) {
         setNotifications(data);
       }
     } catch (err) {
-      console.error('Error fetching notifications:', err);
+      console.error('Error fetching notifications:', {
+        message: err?.message,
+        details: err?.details,
+        hint: err?.hint,
+        code: err?.code,
+        error: err
+      });
     } finally {
       setLoadingNotifications(false);
     }
