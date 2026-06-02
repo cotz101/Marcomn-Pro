@@ -77,7 +77,43 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
     setCommentsList(post.comments || []);
   }, [post.likes, post.comments]);
 
-  const author = post.author || { name: 'Maritime Professional', avatar_url: null, headline: 'MarComn Member' };
+  // Resilient author resolver supporting multiple formats and fallbacks
+  const getAuthorInfo = () => {
+    // 1. Check post.author
+    if (post.author) {
+      const name = post.author.name || post.author.full_name || post.author.display_name;
+      if (name) {
+        return {
+          id: post.author.id,
+          name: name,
+          avatar_url: post.author.avatar_url,
+          headline: post.author.headline || 'MarComn Member'
+        };
+      }
+    }
+    // 2. Check alternative profile objects
+    const alternativeProfile = post.profiles || post.user || post.profile;
+    if (alternativeProfile) {
+      const name = alternativeProfile.name || alternativeProfile.full_name || alternativeProfile.display_name || alternativeProfile.fullName;
+      if (name) {
+        return {
+          id: alternativeProfile.id,
+          name: name,
+          avatar_url: alternativeProfile.avatar_url || alternativeProfile.profilePic,
+          headline: alternativeProfile.headline || alternativeProfile.currentRole || 'MarComn Member'
+        };
+      }
+    }
+    // 3. Fallback
+    return {
+      id: post.user_id || post.author_id,
+      name: 'Maritime Professional',
+      avatar_url: null,
+      headline: 'MarComn Member'
+    };
+  };
+
+  const author = getAuthorInfo();
   const likeCount = likesList.length;
   const commentCount = commentsList.length;
   const hasLiked = userId ? likesList.some(like => like.user_id === userId) : false;
@@ -373,23 +409,76 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
   const renderContentWithEmbeds = (content) => {
     if (!content) return '';
 
-    // Regex to scan for youtube.com or youtu.be links
-    const youtubeRegex = /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})[^\s<]*)/g;
+    // Regex to match YouTube URLs
+    const youtubeRegex = /(?:https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})[^\s<]*)/;
 
-    return content.replace(youtubeRegex, (match, url, videoId) => {
-      return `
-        <div class="my-4 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-sm relative w-full aspect-video" style="aspect-ratio: 16/9; max-width: 100%;">
-          <iframe
-            src="https://www.youtube.com/embed/${videoId}"
-            title="YouTube video player"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowfullscreen
-            class="absolute top-0 left-0 w-full h-full rounded-xl"
-          ></iframe>
-        </div>
-      `;
-    });
+    if (typeof window === 'undefined') {
+      return content;
+    }
+
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(content, 'text/html');
+      const videoIds = new Set();
+
+      // 1. Audit all <a> tags to find YouTube links
+      const anchors = doc.querySelectorAll('a');
+      anchors.forEach(anchor => {
+        const href = anchor.getAttribute('href') || '';
+        const match = href.match(youtubeRegex);
+        if (match && match[1]) {
+          videoIds.add(match[1]);
+          anchor.remove();
+        }
+      });
+
+      // 2. Search for any plain text YouTube links in text nodes
+      const walkNode = (node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const match = node.textContent.match(youtubeRegex);
+          if (match && match[1]) {
+            videoIds.add(match[1]);
+            node.textContent = node.textContent.replace(youtubeRegex, '');
+          }
+        } else {
+          for (let i = 0; i < node.childNodes.length; i++) {
+            walkNode(node.childNodes[i]);
+          }
+        }
+      };
+      walkNode(doc.body);
+
+      // Clean empty paragraphs resulting from link removals
+      doc.querySelectorAll('p').forEach(p => {
+        if (!p.textContent.trim() && p.children.length === 0) {
+          p.remove();
+        }
+      });
+
+      // 3. Generate HTML output
+      let cleanHtml = doc.body.innerHTML;
+
+      // 4. Append embeds at the end
+      videoIds.forEach(videoId => {
+        cleanHtml += `
+          <div class="my-4 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-sm relative w-full aspect-video" style="aspect-ratio: 16/9; max-width: 100%;">
+            <iframe
+              src="https://www.youtube.com/embed/${videoId}"
+              title="YouTube video player"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              class="absolute top-0 left-0 w-full h-full rounded-xl"
+            ></iframe>
+          </div>
+        `;
+      });
+
+      return cleanHtml;
+    } catch (e) {
+      console.error('Error rendering content with embeds:', e);
+      return content;
+    }
   };
 
   const getPlainText = (html) => {
@@ -545,7 +634,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
           author_id,
           created_at,
           user_id,
-          author:profiles!user_id (name, avatar_url, headline),
+          author:profiles!user_id (id, name, avatar_url, headline),
           likes ( id ),
           comments ( id )
         `)
@@ -559,8 +648,19 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
 
       console.log('SUCCESS: Post updated cleanly');
       setIsEditing(false);
+
+      const postWithAuthor = {
+        ...data,
+        author: data?.author || {
+          id: userId || post.user_id,
+          name: profile?.name || 'Maritime Professional',
+          avatar_url: profile?.profilePic || null,
+          headline: profile?.currentRole || 'MarComn Member'
+        }
+      };
+
       if (onPostUpdated && data) {
-        onPostUpdated(data);
+        onPostUpdated(postWithAuthor);
       }
     } catch (err) {
       console.error('Critical update failure:', err);
@@ -573,14 +673,14 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
   const renderMedia = (mediaUrl, mediaType, videoUrl) => {
     if (videoUrl) {
       return (
-        <div id={`post-video-${post.id}`} className="mt-4 w-full">
+        <div id={`post-video-${post.id}`} className="mt-4 w-full relative overflow-hidden rounded-lg aspect-video">
           <iframe
             src={`https://www.youtube.com/embed/${videoUrl}`}
             title="YouTube video player"
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
-            className="w-full aspect-video rounded-lg"
+            className="absolute top-0 left-0 w-full h-full"
           />
         </div>
       );

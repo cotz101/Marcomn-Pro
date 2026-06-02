@@ -175,7 +175,7 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }) {
           author_id,
           created_at,
           user_id,
-          author:profiles!user_id (name, avatar_url, headline),
+          author:profiles!user_id (id, name, avatar_url, headline),
           likes ( id ),
           comments ( id )
         `)
@@ -194,14 +194,24 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }) {
 
       console.log('SUCCESS: Post published cleanly');
 
+      const postWithAuthor = {
+        ...data,
+        author: data?.author || {
+          id: userId || user?.id,
+          name: profile?.name || 'Maritime Professional',
+          avatar_url: profile?.profilePic || null,
+          headline: profile?.currentRole || 'MarComn Member'
+        }
+      };
+
       // Dispatch custom event for real-time prepending in feeds
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('logbook-post-created', { detail: data }));
+        window.dispatchEvent(new CustomEvent('logbook-post-created', { detail: postWithAuthor }));
         window.dispatchEvent(new Event('post-created'));
       }
 
       if (onPostCreated && data) {
-        onPostCreated(data);
+        onPostCreated(postWithAuthor);
       }
       
       onClose();

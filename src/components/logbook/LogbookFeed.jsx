@@ -43,7 +43,7 @@ export default function LogbookFeed() {
           author_id,
           created_at,
           user_id,
-          author:profiles!user_id (name, avatar_url, headline),
+          author:profiles!user_id (id, name, avatar_url, headline),
           likes ( id, user_id ),
           comments ( id, user_id, content, created_at, profiles:profiles!user_id (name, avatar_url) ),
           shared_article_id

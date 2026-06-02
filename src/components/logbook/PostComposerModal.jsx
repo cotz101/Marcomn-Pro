@@ -131,7 +131,7 @@ export default function PostComposerModal({ isOpen, onClose, userProfile, onPost
           author_id,
           created_at,
           user_id,
-          author:profiles!user_id (name, avatar_url, headline),
+          author:profiles!user_id (id, name, avatar_url, headline),
           likes ( id ),
           comments ( id )
         `)
@@ -148,8 +148,18 @@ export default function PostComposerModal({ isOpen, onClose, userProfile, onPost
         return;
       }
 
+      const postWithAuthor = {
+        ...data,
+        author: data?.author || {
+          id: userProfile?.id || user?.id,
+          name: userProfile?.name || 'Maritime Professional',
+          avatar_url: userProfile?.avatar_url || null,
+          headline: userProfile?.headline || 'MarComn Member'
+        }
+      };
+
       if (onPostCreated && data) {
-        onPostCreated(data);
+        onPostCreated(postWithAuthor);
       }
       onClose();
     } catch (err) {

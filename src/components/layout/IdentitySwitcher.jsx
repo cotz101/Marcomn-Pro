@@ -98,6 +98,12 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
           <User size={18} />
           <span>View Profile</span>
         </div>
+        {profile && ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role) && (
+          <div className="footer-link-item" onClick={() => { router.push('/settings/global'); onClose(); }}>
+            <Settings size={18} className="text-[#002b4e]" />
+            <span className="font-bold text-[#002b4e]">Global Settings</span>
+          </div>
+        )}
         <div className="footer-link-item" onClick={() => { router.push('/settings/notifications'); onClose(); }}>
           <Settings size={18} />
           <span>Notification Settings</span>
