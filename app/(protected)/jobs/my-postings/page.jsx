@@ -22,7 +22,7 @@ const SkeletonRow = () => (
 );
 
 export default function EmployerDashboardPage() {
-  const { userId, showToast } = useProfile();
+  const { userId, showToast, currentIdentity } = useProfile();
   const router = useRouter();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -81,15 +81,22 @@ export default function EmployerDashboardPage() {
   };
 
   const fetchUserJobs = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || !currentIdentity) return;
     setLoading(true);
     try {
       const supabase = createClient();
-      const { data, error } = await supabase
+      let query = supabase
         .from('jobs')
         .select('*, applications(count)')
-        .eq('poster_id', userId)
         .order('created_at', { ascending: false });
+
+      if (currentIdentity.type === 'company') {
+        query = query.eq('company_id', currentIdentity.id);
+      } else {
+        query = query.eq('poster_id', userId).is('company_id', null);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setJobs(data || []);
@@ -98,7 +105,7 @@ export default function EmployerDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, currentIdentity]);
 
   useEffect(() => {
     if (userId) {

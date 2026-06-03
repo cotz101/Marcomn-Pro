@@ -40,8 +40,14 @@ export default function ApplicantsPage() {
   const [applicants, setApplicants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-const [selectedApplicant, setSelectedApplicant] = useState(null);
-const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
+  const [selectedApplicant, setSelectedApplicant] = useState(null);
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
+
+  const [offerExpiryOptions, setOfferExpiryOptions] = useState([24, 48, 72]);
+  const [defaultOfferExpiry, setDefaultOfferExpiry] = useState(48);
+  const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
+  const [appToOffer, setAppToOffer] = useState(null);
+  const [selectedExpiryHours, setSelectedExpiryHours] = useState(48);
 
   const fetchData = useCallback(async () => {
     if (!userId || !id) return;
@@ -104,8 +110,25 @@ const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
         return { ...app, profile };
       });
 
+      // ── 6. Fetch platform settings for offer expiry ────────────────────────
+      const { data: settingsData } = await supabase
+        .from('platform_settings')
+        .select('key, value')
+        .in('key', ['job_offer_expiry_options_hours', 'default_job_offer_expiry_hours']);
+        
+      if (settingsData) {
+        const opts = settingsData.find(s => s.key === 'job_offer_expiry_options_hours');
+        const def = settingsData.find(s => s.key === 'default_job_offer_expiry_hours');
+        if (opts && opts.value) setOfferExpiryOptions(opts.value.split(',').map(n => parseInt(n.trim(), 10)));
+        if (def && def.value) {
+            const defVal = parseInt(def.value, 10);
+            setDefaultOfferExpiry(defVal);
+            setSelectedExpiryHours(defVal);
+        }
+      }
+
       setApplicants(merged);
-    if (merged.length > 0) setSelectedApplicant(merged[0]);
+      if (merged.length > 0) setSelectedApplicant(merged[0]);
     } catch (err) {
       console.error('Error loading applicants page:', err.message || err);
       setError('Something went wrong while loading applicants. Please try again.');
@@ -139,6 +162,43 @@ const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
     }
   };
 
+  const handleSendOffer = async () => {
+    if (!appToOffer) return;
+    try {
+      const supabase = createClient();
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + selectedExpiryHours);
+
+      const { error } = await supabase
+        .from('applications')
+        .update({ 
+          status: 'Offered',
+          offer_sent_at: new Date().toISOString(),
+          offer_expires_at: expiresAt.toISOString(),
+          offer_expiry_hours: selectedExpiryHours
+        })
+        .eq('id', appToOffer.id);
+
+      if (error) throw error;
+
+      setApplicants((prev) =>
+        prev.map((app) => (app.id === appToOffer.id ? { 
+          ...app, 
+          status: 'Offered',
+          offer_sent_at: new Date().toISOString(),
+          offer_expires_at: expiresAt.toISOString()
+        } : app))
+      );
+
+      setIsOfferModalOpen(false);
+      setAppToOffer(null);
+      if (showToast) showToast('Job offer sent successfully!', 'success');
+    } catch (err) {
+      console.error('Error sending offer:', err);
+      if (showToast) showToast('Failed to send offer: ' + (err.message || err), 'error');
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -160,6 +220,10 @@ const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
     switch (status) {
       case 'Accepted':
         return 'border-emerald-200 bg-emerald-50 text-emerald-700 focus:ring-emerald-500 focus:border-emerald-500';
+      case 'Offered':
+        return 'border-blue-200 bg-blue-50 text-blue-700 focus:ring-blue-500 focus:border-blue-500';
+      case 'Expired':
+        return 'border-rose-200 bg-rose-50 text-rose-700 focus:ring-rose-500 focus:border-rose-500';
       case 'Shortlisted':
         return 'border-indigo-200 bg-indigo-50 text-indigo-700 focus:ring-indigo-500 focus:border-indigo-500';
       case 'Under Review':
@@ -351,14 +415,20 @@ const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
                     
                     {/* Status Bookmark */}
                     <div className="absolute top-0 right-0" onClick={(e) => e.stopPropagation()}>
-                      {app.status === 'Withdrawn' ? (
-                        <span className="inline-flex items-center px-3 py-1.5 rounded-bl-xl text-[10px] font-bold uppercase tracking-widest bg-slate-100 text-slate-500 border-b border-l border-slate-200 shadow-sm">Withdrawn</span>
+                      {['Withdrawn', 'Accepted', 'Offered', 'Expired'].includes(app.status) ? (
+                        <span className={`inline-flex items-center px-3 py-1.5 rounded-bl-xl text-[10px] font-bold uppercase tracking-widest shadow-sm border-b border-l ${
+                          app.status === 'Accepted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                          app.status === 'Offered' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                          app.status === 'Expired' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                          'bg-slate-100 text-slate-500 border-slate-200'
+                        }`}>
+                          {app.status}
+                        </span>
                       ) : (
                         <select value={app.status || 'Pending'} onChange={(e) => handleStatusChange(app.id, e.target.value)} className={`appearance-none text-center rounded-bl-xl text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 border-b border-l focus:outline-none cursor-pointer shadow-sm ${getStatusStyles(app.status || 'Pending')}`}>
                           <option value="Pending">Pending</option>
                           <option value="Under Review">Under Review</option>
                           <option value="Shortlisted">Shortlisted</option>
-                          <option value="Accepted">Accepted</option>
                           <option value="Rejected">Rejected</option>
                         </select>
                       )}
@@ -377,6 +447,18 @@ const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
                             +{profile.skills.length - 3}
                           </span>
                         )}
+                      </div>
+                    )}
+                    
+                    {/* Action buttons */}
+                    {!['Withdrawn', 'Accepted', 'Offered', 'Expired', 'Rejected'].includes(app.status) && (
+                      <div className="mt-4 flex justify-end">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setAppToOffer(app); setIsOfferModalOpen(true); }}
+                          className="px-4 py-1.5 bg-[#004173] hover:bg-blue-800 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                        >
+                          Send Job Offer
+                        </button>
                       </div>
                     )}
                   </div>
@@ -487,8 +569,15 @@ const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
                     </div>
                     <div className="text-right">
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Status</p>
-                      {selectedApplicant.status === 'Withdrawn' ? (
-                        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide bg-rose-50 text-rose-700 border border-rose-200">Withdrawn</span>
+                      {['Withdrawn', 'Accepted', 'Offered', 'Expired'].includes(selectedApplicant.status) ? (
+                        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide ${
+                          selectedApplicant.status === 'Accepted' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                          selectedApplicant.status === 'Offered' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                          selectedApplicant.status === 'Expired' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                          'bg-slate-100 text-slate-500 border border-slate-200'
+                        }`}>
+                          {selectedApplicant.status}
+                        </span>
                       ) : (
                         <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide ${getStatusStyles(selectedApplicant.status || 'Pending')}`}>
                           {selectedApplicant.status || 'Pending'}
@@ -549,6 +638,47 @@ const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
               </div>
             </div>
           )}
+
+      {/* Offer Expiry Modal */}
+      {isOfferModalOpen && appToOffer && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-bold text-[#004173] mb-2">Send Job Offer</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              You are sending an offer to <span className="font-semibold text-gray-800">{appToOffer.profile?.name || 'this applicant'}</span>. 
+              The applicant will be notified and will have a limited time to accept the offer before it expires.
+            </p>
+            
+            <div className="mb-6">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Offer Validity Period</label>
+              <select 
+                value={selectedExpiryHours}
+                onChange={(e) => setSelectedExpiryHours(parseInt(e.target.value, 10))}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500 bg-gray-50"
+              >
+                {offerExpiryOptions.map(hours => (
+                  <option key={hours} value={hours}>{hours} Hours</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => { setIsOfferModalOpen(false); setAppToOffer(null); }}
+                className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSendOffer}
+                className="px-5 py-2 text-sm font-bold bg-[#004173] text-white hover:bg-blue-800 rounded-xl transition-colors shadow-sm"
+              >
+                Send Offer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

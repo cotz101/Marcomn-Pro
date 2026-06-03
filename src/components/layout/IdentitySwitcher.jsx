@@ -1,4 +1,4 @@
-import { User, LogOut, Plus, Check, Settings } from 'lucide-react';
+import { User, LogOut, Plus, Check, Settings, Coins } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
@@ -99,10 +99,16 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
           <span>View Profile</span>
         </div>
         {profile && ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role) && (
-          <div className="footer-link-item" onClick={() => { router.push('/settings/global'); onClose(); }}>
-            <Settings size={18} className="text-[#002b4e]" />
-            <span className="font-bold text-[#002b4e]">Global Settings</span>
-          </div>
+          <>
+            <div className="footer-link-item" onClick={() => { router.push('/settings/global'); onClose(); }}>
+              <Settings size={18} className="text-[#002b4e]" />
+              <span className="font-bold text-[#002b4e]">Global Settings</span>
+            </div>
+            <div className="footer-link-item" onClick={() => { router.push('/admin/mcredits'); onClose(); }}>
+              <Coins size={18} className="text-[#002b4e]" />
+              <span className="font-bold text-[#002b4e]">MCredits / Wallet Control</span>
+            </div>
+          </>
         )}
         <div className="footer-link-item" onClick={() => { router.push('/settings/notifications'); onClose(); }}>
           <Settings size={18} />

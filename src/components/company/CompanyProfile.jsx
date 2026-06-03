@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { Globe, Briefcase, MapPin, Edit3, X, Check, Trash2, AlertTriangle, Camera, ArrowLeft } from 'lucide-react';
+import { Globe, Briefcase, MapPin, Edit3, X, Check, Trash2, AlertTriangle, Camera, ArrowLeft, Coins } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import { useRef } from 'react';
 
@@ -196,6 +196,14 @@ export default function CompanyProfile({ company, role, onUpdate }) {
 
             {isOwner && (
               <div style={{ display: 'flex', gap: 8 }}>
+                <button 
+                  className="btn-edit-profile" 
+                  onClick={() => router.push('/company/wallet')} 
+                  style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: 6, padding: '0 12px', fontSize: 13, fontWeight: 'bold' }}
+                  title="Company Wallet"
+                >
+                  <Coins size={16} /> <span className="hidden sm:inline">Wallet</span>
+                </button>
                 <button className="btn-edit-profile" onClick={() => setIsEditModalOpen(true)} style={{ color: '#00B4D8' }}>
                   <Edit3 size={18} />
                 </button>

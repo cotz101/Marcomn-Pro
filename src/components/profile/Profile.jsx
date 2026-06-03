@@ -3,7 +3,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase';
-import { Camera, Briefcase, MapPin, Edit3, X, Check, Plus, ArrowLeft, Ship, MessageSquare, Lock } from 'lucide-react';
+import { Camera, Briefcase, MapPin, Edit3, X, Check, Plus, ArrowLeft, Ship, MessageSquare, Lock, Coins } from 'lucide-react';
 
 export default function Profile({ profile: initialProfile, setProfile: setInitialProfile, userId: currentUserId }) {
   const router = useRouter();
@@ -386,9 +386,19 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
               </div>
 
               {isOwnProfile && (
-                <button className="btn-edit-profile" onClick={handleOpenModal} aria-label="Edit Profile">
-                  <Edit3 size={18} />
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button 
+                    className="btn-edit-profile" 
+                    onClick={() => router.push('/profile/wallet')} 
+                    style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: 6, padding: '0 12px', fontSize: 13, fontWeight: 'bold' }}
+                    title="MCredits Wallet"
+                  >
+                    <Coins size={16} /> <span className="hidden sm:inline">Wallet</span>
+                  </button>
+                  <button className="btn-edit-profile" onClick={handleOpenModal} aria-label="Edit Profile" style={{ color: '#00B4D8' }}>
+                    <Edit3 size={18} />
+                  </button>
+                </div>
               )}
             </div>
 

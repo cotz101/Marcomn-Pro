@@ -52,6 +52,8 @@ export default function AdminMCreditsPage() {
   // Settings state
   const [postingFeePercent, setPostingFeePercent] = useState('1');
   const [acceptanceFeePercent, setAcceptanceFeePercent] = useState('5');
+  const [offerExpiryOptions, setOfferExpiryOptions] = useState('24, 48, 72');
+  const [defaultOfferExpiry, setDefaultOfferExpiry] = useState('48');
   const [savingSettings, setSavingSettings] = useState(false);
 
   // Calculations test fields
@@ -87,8 +89,13 @@ export default function AdminMCreditsPage() {
         if (settings) {
           const postFee = settings.find(s => s.key === 'company_job_posting_fee_percent');
           const accFee = settings.find(s => s.key === 'candidate_acceptance_fee_percent');
+          const expiryOpts = settings.find(s => s.key === 'job_offer_expiry_options_hours');
+          const defaultExpiry = settings.find(s => s.key === 'default_job_offer_expiry_hours');
+
           if (postFee) setPostingFeePercent(postFee.value);
           if (accFee) setAcceptanceFeePercent(accFee.value);
+          if (expiryOpts) setOfferExpiryOptions(expiryOpts.value);
+          if (defaultExpiry) setDefaultOfferExpiry(defaultExpiry.value);
         }
       } catch (err) {
         console.error('Error loading admin lists:', err);
@@ -138,7 +145,7 @@ export default function AdminMCreditsPage() {
       if (wallet) {
         const { data: txs, error: txsError } = await supabase
           .from('mcredit_transactions')
-          .select('*, admin_profile:profiles!created_by(name)')
+          .select('*')
           .eq('wallet_id', wallet.id)
           .order('created_at', { ascending: false });
 
@@ -179,7 +186,25 @@ export default function AdminMCreditsPage() {
           updated_at: new Date().toISOString()
         });
 
-      if (postErr || accErr) throw (postErr || accErr);
+      const { error: optsErr } = await supabase
+        .from('platform_settings')
+        .upsert({
+          key: 'job_offer_expiry_options_hours',
+          value: offerExpiryOptions.toString(),
+          updated_by: userId,
+          updated_at: new Date().toISOString()
+        });
+
+      const { error: defErr } = await supabase
+        .from('platform_settings')
+        .upsert({
+          key: 'default_job_offer_expiry_hours',
+          value: defaultOfferExpiry.toString(),
+          updated_by: userId,
+          updated_at: new Date().toISOString()
+        });
+
+      if (postErr || accErr || optsErr || defErr) throw (postErr || accErr || optsErr || defErr);
 
       showToast('Platform fee configuration updated successfully!', 'success');
     } catch (err) {
@@ -396,6 +421,29 @@ export default function AdminMCreditsPage() {
                   className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-blue-900 transition-colors"
                 />
               </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">Offer Expiry Options (Hours)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 24, 48, 72"
+                  value={offerExpiryOptions}
+                  onChange={(e) => setOfferExpiryOptions(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-blue-900 transition-colors"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">Comma separated list of hours.</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">Default Offer Expiry (Hours)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={defaultOfferExpiry}
+                  onChange={(e) => setDefaultOfferExpiry(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-blue-900 transition-colors"
+                />
+              </div>
             </div>
 
             <div className="bg-slate-50/50 border border-gray-100 rounded-xl p-4 mt-6">
@@ -566,7 +614,16 @@ export default function AdminMCreditsPage() {
                         {tx.justification_note || tx.description || '-'}
                       </td>
                       <td className="py-3 whitespace-nowrap font-semibold text-[#0e2a4d]">
-                        {tx.admin_profile?.name || 'System / Automated'}
+                        {tx.created_by ? (
+                          <div title={tx.created_by}>
+                            <span>Admin action</span>
+                            <span className="block text-[10px] text-gray-400 font-mono mt-0.5">
+                              {tx.created_by.substring(0, 8)}...
+                            </span>
+                          </div>
+                        ) : (
+                          'System / Automated'
+                        )}
                       </td>
                     </tr>
                   );

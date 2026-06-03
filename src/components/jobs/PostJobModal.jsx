@@ -3,7 +3,8 @@ import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 import BaseModal from '../layout/BaseModal';
 import RichTextEditor from '../common/RichTextEditor';
-import { Briefcase } from 'lucide-react';
+import { Briefcase, AlertTriangle, Coins } from 'lucide-react';
+import { getJobPostingFeePreview, getCompanyWalletBalance, deductJobPostingFee, getUserWalletBalance, deductUserJobPostingFee } from '@/app/actions/mcreditsJobs';
 
 export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit }) {
   const { currentIdentity, userId, profile } = useProfile();
@@ -28,6 +29,14 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
   const [skillInput, setSkillInput] = useState('');
   const [withdrawalLimit, setWithdrawalLimit] = useState(3);
   const [tagsString, setTagsString] = useState('');
+
+  // MCredit state
+  const [feePreview, setFeePreview] = useState(null); // { feePercent, fee }
+  const [walletBalance, setWalletBalance] = useState(null);
+  const [mcreditError, setMcreditError] = useState('');
+
+  const isCompany = currentIdentity?.type === 'company' || currentIdentity?.role === 'company';
+  const identityName = isCompany ? currentIdentity?.data?.name : (profile?.fullName || 'Anonymous');
 
   useEffect(() => {
     if (isOpen) {
@@ -100,6 +109,42 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
     }
   }, [jobToEdit, isOpen]);
 
+  // Live MCredit fee preview for job postings
+  useEffect(() => {
+    if (!isOpen || jobToEdit) {
+      setFeePreview(null);
+      setWalletBalance(null);
+      setMcreditError('');
+      return;
+    }
+
+    const payAmount = parseFloat(formData.payAmount);
+    if (!payAmount || payAmount <= 0) {
+      setFeePreview(null);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const [preview, wallet] = await Promise.all([
+          getJobPostingFeePreview(payAmount),
+          isCompany ? getCompanyWalletBalance(currentIdentity.id) : getUserWalletBalance(userId)
+        ]);
+        if (cancelled) return;
+        setFeePreview(preview);
+        setWalletBalance(wallet.balance);
+        setMcreditError(wallet.balance < preview.fee ? `Insufficient MCredits. Required: ${preview.fee.toFixed(2)} MC, Available: ${wallet.balance.toFixed(2)} MC.` : '');
+      } catch (err) {
+        if (!cancelled) {
+          console.error('MCredit preview error:', err);
+          setMcreditError('Unable to check MCredit balance.');
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isOpen, formData.payAmount, isCompany, currentIdentity?.id, userId, jobToEdit]);
+
   if (!isOpen) return null;
 
   const handleInputChange = (e) => {
@@ -121,9 +166,6 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
   const handleRemoveSkill = (skillToRemove) => {
     setSkills(skills.filter(s => s !== skillToRemove));
   };
-
-  const isCompany = currentIdentity?.type === 'company';
-  const identityName = isCompany ? currentIdentity.data.name : (profile?.fullName || 'Anonymous');
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
@@ -174,6 +216,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           responsibilities: formData.responsibilities,
           location: formData.location,
           salary_range: `${formData.currency} ${formData.payAmount}/${formData.payRate}`,
+          salary_numeric: parseFloat(formData.payAmount) || null,
           employment_type: formData.jobType,
           status: formData.postingStatus,
           required_skills: finalSkills,
@@ -203,6 +246,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
       setLoading(false);
       onComplete(jobData);
     } else {
+      const salaryNumericVal = parseFloat(formData.payAmount) || null;
+
       const { data: jobData, error: jobError } = await supabase
         .from('jobs')
         .insert({
@@ -211,6 +256,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           responsibilities: formData.responsibilities,
           location: formData.location,
           salary_range: `${formData.currency} ${formData.payAmount}/${formData.payRate}`,
+          salary_numeric: salaryNumericVal,
           employment_type: formData.jobType,
           company_id: isCompany ? currentIdentity.id : null,
           poster_id: userId,
@@ -227,6 +273,24 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         alert('Error creating job: ' + jobError.message);
         setLoading(false);
         return;
+      }
+
+      // MCredit deduction
+      if (salaryNumericVal && salaryNumericVal > 0) {
+        try {
+          if (isCompany) {
+            await deductJobPostingFee(currentIdentity.id, jobData.id, salaryNumericVal);
+          } else {
+            await deductUserJobPostingFee(userId, jobData.id, salaryNumericVal);
+          }
+        } catch (mcErr) {
+          console.error('MCredit deduction failed, rolling back job:', mcErr);
+          // Rollback: delete the inserted job
+          await supabase.from('jobs').delete().eq('id', jobData.id);
+          alert('Job posting failed: ' + (mcErr.message || 'Insufficient MCredits'));
+          setLoading(false);
+          return;
+        }
       }
 
       const skillPills = finalSkills.length > 0
@@ -532,6 +596,37 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
 
         </div>
 
+        {/* MCredit Fee Preview Banner (Create mode only) */}
+        {!jobToEdit && feePreview && (
+          <div className={`rounded-xl p-4 mt-4 mb-2 border ${
+            mcreditError 
+              ? 'bg-red-50 border-red-200' 
+              : 'bg-emerald-50 border-emerald-200'
+          }`}>
+            <div className="flex items-start gap-3">
+              {mcreditError ? (
+                <AlertTriangle size={18} className="text-red-600 shrink-0 mt-0.5" />
+              ) : (
+                <Coins size={18} className="text-emerald-700 shrink-0 mt-0.5" />
+              )}
+              <div className="text-sm">
+                <p className="font-semibold text-gray-800">
+                  Posting Fee: <span className="font-bold">{feePreview.fee.toFixed(2)} MC</span>
+                  <span className="text-gray-500 font-normal"> ({feePreview.feePercent}% of {parseFloat(formData.payAmount).toLocaleString()})</span>
+                </p>
+                {walletBalance !== null && (
+                  <p className="text-gray-600 mt-0.5">
+                    {isCompany ? 'Company' : 'Personal'} Wallet: <span className="font-bold">{walletBalance.toFixed(2)} MC</span>
+                  </p>
+                )}
+                {mcreditError && (
+                  <p className="text-red-700 font-semibold mt-1">{mcreditError}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Footer Buttons Section */}
         <div className="flex flex-wrap items-center justify-end gap-3 mt-8 pt-4 border-t border-slate-200 w-full">
           <button 
@@ -544,7 +639,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           <button 
             type="submit" 
             className="btn-primary-pill px-6" 
-            disabled={loading}
+            disabled={loading || (isCompany && !jobToEdit && !!mcreditError)}
           >
             {loading ? (jobToEdit ? 'Saving...' : 'Posting...') : (jobToEdit ? 'Save Changes' : 'Create Job')}
           </button>
