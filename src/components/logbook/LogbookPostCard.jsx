@@ -79,6 +79,15 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
 
   // Resilient author resolver supporting multiple formats and fallbacks
   const getAuthorInfo = () => {
+    // 0. Check for company identity override
+    if (post.company) {
+      return {
+        id: post.company.id,
+        name: post.company.name,
+        avatar_url: post.company.logo_url,
+        headline: post.company.industry || 'Company'
+      };
+    }
     // 1. Check post.author
     if (post.author) {
       const name = post.author.name || post.author.full_name || post.author.display_name;

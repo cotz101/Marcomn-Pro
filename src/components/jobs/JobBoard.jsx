@@ -75,10 +75,40 @@ export default function JobBoard() {
         appsData.forEach(app => {
           appsMap[app.job_id] = app;
         });
+
+        // Hydrate companies
+        const companyIds = [...new Set(jobsData.map(j => j.company_id).filter(Boolean))];
+        let companiesMap = {};
+        if (companyIds.length > 0) {
+          try {
+            const { data } = await supabase.from('companies').select('id, name, logo_url').in('id', companyIds);
+            if (data) {
+              data.forEach(c => companiesMap[c.id] = c);
+            }
+          } catch (e) {
+            console.error('Error fetching companies', e);
+          }
+        }
+
+        // Hydrate posters
+        const posterIds = [...new Set(jobsData.map(j => j.poster_id).filter(Boolean))];
+        let postersMap = {};
+        if (posterIds.length > 0) {
+          try {
+            const { data } = await supabase.from('profiles').select('id, name, avatar_url').in('id', posterIds);
+            if (data) {
+              data.forEach(p => postersMap[p.id] = p);
+            }
+          } catch (e) {
+            console.error('Error fetching profiles', e);
+          }
+        }
         
         const jobsWithApps = jobsData.map(job => ({
           ...job,
-          application: appsMap[job.id] || null
+          application: appsMap[job.id] || null,
+          company: companiesMap[job.company_id] || null,
+          poster: postersMap[job.poster_id] || null
         }));
 
         setJobs(jobsWithApps);

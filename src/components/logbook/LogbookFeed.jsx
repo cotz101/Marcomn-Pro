@@ -43,6 +43,7 @@ export default function LogbookFeed() {
           author_id,
           created_at,
           user_id,
+          posted_as_company_id,
           author:profiles!user_id (id, name, avatar_url, headline),
           likes ( id, user_id ),
           comments ( id, user_id, content, created_at, profiles:profiles!user_id (name, avatar_url) ),
@@ -73,6 +74,23 @@ export default function LogbookFeed() {
         }
       }
 
+      // Extract unique company IDs for company author hydration
+      const companyIds = [...new Set((posts || []).map(p => p.posted_as_company_id).filter(Boolean))];
+      let companies = [];
+      if (companyIds.length > 0) {
+        try {
+          const { data, error: compErr } = await supabase
+            .from('companies')
+            .select('id, name, logo_url, industry')
+            .in('id', companyIds);
+          if (!compErr && data) {
+            companies = data;
+          }
+        } catch (err) {
+          console.error('Error fetching companies for logbook feed:', err);
+        }
+      }
+
       // Map to normalize article_id parameter and perform direct clean merge
       const hydratedPosts = posts.map(post => {
         post.article_id = post.article_id || post.shared_article_id;
@@ -88,9 +106,12 @@ export default function LogbookFeed() {
           };
         }
 
+        const matchedCompany = post.posted_as_company_id ? companies.find(c => c.id === post.posted_as_company_id) : null;
+
         return {
           ...post,
-          mblogs: post.article_id ? mblogs : null
+          mblogs: post.article_id ? mblogs : null,
+          company: matchedCompany
         };
       });
 
