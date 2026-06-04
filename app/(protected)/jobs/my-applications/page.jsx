@@ -6,6 +6,7 @@ import { useProfile } from '@/app/context/ProfileContext';
 import { createClient } from '@/lib/supabase';
 import { Briefcase, MapPin, Calendar, Building2, Loader2, ExternalLink, Building, AlertTriangle, Coins } from 'lucide-react';
 import { getCandidateAcceptanceFeePreview, getUserWalletBalance, deductCandidateAcceptanceFee } from '@/app/actions/mcreditsJobs';
+import { createJobOrderFromAcceptedApplication, cancelJobOrderByCandidate } from '@/app/actions/jobOrders';
 
 const SkeletonRow = () => (
   <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm animate-pulse flex items-center justify-between gap-4">
@@ -20,7 +21,7 @@ const SkeletonRow = () => (
 );
 
 export default function MyApplicationsPage() {
-  const { userId } = useProfile();
+  const { userId, currentIdentity } = useProfile();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,14 +32,23 @@ export default function MyApplicationsPage() {
   const [acceptingError, setAcceptingError] = useState('');
   const [isAccepting, setIsAccepting] = useState(false);
 
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [appToCancel, setAppToCancel] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelRemarks, setCancelRemarks] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
+
   const fetchApplications = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || currentIdentity?.type === 'company') {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('applications')
-        .select('*, job:jobs(*)')
+        .select('*, job:jobs(*), job_orders(*)')
         .eq('applicant_id', userId)
         .order('applied_at', { ascending: false });
 
@@ -49,7 +59,7 @@ export default function MyApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, currentIdentity]);
 
   useEffect(() => {
     if (userId) {
@@ -90,7 +100,15 @@ export default function MyApplicationsPage() {
       const salaryNumeric = appToAccept.job?.salary_numeric || 0;
       await deductCandidateAcceptanceFee(userId, appToAccept.id, salaryNumeric);
       
-      setApplications(prev => prev.map(a => a.id === appToAccept.id ? { ...a, status: 'Accepted' } : a));
+      const orderRes = await createJobOrderFromAcceptedApplication(appToAccept.id);
+      let newOrders = [];
+      if (orderRes.success && orderRes.order) {
+        newOrders = [orderRes.order];
+      } else {
+        console.error('Failed to create job order:', orderRes.error);
+      }
+
+      setApplications(prev => prev.map(a => a.id === appToAccept.id ? { ...a, status: 'Accepted', job_orders: newOrders } : a));
       setIsAcceptModalOpen(false);
       setAppToAccept(null);
       alert('Offer accepted successfully!');
@@ -103,6 +121,53 @@ export default function MyApplicationsPage() {
       }
     } finally {
       setIsAccepting(false);
+    }
+  };
+
+  const handleOpenCancelModal = (app) => {
+    setAppToCancel(app);
+    setCancelReason('');
+    setCancelRemarks('');
+    setIsCancelModalOpen(true);
+  };
+
+  const handleConfirmCancellation = async () => {
+    if (!appToCancel || !cancelReason) {
+      alert('Please select a reason for cancellation.');
+      return;
+    }
+    const order = Array.isArray(appToCancel.job_orders) ? appToCancel.job_orders[0] : appToCancel.job_orders;
+    if (!order) return;
+
+    setIsCancelling(true);
+    try {
+      const res = await cancelJobOrderByCandidate({
+        jobOrderId: order.id,
+        reason: cancelReason,
+        remarks: cancelRemarks
+      });
+
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to cancel engagement.');
+      }
+
+      setApplications(prev => prev.map(a => 
+        a.id === appToCancel.id 
+          ? { 
+              ...a, 
+              status: 'Candidate Cancelled', 
+              job_orders: Array.isArray(a.job_orders) ? [{ ...order, status: 'Candidate Cancelled' }] : { ...order, status: 'Candidate Cancelled' } 
+            } 
+          : a
+      ));
+      setIsCancelModalOpen(false);
+      setAppToCancel(null);
+      alert('Engagement cancelled.');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'An error occurred during cancellation.');
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -149,6 +214,12 @@ export default function MyApplicationsPage() {
         return (
           <span className={`${baseClass} bg-red-100 text-red-700`}>
             Withdrawn
+          </span>
+        );
+      case 'Candidate Cancelled':
+        return (
+          <span className={`${baseClass} bg-red-100 text-red-700`}>
+            Candidate Cancelled
           </span>
         );
       default:
@@ -199,6 +270,16 @@ export default function MyApplicationsPage() {
           <SkeletonRow />
           <SkeletonRow />
           <SkeletonRow />
+        </div>
+      ) : currentIdentity?.type === 'company' ? (
+        <div className="text-center p-14 bg-white border border-gray-100 rounded-xl shadow-sm">
+          <div className="text-gray-300 mb-4 flex justify-center">
+            <Building2 size={52} />
+          </div>
+          <h3 className="text-lg font-bold text-gray-800">Company profiles do not submit job applications.</h3>
+          <p className="text-gray-500 mt-1 mb-6 text-sm max-w-sm mx-auto">
+            Switch to your personal profile to view your applications.
+          </p>
         </div>
       ) : applications.length === 0 ? (
         <div className="text-center p-14 bg-white border border-gray-100 rounded-xl shadow-sm">
@@ -290,6 +371,20 @@ export default function MyApplicationsPage() {
                     </div>
                   )}
 
+                  {app.status === 'Accepted' && (Array.isArray(app.job_orders) ? app.job_orders[0]?.status === 'Active' : app.job_orders?.status === 'Active') && (
+                    <div className="flex flex-col items-center gap-1.5 w-full">
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full w-full text-center">
+                        Active Engagement
+                      </span>
+                      <button
+                        onClick={() => handleOpenCancelModal(app)}
+                        className="px-4 py-1.5 text-sm font-semibold bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors w-full sm:w-auto text-center mt-1"
+                      >
+                        Cancel Engagement
+                      </button>
+                    </div>
+                  )}
+
                   <Link
                     href={`/mservices/opportunity/${app.job_id}?source=my-applications`}
                     className="px-4 py-2 text-sm font-semibold text-blue-900 border border-blue-900 rounded-lg hover:bg-blue-50 transition-colors w-full sm:w-auto text-center mt-1"
@@ -355,10 +450,70 @@ export default function MyApplicationsPage() {
               </button>
               <button 
                 onClick={handleConfirmAcceptance}
-                disabled={isAccepting || !feePreview || (acceptingError && acceptingError.includes('Insufficient'))}
-                className="px-5 py-2 text-sm font-bold bg-[#004173] text-white hover:bg-blue-800 rounded-xl transition-colors shadow-sm disabled:bg-slate-300 disabled:text-gray-500"
+                className="bg-[#004173] hover:bg-blue-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
+                disabled={isAccepting || feePreview === null || walletBalance === null || walletBalance < feePreview.fee}
               >
-                {isAccepting ? 'Processing...' : 'Confirm Acceptance'}
+                {isAccepting ? 'Confirming...' : 'Confirm Acceptance'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Engagement Modal */}
+      {isCancelModalOpen && appToCancel && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-lg font-bold text-red-600 mb-2">Cancel Accepted Job</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Cancelling an accepted job may affect your trust and reputation score. Please provide a reason.
+            </p>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Reason (Required)</label>
+                <select 
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                >
+                  <option value="">Select a reason...</option>
+                  <option value="Medical / Health Issue">Medical / Health Issue</option>
+                  <option value="Family Emergency">Family Emergency</option>
+                  <option value="Accepted Another Opportunity">Accepted Another Opportunity</option>
+                  <option value="Schedule Conflict">Schedule Conflict</option>
+                  <option value="Location / Travel Issue">Location / Travel Issue</option>
+                  <option value="Salary or Terms Concern">Salary or Terms Concern</option>
+                  <option value="Unable to Meet Requirements">Unable to Meet Requirements</option>
+                  <option value="Personal Reason">Personal Reason</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Remarks (Optional)</label>
+                <textarea 
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 min-h-[80px]"
+                  placeholder="Provide additional details..."
+                  value={cancelRemarks}
+                  onChange={(e) => setCancelRemarks(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setIsCancelModalOpen(false)}
+                className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                disabled={isCancelling}
+              >
+                Close
+              </button>
+              <button 
+                onClick={handleConfirmCancellation}
+                className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
+                disabled={isCancelling || !cancelReason}
+              >
+                {isCancelling ? 'Submitting...' : 'Submit Cancellation'}
               </button>
             </div>
           </div>

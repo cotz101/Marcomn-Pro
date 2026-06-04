@@ -84,7 +84,7 @@ export default function ApplicantsPage() {
       // ── 3. Step One: Fetch applications for this job ──────────────────────
       const { data: apps, error: appsError } = await supabase
         .from('applications')
-        .select('*')
+        .select('*, job_cancellations(*)')
         .eq('job_id', id)
         .order('applied_at', { ascending: false });
 
@@ -415,9 +415,10 @@ export default function ApplicantsPage() {
                     
                     {/* Status Bookmark */}
                     <div className="absolute top-0 right-0" onClick={(e) => e.stopPropagation()}>
-                      {['Withdrawn', 'Accepted', 'Offered', 'Expired'].includes(app.status) ? (
+                      {['Withdrawn', 'Accepted', 'Offered', 'Expired', 'Candidate Cancelled'].includes(app.status) ? (
                         <span className={`inline-flex items-center px-3 py-1.5 rounded-bl-xl text-[10px] font-bold uppercase tracking-widest shadow-sm border-b border-l ${
                           app.status === 'Accepted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                          app.status === 'Candidate Cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
                           app.status === 'Offered' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                           app.status === 'Expired' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                           'bg-slate-100 text-slate-500 border-slate-200'
@@ -446,6 +447,15 @@ export default function ApplicantsPage() {
                           <span className="px-3 py-1 rounded-full bg-[#EAF3FA] border border-blue-100 text-[10px] font-bold text-[#004173] uppercase tracking-wide">
                             +{profile.skills.length - 3}
                           </span>
+                        )}
+                      </div>
+                    )}
+
+                    {app.status === 'Candidate Cancelled' && app.job_cancellations?.[0] && (
+                      <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-800">
+                        <strong>Cancellation Reason:</strong> {app.job_cancellations[0].cancellation_reason}
+                        {app.job_cancellations[0].cancellation_remarks && (
+                          <p className="mt-1 text-red-700 text-xs">{app.job_cancellations[0].cancellation_remarks}</p>
                         )}
                       </div>
                     )}
