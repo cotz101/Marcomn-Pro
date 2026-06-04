@@ -48,7 +48,7 @@ export default function MyApplicationsPage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('applications')
-        .select('*, job:jobs(*), job_orders(*)')
+        .select('*, job:jobs(*), job_orders(*), job_cancellations(*)')
         .eq('applicant_id', userId)
         .order('applied_at', { ascending: false });
 
@@ -354,6 +354,21 @@ export default function MyApplicationsPage() {
                 {/* Right Side: Actions & Badges */}
                 <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 w-full sm:w-auto">
                   {getStatusBadge(app.status)}
+
+                  {app.status === 'Company Cancelled' && app.job_cancellations && (() => {
+                    const cancellation = Array.isArray(app.job_cancellations) ? app.job_cancellations[0] : app.job_cancellations;
+                    if (cancellation) {
+                      return (
+                        <div className="mt-1 p-2 bg-red-50 border border-red-100 rounded-lg text-xs text-red-800 text-right w-full sm:max-w-xs">
+                          <strong>Cancellation Reason:</strong> {cancellation.cancellation_reason}
+                          {cancellation.cancellation_remarks && (
+                            <p className="mt-1 text-red-700">{cancellation.cancellation_remarks}</p>
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
 
                   {app.status === 'Offered' && (
                     <div className="flex flex-col items-center gap-1.5 w-full">

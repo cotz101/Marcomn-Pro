@@ -547,13 +547,14 @@ export default function OpportunityDetailsPage() {
               // Derive state
               const isPending   = myApplication?.status === 'Pending';
               const isWithdrawn = myApplication?.status === 'Withdrawn';
+              const isCompanyCancelled = myApplication?.status === 'Company Cancelled';
               const withdrawCount = myApplication?.withdrawal_count ?? 0;
               const withdrawLimit = job?.withdrawal_limit ?? 3;
               const canReApply   = isWithdrawn && withdrawCount < withdrawLimit;
               const isLocked     = isWithdrawn && withdrawCount >= withdrawLimit;
               const orderObj = Array.isArray(myApplication?.job_orders) ? myApplication.job_orders[0] : myApplication?.job_orders;
               const isActiveEngagement = myApplication?.status === 'Accepted' && orderObj?.status === 'Active';
-              const needsUpload  = (!myApplication || canReApply) && !isActiveEngagement;
+              const needsUpload  = (!myApplication || canReApply) && !isActiveEngagement && !isCompanyCancelled;
 
               return (
                 <div className="flex flex-col items-end gap-3 w-full sm:w-auto">
@@ -671,6 +672,21 @@ export default function OpportunityDetailsPage() {
                         className="h-10 px-5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
                       >
                         Cancel Engagement
+                      </button>
+                    </div>
+                  )}
+
+                  {/* State F — Company Cancelled */}
+                  {isCompanyCancelled && (
+                    <div className="flex flex-row items-center gap-3 w-full sm:w-auto">
+                      <div className="h-10 px-6 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm font-bold flex items-center justify-center gap-1.5 cursor-default shadow-sm">
+                        Company Cancelled
+                      </div>
+                      <button
+                        onClick={() => router.push('/jobs/my-applications')}
+                        className="h-10 px-5 bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        View Details
                       </button>
                     </div>
                   )}

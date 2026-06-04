@@ -197,3 +197,96 @@ export async function cancelJobOrderByCandidate({ jobOrderId, reason, remarks })
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * Stage 3C: Allow company to cancel an engagement
+ */
+export async function cancelJobOrderByCompany({ jobOrderId, reason, remarks }) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      throw new Error('Unauthorized');
+    }
+
+    const userId = user.id;
+
+    // 1. Fetch job order and job to verify ownership
+    const { data: order, error: orderError } = await supabase
+      .from('job_orders')
+      .select('*, job:jobs(*)')
+      .eq('id', jobOrderId)
+      .maybeSingle();
+
+    if (orderError || !order) {
+      throw new Error('Job order not found');
+    }
+
+    // Verify company/poster identity
+    if (order.job.poster_id !== userId) {
+      throw new Error('Unauthorized: only the job poster can cancel this engagement');
+    }
+
+    // Verify status
+    if (order.status !== 'Active') {
+      throw new Error(`Cannot cancel job order that is ${order.status}`);
+    }
+
+    // 2. Insert job_cancellations row
+    const { error: cancelInsertError } = await supabase
+      .from('job_cancellations')
+      .insert({
+        job_order_id: order.id,
+        job_id: order.job_id,
+        application_id: order.application_id,
+        cancelled_by: userId,
+        cancelled_by_type: 'company',
+        cancellation_reason: reason,
+        cancellation_remarks: remarks || null
+      });
+
+    if (cancelInsertError) throw new Error(`Cancellation record error: ${cancelInsertError.message}`);
+
+    // 3. Update job_order.status
+    const { error: orderUpdateError } = await supabase
+      .from('job_orders')
+      .update({ status: 'Company Cancelled' })
+      .eq('id', order.id);
+
+    if (orderUpdateError) throw new Error(`Order update error: ${orderUpdateError.message}`);
+
+    // 4. Optionally update application status to 'Company Cancelled'
+    const { error: appUpdateError } = await supabase
+      .from('applications')
+      .update({ status: 'Company Cancelled' })
+      .eq('id', order.application_id);
+      
+    if (appUpdateError) {
+        console.error('Warning: Could not update application status to Company Cancelled', appUpdateError);
+    }
+
+    // 5. Create platform notification for candidate
+    const companyName = order.job.company || 'A company';
+    const notificationMessage = `${companyName} cancelled the engagement for ${order.job?.title || 'Unknown Job'}.`;
+    
+    try {
+        await createPlatformNotification({
+            userId: order.candidate_id,
+            title: 'Job Engagement Cancelled',
+            message: notificationMessage,
+            type: 'job_cancelled',
+            linkUrl: `/jobs/my-applications`
+        });
+    } catch (notifErr) {
+        console.error('Failed to create platform notification:', notifErr);
+    }
+
+    return { success: true };
+
+  } catch (err) {
+    console.error('cancelJobOrderByCompany error:', err);
+    return { success: false, error: err.message };
+  }
+}
+

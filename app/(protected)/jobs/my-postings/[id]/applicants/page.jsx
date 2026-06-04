@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useProfile } from '@/app/context/ProfileContext';
 import { createClient } from '@/lib/supabase';
+import { cancelJobOrderByCompany } from '@/app/actions/jobOrders';
 import {
   ArrowLeft,
   Briefcase,
@@ -49,6 +50,12 @@ export default function ApplicantsPage() {
   const [appToOffer, setAppToOffer] = useState(null);
   const [selectedExpiryHours, setSelectedExpiryHours] = useState(48);
 
+  const [isCompanyCancelModalOpen, setIsCompanyCancelModalOpen] = useState(false);
+  const [appToCancel, setAppToCancel] = useState(null);
+  const [companyCancelReason, setCompanyCancelReason] = useState('');
+  const [companyCancelRemarks, setCompanyCancelRemarks] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
+
   const fetchData = useCallback(async () => {
     if (!userId || !id) return;
 
@@ -84,7 +91,7 @@ export default function ApplicantsPage() {
       // ── 3. Step One: Fetch applications for this job ──────────────────────
       const { data: apps, error: appsError } = await supabase
         .from('applications')
-        .select('*, job_cancellations(*)')
+        .select('*, job_cancellations(*), job_orders(*)')
         .eq('job_id', id)
         .order('applied_at', { ascending: false });
 
@@ -199,6 +206,48 @@ export default function ApplicantsPage() {
     }
   };
 
+  const handleConfirmCompanyCancellation = async () => {
+    if (!appToCancel || !companyCancelReason) {
+      if (showToast) showToast('Please select a cancellation reason.', 'error');
+      return;
+    }
+    
+    // Safely extract job_orders correctly handling object or array
+    const order = Array.isArray(appToCancel.job_orders) ? appToCancel.job_orders[0] : appToCancel.job_orders;
+    if (!order) {
+      if (showToast) showToast('Active engagement not found.', 'error');
+      return;
+    }
+
+    setIsCancelling(true);
+    try {
+      const res = await cancelJobOrderByCompany({
+        jobOrderId: order.id,
+        reason: companyCancelReason,
+        remarks: companyCancelRemarks
+      });
+
+      if (!res.success) throw new Error(res.error || 'Failed to cancel engagement.');
+
+      setApplicants((prev) =>
+        prev.map((app) => (app.id === appToCancel.id ? { 
+          ...app, 
+          status: 'Company Cancelled',
+          job_cancellations: [{ cancellation_reason: companyCancelReason, cancellation_remarks: companyCancelRemarks }]
+        } : app))
+      );
+
+      setIsCompanyCancelModalOpen(false);
+      setAppToCancel(null);
+      if (showToast) showToast('Engagement successfully cancelled.', 'success');
+    } catch (err) {
+      console.error('Error cancelling engagement:', err);
+      if (showToast) showToast('Failed to cancel engagement: ' + (err.message || err), 'error');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -224,6 +273,10 @@ export default function ApplicantsPage() {
         return 'border-blue-200 bg-blue-50 text-blue-700 focus:ring-blue-500 focus:border-blue-500';
       case 'Expired':
         return 'border-rose-200 bg-rose-50 text-rose-700 focus:ring-rose-500 focus:border-rose-500';
+      case 'Candidate Cancelled':
+        return 'border-red-200 bg-red-50 text-red-700 focus:ring-red-500 focus:border-red-500';
+      case 'Company Cancelled':
+        return 'border-red-200 bg-red-50 text-red-700 focus:ring-red-500 focus:border-red-500';
       case 'Shortlisted':
         return 'border-indigo-200 bg-indigo-50 text-indigo-700 focus:ring-indigo-500 focus:border-indigo-500';
       case 'Under Review':
@@ -415,10 +468,10 @@ export default function ApplicantsPage() {
                     
                     {/* Status Bookmark */}
                     <div className="absolute top-0 right-0" onClick={(e) => e.stopPropagation()}>
-                      {['Withdrawn', 'Accepted', 'Offered', 'Expired', 'Candidate Cancelled'].includes(app.status) ? (
+                      {['Withdrawn', 'Accepted', 'Offered', 'Expired', 'Candidate Cancelled', 'Company Cancelled'].includes(app.status) ? (
                         <span className={`inline-flex items-center px-3 py-1.5 rounded-bl-xl text-[10px] font-bold uppercase tracking-widest shadow-sm border-b border-l ${
                           app.status === 'Accepted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                          app.status === 'Candidate Cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
+                          (app.status === 'Candidate Cancelled' || app.status === 'Company Cancelled') ? 'bg-red-50 text-red-700 border-red-200' :
                           app.status === 'Offered' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                           app.status === 'Expired' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                           'bg-slate-100 text-slate-500 border-slate-200'
@@ -451,7 +504,7 @@ export default function ApplicantsPage() {
                       </div>
                     )}
 
-                    {app.status === 'Candidate Cancelled' && app.job_cancellations?.[0] && (
+                    {(app.status === 'Candidate Cancelled' || app.status === 'Company Cancelled') && app.job_cancellations?.[0] && (
                       <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-800">
                         <strong>Cancellation Reason:</strong> {app.job_cancellations[0].cancellation_reason}
                         {app.job_cancellations[0].cancellation_remarks && (
@@ -461,6 +514,20 @@ export default function ApplicantsPage() {
                     )}
                     
                     {/* Action buttons */}
+                    {app.status === 'Accepted' && (() => {
+                      const order = Array.isArray(app.job_orders) ? app.job_orders[0] : app.job_orders;
+                      return order?.status === 'Active' ? (
+                        <div className="mt-4 flex justify-end">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setAppToCancel(app); setCompanyCancelReason(''); setCompanyCancelRemarks(''); setIsCompanyCancelModalOpen(true); }}
+                            className="px-4 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-xs font-bold rounded-lg transition-colors shadow-sm"
+                          >
+                            Cancel Engagement
+                          </button>
+                        </div>
+                      ) : null;
+                    })()}
+
                     {app.status === 'Shortlisted' && (
                       <div className="mt-4 flex justify-end">
                         <button 
@@ -648,6 +715,62 @@ export default function ApplicantsPage() {
               </div>
             </div>
           )}
+
+      {/* Company Cancel Engagement Modal */}
+      {isCompanyCancelModalOpen && appToCancel && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-bold text-red-700 mb-2">Cancel Engagement</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              You are about to cancel this active engagement with <span className="font-semibold text-gray-800">{appToCancel.profile?.name || 'this applicant'}</span>. 
+              The candidate will be notified. This action cannot be undone.
+            </p>
+            
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Cancellation Reason *</label>
+              <select 
+                value={companyCancelReason}
+                onChange={(e) => setCompanyCancelReason(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-red-500 bg-gray-50"
+              >
+                <option value="" disabled>Select a reason...</option>
+                <option value="Position Cancelled">Position Cancelled</option>
+                <option value="Hired Another Candidate">Hired Another Candidate</option>
+                <option value="Candidate Unresponsive">Candidate Unresponsive</option>
+                <option value="Candidate Misrepresented Skills">Candidate Misrepresented Skills</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Remarks (Optional)</label>
+              <textarea 
+                value={companyCancelRemarks}
+                onChange={(e) => setCompanyCancelRemarks(e.target.value)}
+                placeholder="Provide additional details..."
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-red-500 bg-gray-50 resize-none h-24"
+              />
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => { setIsCompanyCancelModalOpen(false); setAppToCancel(null); }}
+                disabled={isCancelling}
+                className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                Go Back
+              </button>
+              <button 
+                onClick={handleConfirmCompanyCancellation}
+                disabled={isCancelling}
+                className="px-5 py-2 text-sm font-bold bg-red-600 text-white hover:bg-red-700 rounded-xl transition-colors shadow-sm disabled:opacity-50"
+              >
+                {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Offer Expiry Modal */}
       {isOfferModalOpen && appToOffer && (
