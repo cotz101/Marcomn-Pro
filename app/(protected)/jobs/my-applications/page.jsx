@@ -359,10 +359,15 @@ export default function MyApplicationsPage() {
                     const cancellation = Array.isArray(app.job_cancellations) ? app.job_cancellations[0] : app.job_cancellations;
                     if (cancellation) {
                       return (
-                        <div className="mt-1 p-2 bg-red-50 border border-red-100 rounded-lg text-xs text-red-800 text-right w-full sm:max-w-xs">
-                          <strong>Cancellation Reason:</strong> {cancellation.cancellation_reason}
+                        <div className="mt-2 p-4 bg-red-50 border border-red-100 rounded-lg text-sm text-red-800 text-left w-full sm:max-w-sm">
+                          <p className="font-bold text-red-900 mb-1">Company Cancellation Reason:</p>
+                          <p className="mb-3">{cancellation.cancellation_reason}</p>
+                          
                           {cancellation.cancellation_remarks && (
-                            <p className="mt-1 text-red-700">{cancellation.cancellation_remarks}</p>
+                            <>
+                              <p className="font-bold text-red-900 mb-1">Remarks:</p>
+                              <p>{cancellation.cancellation_remarks}</p>
+                            </>
                           )}
                         </div>
                       );

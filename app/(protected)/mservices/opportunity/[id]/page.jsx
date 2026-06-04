@@ -93,7 +93,7 @@ export default function OpportunityDetailsPage() {
         const supabase = createClient();
         const { data, error } = await supabase
           .from('applications')
-          .select('id, status, withdrawal_count, documents, job_orders(*)')
+          .select('id, status, withdrawal_count, documents, job_orders(*), job_cancellations(*)')
           .eq('job_id', id)
           .eq('applicant_id', currentUser.id)
           .maybeSingle();
@@ -678,16 +678,32 @@ export default function OpportunityDetailsPage() {
 
                   {/* State F — Company Cancelled */}
                   {isCompanyCancelled && (
-                    <div className="flex flex-row items-center gap-3 w-full sm:w-auto">
-                      <div className="h-10 px-6 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm font-bold flex items-center justify-center gap-1.5 cursor-default shadow-sm">
-                        Company Cancelled
+                    <div className="flex flex-col gap-3 w-full sm:w-auto">
+                      <div className="flex flex-row items-center gap-3">
+                        <div className="h-10 px-6 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm font-bold flex items-center justify-center gap-1.5 cursor-default shadow-sm">
+                          Company Cancelled
+                        </div>
+                        <button
+                          onClick={() => router.push('/jobs/my-applications')}
+                          className="h-10 px-5 bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                          View Details
+                        </button>
                       </div>
-                      <button
-                        onClick={() => router.push('/jobs/my-applications')}
-                        className="h-10 px-5 bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
-                      >
-                        View Details
-                      </button>
+                      
+                      {myApplication.job_cancellations?.[0] && (
+                        <div className="p-4 bg-red-50 border border-red-100 rounded-lg text-sm text-red-800 w-full max-w-sm mt-2 text-left">
+                          <p className="font-bold text-red-900 mb-1">Company Cancellation Reason:</p>
+                          <p className="mb-3">{myApplication.job_cancellations[0].cancellation_reason}</p>
+                          
+                          {myApplication.job_cancellations[0].cancellation_remarks && (
+                            <>
+                              <p className="font-bold text-red-900 mb-1">Remarks:</p>
+                              <p>{myApplication.job_cancellations[0].cancellation_remarks}</p>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
