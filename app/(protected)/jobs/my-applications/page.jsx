@@ -280,7 +280,7 @@ export default function MyApplicationsPage() {
                         onClick={() => handleOpenAcceptModal(app)}
                         className="px-4 py-1.5 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto text-center"
                       >
-                        Accept Offer
+                        Click to Accept the Offer
                       </button>
                       {app.offer_expires_at && (
                         <p className="text-[10px] text-rose-500 font-semibold uppercase tracking-wider text-center">

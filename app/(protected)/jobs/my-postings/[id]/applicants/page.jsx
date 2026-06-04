@@ -451,7 +451,7 @@ export default function ApplicantsPage() {
                     )}
                     
                     {/* Action buttons */}
-                    {!['Withdrawn', 'Accepted', 'Offered', 'Expired', 'Rejected'].includes(app.status) && (
+                    {app.status === 'Shortlisted' && (
                       <div className="mt-4 flex justify-end">
                         <button 
                           onClick={(e) => { e.stopPropagation(); setAppToOffer(app); setIsOfferModalOpen(true); }}

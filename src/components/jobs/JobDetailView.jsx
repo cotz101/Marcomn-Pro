@@ -483,11 +483,19 @@ export default function OpportunityDetailsPage() {
               // Derive state
               const isPending   = myApplication?.status === 'Pending';
               const isWithdrawn = myApplication?.status === 'Withdrawn';
+              const isShortlisted = myApplication?.status === 'Shortlisted';
+              const isOffered = myApplication?.status === 'Offered';
+              const isAccepted = myApplication?.status === 'Accepted';
+              const isRejected = myApplication?.status === 'Rejected';
+              const isExpired = myApplication?.status === 'Expired';
+              
               const withdrawCount = myApplication?.withdrawal_count ?? 0;
               const withdrawLimit = job?.withdrawal_limit ?? 3;
               const canReApply   = isWithdrawn && withdrawCount < withdrawLimit;
               const isLocked     = isWithdrawn && withdrawCount >= withdrawLimit;
               const needsUpload  = !myApplication || canReApply;
+
+              const getApplicantStatusBadge = () => null;
 
               return (
                 <div className="flex flex-col items-end gap-3 w-full sm:w-auto">
@@ -554,12 +562,6 @@ export default function OpportunityDetailsPage() {
                   {isPending && (
                     <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
                       <button
-                        disabled
-                        className="px-8 py-3 bg-gray-300 text-gray-500 cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto"
-                      >
-                        Applied ✓
-                      </button>
-                      <button
                         onClick={handleWithdraw}
                         disabled={isWithdrawing}
                         className="text-xs font-semibold text-red-600 hover:text-red-800 transition-colors bg-transparent border-none cursor-pointer underline underline-offset-2 self-end"
@@ -572,27 +574,31 @@ export default function OpportunityDetailsPage() {
 
                   {/* State C — Withdrawn & Locked */}
                   {isLocked && (
-                    <button
-                      disabled
-                      className="px-8 py-3 bg-gray-200 text-gray-400 cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto"
-                    >
-                      Withdrawal Limit Reached
-                    </button>
+                    <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
+                      <button
+                        disabled
+                        className="px-8 py-2 bg-gray-200 text-gray-400 cursor-not-allowed rounded-lg text-xs font-bold w-full sm:w-auto"
+                      >
+                        Withdrawal Limit Reached
+                      </button>
+                    </div>
                   )}
 
                   {/* State D — Withdrawn & Can Re-Apply */}
                   {canReApply && (
-                    <button
-                      onClick={handleReApply}
-                      disabled={isApplying}
-                      className={
-                        isApplying
-                          ? 'px-8 py-3 bg-blue-900 opacity-70 text-white cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto'
-                          : 'px-8 py-3 bg-blue-900 hover:bg-blue-800 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all w-full sm:w-auto'
-                      }
-                    >
-                      {isApplying ? (selectedFiles.length > 0 ? `Uploading ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...` : 'Applying...') : 'Re-Apply to Position'}
-                    </button>
+                    <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={handleReApply}
+                        disabled={isApplying}
+                        className={
+                          isApplying
+                            ? 'px-8 py-3 bg-blue-900 opacity-70 text-white cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto'
+                            : 'px-8 py-3 bg-blue-900 hover:bg-blue-800 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all w-full sm:w-auto'
+                        }
+                      >
+                        {isApplying ? (selectedFiles.length > 0 ? `Uploading ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...` : 'Applying...') : 'Re-Apply to Position'}
+                      </button>
+                    </div>
                   )}
 
                 </div>

@@ -420,30 +420,14 @@ export default function OpportunityDetailsPage() {
             </div>
           </div>
           
-          {/* Application Status badge */}
-          <div className="flex items-center gap-2">
-            {isOwner ? (
+          {/* Posting Owner badge */}
+          {isOwner && (
+            <div className="flex items-center gap-2">
               <span className="px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider bg-blue-50 text-[#002b4e] border border-blue-100 flex items-center gap-1.5">
                 <Briefcase size={13} /> Posting Owner
               </span>
-            ) : myApplication ? (
-              myApplication.status === 'Pending' ? (
-                <span className="px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-none bg-emerald-500 animate-pulse"></span>
-                  Applied
-                </span>
-              ) : (
-                <span className="px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider bg-red-50 text-red-700 border border-red-100 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-none bg-red-500"></span>
-                  Withdrawn
-                </span>
-              )
-            ) : (
-              <span className="px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1.5">
-                Not Applied
-              </span>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Core Content Body */}
