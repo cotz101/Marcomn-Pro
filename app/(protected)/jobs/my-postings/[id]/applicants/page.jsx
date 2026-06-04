@@ -517,10 +517,22 @@ export default function ApplicantsPage() {
                     {app.status === 'Accepted' && (() => {
                       const order = Array.isArray(app.job_orders) ? app.job_orders[0] : app.job_orders;
                       return order?.status === 'Active' ? (
-                        <div className="mt-4 flex justify-end">
+                        <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2 justify-end">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); router.push(`/profile/${app.applicant_id}`); }}
+                            className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                          >
+                            View Profile
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
+                            className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                          >
+                            Message
+                          </button>
                           <button 
                             onClick={(e) => { e.stopPropagation(); setAppToCancel(app); setCompanyCancelReason(''); setCompanyCancelRemarks(''); setIsCompanyCancelModalOpen(true); }}
-                            className="px-4 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-xs font-bold rounded-lg transition-colors shadow-sm"
+                            className="px-4 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-xs font-bold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
                           >
                             Cancel Engagement
                           </button>
