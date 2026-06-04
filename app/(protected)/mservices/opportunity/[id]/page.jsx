@@ -93,7 +93,7 @@ export default function OpportunityDetailsPage() {
         const supabase = createClient();
         const { data, error } = await supabase
           .from('applications')
-          .select('id, status, withdrawal_count, documents, job_orders(*), job_cancellations(*)')
+          .select('id, status, withdrawal_count, documents, job_orders(*, job_cancellations(*))')
           .eq('job_id', id)
           .eq('applicant_id', currentUser.id)
           .maybeSingle();
@@ -677,7 +677,10 @@ export default function OpportunityDetailsPage() {
                   )}
 
                   {/* State F — Company Cancelled */}
-                  {isCompanyCancelled && (
+                  {isCompanyCancelled && (() => {
+                    const orderObj = Array.isArray(myApplication?.job_orders) ? myApplication.job_orders[0] : myApplication?.job_orders;
+                    const cancellation = orderObj?.job_cancellations ? (Array.isArray(orderObj.job_cancellations) ? orderObj.job_cancellations[0] : orderObj.job_cancellations) : null;
+                    return (
                     <div className="flex flex-col gap-3 w-full sm:w-auto">
                       <div className="flex flex-row items-center gap-3">
                         <div className="h-10 px-6 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm font-bold flex items-center justify-center gap-1.5 cursor-default shadow-sm">
@@ -691,21 +694,21 @@ export default function OpportunityDetailsPage() {
                         </button>
                       </div>
                       
-                      {myApplication.job_cancellations?.[0] && (
+                      {cancellation && (
                         <div className="p-4 bg-red-50 border border-red-100 rounded-lg text-sm text-red-800 w-full max-w-sm mt-2 text-left">
                           <p className="font-bold text-red-900 mb-1">Company Cancellation Reason:</p>
-                          <p className="mb-3">{myApplication.job_cancellations[0].cancellation_reason}</p>
+                          <p className="mb-3">{cancellation.cancellation_reason}</p>
                           
-                          {myApplication.job_cancellations[0].cancellation_remarks && (
+                          {cancellation.cancellation_remarks && (
                             <>
                               <p className="font-bold text-red-900 mb-1">Remarks:</p>
-                              <p>{myApplication.job_cancellations[0].cancellation_remarks}</p>
+                              <p>{cancellation.cancellation_remarks}</p>
                             </>
                           )}
                         </div>
                       )}
                     </div>
-                  )}
+                  );})()}
 
                 </div>
               );
