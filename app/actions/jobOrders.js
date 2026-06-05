@@ -6,6 +6,7 @@ import {
   processCandidateCancellationFinancials,
   processCompanyCancellationFinancials,
 } from './refunds';
+import { refreshCandidateReputation } from './reputation';
 
 /**
  * Creates an active job order after candidate accepts the offer.
@@ -183,12 +184,11 @@ export async function cancelJobOrderByCandidate({ jobOrderId, reason, remarks })
     // if existing email infrastructure exists, call it here.
 
     // Record reputation if safe (Stage 3E preparation)
-    const { error: repError } = await supabase
-        .from('candidate_reputation_summary')
-        .upsert(
-            { candidate_id: userId },
-            { onConflict: 'candidate_id' }
-        );
+    try {
+      await refreshCandidateReputation(userId);
+    } catch (repErr) {
+      console.error('Failed to refresh candidate reputation:', repErr);
+    }
 
     // Stage 3D-1: Process financial distribution (non-blocking)
     try {
@@ -290,6 +290,12 @@ export async function cancelJobOrderByCompany({ jobOrderId, reason, remarks }) {
         });
     } catch (notifErr) {
         console.error('Failed to create platform notification:', notifErr);
+    }
+
+    try {
+        await refreshCandidateReputation(order.applicant_id);
+    } catch (repErr) {
+        console.error('Failed to refresh candidate reputation:', repErr);
     }
 
     // Stage 3D-1: Process financial distribution (non-blocking)

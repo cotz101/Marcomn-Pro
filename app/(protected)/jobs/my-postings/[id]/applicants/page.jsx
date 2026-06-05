@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useProfile } from '@/app/context/ProfileContext';
 import { createClient } from '@/lib/supabase';
 import { cancelJobOrderByCompany } from '@/app/actions/jobOrders';
+import { markJobOrderCompleted } from '@/app/actions/reputation';
 import {
   ArrowLeft,
   Briefcase,
@@ -55,6 +56,13 @@ export default function ApplicantsPage() {
   const [companyCancelReason, setCompanyCancelReason] = useState('');
   const [companyCancelRemarks, setCompanyCancelRemarks] = useState('');
   const [isCancelling, setIsCancelling] = useState(false);
+
+  const [isMarkCompleteModalOpen, setIsMarkCompleteModalOpen] = useState(false);
+  const [appToComplete, setAppToComplete] = useState(null);
+  const [feedbackSentiment, setFeedbackSentiment] = useState('');
+  const [feedbackTags, setFeedbackTags] = useState([]);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!userId || !id) return;
@@ -114,7 +122,13 @@ export default function ApplicantsPage() {
       // ── 5. Step Three: Merge data ─────────────────────────────────────────
       const merged = apps.map((app) => {
         const profile = profilesData?.find((p) => p.id === app.applicant_id) || {};
-        return { ...app, profile };
+        
+        // Derive correct status from job_orders if a completed order exists
+        const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
+        const hasCompletedOrder = orderArray.some(o => o.status === 'Completed');
+        const effectiveStatus = hasCompletedOrder ? 'Completed' : app.status;
+
+        return { ...app, status: effectiveStatus, profile };
       });
 
       // ── 6. Fetch platform settings for offer expiry ────────────────────────
@@ -213,7 +227,8 @@ export default function ApplicantsPage() {
     }
     
     // Safely extract job_orders correctly handling object or array
-    const order = Array.isArray(appToCancel.job_orders) ? appToCancel.job_orders[0] : appToCancel.job_orders;
+    const orderArray = Array.isArray(appToCancel.job_orders) ? appToCancel.job_orders : [appToCancel.job_orders].filter(Boolean);
+    const order = orderArray.find(o => o.status === 'Active');
     if (!order) {
       if (showToast) showToast('Active engagement not found.', 'error');
       return;
@@ -248,6 +263,51 @@ export default function ApplicantsPage() {
     }
   };
 
+  const handleConfirmCompletion = async () => {
+    if (!appToComplete || !feedbackSentiment) {
+      if (showToast) showToast('Please select a feedback sentiment.', 'error');
+      return;
+    }
+
+    const orderArray = Array.isArray(appToComplete.job_orders) ? appToComplete.job_orders : [appToComplete.job_orders].filter(Boolean);
+    const order = orderArray.find(o => o.status === 'Active');
+    if (!order) {
+      if (showToast) showToast('Active engagement not found.', 'error');
+      return;
+    }
+
+    setIsCompleting(true);
+    try {
+      const res = await markJobOrderCompleted({
+        jobOrderId: order.id,
+        feedbackData: {
+          sentiment: feedbackSentiment,
+          tags: feedbackTags,
+          comment: feedbackComment,
+          submittedByUserId: userId
+        }
+      });
+
+      if (!res.success) throw new Error(res.error || 'Failed to mark engagement as completed.');
+
+      setApplicants((prev) =>
+        prev.map((app) => (app.id === appToComplete.id ? { 
+          ...app, 
+          status: 'Completed'
+        } : app))
+      );
+
+      setIsMarkCompleteModalOpen(false);
+      setAppToComplete(null);
+      if (showToast) showToast('Engagement marked as completed!', 'success');
+    } catch (err) {
+      console.error('Error marking completion:', err);
+      if (showToast) showToast('Failed to mark as completed: ' + (err.message || err), 'error');
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -277,6 +337,8 @@ export default function ApplicantsPage() {
         return 'border-red-200 bg-red-50 text-red-700 focus:ring-red-500 focus:border-red-500';
       case 'Company Cancelled':
         return 'border-red-200 bg-red-50 text-red-700 focus:ring-red-500 focus:border-red-500';
+      case 'Completed':
+        return 'border-emerald-300 bg-emerald-100 text-emerald-800 focus:ring-emerald-500 focus:border-emerald-500';
       case 'Shortlisted':
         return 'border-indigo-200 bg-indigo-50 text-indigo-700 focus:ring-indigo-500 focus:border-indigo-500';
       case 'Under Review':
@@ -468,10 +530,11 @@ export default function ApplicantsPage() {
                     
                     {/* Status Bookmark */}
                     <div className="absolute top-0 right-0" onClick={(e) => e.stopPropagation()}>
-                      {['Withdrawn', 'Accepted', 'Offered', 'Expired', 'Candidate Cancelled', 'Company Cancelled'].includes(app.status) ? (
+                      {['Withdrawn', 'Accepted', 'Offered', 'Expired', 'Candidate Cancelled', 'Company Cancelled', 'Completed'].includes(app.status) ? (
                         <span className={`inline-flex items-center px-3 py-1.5 rounded-bl-xl text-[10px] font-bold uppercase tracking-widest shadow-sm border-b border-l ${
                           app.status === 'Accepted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                           (app.status === 'Candidate Cancelled' || app.status === 'Company Cancelled') ? 'bg-red-50 text-red-700 border-red-200' :
+                          app.status === 'Completed' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
                           app.status === 'Offered' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                           app.status === 'Expired' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                           'bg-slate-100 text-slate-500 border-slate-200'
@@ -515,8 +578,9 @@ export default function ApplicantsPage() {
                     
                     {/* Action buttons */}
                     {app.status === 'Accepted' && (() => {
-                      const order = Array.isArray(app.job_orders) ? app.job_orders[0] : app.job_orders;
-                      return order?.status === 'Active' ? (
+                      const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
+                      const order = orderArray.find(o => o.status === 'Active');
+                      return order ? (
                         <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2 justify-end">
                           <button 
                             onClick={(e) => { e.stopPropagation(); router.push(`/profile/${app.applicant_id}`); }}
@@ -529,6 +593,12 @@ export default function ApplicantsPage() {
                             className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                           >
                             Message
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setAppToComplete(app); setFeedbackSentiment(''); setFeedbackComment(''); setFeedbackTags([]); setIsMarkCompleteModalOpen(true); }}
+                            className="px-4 py-1.5 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
+                          >
+                            Mark Completed
                           </button>
                           <button 
                             onClick={(e) => { e.stopPropagation(); setAppToCancel(app); setCompanyCancelReason(''); setCompanyCancelRemarks(''); setIsCompanyCancelModalOpen(true); }}
@@ -658,9 +728,10 @@ export default function ApplicantsPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Status</p>
-                      {['Withdrawn', 'Accepted', 'Offered', 'Expired'].includes(selectedApplicant.status) ? (
+                      {['Withdrawn', 'Accepted', 'Offered', 'Expired', 'Completed'].includes(selectedApplicant.status) ? (
                         <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide ${
                           selectedApplicant.status === 'Accepted' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                          selectedApplicant.status === 'Completed' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
                           selectedApplicant.status === 'Offered' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
                           selectedApplicant.status === 'Expired' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
                           'bg-slate-100 text-slate-500 border border-slate-200'
@@ -794,6 +865,88 @@ export default function ApplicantsPage() {
                 className="px-5 py-2 text-sm font-bold bg-red-600 text-white hover:bg-red-700 rounded-xl transition-colors shadow-sm disabled:opacity-50"
               >
                 {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mark Completed & Feedback Modal */}
+      {isMarkCompleteModalOpen && appToComplete && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-bold text-emerald-700 mb-2">Mark Engagement Completed</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              You are about to mark this engagement with <span className="font-semibold text-gray-800">{appToComplete.profile?.name || 'this applicant'}</span> as completed. Please provide feedback on their performance.
+            </p>
+            
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Overall Experience *</label>
+              <div className="flex gap-2">
+                {['positive', 'neutral', 'negative'].map((sentiment) => (
+                  <button
+                    key={sentiment}
+                    onClick={() => setFeedbackSentiment(sentiment)}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold capitalize border transition-colors ${
+                      feedbackSentiment === sentiment
+                        ? sentiment === 'positive' ? 'bg-emerald-50 border-emerald-500 text-emerald-700' :
+                          sentiment === 'neutral' ? 'bg-amber-50 border-amber-500 text-amber-700' :
+                          'bg-red-50 border-red-500 text-red-700'
+                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {sentiment}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Tags (Optional)</label>
+              <div className="flex flex-wrap gap-2">
+                {['Professional', 'Punctual', 'Skilled', 'Needs Improvement', 'Great Communication'].map(tag => {
+                  const isSelected = feedbackTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => setFeedbackTags(prev => isSelected ? prev.filter(t => t !== tag) : [...prev, tag])}
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide transition-colors border ${
+                        isSelected 
+                          ? 'bg-blue-50 border-blue-300 text-blue-700' 
+                          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Comment (Optional)</label>
+              <textarea 
+                value={feedbackComment}
+                onChange={(e) => setFeedbackComment(e.target.value)}
+                placeholder="Leave a comment for this candidate's profile..."
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-emerald-500 bg-gray-50 resize-none h-24"
+              />
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => { setIsMarkCompleteModalOpen(false); setAppToComplete(null); }}
+                disabled={isCompleting}
+                className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                Go Back
+              </button>
+              <button 
+                onClick={handleConfirmCompletion}
+                disabled={isCompleting || !feedbackSentiment}
+                className="px-5 py-2 text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl transition-colors shadow-sm disabled:opacity-50"
+              >
+                {isCompleting ? 'Completing...' : 'Submit & Complete'}
               </button>
             </div>
           </div>

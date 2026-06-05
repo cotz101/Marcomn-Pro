@@ -3,6 +3,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase';
+import { getCandidateReputation } from '@/app/actions/reputation';
 import { Camera, Briefcase, MapPin, Edit3, X, Check, Plus, ArrowLeft, Ship, MessageSquare, Lock, Coins } from 'lucide-react';
 
 export default function Profile({ profile: initialProfile, setProfile: setInitialProfile, userId: currentUserId }) {
@@ -27,6 +28,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
   const [editVesselName, setEditVesselName] = useState(profile.vesselName || '');
   const [messagePrivacy, setMessagePrivacy] = useState('connections');
   const [isFollowedBack, setIsFollowedBack] = useState(false);
+  const [reputation, setReputation] = useState(null);
   
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
@@ -91,6 +93,20 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
       // No need to setProfile here as initial state already uses initialProfile
     }
   }, [viewUid, isOwnProfile, initialProfile, currentUserId]);
+
+  useEffect(() => {
+    const fetchReputation = async () => {
+      const targetUid = viewUid || currentUserId;
+      if (!targetUid) return;
+      try {
+        const rep = await getCandidateReputation(targetUid);
+        setReputation(rep);
+      } catch (err) {
+        console.error('Failed to fetch reputation', err);
+      }
+    };
+    fetchReputation();
+  }, [viewUid, currentUserId]);
 
   // Removed sync of editSkillsInput; handled when opening modal
  
@@ -511,6 +527,83 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
             <p className="about-text">{profile.bio || profile.about}</p>
           </section>
         )}
+
+        {/* ── Trust & Reputation Card ── */}
+        <section className="profile-card about-card about-section-container" style={{ marginTop: '15px' }}>
+          <h2 className="section-title flex items-center gap-2 mb-4">
+            <Check size={20} className="text-[#004173]" />
+            Trust & Reputation
+          </h2>
+          {reputation ? (
+            <div className="flex flex-col gap-6 mt-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-sm">
+                  <span className="text-3xl font-bold text-[#004173] leading-none mb-1">
+                    {(reputation.summary?.completed_jobs + reputation.summary?.cancelled_jobs) === 0 
+                      ? 'N/A' 
+                      : `${reputation.summary?.completion_rate || 0}%`}
+                  </span>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Completion Rate</span>
+                </div>
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-sm">
+                  <span className="text-3xl font-bold text-emerald-600 leading-none mb-1">{reputation.summary?.completed_jobs || 0}</span>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Completed Jobs</span>
+                </div>
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-sm">
+                  <span className="text-3xl font-bold text-slate-700 leading-none mb-1">{reputation.summary?.cancelled_jobs || 0}</span>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Cancelled Engagements</span>
+                </div>
+              </div>
+
+              {reputation.feedback && reputation.feedback.length > 0 && (
+                <div className="mt-2">
+                  <h3 className="text-sm font-bold text-slate-800 mb-4">Recent Feedback</h3>
+                  <div className="flex flex-col gap-3">
+                    {reputation.feedback.map((fb, idx) => (
+                      <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-start gap-4">
+                        <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center border ${
+                          fb.feedback_sentiment === 'positive' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' :
+                          fb.feedback_sentiment === 'neutral' ? 'bg-amber-50 border-amber-200 text-amber-600' :
+                          'bg-red-50 border-red-200 text-red-600'
+                        }`}>
+                          {fb.feedback_sentiment === 'positive' ? <Check size={20} /> :
+                           fb.feedback_sentiment === 'neutral' ? <span className="font-bold">-</span> :
+                           <X size={20} />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-[13px] text-slate-800">
+                              {fb.companies?.name || 'Company'}
+                            </span>
+                            <span className="text-[11px] text-slate-400">
+                              {new Date(fb.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                            </span>
+                          </div>
+                          
+                          {fb.feedback_tags && fb.feedback_tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-2">
+                              {fb.feedback_tags.map((tag, tIdx) => (
+                                <span key={tIdx} className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wide uppercase">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {fb.feedback_comment && (
+                            <p className="text-sm text-slate-600 italic">"{fb.feedback_comment}"</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-4 text-center text-sm text-slate-400 animate-pulse">Loading reputation...</div>
+          )}
+        </section>
       </div>
 
       {/* ── Edit Modal ── */}

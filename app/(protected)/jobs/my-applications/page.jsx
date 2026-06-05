@@ -277,6 +277,18 @@ export default function MyApplicationsPage() {
             Candidate Cancelled
           </span>
         );
+      case 'Company Cancelled':
+        return (
+          <span className={`${baseClass} bg-red-100 text-red-700`}>
+            Company Cancelled
+          </span>
+        );
+      case 'Completed':
+        return (
+          <span className={`${baseClass} bg-emerald-100 text-emerald-800`}>
+            Completed
+          </span>
+        );
       default:
         return (
           <span className={`${baseClass} bg-gray-100 text-gray-700`}>
