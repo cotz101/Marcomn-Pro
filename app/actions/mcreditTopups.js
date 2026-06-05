@@ -69,9 +69,10 @@ export async function createTopupRequest({ ownerType, ownerId, amount, remarks }
       .from('mcredit_topup_requests')
       .insert({
         requester_id: user.id,
-        owner_type: ownerType,
+        owner_type: 'company',
         owner_id: ownerId,
         amount: Number(amount),
+        status: 'Pending',
         payment_method: 'dummy_manual',
         remarks: remarks || null,
       })
