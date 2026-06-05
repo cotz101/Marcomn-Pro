@@ -76,12 +76,19 @@ export default function NotificationsFeedPage() {
     }
 
     if (notification.link) {
-      if (notification.type === 'mention' && notification.link.startsWith('/logbook/')) {
-        const postId = notification.link.replace('/logbook/', '');
-        router.push('/logbook?focus=' + postId);
-      } else {
-        router.push(notification.link);
+      let targetUrl = notification.link;
+      
+      // If link points to a logbook post, route to feed with focus for highlighting
+      if (targetUrl.startsWith('/logbook/')) {
+        const parts = targetUrl.replace('/logbook/', '').split('?');
+        const postId = parts[0];
+        targetUrl = `/logbook?focus=${postId}`;
+        if (parts[1]) {
+           targetUrl += `&${parts[1]}`;
+        }
       }
+
+      router.push(targetUrl);
     }
   };
 
@@ -89,23 +96,26 @@ export default function NotificationsFeedPage() {
   const mapNotificationType = (type) => {
     const t = (type || '').toLowerCase();
     
-    if (['mention', 'comment_mention', 'group_mention'].includes(t)) {
-      return 'Mentions';
-    }
-    if (['message', 'direct_message', 'group_message'].includes(t)) {
-      return 'Messages';
-    }
-    if (['application', 'job_application', 'application_status'].includes(t)) {
+    if (['application', 'job_application', 'application_status', 'application_received', 'application_submitted', 'application_status_changed', 'shortlisted', 'rejected'].includes(t)) {
       return 'Applications';
     }
-    if (['job', 'job_posting', 'job_offer', 'job_status'].includes(t)) {
-      return 'Jobs';
+    if (['job_offer', 'offer_sent', 'offer_received', 'offer_accepted', 'offer_expired'].includes(t)) {
+      return 'Offers';
     }
-    if (['group', 'group_invite', 'group_thread', 'group_like', 'group_join_request', 'group_join_accept', 'group_post'].includes(t)) {
+    if (['job', 'job_posting', 'job_status', 'active_engagement', 'candidate_cancelled', 'company_cancelled', 'engagement_completed', 'feedback_received'].includes(t)) {
+      return 'Engagements';
+    }
+    if (['mcredit_grant', 'mcredit_deduct', 'wallet_credit', 'wallet_debit', 'refund', 'penalty', 'platform_revenue', 'compensation'].includes(t)) {
+      return 'Wallet';
+    }
+    if (['mention', 'post_mention', 'comment_mention', 'group_mention'].includes(t)) {
+      return 'Mentions';
+    }
+    if (['group', 'group_invite', 'group_join_request', 'group_thread_reply', 'group_thread', 'group_like', 'group_join_accept', 'group_post'].includes(t)) {
       return 'Groups';
     }
-    if (['blog', 'mblog', 'article', 'article_like', 'article_comment'].includes(t)) {
-      return 'MBlogs';
+    if (['message', 'direct_message', 'group_message', 'message_received'].includes(t)) {
+      return 'Messages';
     }
     return 'System';
   };
@@ -126,7 +136,7 @@ export default function NotificationsFeedPage() {
 
   // Filters to render (All is always shown, others only if count > 0)
   const activeFilters = useMemo(() => {
-    const order = ['All', 'Mentions', 'Messages', 'Applications', 'Jobs', 'Groups', 'MBlogs', 'System'];
+    const order = ['All', 'Applications', 'Offers', 'Engagements', 'Wallet', 'Mentions', 'Groups', 'Messages', 'System'];
     return order.filter(f => f === 'All' || (categoriesWithCounts[f] && categoriesWithCounts[f] > 0));
   }, [categoriesWithCounts]);
 
