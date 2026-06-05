@@ -70,6 +70,12 @@ export default function ApplicantsPage() {
   const [confirmWorkNote, setConfirmWorkNote] = useState('');
   const [isConfirmingWork, setIsConfirmingWork] = useState(false);
 
+  const getJobOrder = (app) => {
+    if (!app) return null;
+    if (Array.isArray(app.job_orders)) return app.job_orders[0] || null;
+    return app.job_orders || null;
+  };
+
   const handleOpenConfirmWorkModal = (app) => {
     setAppToConfirmWork(app);
     setConfirmWorkNote('');
@@ -78,10 +84,9 @@ export default function ApplicantsPage() {
 
   const handleConfirmWorkCompletedSubmit = async () => {
     if (!appToConfirmWork) return;
-    const orderArray = Array.isArray(appToConfirmWork.job_orders) ? appToConfirmWork.job_orders : [appToConfirmWork.job_orders].filter(Boolean);
-    const order = orderArray.find(o => o.status === 'Work Completed by Applicant');
-    if (!order) {
-      if (showToast) showToast('Job order in Work Completed state not found.', 'error');
+    const order = getJobOrder(appToConfirmWork);
+    if (!order || !order.id) {
+      if (showToast) showToast('Active job order could not be found for this applicant.', 'error');
       return;
     }
 
@@ -172,9 +177,8 @@ export default function ApplicantsPage() {
         const profile = profilesData?.find((p) => p.id === app.applicant_id) || {};
         
         // Derive correct status from job_orders if a completed order exists
-        const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
-        const hasCompletedOrder = orderArray.some(o => o.status === 'Completed');
-        const effectiveStatus = hasCompletedOrder ? 'Completed' : app.status;
+        const order = getJobOrder(app);
+        const effectiveStatus = (order && order.status === 'Completed') ? 'Completed' : app.status;
 
         return { ...app, status: effectiveStatus, profile };
       });
@@ -275,10 +279,9 @@ export default function ApplicantsPage() {
     }
     
     // Safely extract job_orders correctly handling object or array
-    const orderArray = Array.isArray(appToCancel.job_orders) ? appToCancel.job_orders : [appToCancel.job_orders].filter(Boolean);
-    const order = orderArray.find(o => o.status === 'Active');
-    if (!order) {
-      if (showToast) showToast('Active engagement not found.', 'error');
+    const order = getJobOrder(appToCancel);
+    if (!order || !order.id) {
+      if (showToast) showToast('Active job order could not be found for this applicant.', 'error');
       return;
     }
 
@@ -317,10 +320,9 @@ export default function ApplicantsPage() {
       return;
     }
 
-    const orderArray = Array.isArray(appToComplete.job_orders) ? appToComplete.job_orders : [appToComplete.job_orders].filter(Boolean);
-    const order = orderArray.find(o => o.status === 'Payment Confirmed by Applicant' || o.status === 'Active');
-    if (!order) {
-      if (showToast) showToast('Engagement order not found in a completable state.', 'error');
+    const order = getJobOrder(appToComplete);
+    if (!order || !order.id) {
+      if (showToast) showToast('Active job order could not be found for this applicant.', 'error');
       return;
     }
 
@@ -601,8 +603,7 @@ export default function ApplicantsPage() {
                         let colorClass = 'bg-slate-100 text-slate-500 border-slate-200';
                         
                         if (app.status === 'Accepted') {
-                          const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
-                          const order = orderArray.find(o => o.status !== 'Completed' && o.status !== 'Candidate Cancelled' && o.status !== 'Company Cancelled');
+                          const order = getJobOrder(app);
                           
                           if (order && order.status !== 'Active') {
                             displayStatus = order.status;
@@ -664,8 +665,7 @@ export default function ApplicantsPage() {
                     {/* Action buttons */}
                     {/* Action buttons */}
                     {app.status === 'Accepted' && (() => {
-                      const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
-                      const order = orderArray.find(o => o.status !== 'Completed' && o.status !== 'Candidate Cancelled' && o.status !== 'Company Cancelled');
+                      const order = getJobOrder(app);
                       if (!order) return null;
 
                       switch (order.status) {
@@ -1047,17 +1047,15 @@ export default function ApplicantsPage() {
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
             <h3 className="text-lg font-bold text-blue-900 mb-2">
               {(() => {
-                const orderArray = Array.isArray(appToComplete.job_orders) ? appToComplete.job_orders : [appToComplete.job_orders].filter(Boolean);
-                const order = orderArray.find(o => o.status === 'Payment Confirmed by Applicant');
-                return order ? 'Close Completed Engagement' : 'Mark Engagement Completed';
+                const order = getJobOrder(appToComplete);
+                return (order && order.status === 'Payment Confirmed by Applicant') ? 'Close Completed Engagement' : 'Mark Engagement Completed';
               })()}
             </h3>
             <p className="text-sm text-gray-600 mb-6">
               {(() => {
-                const orderArray = Array.isArray(appToComplete.job_orders) ? appToComplete.job_orders : [appToComplete.job_orders].filter(Boolean);
-                const order = orderArray.find(o => o.status === 'Payment Confirmed by Applicant');
+                const order = getJobOrder(appToComplete);
                 const name = appToComplete.profile?.name || 'this applicant';
-                return order 
+                return (order && order.status === 'Payment Confirmed by Applicant')
                   ? `You are about to close this engagement with ${name} as completed. Please provide feedback on their performance.`
                   : `You are about to mark this engagement with ${name} as completed. Please provide feedback on their performance.`;
               })()}
@@ -1130,9 +1128,8 @@ export default function ApplicantsPage() {
                 className="px-5 py-2 text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl transition-colors shadow-sm disabled:opacity-50"
               >
                 {isCompleting ? 'Completing...' : (() => {
-                  const orderArray = Array.isArray(appToComplete.job_orders) ? appToComplete.job_orders : [appToComplete.job_orders].filter(Boolean);
-                  const order = orderArray.find(o => o.status === 'Payment Confirmed by Applicant');
-                  return order ? 'Submit & Close Engagement' : 'Submit & Complete';
+                  const order = getJobOrder(appToComplete);
+                  return (order && order.status === 'Payment Confirmed by Applicant') ? 'Submit & Close Engagement' : 'Submit & Complete';
                 })()}
               </button>
             </div>

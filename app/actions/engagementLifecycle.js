@@ -23,7 +23,7 @@ export async function markWorkCompletedByApplicant(jobOrderId, note) {
       .eq('id', jobOrderId)
       .maybeSingle();
       
-    if (orderError || !order) throw new Error('Job order not found');
+    if (orderError || !order) throw new Error(`Job order not found for id: ${jobOrderId}`);
     
     // Verify candidate identity
     if (order.candidate_id !== user.id) {
@@ -95,7 +95,7 @@ export async function confirmWorkCompletedByCompany(jobOrderId, note) {
       .eq('id', jobOrderId)
       .maybeSingle();
       
-    if (orderError || !order) throw new Error('Job order not found');
+    if (orderError || !order) throw new Error(`Job order not found for id: ${jobOrderId}`);
     
     // Verify company/poster identity
     if (order.job.poster_id !== user.id) {
@@ -160,7 +160,7 @@ export async function confirmPaymentReceivedByApplicant(jobOrderId, note) {
       .eq('id', jobOrderId)
       .maybeSingle();
       
-    if (orderError || !order) throw new Error('Job order not found');
+    if (orderError || !order) throw new Error(`Job order not found for id: ${jobOrderId}`);
     
     // Verify candidate identity
     if (order.candidate_id !== user.id) {
@@ -235,7 +235,7 @@ export async function closeCompletedEngagementByCompany({ jobOrderId, feedbackDa
       .eq('id', jobOrderId)
       .maybeSingle();
       
-    if (orderError || !order) throw new Error('Job order not found');
+    if (orderError || !order) throw new Error(`Job order not found for id: ${jobOrderId}`);
     
     // Verify company/poster identity
     if (order.job.poster_id !== user.id) {
