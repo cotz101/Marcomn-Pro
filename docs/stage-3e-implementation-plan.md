@@ -18,29 +18,23 @@ Stage 3E is already implemented and manually tested.
 - Recent company feedback appears on candidate profile.
 - No wallet movement occurs from Mark Completed or feedback submission.
 
-## Database Decisions
-`candidate_reputation_summary` supports:
-- completed_jobs
-- cancelled_jobs
-- excused_cancellations
-- completion_rate (DEFAULT 0)
-- feedback_count
-- positive_feedback_count
-- negative_feedback_count
-- updated_at
+## Database Updates
 
-`job_feedback` supports:
-- job_order_id
-- job_id
-- application_id
-- company_id
-- candidate_id
-- feedback_by
-- feedback_context (completed_job, candidate_cancelled, company_cancelled)
-- feedback_tags
-- feedback_comment
-- feedback_sentiment (positive, neutral, negative)
-- created_at
+Using the Supabase MCP `execute_sql` tool, we will run the following SQL to ensure tables are ready:
+
+```sql
+ALTER TABLE candidate_reputation_summary 
+ADD COLUMN IF NOT EXISTS completion_rate numeric DEFAULT 0,
+ADD COLUMN IF NOT EXISTS feedback_count integer DEFAULT 0,
+ADD COLUMN IF NOT EXISTS positive_feedback_count integer DEFAULT 0,
+ADD COLUMN IF NOT EXISTS negative_feedback_count integer DEFAULT 0;
+
+ALTER TABLE job_feedback 
+ADD COLUMN IF NOT EXISTS feedback_sentiment text,
+ADD COLUMN IF NOT EXISTS feedback_tags text[],
+ADD COLUMN IF NOT EXISTS feedback_comment text,
+ADD COLUMN IF NOT EXISTS feedback_context text;
+```
 
 ## Trust & Reputation Rules
 1. **Completed Job**
@@ -72,7 +66,7 @@ If `completed_jobs + cancelled_jobs = 0`, UI displays "No engagement history yet
 1. Open a completed job posting as a company. Select an active applicant and click "Mark Completed".
 2. Fill out positive feedback in the modal and submit.
 3. Verify the engagement status changes to `Completed` on both company and candidate sides.
-4. Verify the Candidate's profile now shows the Trust & Reputation section with 1 completed job, and the completion rate is recalculated (not always 100%), and the new feedback appears.
+4. Verify the Candidate's profile now shows the Trust & Reputation section with the updated completed job count, recalculated completion rate, and the new feedback.
 5. Have the candidate cancel an active engagement.
 6. Verify the candidate's profile updates to reflect the cancellation, recalculating and lowering their completion rate.
 
