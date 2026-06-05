@@ -77,11 +77,95 @@ export default function CompanyWalletPage() {
           }
         }
 
-        const enrichedTxs = txs.map(tx => {
-          if (tx.reference_type === 'job_posting' && tx.reference_id && jobMap[tx.reference_id]) {
-            return { ...tx, jobDetails: jobMap[tx.reference_id] };
+        // Fetch cancellation details if any penalty/refund transactions exist
+        const cancellationTypes = ['candidate_cancellation', 'candidate_cancellation_platform', 'company_cancellation_refund'];
+        const cancelIds = txs
+          .filter(t => cancellationTypes.includes(t.reference_type) && t.reference_id)
+          .map(t => t.reference_id);
+        const uniqueCancelIds = [...new Set(cancelIds)];
+
+        const cancelMap = {};
+        if (uniqueCancelIds.length > 0) {
+          const { data: cancelsData } = await supabase
+            .from('job_cancellations')
+            .select('id, job_id, application_id, cancelled_by, cancelled_by_type')
+            .in('id', uniqueCancelIds);
+
+          if (cancelsData) {
+            const jobIdsToFetch = cancelsData.map(c => c.job_id).filter(Boolean);
+            const appIdsToFetch = cancelsData.map(c => c.application_id).filter(Boolean);
+            const uniqueJobIdsToFetch = [...new Set(jobIdsToFetch)];
+            const uniqueAppIdsToFetch = [...new Set(appIdsToFetch)];
+
+            const jobTitleMap = {};
+            if (uniqueJobIdsToFetch.length > 0) {
+              const { data: jobsData } = await supabase
+                .from('jobs')
+                .select('id, title')
+                .in('id', uniqueJobIdsToFetch);
+              if (jobsData) {
+                jobsData.forEach(j => {
+                  jobTitleMap[j.id] = j.title;
+                });
+              }
+            }
+
+            const appToApplicantMap = {};
+            if (uniqueAppIdsToFetch.length > 0) {
+              const { data: appsData } = await supabase
+                .from('applications')
+                .select('id, applicant_id')
+                .in('id', uniqueAppIdsToFetch);
+              if (appsData) {
+                appsData.forEach(a => {
+                  appToApplicantMap[a.id] = a.applicant_id;
+                });
+              }
+            }
+
+            const profileIdsToFetch = [
+              ...cancelsData.map(c => c.cancelled_by).filter(Boolean),
+              ...Object.values(appToApplicantMap)
+            ];
+            const uniqueProfileIdsToFetch = [...new Set(profileIdsToFetch)];
+
+            const profileNameMap = {};
+            if (uniqueProfileIdsToFetch.length > 0) {
+              const { data: profilesData } = await supabase
+                .from('profiles')
+                .select('id, name')
+                .in('id', uniqueProfileIdsToFetch);
+              if (profilesData) {
+                profilesData.forEach(p => {
+                  profileNameMap[p.id] = p.name;
+                });
+              }
+            }
+
+            cancelsData.forEach(cancel => {
+              const applicantId = appToApplicantMap[cancel.application_id];
+              let candidateName = applicantId ? profileNameMap[applicantId] : null;
+              if (!candidateName && cancel.cancelled_by_type === 'candidate') {
+                candidateName = profileNameMap[cancel.cancelled_by];
+              }
+
+              cancelMap[cancel.id] = {
+                jobTitle: jobTitleMap[cancel.job_id] || null,
+                candidateName: candidateName || null
+              };
+            });
           }
-          return tx;
+        }
+
+        const enrichedTxs = txs.map(tx => {
+          let enriched = { ...tx };
+          if (tx.reference_type === 'job_posting' && tx.reference_id && jobMap[tx.reference_id]) {
+            enriched.jobDetails = jobMap[tx.reference_id];
+          }
+          if (cancellationTypes.includes(tx.reference_type) && tx.reference_id && cancelMap[tx.reference_id]) {
+            enriched.cancellationDetails = cancelMap[tx.reference_id];
+          }
+          return enriched;
         });
 
         setTransactions(enrichedTxs);
@@ -229,6 +313,40 @@ export default function CompanyWalletPage() {
                                       const match = note.match(/\(([^)]+)\)/);
                                       return match ? `Posting fee: ${match[1]}` : note;
                                     })()}
+                                    <span className="block text-[9px] text-gray-300 font-mono mt-0.5 truncate max-w-[150px]" title={tx.reference_id}>ID: {tx.reference_id}</span>
+                                  </span>
+                                </>
+                              ) : tx.cancellationDetails ? (
+                                <>
+                                  <span className="text-xs font-bold text-slate-800" title={
+                                    tx.reference_type === 'candidate_cancellation'
+                                      ? `Candidate Cancellation Compensation — ${tx.cancellationDetails.candidateName || 'Unknown Candidate'}`
+                                      : tx.reference_type === 'company_cancellation_refund'
+                                      ? `Company Cancellation Refund — ${tx.cancellationDetails.candidateName || 'Unknown Candidate'}`
+                                      : `Platform Share (Candidate Cancel) — ${tx.cancellationDetails.candidateName || 'Unknown Candidate'}`
+                                  }>
+                                    {tx.reference_type === 'candidate_cancellation' && (
+                                      tx.cancellationDetails.candidateName
+                                        ? `Candidate Cancellation Compensation — ${tx.cancellationDetails.candidateName}`
+                                        : 'Candidate Cancellation Compensation'
+                                    )}
+                                    {tx.reference_type === 'company_cancellation_refund' && (
+                                      tx.cancellationDetails.candidateName
+                                        ? `Company Cancellation Refund — ${tx.cancellationDetails.candidateName}`
+                                        : 'Company Cancellation Refund'
+                                    )}
+                                    {tx.reference_type === 'candidate_cancellation_platform' && (
+                                      tx.cancellationDetails.candidateName
+                                        ? `Platform Share (Candidate Cancel) — ${tx.cancellationDetails.candidateName}`
+                                        : 'Platform Share (Candidate Cancel)'
+                                    )}
+                                  </span>
+                                  <span className="text-[11px] text-gray-500 leading-snug max-w-xs">
+                                    {tx.cancellationDetails.jobTitle ? (
+                                      `For job: ${tx.cancellationDetails.jobTitle}`
+                                    ) : (
+                                      tx.justification_note || tx.description || 'No description provided'
+                                    )}
                                     <span className="block text-[9px] text-gray-300 font-mono mt-0.5 truncate max-w-[150px]" title={tx.reference_id}>ID: {tx.reference_id}</span>
                                   </span>
                                 </>

@@ -143,14 +143,124 @@ export default function AdminMCreditsPage() {
 
       // Load transaction history
       if (wallet) {
-        const { data: txs, error: txsError } = await supabase
+        const { data: txsData, error: txsError } = await supabase
           .from('mcredit_transactions')
           .select('*')
           .eq('wallet_id', wallet.id)
           .order('created_at', { ascending: false });
 
         if (txsError) throw txsError;
-        setTransactions(txs || []);
+        const txs = txsData || [];
+
+        const jobIds = txs.filter(t => t.reference_type === 'job_posting' && t.reference_id).map(t => t.reference_id);
+        const uniqueJobIds = [...new Set(jobIds)];
+        
+        const jobMap = {};
+        if (uniqueJobIds.length > 0) {
+          const { data: jobsData } = await supabase
+            .from('jobs')
+            .select('id, title, salary_numeric')
+            .in('id', uniqueJobIds);
+          
+          if (jobsData) {
+            jobsData.forEach(job => {
+              jobMap[job.id] = job;
+            });
+          }
+        }
+
+        // Fetch cancellation details if any penalty/refund transactions exist
+        const cancellationTypes = ['candidate_cancellation', 'candidate_cancellation_platform', 'company_cancellation_refund'];
+        const cancelIds = txs
+          .filter(t => cancellationTypes.includes(t.reference_type) && t.reference_id)
+          .map(t => t.reference_id);
+        const uniqueCancelIds = [...new Set(cancelIds)];
+
+        const cancelMap = {};
+        if (uniqueCancelIds.length > 0) {
+          const { data: cancelsData } = await supabase
+            .from('job_cancellations')
+            .select('id, job_id, application_id, cancelled_by, cancelled_by_type')
+            .in('id', uniqueCancelIds);
+
+          if (cancelsData) {
+            const jobIdsToFetch = cancelsData.map(c => c.job_id).filter(Boolean);
+            const appIdsToFetch = cancelsData.map(c => c.application_id).filter(Boolean);
+            const uniqueJobIdsToFetch = [...new Set(jobIdsToFetch)];
+            const uniqueAppIdsToFetch = [...new Set(appIdsToFetch)];
+
+            const jobTitleMap = {};
+            if (uniqueJobIdsToFetch.length > 0) {
+              const { data: jobsData } = await supabase
+                .from('jobs')
+                .select('id, title')
+                .in('id', uniqueJobIdsToFetch);
+              if (jobsData) {
+                jobsData.forEach(j => {
+                  jobTitleMap[j.id] = j.title;
+                });
+              }
+            }
+
+            const appToApplicantMap = {};
+            if (uniqueAppIdsToFetch.length > 0) {
+              const { data: appsData } = await supabase
+                .from('applications')
+                .select('id, applicant_id')
+                .in('id', uniqueAppIdsToFetch);
+              if (appsData) {
+                appsData.forEach(a => {
+                  appToApplicantMap[a.id] = a.applicant_id;
+                });
+              }
+            }
+
+            const profileIdsToFetch = [
+              ...cancelsData.map(c => c.cancelled_by).filter(Boolean),
+              ...Object.values(appToApplicantMap)
+            ];
+            const uniqueProfileIdsToFetch = [...new Set(profileIdsToFetch)];
+
+            const profileNameMap = {};
+            if (uniqueProfileIdsToFetch.length > 0) {
+              const { data: profilesData } = await supabase
+                .from('profiles')
+                .select('id, name')
+                .in('id', uniqueProfileIdsToFetch);
+              if (profilesData) {
+                profilesData.forEach(p => {
+                  profileNameMap[p.id] = p.name;
+                });
+              }
+            }
+
+            cancelsData.forEach(cancel => {
+              const applicantId = appToApplicantMap[cancel.application_id];
+              let candidateName = applicantId ? profileNameMap[applicantId] : null;
+              if (!candidateName && cancel.cancelled_by_type === 'candidate') {
+                candidateName = profileNameMap[cancel.cancelled_by];
+              }
+
+              cancelMap[cancel.id] = {
+                jobTitle: jobTitleMap[cancel.job_id] || null,
+                candidateName: candidateName || null
+              };
+            });
+          }
+        }
+
+        const enrichedTxs = txs.map(tx => {
+          let enriched = { ...tx };
+          if (tx.reference_type === 'job_posting' && tx.reference_id && jobMap[tx.reference_id]) {
+            enriched.jobDetails = jobMap[tx.reference_id];
+          }
+          if (cancellationTypes.includes(tx.reference_type) && tx.reference_id && cancelMap[tx.reference_id]) {
+            enriched.cancellationDetails = cancelMap[tx.reference_id];
+          }
+          return enriched;
+        });
+
+        setTransactions(enrichedTxs);
       }
     } catch (err) {
       console.error('Error loading wallet details:', err);
@@ -610,8 +720,52 @@ export default function AdminMCreditsPage() {
                       </td>
                       <td className="py-3 text-right font-mono text-gray-500">{Number(tx.balance_before).toFixed(2)} MC</td>
                       <td className="py-3 text-right font-bold font-mono text-slate-800">{Number(tx.balance_after).toFixed(2)} MC</td>
-                      <td className="py-3 pl-4 max-w-xs truncate text-gray-500" title={tx.justification_note}>
-                        {tx.justification_note || tx.description || '-'}
+                      <td className="py-3 pl-4 max-w-xs text-gray-500 font-medium" title={
+                        tx.cancellationDetails 
+                          ? `${tx.justification_note || tx.description || ''} (Job: ${tx.cancellationDetails.jobTitle || ''}, Candidate: ${tx.cancellationDetails.candidateName || ''})`
+                          : tx.jobDetails
+                          ? `${tx.justification_note || tx.description || ''} (Job: ${tx.jobDetails.title})`
+                          : tx.justification_note || tx.description || ''
+                      }>
+                        {tx.cancellationDetails ? (
+                          <div className="flex flex-col">
+                            <span className="truncate block">
+                              {tx.reference_type === 'candidate_cancellation' && (
+                                tx.cancellationDetails.candidateName 
+                                  ? `Candidate Cancellation Compensation — ${tx.cancellationDetails.candidateName}`
+                                  : 'Candidate Cancellation Compensation'
+                              )}
+                              {tx.reference_type === 'company_cancellation_refund' && (
+                                tx.cancellationDetails.candidateName 
+                                  ? `Company Cancellation Refund — ${tx.cancellationDetails.candidateName}`
+                                  : 'Company Cancellation Refund'
+                              )}
+                              {tx.reference_type === 'candidate_cancellation_platform' && (
+                                tx.cancellationDetails.candidateName 
+                                  ? `Platform Share (Candidate Cancel) — ${tx.cancellationDetails.candidateName}`
+                                  : 'Platform Share (Candidate Cancel)'
+                              )}
+                            </span>
+                            {tx.cancellationDetails.jobTitle && (
+                              <span className="text-[10px] text-gray-400 block mt-0.5 truncate">
+                                Job: {tx.cancellationDetails.jobTitle}
+                              </span>
+                            )}
+                          </div>
+                        ) : tx.jobDetails ? (
+                          <div className="flex flex-col">
+                            <span className="truncate block">Job Posting Fee: {tx.jobDetails.title}</span>
+                            <span className="text-[10px] text-gray-400 block mt-0.5 truncate">
+                              {(() => {
+                                const note = tx.justification_note || tx.description || '';
+                                const match = note.match(/\(([^)]+)\)/);
+                                return match ? `Posting fee: ${match[1]}` : note;
+                              })()}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="truncate block">{tx.justification_note || tx.description || '-'}</span>
+                        )}
                       </td>
                       <td className="py-3 whitespace-nowrap font-semibold text-[#0e2a4d]">
                         {tx.created_by ? (
