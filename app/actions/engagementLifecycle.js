@@ -91,15 +91,45 @@ export async function confirmWorkCompletedByCompany(jobOrderId, note) {
     // Fetch job order
     const { data: order, error: orderError } = await supabase
       .from('job_orders')
-      .select('*, job:jobs(title, poster_id, company)')
+      .select('*, job:jobs(title, poster_id, company, company_id)')
       .eq('id', jobOrderId)
       .maybeSingle();
       
-    if (orderError || !order) throw new Error(`Job order not found for id: ${jobOrderId}`);
+    if (orderError || !order) {
+      let diagnosticMsg = `Job order not found for id: ${jobOrderId}`;
+      try {
+        const { data: diagData, error: diagError } = await supabase
+          .rpc('check_job_order_existence_v1', { p_id: jobOrderId });
+        
+        if (!diagError && diagData && diagData.length > 0) {
+          const diag = diagData[0];
+          diagnosticMsg += ` (Diagnostics: Job order exists in DB but is hidden by RLS. status=${diag.status}, poster_id=${diag.poster_id}, company_id=${diag.company_id}, candidate_id=${diag.candidate_id}, auth_user=${user.id})`;
+        } else {
+          diagnosticMsg += ` (Diagnostics: Job order does not exist in DB at all. diagError=${diagError?.message})`;
+        }
+      } catch (diagEx) {
+        diagnosticMsg += ` (Diagnostics failed: ${diagEx.message})`;
+      }
+      console.error(`Error in confirmWorkCompletedByCompany: ${diagnosticMsg}`);
+      throw new Error(diagnosticMsg);
+    }
     
     // Verify company/poster identity
-    if (order.job.poster_id !== user.id) {
-      throw new Error('Unauthorized: only the job poster can perform this action');
+    let isAuthorized = false;
+    if (order.job.poster_id === user.id) {
+      isAuthorized = true;
+    } else if (order.job.company_id) {
+      const { data: member } = await supabase
+        .from('company_members')
+        .select('role')
+        .eq('company_id', order.job.company_id)
+        .eq('profile_id', user.id)
+        .maybeSingle();
+      if (member) isAuthorized = true;
+    }
+    
+    if (!isAuthorized) {
+      throw new Error('Unauthorized: only the job poster or an authorized company member can perform this action');
     }
     
     // Validate status sequence
@@ -231,15 +261,45 @@ export async function closeCompletedEngagementByCompany({ jobOrderId, feedbackDa
     // Fetch job order
     const { data: order, error: orderError } = await supabase
       .from('job_orders')
-      .select('*, job:jobs(title, poster_id)')
+      .select('*, job:jobs(title, poster_id, company_id)')
       .eq('id', jobOrderId)
       .maybeSingle();
       
-    if (orderError || !order) throw new Error(`Job order not found for id: ${jobOrderId}`);
+    if (orderError || !order) {
+      let diagnosticMsg = `Job order not found for id: ${jobOrderId}`;
+      try {
+        const { data: diagData, error: diagError } = await supabase
+          .rpc('check_job_order_existence_v1', { p_id: jobOrderId });
+        
+        if (!diagError && diagData && diagData.length > 0) {
+          const diag = diagData[0];
+          diagnosticMsg += ` (Diagnostics: Job order exists in DB but is hidden by RLS. status=${diag.status}, poster_id=${diag.poster_id}, company_id=${diag.company_id}, candidate_id=${diag.candidate_id}, auth_user=${user.id})`;
+        } else {
+          diagnosticMsg += ` (Diagnostics: Job order does not exist in DB at all. diagError=${diagError?.message})`;
+        }
+      } catch (diagEx) {
+        diagnosticMsg += ` (Diagnostics failed: ${diagEx.message})`;
+      }
+      console.error(`Error in closeCompletedEngagementByCompany: ${diagnosticMsg}`);
+      throw new Error(diagnosticMsg);
+    }
     
     // Verify company/poster identity
-    if (order.job.poster_id !== user.id) {
-      throw new Error('Unauthorized: only the job poster can perform this action');
+    let isAuthorized = false;
+    if (order.job.poster_id === user.id) {
+      isAuthorized = true;
+    } else if (order.job.company_id) {
+      const { data: member } = await supabase
+        .from('company_members')
+        .select('role')
+        .eq('company_id', order.job.company_id)
+        .eq('profile_id', user.id)
+        .maybeSingle();
+      if (member) isAuthorized = true;
+    }
+    
+    if (!isAuthorized) {
+      throw new Error('Unauthorized: only the job poster or an authorized company member can perform this action');
     }
     
     // Validate status sequence
