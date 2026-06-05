@@ -734,9 +734,14 @@ export default function AdminMCreditsPage() {
 
       {/* Pending Top-Up Requests Section */}
       <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden mb-8">
-        <div className="flex items-center gap-2 mb-6">
-          <CreditCard size={18} className="text-[#0e2a4d]" />
-          <h2 className="text-base font-bold text-[#0e2a4d]">Pending Top-Up Requests</h2>
+        <div className="flex flex-col gap-1 mb-6">
+          <div className="flex items-center gap-2">
+            <CreditCard size={18} className="text-[#0e2a4d]" />
+            <h2 className="text-base font-bold text-[#0e2a4d]">Pending Top-Up Requests</h2>
+          </div>
+          <p className="text-xs text-gray-500 font-medium ml-6">
+            Pending Top-Up Requests require admin review.
+          </p>
         </div>
 
         {pendingTopups.length > 0 ? (

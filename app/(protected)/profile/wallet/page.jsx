@@ -255,9 +255,14 @@ export default function PersonalWalletPage() {
         {/* Left Column: Transactions */}
         <div className="lg:col-span-2">
           <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden min-h-[400px]">
-            <div className="flex items-center gap-2 mb-6">
-              <History size={18} className="text-[#0e2a4d]" />
-              <h2 className="text-base font-bold text-[#0e2a4d]">Wallet Transaction History</h2>
+            <div className="flex flex-col gap-1 mb-6">
+              <div className="flex items-center gap-2">
+                <History size={18} className="text-[#0e2a4d]" />
+                <h2 className="text-base font-bold text-[#0e2a4d]">Wallet Transaction History</h2>
+              </div>
+              <p className="text-xs text-gray-500 font-medium ml-6">
+                Wallet Transaction History shows actual MCredit movements (credits, debits, posting fees, refunds, and approved top-ups).
+              </p>
             </div>
 
             {transactions.length > 0 ? (
@@ -334,9 +339,14 @@ export default function PersonalWalletPage() {
 
           {/* Top-Up History Section */}
           <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden mt-6">
-            <div className="flex items-center gap-2 mb-6">
-              <CreditCard size={18} className="text-[#0e2a4d]" />
-              <h2 className="text-base font-bold text-[#0e2a4d]">Top-Up History</h2>
+            <div className="flex flex-col gap-1 mb-6">
+              <div className="flex items-center gap-2">
+                <CreditCard size={18} className="text-[#0e2a4d]" />
+                <h2 className="text-base font-bold text-[#0e2a4d]">Top-Up History</h2>
+              </div>
+              <p className="text-xs text-gray-500 font-medium ml-6">
+                Top-Up History shows your submitted top-up records (audit log of requests).
+              </p>
             </div>
             {topupRequests.length > 0 ? (
               <div className="overflow-x-auto">
@@ -359,11 +369,11 @@ export default function PersonalWalletPage() {
                           +{Number(req.amount).toFixed(2)} MC
                         </td>
                         <td className="py-4 px-2">
-                          <span className={`inline-flex px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
-                            req.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' :
-                            req.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                            req.status === 'Cancelled' ? 'bg-gray-100 text-gray-800' :
-                            'bg-blue-100 text-blue-800'
+                          <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                            req.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                            req.status === 'Rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                            req.status === 'Cancelled' ? 'bg-gray-50 text-gray-600 border-gray-200' :
+                            'bg-blue-50 text-blue-700 border-blue-200'
                           }`}>
                             {req.status}
                           </span>
@@ -377,8 +387,10 @@ export default function PersonalWalletPage() {
                 </table>
               </div>
             ) : (
-              <div className="text-center py-8 text-sm text-gray-400 font-medium">
-                No top-up history yet. Use the Request Top-Up button above.
+              <div className="text-center py-12 text-sm text-gray-400 font-medium bg-slate-50/30 border border-dashed border-gray-200 rounded-xl">
+                <CreditCard className="mx-auto mb-3 text-gray-300" size={32} />
+                <span className="block text-gray-500 font-semibold mb-1">No top-up history yet.</span>
+                <span className="text-xs text-gray-400">Use the Request Top-Up button above to add credits.</span>
               </div>
             )}
           </div>
@@ -403,7 +415,7 @@ export default function PersonalWalletPage() {
               <div className="bg-blue-950/40 border border-blue-800/50 rounded-xl p-4 mt-6">
                 <h4 className="text-xs font-bold text-blue-200 uppercase tracking-wider mb-2">Need more credits?</h4>
                 <p className="text-xs text-blue-100/80">
-                  Use the <strong>Request Top-Up</strong> button above. In this testing phase, personal MCredits are credited instantly.
+                  Personal instant top-ups are credited immediately in dummy mode. Use the <strong>Request Top-Up</strong> button above.
                 </p>
               </div>
             </div>
@@ -417,7 +429,7 @@ export default function PersonalWalletPage() {
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <h2 className="text-lg font-bold text-[#0e2a4d] mb-2">Request MCredits Top-Up</h2>
             <p className="text-xs text-gray-500 mb-4">
-              Instant mode: MCredits are credited to your wallet immediately.
+              Personal instant top-ups are credited immediately in dummy mode.
             </p>
             {topupMessage && (
               <div className={`mb-4 px-4 py-3 rounded-xl text-sm font-semibold ${
