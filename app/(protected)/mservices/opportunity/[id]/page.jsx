@@ -686,12 +686,6 @@ export default function OpportunityDetailsPage() {
                         <div className="h-10 px-6 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm font-bold flex items-center justify-center gap-1.5 cursor-default shadow-sm">
                           Company Cancelled
                         </div>
-                        <button
-                          onClick={() => router.push('/jobs/my-applications')}
-                          className="h-10 px-5 bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
-                        >
-                          View Details
-                        </button>
                       </div>
                       
                       {cancellation && (

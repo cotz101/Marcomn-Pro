@@ -746,12 +746,28 @@ export default function ApplicantsPage() {
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-red-500 bg-gray-50"
               >
                 <option value="" disabled>Select a reason...</option>
-                <option value="Position Cancelled">Position Cancelled</option>
-                <option value="Hired Another Candidate">Hired Another Candidate</option>
-                <option value="Candidate Unresponsive">Candidate Unresponsive</option>
-                <option value="Candidate Misrepresented Skills">Candidate Misrepresented Skills</option>
-                <option value="Other">Other</option>
+                <optgroup label="── Company / Business Reasons">
+                  <option value="Position Cancelled">Position Cancelled</option>
+                  <option value="Project Cancelled">Project Cancelled</option>
+                  <option value="Vessel Schedule Changed">Vessel Schedule Changed</option>
+                  <option value="Client Requirement Changed">Client Requirement Changed</option>
+                  <option value="Role No Longer Needed">Role No Longer Needed</option>
+                  <option value="Budget Issue">Budget Issue</option>
+                  <option value="Company Internal Reason">Company Internal Reason</option>
+                </optgroup>
+                <optgroup label="── Applicant-Related Reasons">
+                  <option value="Candidate No Show">Candidate No Show</option>
+                  <option value="Candidate No Response">Candidate No Response</option>
+                  <option value="Candidate Unreachable">Candidate Unreachable</option>
+                  <option value="Candidate Failed Requirement">Candidate Failed Requirement</option>
+                  <option value="Candidate Misrepresented Information">Candidate Misrepresented Information</option>
+                  <option value="Candidate Declined After Confirmation">Candidate Declined After Confirmation</option>
+                  <option value="Other Candidate Issue">Other Candidate Issue</option>
+                </optgroup>
               </select>
+              <p className="text-[10px] text-gray-400 mt-1.5 leading-snug">
+                <span className="font-semibold text-amber-600">Note:</span> Company/Business reasons will automatically refund the candidate. Applicant-related reasons will be reviewed by MarComn before any refund decision.
+              </p>
             </div>
 
             <div className="mb-6">

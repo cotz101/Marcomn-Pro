@@ -46,14 +46,69 @@ export default function MyApplicationsPage() {
     setLoading(true);
     try {
       const supabase = createClient();
-      const { data, error } = await supabase
+      const { data: appsData, error } = await supabase
         .from('applications')
-        .select('*, job:jobs(*), job_orders(*, job_cancellations(*))')
+        .select('*, job:jobs(*)')
         .eq('applicant_id', userId)
         .order('applied_at', { ascending: false });
 
       if (error) throw error;
-      setApplications(data || []);
+      
+      let applications = appsData || [];
+      
+      if (applications.length > 0) {
+        const appIds = applications.map(a => a.id);
+        
+        // 2. Fetch job_orders for application IDs
+        const { data: jobOrders, error: ordersError } = await supabase
+          .from('job_orders')
+          .select('*')
+          .in('application_id', appIds);
+          
+        let fetchedOrders = (!ordersError && jobOrders) ? jobOrders : [];
+        let orderIds = fetchedOrders.map(o => o.id);
+        
+        // 3. Fetch job_cancellations for job_order IDs
+        let fetchedCancellations = [];
+        if (orderIds.length > 0) {
+          const { data: jobCancellations, error: cancelError } = await supabase
+            .from('job_cancellations')
+            .select('*')
+            .in('job_order_id', orderIds);
+          if (!cancelError && jobCancellations) {
+            fetchedCancellations = jobCancellations;
+          }
+        }
+        
+        // 4. Manually attach the latest cancellation record to each application object
+        applications = applications.map(app => {
+          // Find orders for this app
+          const appOrders = fetchedOrders.filter(o => o.application_id === app.id);
+          
+          // Get the latest order (or only order)
+          const latestOrder = appOrders.length > 0 ? appOrders[0] : null;
+          
+          // Find cancellations for this order
+          let appCancellation = null;
+          if (latestOrder) {
+            const orderCancellations = fetchedCancellations.filter(c => c.job_order_id === latestOrder.id);
+            // Get the latest cancellation
+            if (orderCancellations.length > 0) {
+              // Sort descending by created_at if possible, or just take first
+              orderCancellations.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+              appCancellation = orderCancellations[0];
+            }
+          }
+          
+          return {
+            ...app,
+            job_orders: appOrders,
+            job_cancellation: appCancellation
+          };
+        });
+      }
+
+      setApplications(applications);
     } catch (err) {
       console.error('Error fetching applications:', err.message || err);
     } finally {
@@ -355,20 +410,45 @@ export default function MyApplicationsPage() {
                 <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 w-full sm:w-auto">
                   {getStatusBadge(app.status)}
 
-                  {app.status === 'Company Cancelled' && (() => {
-                    const order = Array.isArray(app.job_orders) ? app.job_orders[0] : app.job_orders;
-                    const cancellation = order?.job_cancellations ? (Array.isArray(order.job_cancellations) ? order.job_cancellations[0] : order.job_cancellations) : null;
+                  {(app.status === 'Company Cancelled' || app.status === 'Candidate Cancelled') && (() => {
+                    let cancellation = app.job_cancellation;
+                    if (!cancellation && app.job_cancellations?.length > 0) {
+                      cancellation = app.job_cancellations[0];
+                    }
+                    if (!cancellation) {
+                      const order = Array.isArray(app.job_orders) ? app.job_orders[0] : app.job_orders;
+                      cancellation = order?.job_cancellations ? (Array.isArray(order.job_cancellations) ? order.job_cancellations[0] : order.job_cancellations) : null;
+                    }
                     if (cancellation) {
+                      const prefix = app.status === 'Company Cancelled' ? 'Company' : 'Candidate';
+                      const refundStatus = cancellation.refund_status;
+
+                      // Determine refund label for display
+                      let refundLabel = null;
+                      if (app.status === 'Company Cancelled') {
+                        if (refundStatus === 'auto_refunded') {
+                          refundLabel = { text: 'Acceptance fee refunded to your wallet.', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
+                        } else if (refundStatus === 'no_refund') {
+                          refundLabel = { text: 'No refund due to applicant-related cancellation reason.', color: 'text-gray-600 bg-gray-50 border-gray-200' };
+                        }
+                      }
+
                       return (
                         <div className="mt-2 p-4 bg-red-50 border border-red-100 rounded-lg text-sm text-red-800 text-left w-full sm:max-w-sm">
-                          <p className="font-bold text-red-900 mb-1">Company Cancellation Reason:</p>
+                          <p className="font-bold text-red-900 mb-1">{prefix} Cancellation Reason:</p>
                           <p className="mb-3">{cancellation.cancellation_reason}</p>
                           
                           {cancellation.cancellation_remarks && (
                             <>
                               <p className="font-bold text-red-900 mb-1">Remarks:</p>
-                              <p>{cancellation.cancellation_remarks}</p>
+                              <p className="mb-3">{cancellation.cancellation_remarks}</p>
                             </>
+                          )}
+
+                          {refundLabel && (
+                            <p className={`text-xs font-semibold mt-1 px-2 py-1 rounded border inline-block ${refundLabel.color}`}>
+                              {refundLabel.text}
+                            </p>
                           )}
                         </div>
                       );

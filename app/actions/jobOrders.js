@@ -2,6 +2,10 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { createPlatformNotification } from './notifications';
+import {
+  processCandidateCancellationFinancials,
+  processCompanyCancellationFinancials,
+} from './refunds';
 
 /**
  * Creates an active job order after candidate accepts the offer.
@@ -179,16 +183,22 @@ export async function cancelJobOrderByCandidate({ jobOrderId, reason, remarks })
     // if existing email infrastructure exists, call it here.
 
     // Record reputation if safe (Stage 3E preparation)
-    // We'll upsert reputation summary safely using Rpc or just ignoring conflicts
     const { error: repError } = await supabase
         .from('candidate_reputation_summary')
         .upsert(
             { candidate_id: userId },
             { onConflict: 'candidate_id' }
         );
-        
-    // Wait, upserting doesn't automatically increment.
-    // For now we just prepare it in schema as requested.
+
+    // Stage 3D-1: Process financial distribution (non-blocking)
+    try {
+      const finResult = await processCandidateCancellationFinancials(order.id);
+      if (!finResult.success && !finResult.skipped) {
+        console.warn('Financial processing warning (candidate cancel):', finResult.error);
+      }
+    } catch (finErr) {
+      console.error('Financial processing failed (candidate cancel) — cancellation stands:', finErr);
+    }
 
     return { success: true };
 
@@ -282,6 +292,16 @@ export async function cancelJobOrderByCompany({ jobOrderId, reason, remarks }) {
         console.error('Failed to create platform notification:', notifErr);
     }
 
+    // Stage 3D-1: Process financial distribution (non-blocking)
+    try {
+      const finResult = await processCompanyCancellationFinancials(order.id);
+      if (!finResult.success && !finResult.skipped) {
+        console.warn('Financial processing warning (company cancel):', finResult.error);
+      }
+    } catch (finErr) {
+      console.error('Financial processing failed (company cancel) — cancellation stands:', finErr);
+    }
+
     return { success: true };
 
   } catch (err) {
@@ -289,4 +309,3 @@ export async function cancelJobOrderByCompany({ jobOrderId, reason, remarks }) {
     return { success: false, error: err.message };
   }
 }
-
