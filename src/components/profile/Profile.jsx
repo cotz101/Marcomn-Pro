@@ -555,6 +555,12 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
                 </div>
               </div>
 
+              {(reputation.summary?.completed_jobs + reputation.summary?.cancelled_jobs) === 0 && (
+                <div className="text-center py-6 text-sm font-semibold text-slate-500 bg-slate-50 border border-dashed border-slate-200 rounded-xl">
+                  No engagement history yet.
+                </div>
+              )}
+
               {reputation.feedback && reputation.feedback.length > 0 && (
                 <div className="mt-2">
                   <h3 className="text-sm font-bold text-slate-800 mb-4">Recent Feedback</h3>

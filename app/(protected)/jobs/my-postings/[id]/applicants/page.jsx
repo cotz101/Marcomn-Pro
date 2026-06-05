@@ -610,6 +610,23 @@ export default function ApplicantsPage() {
                       ) : null;
                     })()}
 
+                    {app.status === 'Completed' && (
+                      <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2 justify-end">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); router.push(`/profile/${app.applicant_id}`); }}
+                          className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                        >
+                          View Profile
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
+                          className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                        >
+                          Message
+                        </button>
+                      </div>
+                    )}
+
                     {app.status === 'Shortlisted' && (
                       <div className="mt-4 flex justify-end">
                         <button 
