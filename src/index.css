@@ -235,6 +235,9 @@ a {
     grid-template-columns: 225px 1fr 300px;
     padding: 0;
   }
+  .main-grid.hide-sidebar-right {
+    grid-template-columns: 225px 1fr !important;
+  }
 }
 
 .center-feed {

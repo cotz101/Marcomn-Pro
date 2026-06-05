@@ -29,6 +29,7 @@ export default function CompanyWalletPage() {
   const [transactions, setTransactions] = useState([]);
   const [topupRequests, setTopupRequests] = useState([]);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('transactions');
 
   // Top-Up Modal State
   const [isTopupModalOpen, setIsTopupModalOpen] = useState(false);
@@ -336,186 +337,205 @@ export default function CompanyWalletPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Left Column: Transactions */}
+        {/* Left Column: Transactions & Top-ups with Tabs */}
         <div className="lg:col-span-2">
           <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden min-h-[400px]">
-            <div className="flex flex-col gap-1 mb-6">
-              <div className="flex items-center gap-2">
-                <History size={18} className="text-[#0e2a4d]" />
-                <h2 className="text-base font-bold text-[#0e2a4d]">Wallet Transaction History</h2>
-              </div>
-              <p className="text-xs text-gray-500 font-medium ml-6">
-                Wallet Transaction History shows approved credit/debit movements (actual MCredit balance changes).
-              </p>
+            {/* Tabs Header */}
+            <div className="flex border-b border-gray-100 mb-6 gap-6">
+              <button
+                onClick={() => setActiveTab('transactions')}
+                className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
+                  activeTab === 'transactions'
+                    ? 'border-[#0e2a4d] text-[#0e2a4d]'
+                    : 'border-transparent text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                <History size={16} />
+                <span>Wallet Transaction History</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('topups')}
+                className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
+                  activeTab === 'topups'
+                    ? 'border-[#0e2a4d] text-[#0e2a4d]'
+                    : 'border-transparent text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                <CreditCard size={16} />
+                <span>Top-Up History</span>
+              </button>
             </div>
 
-            {transactions.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm border-collapse">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[11px] font-bold">
-                      <th className="pb-3 pr-4">Date</th>
-                      <th className="pb-3 px-2">Details</th>
-                      <th className="pb-3 px-2 text-right">Amount</th>
-                      <th className="pb-3 pl-4 text-right">Balance After</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 text-gray-700 font-medium">
-                    {transactions.map((tx) => {
-                      const isCredit = tx.direction === 'credit';
-                      return (
-                        <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-4 pr-4 whitespace-nowrap text-xs text-gray-500 font-mono">
-                            {new Date(tx.created_at).toLocaleDateString()}
-                            <br/>
-                            <span className="text-[10px] text-gray-400">{new Date(tx.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                          </td>
-                          <td className="py-4 px-2">
-                            <div className="flex flex-col gap-1">
-                              {tx.jobDetails ? (
-                                <>
-                                  <span className="text-xs font-bold text-slate-800 capitalize truncate max-w-[200px]" title={`Job Posting Fee — ${tx.jobDetails.title}`}>
-                                    Job Posting Fee — {tx.jobDetails.title}
-                                  </span>
-                                  <span className="text-[11px] text-gray-500 leading-snug max-w-xs">
-                                    {(() => {
-                                      const note = tx.justification_note || tx.description || '';
-                                      const match = note.match(/\(([^)]+)\)/);
-                                      return match ? `Posting fee: ${match[1]}` : note;
-                                    })()}
-                                    <span className="block text-[9px] text-gray-300 font-mono mt-0.5 truncate max-w-[150px]" title={tx.reference_id}>ID: {tx.reference_id}</span>
-                                  </span>
-                                </>
-                              ) : tx.cancellationDetails ? (
-                                <>
-                                  <span className="text-xs font-bold text-slate-800" title={
-                                    tx.reference_type === 'candidate_cancellation'
-                                      ? `Candidate Cancellation Compensation — ${tx.cancellationDetails.candidateName || 'Unknown Candidate'}`
-                                      : tx.reference_type === 'company_cancellation_refund'
-                                      ? `Company Cancellation Refund — ${tx.cancellationDetails.candidateName || 'Unknown Candidate'}`
-                                      : `Platform Share (Candidate Cancel) — ${tx.cancellationDetails.candidateName || 'Unknown Candidate'}`
-                                  }>
-                                    {tx.reference_type === 'candidate_cancellation' && (
-                                      tx.cancellationDetails.candidateName
-                                        ? `Candidate Cancellation Compensation — ${tx.cancellationDetails.candidateName}`
-                                        : 'Candidate Cancellation Compensation'
-                                    )}
-                                    {tx.reference_type === 'company_cancellation_refund' && (
-                                      tx.cancellationDetails.candidateName
-                                        ? `Company Cancellation Refund — ${tx.cancellationDetails.candidateName}`
-                                        : 'Company Cancellation Refund'
-                                    )}
-                                    {tx.reference_type === 'candidate_cancellation_platform' && (
-                                      tx.cancellationDetails.candidateName
-                                        ? `Platform Share (Candidate Cancel) — ${tx.cancellationDetails.candidateName}`
-                                        : 'Platform Share (Candidate Cancel)'
-                                    )}
-                                  </span>
-                                  <span className="text-[11px] text-gray-500 leading-snug max-w-xs">
-                                    {tx.cancellationDetails.jobTitle ? (
-                                      `For job: ${tx.cancellationDetails.jobTitle}`
-                                    ) : (
-                                      tx.justification_note || tx.description || 'No description provided'
-                                    )}
-                                    <span className="block text-[9px] text-gray-300 font-mono mt-0.5 truncate max-w-[150px]" title={tx.reference_id}>ID: {tx.reference_id}</span>
-                                  </span>
-                                </>
-                              ) : (
-                                <>
-                                  <span className="text-xs font-bold text-slate-800 capitalize">
-                                    {tx.transaction_type.replace('_', ' ')}
-                                  </span>
-                                  <span className="text-[11px] text-gray-500 leading-snug max-w-xs" title={tx.justification_note}>
-                                    {tx.justification_note || tx.description || 'No description provided'}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-4 px-2 text-right whitespace-nowrap">
-                            <span className={`inline-flex items-center justify-end gap-1 font-bold ${isCredit ? 'text-emerald-600' : 'text-red-600'}`}>
-                              {isCredit ? '+' : '-'}{Number(tx.amount).toFixed(2)}
-                            </span>
-                          </td>
-                          <td className="py-4 pl-4 text-right whitespace-nowrap font-bold text-[#0e2a4d]">
-                            {Number(tx.balance_after).toFixed(2)} MC
-                          </td>
+            {/* Tab content */}
+            {activeTab === 'transactions' ? (
+              <div>
+                <p className="text-xs text-gray-500 font-medium mb-4">
+                  Wallet Transaction History shows approved credit/debit movements (actual MCredit balance changes).
+                </p>
+
+                {transactions.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm border-collapse">
+                      <thead>
+                        <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[11px] font-bold">
+                          <th className="pb-3 pr-4">Date</th>
+                          <th className="pb-3 px-2">Details</th>
+                          <th className="pb-3 px-2 text-right">Amount</th>
+                          <th className="pb-3 pl-4 text-right">Balance After</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 text-gray-700 font-medium">
+                        {transactions.map((tx) => {
+                          const isCredit = tx.direction === 'credit';
+                          return (
+                            <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="py-4 pr-4 whitespace-nowrap text-xs text-gray-500 font-mono">
+                                {new Date(tx.created_at).toLocaleDateString()}
+                                <br/>
+                                <span className="text-[10px] text-gray-400">{new Date(tx.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                              </td>
+                              <td className="py-4 px-2">
+                                <div className="flex flex-col gap-1">
+                                  {tx.jobDetails ? (
+                                    <>
+                                      <span className="text-xs font-bold text-slate-800 capitalize truncate max-w-[200px]" title={`Job Posting Fee — ${tx.jobDetails.title}`}>
+                                        Job Posting Fee — {tx.jobDetails.title}
+                                      </span>
+                                      <span className="text-[11px] text-gray-500 leading-snug max-w-xs">
+                                        {(() => {
+                                          const note = tx.justification_note || tx.description || '';
+                                          const match = note.match(/\(([^)]+)\)/);
+                                          return match ? `Posting fee: ${match[1]}` : note;
+                                        })()}
+                                        <span className="block text-[9px] text-gray-300 font-mono mt-0.5 truncate max-w-[150px]" title={tx.reference_id}>ID: {tx.reference_id}</span>
+                                      </span>
+                                    </>
+                                  ) : tx.cancellationDetails ? (
+                                    <>
+                                      <span className="text-xs font-bold text-slate-800" title={
+                                        tx.reference_type === 'candidate_cancellation'
+                                          ? `Candidate Cancellation Compensation — ${tx.cancellationDetails.candidateName || 'Unknown Candidate'}`
+                                          : tx.reference_type === 'company_cancellation_refund'
+                                          ? `Company Cancellation Refund — ${tx.cancellationDetails.candidateName || 'Unknown Candidate'}`
+                                          : `Platform Share (Candidate Cancel) — ${tx.cancellationDetails.candidateName || 'Unknown Candidate'}`
+                                      }>
+                                        {tx.reference_type === 'candidate_cancellation' && (
+                                          tx.cancellationDetails.candidateName
+                                            ? `Candidate Cancellation Compensation — ${tx.cancellationDetails.candidateName}`
+                                            : 'Candidate Cancellation Compensation'
+                                        )}
+                                        {tx.reference_type === 'company_cancellation_refund' && (
+                                          tx.cancellationDetails.candidateName
+                                            ? `Company Cancellation Refund — ${tx.cancellationDetails.candidateName}`
+                                            : 'Company Cancellation Refund'
+                                        )}
+                                        {tx.reference_type === 'candidate_cancellation_platform' && (
+                                          tx.cancellationDetails.candidateName
+                                            ? `Platform Share (Candidate Cancel) — ${tx.cancellationDetails.candidateName}`
+                                            : 'Platform Share (Candidate Cancel)'
+                                        )}
+                                      </span>
+                                      <span className="text-[11px] text-gray-500 leading-snug max-w-xs">
+                                        {tx.cancellationDetails.jobTitle ? (
+                                          `For job: ${tx.cancellationDetails.jobTitle}`
+                                        ) : (
+                                          tx.justification_note || tx.description || 'No description provided'
+                                        )}
+                                        <span className="block text-[9px] text-gray-300 font-mono mt-0.5 truncate max-w-[150px]" title={tx.reference_id}>ID: {tx.reference_id}</span>
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="text-xs font-bold text-slate-800 capitalize">
+                                        {tx.transaction_type.replace('_', ' ')}
+                                      </span>
+                                      <span className="text-[11px] text-gray-500 leading-snug max-w-xs" title={tx.justification_note}>
+                                        {tx.justification_note || tx.description || 'No description provided'}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-4 px-2 text-right whitespace-nowrap">
+                                <span className={`inline-flex items-center justify-end gap-1 font-bold ${isCredit ? 'text-emerald-600' : 'text-red-600'}`}>
+                                  {isCredit ? '+' : '-'}{Number(tx.amount).toFixed(2)}
+                                </span>
+                              </td>
+                              <td className="py-4 pl-4 text-right whitespace-nowrap font-bold text-[#0e2a4d]">
+                                {Number(tx.balance_after).toFixed(2)} MC
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-16 text-sm text-gray-400 font-medium bg-slate-50/30 border border-dashed border-gray-200 rounded-xl">
+                    <FileText className="mx-auto mb-3 text-gray-300" size={32} />
+                    <span className="block text-gray-500 font-semibold mb-1">No wallet transactions yet.</span>
+                    <span className="text-xs text-gray-400">Your ledger will populate as you use MCredits.</span>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="text-center py-16 text-sm text-gray-400 font-medium bg-slate-50/30 border border-dashed border-gray-200 rounded-xl">
-                <FileText className="mx-auto mb-3 text-gray-300" size={32} />
-                <span className="block text-gray-500 font-semibold mb-1">No wallet transactions yet.</span>
-                <span className="text-xs text-gray-400">Your ledger will populate as you use MCredits.</span>
-              </div>
-            )}
-          </div>
+              <div>
+                <p className="text-xs text-gray-500 font-medium mb-4">
+                  Top-Up History shows your submitted top-up records (audit log of requests).
+                </p>
 
-          {/* Top-Up Requests Section */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden mt-6">
-            <div className="flex flex-col gap-1 mb-6">
-              <div className="flex items-center gap-2">
-                <CreditCard size={18} className="text-[#0e2a4d]" />
-                <h2 className="text-base font-bold text-[#0e2a4d]">Top-Up Requests</h2>
-              </div>
-              <p className="text-xs text-gray-500 font-medium ml-6">
-                Pending top-ups do not change wallet balance until approved.
-              </p>
-            </div>
-            {topupRequests.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm border-collapse">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[11px] font-bold">
-                      <th className="pb-3 pr-4">Date</th>
-                      <th className="pb-3 px-2">Amount</th>
-                      <th className="pb-3 px-2">Status</th>
-                      <th className="pb-3 pl-4">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 text-gray-700 font-medium">
-                    {topupRequests.map((req) => (
-                      <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-4 pr-4 whitespace-nowrap text-xs text-gray-500 font-mono">
-                          {new Date(req.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="py-4 px-2 font-bold text-[#0e2a4d]">
-                          {Number(req.amount).toFixed(2)} MC
-                        </td>
-                        <td className="py-4 px-2">
-                          <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                            req.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                            req.status === 'Rejected' ? 'bg-red-50 text-red-700 border-red-200' :
-                            req.status === 'Cancelled' ? 'bg-gray-50 text-gray-600 border-gray-200' :
-                            'bg-blue-50 text-blue-700 border-blue-200'
-                          }`}>
-                            {req.status}
-                          </span>
-                        </td>
-                        <td className="py-4 pl-4 text-xs">
-                          {req.status === 'Pending' && (
-                            <button
-                              onClick={() => handleCancelTopup(req.id)}
-                              className="text-red-500 hover:text-red-700 font-semibold"
-                            >
-                              Cancel
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-12 text-sm text-gray-400 font-medium bg-slate-50/30 border border-dashed border-gray-200 rounded-xl">
-                <CreditCard className="mx-auto mb-3 text-gray-300" size={32} />
-                <span className="block text-gray-500 font-semibold mb-1">No top-up requests found.</span>
-                <span className="text-xs text-gray-400">Use the Request Company Top-Up button above to submit a request.</span>
+                {topupRequests.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm border-collapse">
+                      <thead>
+                        <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[11px] font-bold">
+                          <th className="pb-3 pr-4">Date</th>
+                          <th className="pb-3 px-2">Amount</th>
+                          <th className="pb-3 px-2">Status</th>
+                          <th className="pb-3 pl-4">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 text-gray-700 font-medium">
+                        {topupRequests.map((req) => (
+                          <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="py-4 pr-4 whitespace-nowrap text-xs text-gray-500 font-mono">
+                              {new Date(req.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="py-4 px-2 font-bold text-[#0e2a4d]">
+                              {Number(req.amount).toFixed(2)} MC
+                            </td>
+                            <td className="py-4 px-2">
+                              <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                                req.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                req.status === 'Rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                                req.status === 'Cancelled' ? 'bg-gray-50 text-gray-600 border-gray-200' :
+                                'bg-blue-50 text-blue-700 border-blue-200'
+                              }`}>
+                                {req.status}
+                              </span>
+                            </td>
+                            <td className="py-4 pl-4 text-xs">
+                              {req.status === 'Pending' && (
+                                <button
+                                  onClick={() => handleCancelTopup(req.id)}
+                                  className="text-red-500 hover:text-red-700 font-semibold"
+                                >
+                                  Cancel
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-sm text-gray-400 font-medium bg-slate-50/30 border border-dashed border-gray-200 rounded-xl">
+                    <CreditCard className="mx-auto mb-3 text-gray-300" size={32} />
+                    <span className="block text-gray-500 font-semibold mb-1">No top-up requests found.</span>
+                    <span className="text-xs text-gray-400">Use the Request Company Top-Up button above to submit a request.</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -532,16 +552,15 @@ export default function CompanyWalletPage() {
             <div className="relative z-10">
               <h3 className="text-base font-bold mb-3 flex items-center gap-2">
                 <Info size={18} className="text-blue-300" />
-                About MCredits
+                <span>About MCredits</span>
               </h3>
-              <p className="text-sm text-blue-100 leading-relaxed mb-4">
-                MCredits are used to power transactions on MarComn, including job postings, premium promotions, and future marketplace services.
-              </p>
               
-              <div className="bg-blue-950/40 border border-blue-800/50 rounded-xl p-4 mt-6">
-                <h4 className="text-xs font-bold text-blue-200 uppercase tracking-wider mb-2">Need more credits?</h4>
-                <p className="text-xs text-blue-100/80">
-                  Company top-ups require platform admin approval. Use the <strong>Request Company Top-Up</strong> button above.
+              <div className="space-y-4 text-xs text-blue-100/90 leading-relaxed">
+                <p>
+                  Company MCredits are used for job posting and company-side platform services.
+                </p>
+                <p>
+                  Company top-ups require platform admin approval.
                 </p>
               </div>
             </div>
