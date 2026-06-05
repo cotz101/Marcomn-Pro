@@ -622,7 +622,7 @@ export default function MyApplicationsPage() {
                               onClick={() => handleOpenConfirmPaymentModal(order.id)}
                               className="px-4 py-1.5 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto text-center"
                             >
-                              Confirm Payment Received
+                              Press to Confirm Payment Received
                             </button>
                           </div>
                         );
@@ -856,10 +856,10 @@ export default function MyApplicationsPage() {
               </button>
               <button 
                 onClick={handleConfirmPaymentReceived}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
+                className="bg-[#004173] hover:bg-blue-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
                 disabled={submittingLifecycle}
               >
-                {submittingLifecycle ? 'Confirming...' : 'Confirm Payment Received'}
+                {submittingLifecycle ? 'Confirming...' : 'Press to Confirm Payment Received'}
               </button>
             </div>
           </div>

@@ -88,82 +88,34 @@ export async function confirmWorkCompletedByCompany(jobOrderId, note) {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error('Unauthorized');
     
-    // Fetch job order
-    const { data: order, error: orderError } = await supabase
-      .from('job_orders')
-      .select('*, job:jobs(title, poster_id, company, company_id)')
-      .eq('id', jobOrderId)
-      .maybeSingle();
-      
-    if (orderError || !order) {
-      let diagnosticMsg = `Job order not found for id: ${jobOrderId}`;
-      try {
-        const { data: diagData, error: diagError } = await supabase
-          .rpc('check_job_order_existence_v1', { p_id: jobOrderId });
-        
-        if (!diagError && diagData && diagData.length > 0) {
-          const diag = diagData[0];
-          diagnosticMsg += ` (Diagnostics: Job order exists in DB but is hidden by RLS. status=${diag.status}, poster_id=${diag.poster_id}, company_id=${diag.company_id}, candidate_id=${diag.candidate_id}, auth_user=${user.id})`;
-        } else {
-          diagnosticMsg += ` (Diagnostics: Job order does not exist in DB at all. diagError=${diagError?.message})`;
-        }
-      } catch (diagEx) {
-        diagnosticMsg += ` (Diagnostics failed: ${diagEx.message})`;
-      }
-      console.error(`Error in confirmWorkCompletedByCompany: ${diagnosticMsg}`);
-      throw new Error(diagnosticMsg);
+    // Call the RPC function
+    const { data: result, error: rpcError } = await supabase
+      .rpc('confirm_work_completed_by_company', {
+        p_job_order_id: jobOrderId,
+        p_note: note || null
+      });
+
+    if (rpcError) {
+      console.error('RPC Error in confirmWorkCompletedByCompany:', rpcError);
+      throw new Error(`Failed to confirm work completed: ${rpcError.message}`);
     }
-    
-    // Verify company/poster identity
-    let isAuthorized = false;
-    if (order.job.poster_id === user.id) {
-      isAuthorized = true;
-    } else if (order.job.company_id) {
-      const { data: member } = await supabase
-        .from('company_members')
-        .select('role')
-        .eq('company_id', order.job.company_id)
-        .eq('profile_id', user.id)
-        .maybeSingle();
-      if (member) isAuthorized = true;
+
+    if (!result || !result.success) {
+      throw new Error(result?.error || 'Failed to confirm work completed');
     }
-    
-    if (!isAuthorized) {
-      throw new Error('Unauthorized: only the job poster or an authorized company member can perform this action');
-    }
-    
-    // Validate status sequence
-    if (order.status !== 'Work Completed by Applicant') {
-      throw new Error(`Invalid status transition. Current status: ${order.status}`);
-    }
-    
-    // Update
-    const { error: updateError } = await supabase
-      .from('job_orders')
-      .update({
-        status: 'Completion Confirmed by Company',
-        completion_confirmed_by_company_at: new Date().toISOString(),
-        company_completion_note: note || null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', jobOrderId);
-      
-    if (updateError) throw updateError;
-    
-    const companyName = order.job.company || 'Company';
-    
-    // Notify candidate
+
+    // Notify candidate using data from RPC
     await createPlatformNotification({
-      userId: order.candidate_id,
+      userId: result.candidate_id,
       title: 'Work Completion Confirmed',
-      message: `${companyName} confirmed work completed for ${order.job.title}. Please confirm payment once received.`,
+      message: `${result.company_name} confirmed work completed for ${result.job_title}. Please confirm payment once received.`,
       type: 'active_engagement',
       linkUrl: `/jobs/my-applications`,
       senderId: user.id
     });
     
+    revalidatePath(`/jobs/my-postings/${result.job_id}/applicants`);
     revalidatePath(`/jobs/my-applications`);
-    revalidatePath(`/jobs/my-postings/${order.job_id}/applicants`);
     
     return { success: true };
   } catch (err) {
@@ -258,122 +210,40 @@ export async function closeCompletedEngagementByCompany({ jobOrderId, feedbackDa
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error('Unauthorized');
     
-    // Fetch job order
-    const { data: order, error: orderError } = await supabase
-      .from('job_orders')
-      .select('*, job:jobs(title, poster_id, company_id)')
-      .eq('id', jobOrderId)
-      .maybeSingle();
-      
-    if (orderError || !order) {
-      let diagnosticMsg = `Job order not found for id: ${jobOrderId}`;
-      try {
-        const { data: diagData, error: diagError } = await supabase
-          .rpc('check_job_order_existence_v1', { p_id: jobOrderId });
-        
-        if (!diagError && diagData && diagData.length > 0) {
-          const diag = diagData[0];
-          diagnosticMsg += ` (Diagnostics: Job order exists in DB but is hidden by RLS. status=${diag.status}, poster_id=${diag.poster_id}, company_id=${diag.company_id}, candidate_id=${diag.candidate_id}, auth_user=${user.id})`;
-        } else {
-          diagnosticMsg += ` (Diagnostics: Job order does not exist in DB at all. diagError=${diagError?.message})`;
-        }
-      } catch (diagEx) {
-        diagnosticMsg += ` (Diagnostics failed: ${diagEx.message})`;
-      }
-      console.error(`Error in closeCompletedEngagementByCompany: ${diagnosticMsg}`);
-      throw new Error(diagnosticMsg);
+    // Call the RPC function
+    const { data: result, error: rpcError } = await supabase
+      .rpc('close_completed_engagement_by_company', {
+        p_job_order_id: jobOrderId,
+        p_sentiment: feedbackData.sentiment,
+        p_tags: feedbackData.tags || [],
+        p_comment: feedbackData.comment || ''
+      });
+
+    if (rpcError) {
+      console.error('RPC Error in closeCompletedEngagementByCompany:', rpcError);
+      throw new Error(`Failed to close engagement: ${rpcError.message}`);
+    }
+
+    if (!result || !result.success) {
+      throw new Error(result?.error || 'Failed to close engagement');
     }
     
-    // Verify company/poster identity
-    let isAuthorized = false;
-    if (order.job.poster_id === user.id) {
-      isAuthorized = true;
-    } else if (order.job.company_id) {
-      const { data: member } = await supabase
-        .from('company_members')
-        .select('role')
-        .eq('company_id', order.job.company_id)
-        .eq('profile_id', user.id)
-        .maybeSingle();
-      if (member) isAuthorized = true;
-    }
+    // Refresh candidate reputation
+    await refreshCandidateReputation(result.candidate_id);
     
-    if (!isAuthorized) {
-      throw new Error('Unauthorized: only the job poster or an authorized company member can perform this action');
-    }
-    
-    // Validate status sequence
-    if (order.status !== 'Payment Confirmed by Applicant') {
-      throw new Error(`Invalid status transition. Current status: ${order.status}`);
-    }
-    
-    // 1. Update job_orders status to 'Completed'
-    const { error: updateOrderErr } = await supabase
-      .from('job_orders')
-      .update({
-        status: 'Completed',
-        engagement_closed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', jobOrderId);
-      
-    if (updateOrderErr) throw updateOrderErr;
-    
-    // 2. Update application status to 'Completed'
-    if (order.application_id) {
-      const { error: appErr } = await supabase
-        .from('applications')
-        .update({ status: 'Completed' })
-        .eq('id', order.application_id);
-        
-      if (appErr) throw appErr;
-    }
-    
-    // 3. Insert Feedback if provided and doesn't already exist
-    if (feedbackData && feedbackData.sentiment) {
-      const { data: existingFeedback } = await supabase
-        .from('job_feedback')
-        .select('id')
-        .eq('job_order_id', jobOrderId)
-        .maybeSingle();
-        
-      if (!existingFeedback) {
-        const { error: feedErr } = await supabase
-          .from('job_feedback')
-          .insert({
-            job_order_id: jobOrderId,
-            job_id: order.job_id,
-            application_id: order.application_id,
-            company_id: order.company_id,
-            candidate_id: order.candidate_id,
-            feedback_by: user.id,
-            feedback_sentiment: feedbackData.sentiment,
-            feedback_tags: feedbackData.tags || [],
-            feedback_comment: feedbackData.comment || '',
-            feedback_context: 'completed_job',
-            created_at: new Date().toISOString()
-          });
-          
-        if (feedErr) throw feedErr;
-      }
-    }
-    
-    // 4. Refresh candidate reputation
-    await refreshCandidateReputation(order.candidate_id);
-    
-    // 5. Notify candidate
+    // Notify candidate
     await createPlatformNotification({
-      userId: order.candidate_id,
+      userId: result.candidate_id,
       title: 'Engagement Closed',
-      message: `Engagement for ${order.job.title} has been closed as completed.`,
+      message: `${result.company_name} closed the engagement for ${result.job_title} as completed.`,
       type: 'engagement_completed',
       linkUrl: `/jobs/my-applications`,
       senderId: user.id
     });
     
     revalidatePath(`/jobs/my-applications`);
-    revalidatePath(`/jobs/my-postings/${order.job_id}/applicants`);
-    revalidatePath(`/profile/${order.candidate_id}`);
+    revalidatePath(`/jobs/my-postings/${result.job_id}/applicants`);
+    revalidatePath(`/profile/${result.candidate_id}`);
     
     return { success: true };
   } catch (err) {

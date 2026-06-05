@@ -27,7 +27,7 @@ export async function sendNotification(targetUserId, senderUserId, message, conv
   return { success: true };
 }
 
-export async function createPlatformNotification({ userId, title, message, type, linkUrl, senderId = null }) {
+export async function createPlatformNotification({ userId, title, message, type, linkUrl, senderId = null, metadata = null }) {
   const supabase = await createClient();
   
   const { error } = await supabase
@@ -40,7 +40,8 @@ export async function createPlatformNotification({ userId, title, message, type,
         title: title,
         body: message,
         link: linkUrl || null,
-        is_read: false
+        is_read: false,
+        metadata: metadata || {}
       }
     ]);
   

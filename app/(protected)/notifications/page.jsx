@@ -168,6 +168,37 @@ export default function NotificationsFeedPage() {
   };
 
   const renderAvatar = (notification) => {
+    const hasCompanyContext = notification.metadata?.actor_type === 'company' || notification.metadata?.actor_company_id;
+    
+    if (hasCompanyContext) {
+      const companyLogo = notification.metadata.actor_company_logo_url;
+      const companyName = notification.metadata.actor_company_name || 'Company';
+      
+      if (companyLogo) {
+        return (
+          <>
+            <img 
+              src={companyLogo} 
+              alt={companyName} 
+              className="w-11 h-11 rounded-full object-cover border border-gray-150 shadow-xs"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div className="w-11 h-11 rounded-full items-center justify-center shadow-xs border font-bold text-base shrink-0 bg-blue-50 border-blue-100 text-blue-600 hidden">
+              {companyName.charAt(0).toUpperCase()}
+            </div>
+          </>
+        );
+      }
+      return (
+        <div className="w-11 h-11 rounded-full flex items-center justify-center shadow-xs border font-bold text-base shrink-0 bg-blue-50 border-blue-100 text-blue-600">
+          {companyName.charAt(0).toUpperCase()}
+        </div>
+      );
+    }
+
     const hasAvatar = notification.sender && notification.sender.avatar_url;
     if (hasAvatar) {
       return (
