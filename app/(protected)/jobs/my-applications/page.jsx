@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase';
 import { Briefcase, MapPin, Calendar, Building2, Loader2, ExternalLink, Building, AlertTriangle, Coins } from 'lucide-react';
 import { getCandidateAcceptanceFeePreview, getUserWalletBalance, deductCandidateAcceptanceFee } from '@/app/actions/mcreditsJobs';
 import { createJobOrderFromAcceptedApplication, cancelJobOrderByCandidate } from '@/app/actions/jobOrders';
+import { markWorkCompletedByApplicant, confirmPaymentReceivedByApplicant } from '@/app/actions/engagementLifecycle';
 
 const SkeletonRow = () => (
   <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm animate-pulse flex items-center justify-between gap-4">
@@ -37,6 +38,65 @@ export default function MyApplicationsPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelRemarks, setCancelRemarks] = useState('');
   const [isCancelling, setIsCancelling] = useState(false);
+
+  const [isWorkCompletedModalOpen, setIsWorkCompletedModalOpen] = useState(false);
+  const [isConfirmPaymentModalOpen, setIsConfirmPaymentModalOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [workCompletedNote, setWorkCompletedNote] = useState('');
+  const [paymentConfirmationNote, setPaymentConfirmationNote] = useState('');
+  const [submittingLifecycle, setSubmittingLifecycle] = useState(false);
+
+  const handleOpenWorkCompletedModal = (orderId) => {
+    setSelectedOrderId(orderId);
+    setWorkCompletedNote('');
+    setIsWorkCompletedModalOpen(true);
+  };
+
+  const handleOpenConfirmPaymentModal = (orderId) => {
+    setSelectedOrderId(orderId);
+    setPaymentConfirmationNote('');
+    setIsConfirmPaymentModalOpen(true);
+  };
+
+  const handleConfirmWorkCompleted = async () => {
+    if (!selectedOrderId) return;
+    setSubmittingLifecycle(true);
+    try {
+      const res = await markWorkCompletedByApplicant(selectedOrderId, workCompletedNote);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to mark work completed');
+      }
+      setIsWorkCompletedModalOpen(false);
+      setSelectedOrderId(null);
+      await fetchApplications(); // Reload data
+      alert('Work marked as completed successfully!');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'An error occurred.');
+    } finally {
+      setSubmittingLifecycle(false);
+    }
+  };
+
+  const handleConfirmPaymentReceived = async () => {
+    if (!selectedOrderId) return;
+    setSubmittingLifecycle(true);
+    try {
+      const res = await confirmPaymentReceivedByApplicant(selectedOrderId, paymentConfirmationNote);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to confirm payment received');
+      }
+      setIsConfirmPaymentModalOpen(false);
+      setSelectedOrderId(null);
+      await fetchApplications(); // Reload data
+      alert('Payment received confirmed!');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'An error occurred.');
+    } finally {
+      setSubmittingLifecycle(false);
+    }
+  };
 
   const fetchApplications = useCallback(async () => {
     if (!userId || currentIdentity?.type === 'company') {
@@ -226,8 +286,38 @@ export default function MyApplicationsPage() {
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, orderStatus = null) => {
     const baseClass = "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider";
+    if (status === 'Accepted' && orderStatus && orderStatus !== 'Active') {
+      switch (orderStatus) {
+        case 'Work Completed by Applicant':
+          return (
+            <span className={`${baseClass} bg-blue-100 text-blue-700`}>
+              Work Completed
+            </span>
+          );
+        case 'Completion Confirmed by Company':
+          return (
+            <span className={`${baseClass} bg-emerald-100 text-emerald-700`}>
+              Work Confirmed
+            </span>
+          );
+        case 'Payment Confirmed by Applicant':
+          return (
+            <span className={`${baseClass} bg-indigo-100 text-indigo-700`}>
+              Payment Confirmed
+            </span>
+          );
+        case 'Completed':
+          return (
+            <span className={`${baseClass} bg-emerald-100 text-emerald-800`}>
+              Completed
+            </span>
+          );
+        default:
+          break;
+      }
+    }
     switch (status) {
       case 'Accepted':
         return (
@@ -420,7 +510,11 @@ export default function MyApplicationsPage() {
 
                 {/* Right Side: Actions & Badges */}
                 <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 w-full sm:w-auto">
-                  {getStatusBadge(app.status)}
+                  {(() => {
+                    const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
+                    const order = orderArray[0];
+                    return getStatusBadge(app.status, order?.status);
+                  })()}
 
                   {(app.status === 'Company Cancelled' || app.status === 'Candidate Cancelled') && (() => {
                     let cancellation = app.job_cancellation;
@@ -484,19 +578,77 @@ export default function MyApplicationsPage() {
                     </div>
                   )}
 
-                  {app.status === 'Accepted' && (Array.isArray(app.job_orders) ? app.job_orders[0]?.status === 'Active' : app.job_orders?.status === 'Active') && (
-                    <div className="flex flex-col items-center gap-1.5 w-full">
-                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full w-full text-center">
-                        Active Engagement
-                      </span>
-                      <button
-                        onClick={() => handleOpenCancelModal(app)}
-                        className="px-4 py-1.5 text-sm font-semibold bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors w-full sm:w-auto text-center mt-1"
-                      >
-                        Cancel Engagement
-                      </button>
-                    </div>
-                  )}
+                  {app.status === 'Accepted' && (() => {
+                    const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
+                    const order = orderArray[0];
+                    if (!order) return null;
+
+                    switch (order.status) {
+                      case 'Active':
+                        return (
+                          <div className="flex flex-col items-center gap-1.5 w-full">
+                            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full w-full text-center">
+                              Active Engagement
+                            </span>
+                            <button
+                              onClick={() => handleOpenWorkCompletedModal(order.id)}
+                              className="px-4 py-1.5 text-sm font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors w-full sm:w-auto text-center mt-1"
+                            >
+                              Mark Work Completed
+                            </button>
+                            <button
+                              onClick={() => handleOpenCancelModal(app)}
+                              className="px-4 py-1.5 text-sm font-semibold bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors w-full sm:w-auto text-center mt-1"
+                            >
+                              Cancel Engagement
+                            </button>
+                          </div>
+                        );
+                      case 'Work Completed by Applicant':
+                        return (
+                          <div className="flex flex-col items-center gap-1.5 w-full">
+                            <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full w-full text-center">
+                              Waiting for company confirmation
+                            </span>
+                          </div>
+                        );
+                      case 'Completion Confirmed by Company':
+                        return (
+                          <div className="flex flex-col items-center gap-1.5 w-full">
+                            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full w-full text-center mb-1">
+                              Completion Confirmed
+                            </span>
+                            <button
+                              onClick={() => handleOpenConfirmPaymentModal(order.id)}
+                              className="px-4 py-1.5 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto text-center"
+                            >
+                              Confirm Payment Received
+                            </button>
+                          </div>
+                        );
+                      case 'Payment Confirmed by Applicant':
+                        return (
+                          <div className="flex flex-col items-center gap-1.5 w-full text-center">
+                            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full w-full">
+                              Payment received confirmed
+                            </span>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Waiting for company to close engagement
+                            </p>
+                          </div>
+                        );
+                      case 'Completed':
+                        return (
+                          <div className="flex flex-col items-center gap-1.5 w-full">
+                            <span className="text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-full w-full text-center">
+                              Completed
+                            </span>
+                          </div>
+                        );
+                      default:
+                        return null;
+                    }
+                  })()}
 
                   <Link
                     href={`/mservices/opportunity/${app.job_id}?source=my-applications`}
@@ -627,6 +779,87 @@ export default function MyApplicationsPage() {
                 disabled={isCancelling || !cancelReason}
               >
                 {isCancelling ? 'Submitting...' : 'Submit Cancellation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Mark Work Completed Modal */}
+      {isWorkCompletedModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-lg font-bold text-blue-900 mb-2">Mark Work Completed</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Confirm that you have completed the work for this opportunity. You can add an optional note for the company.
+            </p>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Completion Note (Optional)</label>
+                <textarea 
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 min-h-[80px]"
+                  placeholder="Describe completed work or add details..."
+                  value={workCompletedNote}
+                  onChange={(e) => setWorkCompletedNote(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => { setIsWorkCompletedModalOpen(false); setSelectedOrderId(null); }}
+                className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                disabled={submittingLifecycle}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleConfirmWorkCompleted}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
+                disabled={submittingLifecycle}
+              >
+                {submittingLifecycle ? 'Submitting...' : 'Confirm Work Completed'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Payment Received Modal */}
+      {isConfirmPaymentModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-lg font-bold text-blue-900 mb-2">Confirm Payment Received</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Confirm that you have received payment directly from the company. This will allow the company to finalize and close the engagement.
+            </p>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Confirmation Note (Optional)</label>
+                <textarea 
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 min-h-[80px]"
+                  placeholder="Payment receipt details or remarks..."
+                  value={paymentConfirmationNote}
+                  onChange={(e) => setPaymentConfirmationNote(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => { setIsConfirmPaymentModalOpen(false); setSelectedOrderId(null); }}
+                className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                disabled={submittingLifecycle}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleConfirmPaymentReceived}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
+                disabled={submittingLifecycle}
+              >
+                {submittingLifecycle ? 'Confirming...' : 'Confirm Payment Received'}
               </button>
             </div>
           </div>

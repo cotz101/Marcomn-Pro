@@ -7,6 +7,7 @@ import { useProfile } from '@/app/context/ProfileContext';
 import { createClient } from '@/lib/supabase';
 import { cancelJobOrderByCompany } from '@/app/actions/jobOrders';
 import { markJobOrderCompleted } from '@/app/actions/reputation';
+import { confirmWorkCompletedByCompany, closeCompletedEngagementByCompany } from '@/app/actions/engagementLifecycle';
 import {
   ArrowLeft,
   Briefcase,
@@ -63,6 +64,53 @@ export default function ApplicantsPage() {
   const [feedbackTags, setFeedbackTags] = useState([]);
   const [feedbackComment, setFeedbackComment] = useState('');
   const [isCompleting, setIsCompleting] = useState(false);
+
+  const [isConfirmWorkModalOpen, setIsConfirmWorkModalOpen] = useState(false);
+  const [appToConfirmWork, setAppToConfirmWork] = useState(null);
+  const [confirmWorkNote, setConfirmWorkNote] = useState('');
+  const [isConfirmingWork, setIsConfirmingWork] = useState(false);
+
+  const handleOpenConfirmWorkModal = (app) => {
+    setAppToConfirmWork(app);
+    setConfirmWorkNote('');
+    setIsConfirmWorkModalOpen(true);
+  };
+
+  const handleConfirmWorkCompletedSubmit = async () => {
+    if (!appToConfirmWork) return;
+    const orderArray = Array.isArray(appToConfirmWork.job_orders) ? appToConfirmWork.job_orders : [appToConfirmWork.job_orders].filter(Boolean);
+    const order = orderArray.find(o => o.status === 'Work Completed by Applicant');
+    if (!order) {
+      if (showToast) showToast('Job order in Work Completed state not found.', 'error');
+      return;
+    }
+
+    setIsConfirmingWork(true);
+    try {
+      const res = await confirmWorkCompletedByCompany(order.id, confirmWorkNote);
+      if (!res.success) throw new Error(res.error || 'Failed to confirm work completion.');
+
+      setApplicants((prev) =>
+        prev.map((app) => (app.id === appToConfirmWork.id ? { 
+          ...app,
+          job_orders: Array.isArray(app.job_orders)
+            ? app.job_orders.map(o => o.id === order.id ? { ...o, status: 'Completion Confirmed by Company' } : o)
+            : app.job_orders
+              ? { ...app.job_orders, status: 'Completion Confirmed by Company' }
+              : null
+        } : app))
+      );
+
+      setIsConfirmWorkModalOpen(false);
+      setAppToConfirmWork(null);
+      if (showToast) showToast('Work completion confirmed!', 'success');
+    } catch (err) {
+      console.error('Error confirming work completion:', err);
+      if (showToast) showToast('Failed to confirm completion: ' + (err.message || err), 'error');
+    } finally {
+      setIsConfirmingWork(false);
+    }
+  };
 
   const fetchData = useCallback(async () => {
     if (!userId || !id) return;
@@ -270,39 +318,57 @@ export default function ApplicantsPage() {
     }
 
     const orderArray = Array.isArray(appToComplete.job_orders) ? appToComplete.job_orders : [appToComplete.job_orders].filter(Boolean);
-    const order = orderArray.find(o => o.status === 'Active');
+    const order = orderArray.find(o => o.status === 'Payment Confirmed by Applicant' || o.status === 'Active');
     if (!order) {
-      if (showToast) showToast('Active engagement not found.', 'error');
+      if (showToast) showToast('Engagement order not found in a completable state.', 'error');
       return;
     }
 
     setIsCompleting(true);
     try {
-      const res = await markJobOrderCompleted({
-        jobOrderId: order.id,
-        feedbackData: {
-          sentiment: feedbackSentiment,
-          tags: feedbackTags,
-          comment: feedbackComment,
-          submittedByUserId: userId
-        }
-      });
+      let res;
+      if (order.status === 'Payment Confirmed by Applicant') {
+        res = await closeCompletedEngagementByCompany({
+          jobOrderId: order.id,
+          feedbackData: {
+            sentiment: feedbackSentiment,
+            tags: feedbackTags,
+            comment: feedbackComment
+          }
+        });
+      } else {
+        // Fallback for legacy Active -> Completed
+        res = await markJobOrderCompleted({
+          jobOrderId: order.id,
+          feedbackData: {
+            sentiment: feedbackSentiment,
+            tags: feedbackTags,
+            comment: feedbackComment,
+            submittedByUserId: userId
+          }
+        });
+      }
 
-      if (!res.success) throw new Error(res.error || 'Failed to mark engagement as completed.');
+      if (!res.success) throw new Error(res.error || 'Failed to close engagement.');
 
       setApplicants((prev) =>
         prev.map((app) => (app.id === appToComplete.id ? { 
           ...app, 
-          status: 'Completed'
+          status: 'Completed',
+          job_orders: Array.isArray(app.job_orders)
+            ? app.job_orders.map(o => o.id === order.id ? { ...o, status: 'Completed' } : o)
+            : app.job_orders
+              ? { ...app.job_orders, status: 'Completed' }
+              : null
         } : app))
       );
 
       setIsMarkCompleteModalOpen(false);
       setAppToComplete(null);
-      if (showToast) showToast('Engagement marked as completed!', 'success');
+      if (showToast) showToast('Engagement closed and completed!', 'success');
     } catch (err) {
       console.error('Error marking completion:', err);
-      if (showToast) showToast('Failed to mark as completed: ' + (err.message || err), 'error');
+      if (showToast) showToast('Failed to close engagement: ' + (err.message || err), 'error');
     } finally {
       setIsCompleting(false);
     }
@@ -530,18 +596,37 @@ export default function ApplicantsPage() {
                     
                     {/* Status Bookmark */}
                     <div className="absolute top-0 right-0" onClick={(e) => e.stopPropagation()}>
-                      {['Withdrawn', 'Accepted', 'Offered', 'Expired', 'Candidate Cancelled', 'Company Cancelled', 'Completed'].includes(app.status) ? (
-                        <span className={`inline-flex items-center px-3 py-1.5 rounded-bl-xl text-[10px] font-bold uppercase tracking-widest shadow-sm border-b border-l ${
-                          app.status === 'Accepted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                          (app.status === 'Candidate Cancelled' || app.status === 'Company Cancelled') ? 'bg-red-50 text-red-700 border-red-200' :
-                          app.status === 'Completed' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
-                          app.status === 'Offered' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                          app.status === 'Expired' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                          'bg-slate-100 text-slate-500 border-slate-200'
-                        }`}>
-                          {app.status}
-                        </span>
-                      ) : (
+                      {['Withdrawn', 'Accepted', 'Offered', 'Expired', 'Candidate Cancelled', 'Company Cancelled', 'Completed'].includes(app.status) ? (() => {
+                        let displayStatus = app.status;
+                        let colorClass = 'bg-slate-100 text-slate-500 border-slate-200';
+                        
+                        if (app.status === 'Accepted') {
+                          const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
+                          const order = orderArray.find(o => o.status !== 'Completed' && o.status !== 'Candidate Cancelled' && o.status !== 'Company Cancelled');
+                          
+                          if (order && order.status !== 'Active') {
+                            displayStatus = order.status;
+                            colorClass = 'bg-blue-50 text-blue-700 border-blue-200';
+                          } else {
+                            displayStatus = 'Accepted';
+                            colorClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                          }
+                        } else if (app.status === 'Candidate Cancelled' || app.status === 'Company Cancelled') {
+                          colorClass = 'bg-red-50 text-red-700 border-red-200';
+                        } else if (app.status === 'Completed') {
+                          colorClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                        } else if (app.status === 'Offered') {
+                          colorClass = 'bg-blue-50 text-blue-700 border-blue-200';
+                        } else if (app.status === 'Expired') {
+                          colorClass = 'bg-rose-50 text-rose-700 border-rose-200';
+                        }
+                        
+                        return (
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-bl-xl text-[10px] font-bold uppercase tracking-widest shadow-sm border-b border-l ${colorClass}`}>
+                            {displayStatus}
+                          </span>
+                        );
+                      })() : (
                         <select value={app.status || 'Pending'} onChange={(e) => handleStatusChange(app.id, e.target.value)} className={`appearance-none text-center rounded-bl-xl text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 border-b border-l focus:outline-none cursor-pointer shadow-sm ${getStatusStyles(app.status || 'Pending')}`}>
                           <option value="Pending">Pending</option>
                           <option value="Under Review">Under Review</option>
@@ -577,37 +662,105 @@ export default function ApplicantsPage() {
                     )}
                     
                     {/* Action buttons */}
+                    {/* Action buttons */}
                     {app.status === 'Accepted' && (() => {
                       const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
-                      const order = orderArray.find(o => o.status === 'Active');
-                      return order ? (
-                        <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2 justify-end">
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); router.push(`/profile/${app.applicant_id}`); }}
-                            className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
-                          >
-                            View Profile
-                          </button>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
-                            className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
-                          >
-                            Message
-                          </button>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); setAppToComplete(app); setFeedbackSentiment(''); setFeedbackComment(''); setFeedbackTags([]); setIsMarkCompleteModalOpen(true); }}
-                            className="px-4 py-1.5 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
-                          >
-                            Mark Completed
-                          </button>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); setAppToCancel(app); setCompanyCancelReason(''); setCompanyCancelRemarks(''); setIsCompanyCancelModalOpen(true); }}
-                            className="px-4 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-xs font-bold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
-                          >
-                            Cancel Engagement
-                          </button>
-                        </div>
-                      ) : null;
+                      const order = orderArray.find(o => o.status !== 'Completed' && o.status !== 'Candidate Cancelled' && o.status !== 'Company Cancelled');
+                      if (!order) return null;
+
+                      switch (order.status) {
+                        case 'Active':
+                          return (
+                            <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2 justify-end">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); router.push(`/profile/${app.applicant_id}`); }}
+                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                              >
+                                View Profile
+                              </button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
+                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                              >
+                                Message
+                              </button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setAppToCancel(app); setCompanyCancelReason(''); setCompanyCancelRemarks(''); setIsCompanyCancelModalOpen(true); }}
+                                className="px-4 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-xs font-bold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
+                              >
+                                Cancel Engagement
+                              </button>
+                            </div>
+                          );
+                        case 'Work Completed by Applicant':
+                          return (
+                            <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2 justify-end">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); router.push(`/profile/${app.applicant_id}`); }}
+                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                              >
+                                View Profile
+                              </button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
+                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                              >
+                                Message
+                              </button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleOpenConfirmWorkModal(app); }}
+                                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
+                              >
+                                Confirm Work Completed
+                              </button>
+                            </div>
+                          );
+                        case 'Completion Confirmed by Company':
+                          return (
+                            <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2 justify-end items-center">
+                              <span className="text-xs font-semibold text-slate-500 mr-auto">
+                                Waiting for applicant payment confirmation
+                              </span>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); router.push(`/profile/${app.applicant_id}`); }}
+                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm text-center"
+                              >
+                                View Profile
+                              </button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
+                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm text-center"
+                              >
+                                Message
+                              </button>
+                            </div>
+                          );
+                        case 'Payment Confirmed by Applicant':
+                          return (
+                            <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2 justify-end">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); router.push(`/profile/${app.applicant_id}`); }}
+                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                              >
+                                View Profile
+                              </button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
+                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                              >
+                                Message
+                              </button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setAppToComplete(app); setFeedbackSentiment(''); setFeedbackComment(''); setFeedbackTags([]); setIsMarkCompleteModalOpen(true); }}
+                                className="px-4 py-1.5 bg-[#004173] hover:bg-blue-800 text-white text-xs font-bold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
+                              >
+                                Close Engagement
+                              </button>
+                            </div>
+                          );
+                        default:
+                          return null;
+                      }
                     })()}
 
                     {app.status === 'Completed' && (
@@ -892,9 +1045,22 @@ export default function ApplicantsPage() {
       {isMarkCompleteModalOpen && appToComplete && (
         <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
-            <h3 className="text-lg font-bold text-emerald-700 mb-2">Mark Engagement Completed</h3>
+            <h3 className="text-lg font-bold text-blue-900 mb-2">
+              {(() => {
+                const orderArray = Array.isArray(appToComplete.job_orders) ? appToComplete.job_orders : [appToComplete.job_orders].filter(Boolean);
+                const order = orderArray.find(o => o.status === 'Payment Confirmed by Applicant');
+                return order ? 'Close Completed Engagement' : 'Mark Engagement Completed';
+              })()}
+            </h3>
             <p className="text-sm text-gray-600 mb-6">
-              You are about to mark this engagement with <span className="font-semibold text-gray-800">{appToComplete.profile?.name || 'this applicant'}</span> as completed. Please provide feedback on their performance.
+              {(() => {
+                const orderArray = Array.isArray(appToComplete.job_orders) ? appToComplete.job_orders : [appToComplete.job_orders].filter(Boolean);
+                const order = orderArray.find(o => o.status === 'Payment Confirmed by Applicant');
+                const name = appToComplete.profile?.name || 'this applicant';
+                return order 
+                  ? `You are about to close this engagement with ${name} as completed. Please provide feedback on their performance.`
+                  : `You are about to mark this engagement with ${name} as completed. Please provide feedback on their performance.`;
+              })()}
             </p>
             
             <div className="mb-4">
@@ -963,7 +1129,11 @@ export default function ApplicantsPage() {
                 disabled={isCompleting || !feedbackSentiment}
                 className="px-5 py-2 text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl transition-colors shadow-sm disabled:opacity-50"
               >
-                {isCompleting ? 'Completing...' : 'Submit & Complete'}
+                {isCompleting ? 'Completing...' : (() => {
+                  const orderArray = Array.isArray(appToComplete.job_orders) ? appToComplete.job_orders : [appToComplete.job_orders].filter(Boolean);
+                  const order = orderArray.find(o => o.status === 'Payment Confirmed by Applicant');
+                  return order ? 'Submit & Close Engagement' : 'Submit & Complete';
+                })()}
               </button>
             </div>
           </div>
@@ -1005,6 +1175,46 @@ export default function ApplicantsPage() {
                 className="px-5 py-2 text-sm font-bold bg-[#004173] text-white hover:bg-blue-800 rounded-xl transition-colors shadow-sm"
               >
                 Send Offer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Confirm Work Completed Modal */}
+      {isConfirmWorkModalOpen && appToConfirmWork && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-lg font-bold text-blue-900 mb-2">Confirm Work Completed</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Confirm that the applicant <span className="font-semibold text-gray-800">{appToConfirmWork.profile?.name || 'this applicant'}</span> has successfully completed the work. You can add an optional note for the candidate.
+            </p>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Confirmation Note (Optional)</label>
+                <textarea 
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 min-h-[80px]"
+                  placeholder="Feedback on work completion or additional remarks..."
+                  value={confirmWorkNote}
+                  onChange={(e) => setConfirmWorkNote(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => { setIsConfirmWorkModalOpen(false); setAppToConfirmWork(null); }}
+                className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                disabled={isConfirmingWork}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleConfirmWorkCompletedSubmit}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
+                disabled={isConfirmingWork}
+              >
+                {isConfirmingWork ? 'Confirming...' : 'Confirm Work Completed'}
               </button>
             </div>
           </div>
