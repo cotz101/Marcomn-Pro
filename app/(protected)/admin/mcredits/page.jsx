@@ -16,8 +16,16 @@ import {
   History, 
   TrendingUp, 
   TrendingDown, 
-  Settings 
+  Settings,
+  CreditCard,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
+import { 
+  getPendingTopupRequests, 
+  approveTopupRequest, 
+  rejectTopupRequest 
+} from '@/app/actions/mcreditTopups';
 import { 
   getUserWallet, 
   getCompanyWallet, 
@@ -61,6 +69,14 @@ export default function AdminMCreditsPage() {
   const [companyFeePreview, setCompanyFeePreview] = useState(0);
   const [candidateFeePreview, setCandidateFeePreview] = useState(0);
 
+  // Top-Up Admin State
+  const [pendingTopups, setPendingTopups] = useState([]);
+  const [actionTopupId, setActionTopupId] = useState(null);
+  const [adminNotes, setAdminNotes] = useState('');
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [actionSubmitting, setActionSubmitting] = useState(false);
+
   // Fetch initial option lists and settings
   useEffect(() => {
     if (!isAuthorized) return;
@@ -97,6 +113,10 @@ export default function AdminMCreditsPage() {
           if (expiryOpts) setOfferExpiryOptions(expiryOpts.value);
           if (defaultExpiry) setDefaultOfferExpiry(defaultExpiry.value);
         }
+
+        // Fetch pending topups
+        const topups = await getPendingTopupRequests();
+        setPendingTopups(topups || []);
       } catch (err) {
         console.error('Error loading admin lists:', err);
       }
@@ -359,6 +379,48 @@ export default function AdminMCreditsPage() {
       showToast(err.message || 'Transaction failed. Check balance.', 'error');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleApproveTopup = async (e) => {
+    e.preventDefault();
+    if (!actionTopupId) return;
+    setActionSubmitting(true);
+    try {
+      const res = await approveTopupRequest(actionTopupId, adminNotes);
+      if (!res.success) throw new Error(res.error);
+      showToast('Top-up request approved and wallet credited.', 'success');
+      setIsApproveModalOpen(false);
+      setAdminNotes('');
+      const topups = await getPendingTopupRequests();
+      setPendingTopups(topups || []);
+      // If the currently viewed wallet matches the topup, refresh it
+      await loadWallet();
+    } catch (err) {
+      console.error('Approve failed:', err);
+      showToast(err.message || 'Failed to approve top-up', 'error');
+    } finally {
+      setActionSubmitting(false);
+    }
+  };
+
+  const handleRejectTopup = async (e) => {
+    e.preventDefault();
+    if (!actionTopupId) return;
+    setActionSubmitting(true);
+    try {
+      const res = await rejectTopupRequest(actionTopupId, adminNotes);
+      if (!res.success) throw new Error(res.error);
+      showToast('Top-up request rejected.', 'success');
+      setIsRejectModalOpen(false);
+      setAdminNotes('');
+      const topups = await getPendingTopupRequests();
+      setPendingTopups(topups || []);
+    } catch (err) {
+      console.error('Reject failed:', err);
+      showToast(err.message || 'Failed to reject top-up', 'error');
+    } finally {
+      setActionSubmitting(false);
     }
   };
 
@@ -670,6 +732,109 @@ export default function AdminMCreditsPage() {
         </div>
       </div>
 
+      {/* Pending Top-Up Requests Section */}
+      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden mb-8">
+        <div className="flex items-center gap-2 mb-6">
+          <CreditCard size={18} className="text-[#0e2a4d]" />
+          <h2 className="text-base font-bold text-[#0e2a4d]">Pending Top-Up Requests</h2>
+        </div>
+
+        {pendingTopups.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider font-bold">
+                  <th className="pb-3 pr-4 font-semibold">Date</th>
+                  <th className="pb-3 font-semibold">Identity</th>
+                  <th className="pb-3 font-semibold text-right">Amount</th>
+                  <th className="pb-3 pl-4 font-semibold">Remarks</th>
+                  <th className="pb-3 font-semibold text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-gray-600 font-medium">
+                {pendingTopups.map((req) => (
+                  <tr key={req.id} className="hover:bg-slate-50/30">
+                    <td className="py-3 pr-4 whitespace-nowrap text-gray-500 font-mono">
+                      {new Date(req.created_at).toLocaleString()}
+                    </td>
+                    <td className="py-3">
+                      {req.owner_type === 'company' ? (
+                        <div className="flex items-center gap-2.5">
+                          {/* Company avatar */}
+                          <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 overflow-hidden">
+                            {req.company_logo_url ? (
+                              <img src={req.company_logo_url} alt={req.company_name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-blue-600 font-bold text-xs">
+                                {(req.company_name || 'C').charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-[#0e2a4d] text-xs">{req.company_name || 'Unknown Company'}</span>
+                            <span className="text-[10px] text-gray-400 font-normal mt-0.5">
+                              Requested by: {req.requester_name || 'Unknown'}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2.5">
+                          {/* Personal avatar */}
+                          <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
+                            {req.requester_avatar_url ? (
+                              <img src={req.requester_avatar_url} alt={req.requester_name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-slate-500 font-bold text-xs">
+                                {(req.requester_name || 'U').charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-bold text-[#0e2a4d] text-xs">{req.requester_name || 'Unknown'}</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-3 text-right font-bold text-[#0e2a4d] whitespace-nowrap">
+                      {Number(req.amount).toFixed(2)} MC
+                    </td>
+                    <td className="py-3 pl-4 max-w-xs text-gray-500 truncate" title={req.remarks}>
+                      {req.remarks || '—'}
+                    </td>
+                    <td className="py-3 text-center whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => {
+                            setActionTopupId(req.id);
+                            setIsApproveModalOpen(true);
+                          }}
+                          className="text-emerald-600 hover:text-emerald-800 p-1 bg-emerald-50 hover:bg-emerald-100 rounded transition-colors"
+                          title="Approve Request"
+                        >
+                          <CheckCircle size={16} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setActionTopupId(req.id);
+                            setIsRejectModalOpen(true);
+                          }}
+                          className="text-red-600 hover:text-red-800 p-1 bg-red-50 hover:bg-red-100 rounded transition-colors"
+                          title="Reject Request"
+                        >
+                          <XCircle size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-12 text-sm text-gray-400 font-medium bg-slate-50/20 border border-dashed border-gray-150 rounded-xl">
+            <span>No pending top-up requests found.</span>
+          </div>
+        )}
+      </div>
+
       {/* Transaction History Section */}
       <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden">
         <div className="flex items-center gap-2 mb-6">
@@ -792,6 +957,98 @@ export default function AdminMCreditsPage() {
           </div>
         )}
       </div>
+
+      {/* Approve Modal */}
+      {isApproveModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h2 className="text-lg font-bold text-emerald-700 mb-2 flex items-center gap-2">
+              <CheckCircle size={20} /> Approve Top-Up
+            </h2>
+            <p className="text-xs text-gray-500 mb-6">
+              Approving this request will immediately credit the target wallet.
+            </p>
+            <form onSubmit={handleApproveTopup}>
+              <div className="mb-6">
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Admin Notes (Optional)</label>
+                <textarea
+                  value={adminNotes}
+                  onChange={(e) => setAdminNotes(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-700 resize-none h-20"
+                  placeholder="Internal notes for audit"
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsApproveModalOpen(false);
+                    setAdminNotes('');
+                  }}
+                  disabled={actionSubmitting}
+                  className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionSubmitting}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-sm font-bold rounded-xl flex items-center gap-2"
+                >
+                  {actionSubmitting && <Loader2 size={14} className="animate-spin" />}
+                  Confirm Approval
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Modal */}
+      {isRejectModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h2 className="text-lg font-bold text-red-700 mb-2 flex items-center gap-2">
+              <XCircle size={20} /> Reject Top-Up
+            </h2>
+            <p className="text-xs text-gray-500 mb-6">
+              Rejecting this request will mark it as rejected with no wallet movement.
+            </p>
+            <form onSubmit={handleRejectTopup}>
+              <div className="mb-6">
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Reason for Rejection (Recommended)</label>
+                <textarea
+                  value={adminNotes}
+                  onChange={(e) => setAdminNotes(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-700 resize-none h-20"
+                  placeholder="Tell the user why it was rejected"
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRejectModalOpen(false);
+                    setAdminNotes('');
+                  }}
+                  disabled={actionSubmitting}
+                  className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionSubmitting}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-bold rounded-xl flex items-center gap-2"
+                >
+                  {actionSubmitting && <Loader2 size={14} className="animate-spin" />}
+                  Confirm Rejection
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

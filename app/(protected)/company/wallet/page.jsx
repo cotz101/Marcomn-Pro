@@ -14,8 +14,11 @@ import {
   TrendingDown, 
   FileText,
   Building2,
-  Info
+  Info,
+  Plus,
+  CreditCard
 } from 'lucide-react';
+import { createTopupRequest, cancelTopupRequest, getMyTopupRequests } from '@/app/actions/mcreditTopups';
 
 export default function CompanyWalletPage() {
   const router = useRouter();
@@ -24,7 +27,15 @@ export default function CompanyWalletPage() {
   const [loading, setLoading] = useState(true);
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [topupRequests, setTopupRequests] = useState([]);
   const [error, setError] = useState(null);
+
+  // Top-Up Modal State
+  const [isTopupModalOpen, setIsTopupModalOpen] = useState(false);
+  const [topupAmount, setTopupAmount] = useState('');
+  const [topupRemarks, setTopupRemarks] = useState('');
+  const [submittingTopup, setSubmittingTopup] = useState(false);
+  const [topupMessage, setTopupMessage] = useState(null);  // { type: 'success'|'error', text: string }
 
   const myCompany = companies && companies.length > 0 ? companies[0] : null;
 
@@ -169,6 +180,10 @@ export default function CompanyWalletPage() {
         });
 
         setTransactions(enrichedTxs);
+
+        // Fetch Top-Up Requests
+        const topups = await getMyTopupRequests('company', myCompany.id);
+        setTopupRequests(topups || []);
       }
     } catch (err) {
       console.error('Error fetching company wallet:', err);
@@ -183,6 +198,47 @@ export default function CompanyWalletPage() {
       fetchWalletData();
     }
   }, [userId, companies, fetchWalletData]);
+
+  const handleTopupSubmit = async (e) => {
+    e.preventDefault();
+    if (!topupAmount || Number(topupAmount) <= 0) return;
+    setSubmittingTopup(true);
+    setTopupMessage(null);
+    try {
+      const res = await createTopupRequest({
+        ownerType: 'company',
+        ownerId: myCompany.id,
+        amount: topupAmount,
+        remarks: topupRemarks
+      });
+      if (!res.success) throw new Error(res.error);
+      setTopupMessage({ type: 'success', text: 'Top-up request submitted and pending admin approval.' });
+      setTopupAmount('');
+      setTopupRemarks('');
+      await fetchWalletData();
+      setTimeout(() => {
+        setIsTopupModalOpen(false);
+        setTopupMessage(null);
+      }, 2000);
+    } catch (err) {
+      console.error('Topup request error:', err);
+      setTopupMessage({ type: 'error', text: err.message || 'Failed to submit request' });
+    } finally {
+      setSubmittingTopup(false);
+    }
+  };
+
+  const handleCancelTopup = async (requestId) => {
+    if (!confirm('Are you sure you want to cancel this top-up request?')) return;
+    try {
+      const res = await cancelTopupRequest(requestId);
+      if (!res.success) throw new Error(res.error);
+      await fetchWalletData();
+    } catch (err) {
+      console.error('Cancel request error:', err);
+      alert(err.message || 'Failed to cancel request');
+    }
+  };
 
   if (loading) {
     return (
@@ -263,9 +319,18 @@ export default function CompanyWalletPage() {
             <span className="text-sm font-bold text-gray-500 mb-1">MC</span>
           </div>
           {wallet && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wider mt-2">
-              {wallet.status}
-            </span>
+            <div className="flex flex-col items-end gap-2 mt-2">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wider">
+                {wallet.status}
+              </span>
+              <button
+                onClick={() => { setTopupMessage(null); setIsTopupModalOpen(true); }}
+                className="mt-2 bg-[#002b4e] hover:bg-blue-800 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                <Plus size={14} />
+                <span>Request Company Top-Up</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -384,6 +449,64 @@ export default function CompanyWalletPage() {
               </div>
             )}
           </div>
+
+          {/* Top-Up Requests Section */}
+          <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden mt-6">
+            <div className="flex items-center gap-2 mb-6">
+              <CreditCard size={18} className="text-[#0e2a4d]" />
+              <h2 className="text-base font-bold text-[#0e2a4d]">Top-Up Requests</h2>
+            </div>
+            {topupRequests.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[11px] font-bold">
+                      <th className="pb-3 pr-4">Date</th>
+                      <th className="pb-3 px-2">Amount</th>
+                      <th className="pb-3 px-2">Status</th>
+                      <th className="pb-3 pl-4">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-gray-700 font-medium">
+                    {topupRequests.map((req) => (
+                      <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-4 pr-4 whitespace-nowrap text-xs text-gray-500 font-mono">
+                          {new Date(req.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="py-4 px-2 font-bold text-[#0e2a4d]">
+                          {Number(req.amount).toFixed(2)} MC
+                        </td>
+                        <td className="py-4 px-2">
+                          <span className={`inline-flex px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                            req.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' :
+                            req.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                            req.status === 'Cancelled' ? 'bg-gray-100 text-gray-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {req.status}
+                          </span>
+                        </td>
+                        <td className="py-4 pl-4 text-xs">
+                          {req.status === 'Pending' && (
+                            <button
+                              onClick={() => handleCancelTopup(req.id)}
+                              className="text-red-500 hover:text-red-700 font-semibold"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-sm text-gray-400 font-medium">
+                No top-up requests found.
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Column: Info & Settings Summary */}
@@ -413,6 +536,69 @@ export default function CompanyWalletPage() {
           </div>
         </div>
       </div>
+
+      {/* Top-Up Modal */}
+      {isTopupModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h2 className="text-lg font-bold text-[#0e2a4d] mb-2">Request Company Top-Up</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              Dummy/manual top-up mode: MCredits are credited only after platform admin approval.
+            </p>
+            {topupMessage && (
+              <div className={`mb-4 px-4 py-3 rounded-xl text-sm font-semibold ${
+                topupMessage.type === 'success'
+                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  : 'bg-red-50 text-red-800 border border-red-200'
+              }`}>
+                {topupMessage.text}
+              </div>
+            )}
+            <form onSubmit={handleTopupSubmit}>
+              <div className="mb-4">
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Amount</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  required
+                  value={topupAmount}
+                  onChange={(e) => setTopupAmount(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-900"
+                  placeholder="e.g. 500"
+                />
+              </div>
+              <div className="mb-6">
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Remarks (Optional)</label>
+                <textarea
+                  value={topupRemarks}
+                  onChange={(e) => setTopupRemarks(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-900 resize-none h-20"
+                  placeholder="Payment reference or note"
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsTopupModalOpen(false)}
+                  disabled={submittingTopup}
+                  className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingTopup}
+                  className="bg-[#0e2a4d] text-white px-4 py-2 text-sm font-bold rounded-xl flex items-center gap-2"
+                >
+                  {submittingTopup && <Loader2 size={14} className="animate-spin" />}
+                  Submit Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
