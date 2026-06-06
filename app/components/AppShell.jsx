@@ -276,7 +276,7 @@ export default function AppShell({ children, userEmail, userId }) {
             
             {/* LEFT: Logo / Back Button */}
             <div className="flex items-center gap-3 flex-1 md:flex-none">
-              {pathname === '/profile' ? (
+              {(pathname === '/profile' || pathname?.startsWith('/company/')) ? (
                 <>
                   <button 
                     onClick={() => router.push('/network/connections')}
@@ -313,7 +313,7 @@ export default function AppShell({ children, userEmail, userId }) {
 
             {/* CENTER: Main Navigation (Desktop Only) */}
             <div className="hidden md:flex items-center justify-center !mt-[10px] flex-1">
-              {pathname === '/profile' ? (
+              {(pathname === '/profile' || pathname?.startsWith('/company/')) ? (
                 <span className="font-bold text-xl text-[#002b4e]">Profile</span>
               ) : (
                 <>
@@ -491,7 +491,7 @@ export default function AppShell({ children, userEmail, userId }) {
       )}
 
       {/* Contextual Speed Dial FAB */}
-      {!pathname?.startsWith('/messages') && !pathname?.startsWith('/profile') && (
+      {!pathname?.startsWith('/messages') && !pathname?.startsWith('/profile') && !pathname?.startsWith('/company/') && (
         <>
           {isFabExpanded && (
             <div className="fab-overlay show" onClick={() => setIsFabExpanded(false)}></div>

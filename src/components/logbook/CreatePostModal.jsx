@@ -7,8 +7,12 @@ import { Image as ImageIcon, X, Loader2, Globe } from 'lucide-react';
 import RichTextEditor from '@/src/components/common/RichTextEditor';
 
 export default function CreatePostModal({ isOpen, onClose, onPostCreated }) {
-  const { userId, profile } = useProfile();
+  const { userId, profile, currentIdentity } = useProfile();
   const supabase = createClient();
+
+  const isCompany = currentIdentity?.type === 'company';
+  const identityImage = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (profile?.profilePic || '/avatar_placeholder.png');
+  const identityName = isCompany ? (currentIdentity.data?.name || 'Company') : (profile?.name || 'Maritime Professional');
 
   const [postMode, setPostMode] = useState('quick'); // 'quick' | 'article'
   const [submitting, setSubmitting] = useState(false);
@@ -139,6 +143,7 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }) {
       const postPayload = {
         user_id: userId,
         author_id: userId,
+        posted_as_company_id: isCompany ? currentIdentity.id : null,
         title: postMode === 'article' ? articleTitle.trim() : null,
         content: postMode === 'article' ? articleContent.trim() : content.trim(),
         media_url: postMode === 'quick' ? mediaPath : null,
@@ -175,6 +180,7 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }) {
           author_id,
           created_at,
           user_id,
+          posted_as_company_id,
           author:profiles!user_id (id, name, avatar_url, headline),
           likes ( id ),
           comments ( id )
@@ -201,7 +207,13 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }) {
           name: profile?.name || 'Maritime Professional',
           avatar_url: profile?.profilePic || null,
           headline: profile?.currentRole || 'MarComn Member'
-        }
+        },
+        company: isCompany ? {
+          id: currentIdentity.id,
+          name: currentIdentity.data?.name,
+          logo_url: currentIdentity.data?.logo_url,
+          industry: currentIdentity.data?.industry
+        } : null
       };
 
       // Dispatch custom event for real-time prepending in feeds
@@ -277,16 +289,17 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }) {
             
             {/* User-Avatar Alignment */}
             <div className="flex-shrink-0">
-              {profile?.profilePic ? (
+              {identityImage ? (
                 <img
-                  src={profile.profilePic}
-                  alt={profile.name || 'User'}
-                  className="w-11 h-11 rounded-full object-cover border border-gray-100 shadow-xs"
+                  src={identityImage}
+                  alt={identityName}
+                  className="w-11 h-11 object-cover border border-gray-100 shadow-xs"
+                  style={{ borderRadius: isCompany ? '8px' : '50%' }}
                 />
               ) : (
                 <div className="w-11 h-11 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shadow-inner">
                   <span className="text-sm font-extrabold text-blue-900 font-sans">
-                    {profile?.name?.charAt(0)?.toUpperCase() || 'M'}
+                    {identityName.charAt(0).toUpperCase()}
                   </span>
                 </div>
               )}
@@ -297,7 +310,7 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }) {
               
               {/* User Audience Picker (Visibility selector UI is hidden) */}
               <div className="flex items-center gap-1.5 mb-4 text-xs text-gray-500 font-medium select-none">
-                <span className="font-semibold text-gray-800 font-sans">{profile?.name || 'Maritime Professional'}</span>
+                <span className="font-semibold text-gray-800 font-sans">{identityName}</span>
               </div>
 
               {/* Content Switcher Area */}

@@ -177,10 +177,10 @@ export default function SidebarLeft() {
   const activeGroups = groupCount || 0;
 
   // Dynamic Metadata Priority Extraction Logic
-  const sourceProfile = fetchedProfileData || profile || {};
+  const sourceProfile = { ...fetchedProfileData, ...profile };
   
   const name = isCompany ? currentIdentity.data?.name : (sourceProfile.name || sourceProfile.fullName || 'MarComn Member');
-  const image = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (sourceProfile.avatar_url || sourceProfile.profilePic || '/profile_pic.png');
+  const image = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (sourceProfile.profilePic || sourceProfile.avatar_url || '/avatar_placeholder.png');
   const displayRole = sourceProfile.currentRole || sourceProfile.previousRole || 'MarComn Professional';
   const headline = isCompany ? 'Maritime Enterprise' : displayRole;
 
@@ -249,7 +249,7 @@ export default function SidebarLeft() {
           )}
 
           {/* Footer Section */}
-          <Link href={`/profile/${profile?.id || ''}`} className="block w-full py-2 mt-4 text-center text-[13px] font-medium text-blue-950 bg-transparent hover:text-blue-700 hover:underline transition-all font-sans">
+          <Link href={isCompany ? `/company/${currentIdentity?.id || ''}` : `/profile/${profile?.id || ''}`} className="block w-full py-2 mt-4 text-center text-[13px] font-medium text-blue-950 bg-transparent hover:text-blue-700 hover:underline transition-all font-sans">
             View Profile
           </Link>
         </div>

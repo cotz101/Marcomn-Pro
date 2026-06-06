@@ -89,8 +89,8 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
         setLoading(false);
       };
       fetchViewedProfile();
-    } else {
-      // No need to setProfile here as initial state already uses initialProfile
+    } else if (isOwnProfile && initialProfile) {
+      setProfile(initialProfile);
     }
   }, [viewUid, isOwnProfile, initialProfile, currentUserId]);
 

@@ -541,7 +541,7 @@ export default function SidebarRight() {
                   const companyName = opp.company?.name || opp.poster?.name || 'Private Poster';
                   return (
                     <div key={opp.id} className="group cursor-pointer">
-                      <Link href={`/services?jobId=${opp.id}`} className="text-sm font-medium text-blue-950 group-hover:underline truncate block">
+                      <Link href={`/mservices/opportunity/${opp.id}`} className="text-sm font-medium text-blue-950 group-hover:underline truncate block">
                         {opp.title}
                       </Link>
                       <p className="text-xs text-gray-800 font-semibold mt-0.5 truncate">
@@ -555,7 +555,7 @@ export default function SidebarRight() {
                   );
                 })
               )}
-              <Link href="/services" className="text-xs font-bold text-[#004173] mt-2 hover:underline">
+              <Link href="/mservices" className="text-xs font-bold text-[#004173] mt-2 hover:underline">
                 View All Opportunities
               </Link>
             </div>

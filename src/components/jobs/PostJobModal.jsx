@@ -275,8 +275,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         return;
       }
 
-      // MCredit deduction
-      if (salaryNumericVal && salaryNumericVal > 0) {
+      // MCredit deduction (only if not saving as Draft)
+      if (formData.postingStatus !== 'Draft' && salaryNumericVal && salaryNumericVal > 0) {
         try {
           if (isCompany) {
             await deductJobPostingFee(currentIdentity.id, jobData.id, salaryNumericVal);
@@ -639,7 +639,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           <button 
             type="submit" 
             className="btn-primary-pill px-6" 
-            disabled={loading || (isCompany && !jobToEdit && !!mcreditError)}
+            disabled={loading || (formData.postingStatus !== 'Draft' && isCompany && !jobToEdit && !!mcreditError)}
           >
             {loading ? (jobToEdit ? 'Saving...' : 'Posting...') : (jobToEdit ? 'Save Changes' : 'Create Job')}
           </button>

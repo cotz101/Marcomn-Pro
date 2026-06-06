@@ -262,7 +262,8 @@ a {
   font-weight: 700;
   color: #004173;
   flex-shrink: 0;
-  width: 120px;
+  width: auto;
+  min-w: 120px;
 }
 
 .header-right {
@@ -2382,6 +2383,7 @@ html.dark .btn-primary {
     grid-template-columns: 191px 1fr 255px !important;
     gap: 16px !important;
     justify-content: center !important;
+    align-items: stretch !important;
   }
   
   .sidebar-left, .sidebar-right {

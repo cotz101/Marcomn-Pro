@@ -94,7 +94,17 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
       </div>
 
       <div className="switcher-footer-links" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
-        <div className="footer-link-item" onClick={() => { router.push('/profile'); onClose(); }}>
+        <div 
+          className="footer-link-item" 
+          onClick={() => { 
+            if (currentIdentity?.type === 'company') {
+              router.push(`/company/${currentIdentity.id}`);
+            } else {
+              router.push('/profile');
+            }
+            onClose(); 
+          }}
+        >
           <User size={18} />
           <span>View Profile</span>
         </div>
