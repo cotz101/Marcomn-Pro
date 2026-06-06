@@ -61,6 +61,17 @@ export async function createTopupRequest({ ownerType, ownerId, amount, remarks }
       if (rpcError) throw new Error(`Instant top-up failed: ${rpcError.message}`);
       if (!result) throw new Error('No result returned from instant top-up RPC');
 
+      // Create receipt for instant topup
+      try {
+        const { createReceiptForTopup } = await import('./mcreditReceipts');
+        await createReceiptForTopup({
+          topupRequestId: result.request_id,
+          transactionId: result.tx_id
+        });
+      } catch (receiptErr) {
+        console.error('Failed to generate receipt for instant topup:', receiptErr);
+      }
+
       return { success: true, instantCredit: true, result };
     }
 
@@ -220,6 +231,7 @@ export async function approveTopupRequest(requestId, adminNotes) {
       p_override_insufficient: true,
     });
 
+    let finalTxId = txId;
     if (creditError) {
       // Fallback to admin_grant if purchase_completed is not allowed
       if (creditError.message.includes('Invalid transaction_type')) {
@@ -236,10 +248,22 @@ export async function approveTopupRequest(requestId, adminNotes) {
         });
 
         if (fallbackError) throw new Error(`Fallback crediting failed: ${fallbackError.message}`);
+        finalTxId = fallbackTxId;
       } else {
         throw new Error(`Crediting failed: ${creditError.message}`);
       }
     }
+
+    // Now fetch the actual transaction that was inserted by `adjust_wallet_balance`
+    const { data: txList } = await supabase
+      .from('mcredit_transactions')
+      .select('id')
+      .eq('reference_type', 'mcredit_topup_request')
+      .eq('reference_id', requestId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+      
+    const actualTxId = txList && txList.length > 0 ? txList[0].id : null;
 
     // Update request
     const { error: updateError } = await supabase
@@ -249,11 +273,23 @@ export async function approveTopupRequest(requestId, adminNotes) {
         approved_by: user.id,
         approved_at: new Date().toISOString(),
         admin_notes: adminNotes || null,
+        transaction_id: actualTxId,
         updated_at: new Date().toISOString()
       })
       .eq('id', requestId);
 
     if (updateError) throw new Error(`Failed to update request: ${updateError.message}`);
+
+    // Create receipt for approved top-up
+    try {
+      const { createReceiptForTopup } = await import('./mcreditReceipts');
+      await createReceiptForTopup({
+        topupRequestId: requestId,
+        transactionId: actualTxId
+      });
+    } catch (receiptErr) {
+      console.error('Failed to generate receipt for approved company top-up:', receiptErr);
+    }
 
     // Notify requester
     await createPlatformNotification({

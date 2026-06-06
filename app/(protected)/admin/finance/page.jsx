@@ -29,6 +29,7 @@ import {
   getFinanceTransactions, 
   getTopupReport 
 } from '@/app/actions/adminFinance';
+import { getAdminReceipts } from '@/app/actions/mcreditReceipts';
 
 export default function AdminFinancePage() {
   const router = useRouter();
@@ -42,6 +43,7 @@ export default function AdminFinancePage() {
   const [summary, setSummary] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [topupReport, setTopupReport] = useState(null);
+  const [receipts, setReceipts] = useState([]);
 
   // Filter values
   const [dateFrom, setDateFrom] = useState('');
@@ -60,15 +62,17 @@ export default function AdminFinancePage() {
     if (!isAuthorized) return;
     setLoading(true);
     try {
-      const [summaryRes, txsRes, topupRes] = await Promise.all([
+      const [summaryRes, txsRes, topupRes, receiptsData] = await Promise.all([
         getFinanceDashboardSummary(activeFilters),
         getFinanceTransactions(activeFilters),
-        getTopupReport(activeFilters)
+        getTopupReport(activeFilters),
+        getAdminReceipts()
       ]);
 
       if (summaryRes.success) setSummary(summaryRes.summary);
       if (txsRes.success) setTransactions(txsRes.transactions);
       if (topupRes.success) setTopupReport(topupRes.report);
+      setReceipts(receiptsData || []);
 
       if (!summaryRes.success || !txsRes.success || !topupRes.success) {
         showToast('Error loading some reporting data', 'error');
@@ -318,7 +322,7 @@ export default function AdminFinancePage() {
                 : 'border-transparent text-gray-400 hover:text-gray-600'
             }`}
           >
-            Receipts Planning
+            Receipts
           </button>
         </div>
 
@@ -822,40 +826,73 @@ export default function AdminFinancePage() {
                 </div>
               )}
 
-              {/* TAB 5: RECEIPTS PLANNING */}
+              {/* TAB 5: RECEIPTS */}
               {activeTab === 'receipts' && (
                 <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-6 animate-fadeIn">
                   <div className="flex items-center gap-2 mb-2">
                     <ClipboardList size={18} className="text-[#0e2a4d]" />
-                    <h2 className="text-base font-bold text-[#0e2a4d]">E-Receipt & PDF Receipt Foundation</h2>
+                    <h2 className="text-base font-bold text-[#0e2a4d]">E-Receipt Records</h2>
                   </div>
 
-                  <div className="p-6 bg-slate-50 rounded-2xl border border-gray-100 space-y-4 max-w-2xl">
-                    <h3 className="text-sm font-bold text-[#0e2a4d]">Future Receipts System Architecture</h3>
+                  <div className="p-4 bg-slate-50 rounded-xl border border-gray-100 space-y-2 max-w-3xl mb-6">
+                    <h3 className="text-sm font-bold text-[#0e2a4d]">Digital Receipts Active</h3>
                     <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                      In the next development stage, approved wallet top-ups and platform spend actions will automatically generate serialized e-receipt files. The proposed flow includes:
+                      In-app digital receipts are now automatically generated for personal instant top-ups and approved company top-ups.
                     </p>
-                    
-                    <ul className="list-disc list-inside space-y-2 text-xs text-gray-600 pl-2">
-                      <li>
-                        <span className="font-bold text-[#0e2a4d]">Unique Receipt Numbers:</span> Serialized formats like <code className="font-mono bg-white px-1 py-0.5 rounded border border-gray-250">MC-REC-YYYYMMDD-XXXX</code> created immediately upon top-up approval.
-                      </li>
-                      <li>
-                        <span className="font-bold text-[#0e2a4d]">Digital Receipt Views:</span> Interactive receipt panels built directly into company and personal wallet histories for instant audit.
-                      </li>
-                      <li>
-                        <span className="font-bold text-[#0e2a4d]">PDF Generation:</span> Client-side or server-side rendering of receipts supporting layout templates (invoice details, platform logo, merchant details).
-                      </li>
-                      <li>
-                        <span className="font-bold text-[#0e2a4d]">Admin Receipts Ledger:</span> Dashboard table allowing finance managers to search, export CSV records, and inspect tax settings.
-                      </li>
-                    </ul>
-
-                    <div className="mt-4 p-3 bg-blue-50 border border-blue-150 rounded-xl text-[10px] text-blue-900 font-bold flex items-center gap-2">
-                      <Clock size={14} className="shrink-0" />
-                      <span>This is a non-functional planning concept. PDF rendering logic is currently not deployed.</span>
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-150">
+                      <Clock size={12} />
+                      <span>PDF download functionality is planned for a future update.</span>
                     </div>
                   </div>
+
+                  {receipts.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider font-bold">
+                            <th className="pb-3 font-semibold">Issued Date</th>
+                            <th className="pb-3 font-semibold">Receipt No.</th>
+                            <th className="pb-3 font-semibold">Issued To</th>
+                            <th className="pb-3 font-semibold text-right">Amount</th>
+                            <th className="pb-3 pl-4 font-semibold">Method</th>
+                            <th className="pb-3 font-semibold">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 text-gray-600 font-medium">
+                          {receipts.map((rec) => (
+                            <tr key={rec.id} className="hover:bg-slate-50/30">
+                              <td className="py-3 whitespace-nowrap text-gray-500 font-mono">
+                                {new Date(rec.issued_at).toLocaleString()}
+                              </td>
+                              <td className="py-3 font-mono font-bold text-[#0e2a4d]">
+                                {rec.receipt_number}
+                              </td>
+                              <td className="py-3">
+                                <span className="block font-bold text-slate-800">{rec.issued_to_company_name || rec.issued_to_name}</span>
+                                <span className="block text-[10px] text-gray-400 capitalize">{rec.owner_type}</span>
+                              </td>
+                              <td className="py-3 text-right font-extrabold text-emerald-700">
+                                {Number(rec.amount).toFixed(2)} MC
+                              </td>
+                              <td className="py-3 pl-4 uppercase text-[10px] font-bold text-gray-500">
+                                {rec.payment_method.replace('_', ' ')}
+                              </td>
+                              <td className="py-3">
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                  {rec.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-sm text-gray-400 font-medium border border-dashed border-gray-150 rounded-xl bg-slate-50/20">
+                      <FileText className="mx-auto mb-2 text-gray-300" size={32} />
+                      <span>No receipts generated yet.</span>
+                    </div>
+                  )}
                 </div>
               )}
 

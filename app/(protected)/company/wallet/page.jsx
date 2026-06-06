@@ -16,9 +16,11 @@ import {
   Building2,
   Info,
   Plus,
-  CreditCard
+  CreditCard,
+  XCircle
 } from 'lucide-react';
 import { createTopupRequest, cancelTopupRequest, getMyTopupRequests } from '@/app/actions/mcreditTopups';
+import { getMyReceipts } from '@/app/actions/mcreditReceipts';
 
 export default function CompanyWalletPage() {
   const router = useRouter();
@@ -30,6 +32,8 @@ export default function CompanyWalletPage() {
   const [topupRequests, setTopupRequests] = useState([]);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('transactions');
+  const [receipts, setReceipts] = useState([]);
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
 
   // Top-Up Modal State
   const [isTopupModalOpen, setIsTopupModalOpen] = useState(false);
@@ -185,6 +189,10 @@ export default function CompanyWalletPage() {
         // Fetch Top-Up Requests
         const topups = await getMyTopupRequests('company', myCompany.id);
         setTopupRequests(topups || []);
+
+        // Fetch Receipts
+        const userReceipts = await getMyReceipts('company', myCompany.id);
+        setReceipts(userReceipts || []);
       }
     } catch (err) {
       console.error('Error fetching company wallet:', err);
@@ -547,9 +555,21 @@ export default function CompanyWalletPage() {
                           {req.status === 'Pending' && (
                             <button
                               onClick={() => handleCancelTopup(req.id)}
-                              className="text-red-500 hover:text-red-700 font-semibold"
+                              className="text-red-500 hover:text-red-700 font-semibold mr-3"
                             >
                               Cancel
+                            </button>
+                          )}
+                          {req.status === 'Approved' && (
+                            <button
+                              onClick={() => {
+                                const receipt = receipts.find(r => r.topup_request_id === req.id);
+                                if (receipt) setSelectedReceipt(receipt);
+                                else alert('Receipt not generated yet.');
+                              }}
+                              className="text-blue-600 hover:text-blue-800 font-bold hover:underline"
+                            >
+                              View Receipt
                             </button>
                           )}
                         </td>
@@ -628,6 +648,67 @@ export default function CompanyWalletPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Receipt Modal */}
+      {selectedReceipt && (
+        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-xl border border-gray-100 relative">
+            <button 
+              onClick={() => setSelectedReceipt(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <XCircle size={24} />
+            </button>
+            
+            <div className="text-center mb-6 border-b border-dashed border-gray-200 pb-6">
+              <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FileText size={24} />
+              </div>
+              <h2 className="text-xl font-bold text-[#0e2a4d]">Payment Receipt</h2>
+              <p className="text-xs text-gray-500 mt-1 font-mono">{selectedReceipt.receipt_number}</p>
+            </div>
+            
+            <div className="space-y-4 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Date</span>
+                <span className="font-bold text-gray-800">{new Date(selectedReceipt.issued_at).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Issued To</span>
+                <span className="font-bold text-gray-800">{selectedReceipt.issued_to_company_name || selectedReceipt.issued_to_name}</span>
+              </div>
+              {selectedReceipt.issued_to_email && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Email</span>
+                  <span className="font-bold text-gray-800">{selectedReceipt.issued_to_email}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Payment Method</span>
+                <span className="font-bold text-gray-800 uppercase text-xs">{selectedReceipt.payment_method.replace('_', ' ')}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Status</span>
+                <span className="font-bold text-emerald-600 uppercase text-xs tracking-wider">{selectedReceipt.status}</span>
+              </div>
+            </div>
+            
+            <div className="mt-6 pt-6 border-t border-dashed border-gray-200 flex justify-between items-end">
+              <span className="text-gray-500 font-bold">Total Amount</span>
+              <div className="text-right">
+                <span className="text-2xl font-extrabold text-[#0e2a4d]">{Number(selectedReceipt.amount).toFixed(2)}</span>
+                <span className="text-sm text-gray-500 font-bold ml-1">MC</span>
+              </div>
+            </div>
+            
+            <div className="mt-8 text-center">
+              <p className="text-[10px] text-gray-400 bg-gray-50 p-2 rounded-lg inline-block">
+                PDF download functionality is planned for a future update.
+              </p>
+            </div>
           </div>
         </div>
       )}
