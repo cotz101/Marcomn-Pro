@@ -3,7 +3,11 @@
 import { useProfile } from '@/app/context/ProfileContext';
 
 export default function CreatePost() {
-  const { profile, setShowCreatePost } = useProfile();
+  const { profile, setShowCreatePost, currentIdentity } = useProfile();
+
+  const isCompany = currentIdentity?.type === 'company';
+  const identityImage = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (profile?.profilePic || '/avatar_placeholder.png');
+  const identityName = isCompany ? (currentIdentity.data?.name || 'Company') : (profile?.name || 'member');
 
   return (
     <div 
@@ -12,16 +16,17 @@ export default function CreatePost() {
     >
       {/* Avatar + Rounded Trigger Button */}
       <div className="flex items-center gap-3 w-full">
-        {profile?.profilePic ? (
+        {identityImage ? (
           <img
-            src={profile.profilePic}
-            alt={profile.name || 'User'}
-            className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-xs flex-shrink-0"
+            src={identityImage}
+            alt={identityName}
+            className="w-10 h-10 object-cover border border-gray-100 shadow-xs flex-shrink-0"
+            style={{ borderRadius: isCompany ? '8px' : '50%' }}
           />
         ) : (
           <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shadow-inner flex-shrink-0">
             <span className="text-sm font-extrabold text-blue-900">
-              {profile?.name?.charAt(0)?.toUpperCase() || 'M'}
+              {identityName.charAt(0).toUpperCase()}
             </span>
           </div>
         )}
@@ -33,7 +38,7 @@ export default function CreatePost() {
           }}
           className="bg-gray-50 hover:bg-gray-100/80 border border-gray-200 font-sans font-medium text-sm text-gray-500 rounded-full transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-100 active:scale-[0.99] select-none flex items-center justify-center w-full text-center px-4 py-3"
         >
-          Start a post as {profile?.name || 'member'}...
+          Start a post as {identityName}...
         </button>
       </div>
     </div>

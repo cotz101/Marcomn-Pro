@@ -184,8 +184,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
     const supabase = createClient();
 
     const salaryNumericVal = parseFloat(formData.payAmount) || null;
-    const isPublishingNewJob = !jobToEdit && formData.postingStatus !== 'Draft';
-    const isTransitionToPublish = jobToEdit && (jobToEdit.status === 'Draft' || !jobToEdit.status) && (formData.postingStatus === 'Published' || formData.postingStatus === 'Open');
+    const isPublishingNewJob = !jobToEdit && (formData.postingStatus || '').toLowerCase() !== 'draft';
+    const isTransitionToPublish = jobToEdit && ((jobToEdit.status || 'draft').toLowerCase() === 'draft') && ['published', 'open'].includes((formData.postingStatus || '').toLowerCase());
 
     // Perform wallet balance check prior to any DB operation if publishing
     if ((isPublishingNewJob || isTransitionToPublish) && salaryNumericVal && salaryNumericVal > 0) {
@@ -372,8 +372,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
       onComplete(jobData);
     }
   };
-  const isPublishingNewJob = !jobToEdit && formData.postingStatus !== 'Draft';
-  const isTransitionToPublish = jobToEdit && (jobToEdit.status === 'Draft' || !jobToEdit.status) && (formData.postingStatus === 'Published' || formData.postingStatus === 'Open');
+  const isPublishingNewJob = !jobToEdit && (formData.postingStatus || '').toLowerCase() !== 'draft';
+  const isTransitionToPublish = jobToEdit && ((jobToEdit.status || 'draft').toLowerCase() === 'draft') && ['published', 'open'].includes((formData.postingStatus || '').toLowerCase());
   const isPublishAction = isPublishingNewJob || isTransitionToPublish;
 
   return (
