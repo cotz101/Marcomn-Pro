@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
-import { Bell, Newspaper, Users, Briefcase, Mail, MessageSquare, Globe, ArrowLeft, Loader2, Check } from 'lucide-react';
+import { Bell, Newspaper, Users, Briefcase, Mail, MessageSquare, Globe, ArrowLeft, Loader2, Check, Coins } from 'lucide-react';
 
 export default function NotificationsFeedPage() {
   const router = useRouter();
@@ -168,6 +168,18 @@ export default function NotificationsFeedPage() {
   };
 
   const renderAvatar = (notification) => {
+    // Check if it's a platform/wallet related top-up or credits notification
+    const isTopup = ['wallet_credit', 'wallet_debit', 'wallet_topup', 'mcredit_grant', 'mcredit_deduct', 'refund', 'penalty', 'platform_revenue', 'compensation'].includes((notification.type || '').toLowerCase()) || 
+                    (notification.title && notification.title.toLowerCase().includes('top-up'));
+    
+    if (isTopup) {
+      return (
+        <div className="w-11 h-11 rounded-full bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shadow-xs shrink-0">
+          <Coins size={20} />
+        </div>
+      );
+    }
+
     const hasCompanyContext = notification.metadata?.actor_type === 'company' || notification.metadata?.actor_company_id;
     
     if (hasCompanyContext) {

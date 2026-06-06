@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
-import { X, Newspaper, Users, Briefcase, Bell } from 'lucide-react';
+import { X, Newspaper, Users, Briefcase, Bell, Coins } from 'lucide-react';
 
 const markAsRead = async (notificationId) => {
   try {
@@ -160,6 +160,18 @@ export default function NotificationDropdown({
   };
 
   const renderAvatar = (notification) => {
+    // Check if it's a platform/wallet related top-up or credits notification
+    const isTopup = ['wallet_credit', 'wallet_debit', 'wallet_topup', 'mcredit_grant', 'mcredit_deduct', 'refund', 'penalty', 'platform_revenue', 'compensation'].includes((notification.type || '').toLowerCase()) || 
+                    (notification.title && notification.title.toLowerCase().includes('top-up'));
+    
+    if (isTopup) {
+      return (
+        <div className="w-10 h-10 rounded-full bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shadow-sm shrink-0">
+          <Coins size={18} />
+        </div>
+      );
+    }
+
     // Graceful default if sender profile reference is missing or null
     const hasAvatar = notification.sender && notification.sender.avatar_url;
     

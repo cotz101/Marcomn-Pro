@@ -246,8 +246,7 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }) {
       <div className={`bg-white rounded-2xl shadow-xl w-full mx-auto overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col h-auto max-h-[65vh] transition-all duration-300 ${
         postMode === 'article' ? 'max-w-3xl md:max-h-[60vh]' : 'max-w-2xl md:max-h-[60vh]'
       }`}>
-        
-        {/* Scoped CSS Style to lock Rich-Text Editor height and styles */}
+                {/* Scoped CSS Style to lock Rich-Text Editor height and styles */}
         <style>{`
           .article-editor-wrapper .ql-container {
             min-height: 220px !important;
@@ -256,19 +255,17 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }) {
           .article-editor-wrapper .ql-editor {
             min-height: 220px !important;
           }
-          .ql-toolbar.ql-snow {
+          .article-editor-wrapper .ql-toolbar.ql-snow {
             border-top: none !important;
             border-left: none !important;
             border-right: none !important;
             border-bottom: 1px solid #f3f4f6 !important;
             padding: 8px 12px !important;
           }
-          .ql-container.ql-snow {
+          .article-editor-wrapper .ql-container.ql-snow {
             border: none !important;
           }
-        `}</style>
-
-        {/* Navy Header Shell */}
+        `}</style>        {/* Navy Header Shell */}
         <div className="modal-header h-14 bg-navy-900 text-white flex items-center justify-between px-6 flex-shrink-0 border-b border-[#0b223e] relative pr-4 max-sm:relative max-sm:bg-[#1e3a8a] max-sm:text-white max-sm:justify-center max-sm:border-b-0 max-sm:h-[60px]" style={{ position: "relative", paddingRight: "1rem" }}>
           <h3 className="absolute left-1/2 -translate-x-1/2 font-semibold text-lg font-sans max-sm:text-white max-sm:absolute max-sm:left-1/2 max-sm:-translate-x-1/2" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)" }}>Create a Post</h3>
           <button

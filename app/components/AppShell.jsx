@@ -43,6 +43,7 @@ import { createClient } from '@/lib/supabase';
 export default function AppShell({ children, userEmail, userId }) {
   const router = useRouter();
   const pathname = usePathname();
+  const isWideAdminRoute = pathname?.startsWith('/admin/mcredits');
   const { 
     profile, setProfile, onboardingCompleted, setOnboardingCompleted,
     companies, refreshCompanies, currentIdentity, setCurrentIdentity,
@@ -270,7 +271,7 @@ export default function AppShell({ children, userEmail, userId }) {
       )}
 
       <header className="header app-header" style={{ borderTop: isCompany ? '4px solid var(--primary)' : 'none' }}>
-        <div className="app-container">
+        <div className="app-container" style={{ maxWidth: isWideAdminRoute ? '1480px' : undefined }}>
           {/* Unified Responsive Header Content */}
           <div className="w-full flex items-center justify-between py-2 px-4 h-[calc(76px+env(safe-area-inset-top))] md:h-auto md:min-h-[64px] pt-[calc(env(safe-area-inset-top)+20px)] md:pt-1">
             
@@ -588,20 +589,23 @@ export default function AppShell({ children, userEmail, userId }) {
       )}
 
       <main className={`flex-1 flex flex-col ${pathname === '/messages' ? 'min-h-0 overflow-hidden' : ''}`}>
-        <div className={pathname === '/messages' ? 'w-full flex-1 flex flex-col overflow-hidden min-h-0' : 'app-container'}>
+        <div 
+          className={pathname === '/messages' ? 'w-full flex-1 flex flex-col overflow-hidden min-h-0' : 'app-container'}
+          style={pathname === '/messages' ? undefined : { maxWidth: isWideAdminRoute ? '1480px' : undefined }}
+        >
           {pathname === '/messages' ? (
             <div className="w-full flex-1 flex flex-col overflow-hidden min-h-0">
               {children}
             </div>
           ) : (
             <div className={`main-grid ${
-              (pathname?.startsWith('/jobs/my-postings') || pathname?.endsWith('/wallet')) ? 'hide-sidebar-right' : ''
+              (pathname?.startsWith('/jobs/my-postings') || pathname?.endsWith('/wallet') || pathname?.startsWith('/admin/mcredits')) ? 'hide-sidebar-right' : ''
             }`}>
               <SidebarLeft />
               <div className="center-feed">
                 {children}
               </div>
-              {!(pathname?.startsWith('/jobs/my-postings') || pathname?.endsWith('/wallet')) && <SidebarRight />}
+              {!(pathname?.startsWith('/jobs/my-postings') || pathname?.endsWith('/wallet') || pathname?.startsWith('/admin/mcredits')) && <SidebarRight />}
             </div>
           )}
         </div>

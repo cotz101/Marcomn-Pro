@@ -621,7 +621,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           {/* Row 7: Job Description */}
           <div>
             <label className="text-sm font-semibold text-gray-700 block mb-1.5">Job Description</label>
-            <div className="border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-900 overflow-hidden rich-text-editor-container min-h-[220px] leading-relaxed">
+            <div className="border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-900 overflow-hidden rich-text-editor-container post-job-editor-wrapper min-h-[220px] leading-relaxed">
               <RichTextEditor
                 value={formData.description}
                 onChange={(val) => setFormData(prev => ({ ...prev, description: val }))}
@@ -633,7 +633,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           {/* Row 8: Responsibilities */}
           <div>
             <label className="text-sm font-semibold text-gray-700 block mb-1.5">Responsibilities</label>
-            <div className="border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-900 overflow-hidden rich-text-editor-container min-h-[220px] leading-relaxed">
+            <div className="border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-900 overflow-hidden rich-text-editor-container post-job-editor-wrapper min-h-[220px] leading-relaxed">
               <RichTextEditor
                 value={formData.responsibilities}
                 onChange={(val) => setFormData(prev => ({ ...prev, responsibilities: val }))}

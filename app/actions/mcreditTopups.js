@@ -80,6 +80,38 @@ export async function createTopupRequest({ ownerType, ownerId, amount, remarks }
       .single();
 
     if (insertError) throw new Error(insertError.message);
+
+    // Send notifications to all admins
+    try {
+      const { data: companyData } = await supabase
+        .from('companies')
+        .select('name')
+        .eq('id', ownerId)
+        .single();
+      const companyName = companyData?.name || 'Company';
+
+      const { data: adminProfiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .in('global_role', ['super_admin', 'admin', 'brand_manager']);
+
+      if (adminProfiles && adminProfiles.length > 0) {
+        await Promise.all(
+          adminProfiles.map(admin =>
+            createPlatformNotification({
+              userId: admin.id,
+              title: 'New Top-Up Request',
+              message: `New company MCredits top-up request submitted by ${companyName}.`,
+              type: 'wallet_topup',
+              linkUrl: '/admin/mcredits',
+              senderId: null
+            })
+          )
+        );
+      }
+    } catch (notifErr) {
+      console.error('Failed to send admin top-up request notifications:', notifErr);
+    }
     
     return { success: true, instantCredit: false, request };
   } catch (error) {
@@ -230,7 +262,7 @@ export async function approveTopupRequest(requestId, adminNotes) {
       message: `Your MCredits top-up request for ${request.amount} MC has been approved.`,
       type: 'wallet_credit',
       linkUrl: request.owner_type === 'company' ? '/company/wallet' : '/profile/wallet',
-      senderId: user.id
+      senderId: null
     });
 
     return { success: true };
@@ -282,7 +314,7 @@ export async function rejectTopupRequest(requestId, adminNotes) {
       message: `Your MCredits top-up request for ${request.amount} MC has been rejected.`,
       type: 'system',
       linkUrl: request.owner_type === 'company' ? '/company/wallet' : '/profile/wallet',
-      senderId: user.id
+      senderId: null
     });
 
     return { success: true };

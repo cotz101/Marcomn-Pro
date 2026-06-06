@@ -3856,11 +3856,38 @@ body {
 }
 
 /* Premium Rich Text Editor Customizations */
-.rich-text-editor-container .ql-toolbar.ql-snow {
+.post-job-editor-wrapper .ql-toolbar.ql-snow {
   border: none !important;
   border-bottom: 1px solid #e5e7eb !important;
-  background-color: #f9fafb;
-  padding: 8px 12px;
+  background-color: #f9fafb !important;
+  padding: 8px 12px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+}
+
+.post-job-editor-wrapper .ql-formats {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin-right: 8px !important;
+  float: none !important;
+}
+
+.post-job-editor-wrapper .ql-toolbar.ql-snow button {
+  width: 28px !important;
+  height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  float: none !important;
+  padding: 3px 5px !important;
+  border: none !important;
+  background: none !important;
 }
 
 .rich-text-editor-container .ql-container.ql-snow {
@@ -4103,10 +4130,8 @@ body {
   padding-bottom: 0 !important;
   min-height: unset !important;
 }
-
 /* Compact Toolbar */
-.quill-composer .ql-toolbar.ql-snow,
-.ql-toolbar.ql-snow {
+.quill-composer .ql-toolbar.ql-snow {
   border: none !important;
   background-color: #f9fafb !important;
   margin-bottom: 8px !important;
@@ -4114,15 +4139,13 @@ body {
 }
 
 /* Single-line feel for the Editor */
-.quill-composer .ql-container.ql-snow,
-.ql-container.ql-snow {
+.quill-composer .ql-container.ql-snow {
   border: none !important;
   min-height: unset !important;
   height: auto !important;
 }
 
-.quill-composer .ql-editor,
-.ql-editor {
+.quill-composer .ql-editor {
   min-height: 40px !important; /* Adjust for "1 line" height */
   height: auto !important;
   padding: 8px 12px !important;
@@ -4130,6 +4153,7 @@ body {
   border-radius: 8px !important;
   line-height: 1.2 !important;
 }
+
 
 /* Button Theming (White background, Blue text/border) */
 .btn-post {
