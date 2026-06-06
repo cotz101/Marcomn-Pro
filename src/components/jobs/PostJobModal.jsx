@@ -119,8 +119,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
     }
 
     const payAmount = parseFloat(formData.payAmount);
-    const isNewPublish = !jobToEdit && formData.postingStatus !== 'Draft';
-    const isEditPublish = jobToEdit && (jobToEdit.status === 'Draft' || !jobToEdit.status) && (formData.postingStatus === 'Published' || formData.postingStatus === 'Open');
+    const isNewPublish = !jobToEdit && (formData.postingStatus || '').toLowerCase() !== 'draft';
+    const isEditPublish = jobToEdit && ((jobToEdit.status || 'draft').toLowerCase() === 'draft') && ['published', 'open'].includes((formData.postingStatus || '').toLowerCase());
 
     if (!payAmount || payAmount <= 0 || (!isNewPublish && !isEditPublish)) {
       setFeePreview(null);
@@ -644,8 +644,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
 
         </div>
 
-        {/* MCredit Fee Preview Banner (Create mode only) */}
-        {!jobToEdit && feePreview && (
+        {/* MCredit Fee Preview Banner */}
+        {feePreview && (
           <div className={`rounded-xl p-4 mt-4 mb-2 border ${
             mcreditError 
               ? 'bg-red-50 border-red-200' 
@@ -668,7 +668,15 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                   </p>
                 )}
                 {mcreditError && (
-                  <p className="text-red-700 font-semibold mt-1">{mcreditError}</p>
+                  <div className="text-red-700 font-semibold mt-1">
+                    <p>{mcreditError}</p>
+                    {jobToEdit && (
+                      <div className="mt-1.5 text-xs space-y-1">
+                        <p className="font-semibold text-red-700">Insufficient MCredits to publish this job. You can keep it as draft or top up your wallet.</p>
+                        <p className="text-gray-500 font-normal">Draft jobs can be saved without MCredits. MCredits are only required when publishing.</p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
