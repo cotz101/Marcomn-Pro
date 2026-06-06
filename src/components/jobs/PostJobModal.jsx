@@ -111,7 +111,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
 
   // Live MCredit fee preview for job postings
   useEffect(() => {
-    if (!isOpen || jobToEdit) {
+    if (!isOpen) {
       setFeePreview(null);
       setWalletBalance(null);
       setMcreditError('');
@@ -119,8 +119,13 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
     }
 
     const payAmount = parseFloat(formData.payAmount);
-    if (!payAmount || payAmount <= 0) {
+    const isNewPublish = !jobToEdit && formData.postingStatus !== 'Draft';
+    const isEditPublish = jobToEdit && (jobToEdit.status === 'Draft' || !jobToEdit.status) && (formData.postingStatus === 'Published' || formData.postingStatus === 'Open');
+
+    if (!payAmount || payAmount <= 0 || (!isNewPublish && !isEditPublish)) {
       setFeePreview(null);
+      setWalletBalance(null);
+      setMcreditError('');
       return;
     }
 
@@ -143,7 +148,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
       }
     })();
     return () => { cancelled = true; };
-  }, [isOpen, formData.payAmount, isCompany, currentIdentity?.id, userId, jobToEdit]);
+  }, [isOpen, formData.payAmount, isCompany, currentIdentity?.id, userId, jobToEdit, formData.postingStatus]);
 
   if (!isOpen) return null;
 
@@ -177,6 +182,28 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
 
     setLoading(true);
     const supabase = createClient();
+
+    const salaryNumericVal = parseFloat(formData.payAmount) || null;
+    const isPublishingNewJob = !jobToEdit && formData.postingStatus !== 'Draft';
+    const isTransitionToPublish = jobToEdit && (jobToEdit.status === 'Draft' || !jobToEdit.status) && (formData.postingStatus === 'Published' || formData.postingStatus === 'Open');
+
+    // Perform wallet balance check prior to any DB operation if publishing
+    if ((isPublishingNewJob || isTransitionToPublish) && salaryNumericVal && salaryNumericVal > 0) {
+      try {
+        const preview = await getJobPostingFeePreview(salaryNumericVal);
+        const wallet = await (isCompany ? getCompanyWalletBalance(currentIdentity.id) : getUserWalletBalance(userId));
+        if (wallet.balance < preview.fee) {
+          alert(`Insufficient MCredits to publish this job. Required: ${preview.fee.toFixed(2)} MC, Available: ${wallet.balance.toFixed(2)} MC. You can keep it as draft or top up your wallet.`);
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Wallet validation error:', err);
+        alert('Failed to validate MCredits balance: ' + err.message);
+        setLoading(false);
+        return;
+      }
+    }
 
     // Auto-commit any lingering skill input if the user forgot to press Enter
     let finalSkills = [...skills];
@@ -243,6 +270,24 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
       }
 
       console.log('Update job success:', jobData);
+
+      if (isTransitionToPublish && salaryNumericVal && salaryNumericVal > 0) {
+        try {
+          if (isCompany) {
+            await deductJobPostingFee(currentIdentity.id, jobToEdit.id, salaryNumericVal);
+          } else {
+            await deductUserJobPostingFee(userId, jobToEdit.id, salaryNumericVal);
+          }
+        } catch (mcErr) {
+          console.error('MCredit deduction failed during transition, rolling back job status:', mcErr);
+          // Rollback: set status back to Draft in database
+          await supabase.from('jobs').update({ status: 'Draft' }).eq('id', jobToEdit.id);
+          alert('Job publishing failed: ' + (mcErr.message || 'Insufficient MCredits'));
+          setLoading(false);
+          return;
+        }
+      }
+
       setLoading(false);
       onComplete(jobData);
     } else {
@@ -327,6 +372,9 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
       onComplete(jobData);
     }
   };
+  const isPublishingNewJob = !jobToEdit && formData.postingStatus !== 'Draft';
+  const isTransitionToPublish = jobToEdit && (jobToEdit.status === 'Draft' || !jobToEdit.status) && (formData.postingStatus === 'Published' || formData.postingStatus === 'Open');
+  const isPublishAction = isPublishingNewJob || isTransitionToPublish;
 
   return (
     <BaseModal 
@@ -639,7 +687,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           <button 
             type="submit" 
             className="btn-primary-pill px-6" 
-            disabled={loading || (formData.postingStatus !== 'Draft' && isCompany && !jobToEdit && !!mcreditError)}
+            disabled={loading || (isPublishAction && !!mcreditError)}
           >
             {loading ? (jobToEdit ? 'Saving...' : 'Posting...') : (jobToEdit ? 'Save Changes' : 'Create Job')}
           </button>
