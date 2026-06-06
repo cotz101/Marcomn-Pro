@@ -43,7 +43,7 @@ import { createClient } from '@/lib/supabase';
 export default function AppShell({ children, userEmail, userId }) {
   const router = useRouter();
   const pathname = usePathname();
-  const isWideAdminRoute = pathname?.startsWith('/admin/mcredits');
+  const isWideAdminRoute = pathname?.startsWith('/admin/mcredits') || pathname?.startsWith('/admin/finance');
   const { 
     profile, setProfile, onboardingCompleted, setOnboardingCompleted,
     companies, refreshCompanies, currentIdentity, setCurrentIdentity,
@@ -599,13 +599,13 @@ export default function AppShell({ children, userEmail, userId }) {
             </div>
           ) : (
             <div className={`main-grid ${
-              (pathname?.startsWith('/jobs/my-postings') || pathname?.endsWith('/wallet') || pathname?.startsWith('/admin/mcredits')) ? 'hide-sidebar-right' : ''
+              (pathname?.startsWith('/jobs/my-postings') || pathname?.endsWith('/wallet') || pathname?.startsWith('/admin/mcredits') || pathname?.startsWith('/admin/finance')) ? 'hide-sidebar-right' : ''
             }`}>
               <SidebarLeft />
               <div className="center-feed">
                 {children}
               </div>
-              {!(pathname?.startsWith('/jobs/my-postings') || pathname?.endsWith('/wallet') || pathname?.startsWith('/admin/mcredits')) && <SidebarRight />}
+              {!(pathname?.startsWith('/jobs/my-postings') || pathname?.endsWith('/wallet') || pathname?.startsWith('/admin/mcredits') || pathname?.startsWith('/admin/finance')) && <SidebarRight />}
             </div>
           )}
         </div>

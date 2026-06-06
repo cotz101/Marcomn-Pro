@@ -474,15 +474,25 @@ export default function AdminMCreditsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 lg:gap-7 items-start mb-8">
         
         {/* Header Info (Left Column Row 1) */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex items-start gap-4 lg:col-start-1 lg:row-start-1">
-          <div className="p-3 bg-blue-50 text-blue-950 rounded-xl flex items-center justify-center shrink-0">
-            <Coins size={24} className="text-blue-900" />
+        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 lg:col-start-1 lg:row-start-1">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-blue-50 text-blue-950 rounded-xl flex items-center justify-center shrink-0">
+              <Coins size={24} className="text-blue-900" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-[#0e2a4d] leading-tight">MCredits Stage 1 Platform Ledger</h1>
+              <p className="text-sm text-gray-500 mt-1 font-medium">
+                Grant or deduct credits for user applicants and company profiles, view transaction history, and configure dynamic percentage fees.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-[#0e2a4d] leading-tight">MCredits Stage 1 Platform Ledger</h1>
-            <p className="text-sm text-gray-500 mt-1 font-medium">
-              Grant or deduct credits for user applicants and company profiles, view transaction history, and configure dynamic percentage fees.
-            </p>
+          <div className="shrink-0">
+            <button
+              onClick={() => router.push('/admin/finance')}
+              className="border border-[#002b4e] text-[#002b4e] hover:bg-slate-50 text-xs font-bold py-2.5 px-4 rounded-xl transition-all select-none cursor-pointer whitespace-nowrap"
+            >
+              Open Finance Dashboard
+            </button>
           </div>
         </div>
 
