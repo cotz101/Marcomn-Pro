@@ -342,4 +342,14 @@ To maintain absolute accountability, the system will log the following events:
  -   * * R e a d - o n l y   i n t e r f a c e * * :   L o g s   a r e   d i s p l a y e d   s e c u r e l y   u s i n g   a   S e r v e r   A c t i o n   a n d   s e r v i c e S u p a b a s e   t o   b y p a s s   R L S ,   w i t h o u t   e x p o s i n g   t h e   s e r v i c e   r o l e   k e y   t o   t h e   c l i e n t .  
  -   * * F i l t e r s   s u p p o r t e d * * :   A c t o r   e m a i l ,   A c t i o n   k e y ,   T a r g e t   t y p e ,   D a t e   f r o m ,   D a t e   t o .  
  -   * * D e f a u l t   l i m i t * * :   D i s p l a y s   t h e   1 0 0   m o s t   r e c e n t   l o g s   b y   d e f a u l t   t o   p r o t e c t   d a t a b a s e   p e r f o r m a n c e .  
+  
+ # #   S t a g e   A d m i n - 6 :   P l a t f o r m   A d m i n   D a s h b o a r d   &   M e n u   T r e e   P o l i s h  
+ -   * * P l a t f o r m   A d m i n   D a s h b o a r d   ( / a d m i n ) * * :   A d d e d   a   c e n t r a l   m e n u   t r e e   l a n d i n g   p a g e   f o r   p l a t f o r m   a d m i n i s t r a t o r s .  
+ -   * * N a v i g a t i o n   P o l i s h * * :   U n i f i e d   b a c k   l i n k s   a c r o s s   / s e t t i n g s / g l o b a l ,   / a d m i n / m c r e d i t s ,   / a d m i n / f i n a n c e ,   / a d m i n / r o l e s ,   a n d   / a d m i n / a u d i t - l o g s   t o   p o i n t   s a f e l y   t o   / a d m i n .  
+ -   * * C u r r e n t   a c t i v e   m o d u l e s * * :   A u t o m a t i c a l l y   u n l o c k e d   a n d   v i s i b l e   b a s e d   o n   p r e c i s e   p e r m i s s i o n s   ( e . g . ,   c a n _ v i e w _ f i n a n c e _ d a s h b o a r d ,   c a n _ m a n a g e _ a d m i n _ r o l e s ) .  
+ -   * * F u t u r e   m o d u l e s * * :   ' C o m i n g   S o o n '   p l a c e h o l d e r   c a r d s   c l e a r l y   d i s p l a y   f u t u r e   r o a d m a p   a r e a s   l i k e   M o d e r a t i o n ,   D i s p u t e   R e v i e w ,   B r a n d i n g ,   a n d   N o t i f i c a t i o n s .  
+ -   * * B u s i n e s s   L o g i c   S c o p e * * :   T h i s   s t a g e   f o c u s e s   p u r e l y   o n   U I   s t r u c t u r e   a n d   n a v i g a t i o n   g r o u p i n g .   I t   d o e s   n o t   i n t r o d u c e   o r   a l t e r   u n d e r l y i n g   b a c k e n d   l o g i c ,   R L S   r u l e s ,   o r   e x i s t i n g   s t r i c t   p e r m i s s i o n   e n f o r c e m e n t   f u n c t i o n s .  
+ -   / a d m i n   l a n d i n g   d a s h b o a r d   a l l o w s   a n y   p l a t f o r m   a d m i n   w i t h   a t   l e a s t   o n e   m a p p e d   a d m i n   p e r m i s s i o n .  
+ -   S e c t i o n   c a r d s   a r e   p e r m i s s i o n - a w a r e .  
+ -   D i r e c t   p a g e   p r o t e c t i o n s   r e m a i n   u n c h a n g e d .  
  

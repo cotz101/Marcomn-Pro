@@ -499,11 +499,11 @@ export default function AdminMCreditsPage() {
     <div className="max-w-[1280px] mx-auto px-4 py-8 font-sans w-full">
       {/* Navigation */}
       <button
-        onClick={() => router.push('/profile')}
+        onClick={() => router.push('/admin')}
         className="flex items-center gap-2 text-gray-500 hover:text-[#002b4e] transition-colors mb-6 text-sm font-bold cursor-pointer bg-none border-none outline-none"
       >
         <ArrowLeft size={16} />
-        <span>Back to Profile</span>
+        <span>Back to Admin Dashboard</span>
       </button>
 
       {/* Main Grid: Responsive layout (stacked on mobile, side-by-side on desktop) */}

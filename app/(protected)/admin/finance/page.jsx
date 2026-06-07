@@ -152,11 +152,11 @@ export default function AdminFinancePage() {
       {/* Navigation */}
       <div className="flex items-center gap-4 mb-6">
         <button
-          onClick={() => router.push('/admin/mcredits')}
+          onClick={() => router.push('/admin')}
           className="flex items-center gap-2 text-gray-500 hover:text-[#002b4e] transition-colors text-sm font-bold cursor-pointer bg-none border-none outline-none"
         >
           <ArrowLeft size={16} />
-          <span>Back to MCredits Wallet Control</span>
+          <span>Back to Admin Dashboard</span>
         </button>
         <span className="text-gray-300">|</span>
         <button
