@@ -114,6 +114,15 @@ export default function AdminRolesPage() {
             </p>
           </div>
         </div>
+        <div className="shrink-0 flex items-center justify-end">
+          <button
+            onClick={() => router.push('/admin/audit-logs')}
+            className="flex items-center gap-2 bg-[#0e2a4d] hover:bg-blue-900 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm border-none cursor-pointer"
+          >
+            <ShieldCheck size={14} />
+            View Audit Logs
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}

@@ -335,3 +335,11 @@ To maintain absolute accountability, the system will log the following events:
   - Enforces UI and server-side read-only protections for the `super_admin` role.
   - Permission updates are synced atomically within a Postgres transaction using the new `sync_role_permissions` RPC.
   - Logs successful permission updates through `logPlatformAdminAction` under `role.permissions_updated`.
+ 
+ # #   S t a g e   A d m i n - 5 C   I m p l e m e n t a t i o n   N o t e s  
+ -   * * A u d i t   L o g   V i e w e r   U I   a d d e d * * :   A   s e c u r e   v i e w e r   a t   / a d m i n / a u d i t - l o g s   f o r   p l a t f o r m _ a d m i n _ a u d i t _ l o g s .  
+ -   * * S e r v e r - s i d e   c h e c k * * :   A c c e s s   i s   r e s t r i c t e d   s t r i c t l y   t o   u s e r s   w i t h   c a n _ v i e w _ a d m i n _ a u d i t _ l o g s .  
+ -   * * R e a d - o n l y   i n t e r f a c e * * :   L o g s   a r e   d i s p l a y e d   s e c u r e l y   u s i n g   a   S e r v e r   A c t i o n   a n d   s e r v i c e S u p a b a s e   t o   b y p a s s   R L S ,   w i t h o u t   e x p o s i n g   t h e   s e r v i c e   r o l e   k e y   t o   t h e   c l i e n t .  
+ -   * * F i l t e r s   s u p p o r t e d * * :   A c t o r   e m a i l ,   A c t i o n   k e y ,   T a r g e t   t y p e ,   D a t e   f r o m ,   D a t e   t o .  
+ -   * * D e f a u l t   l i m i t * * :   D i s p l a y s   t h e   1 0 0   m o s t   r e c e n t   l o g s   b y   d e f a u l t   t o   p r o t e c t   d a t a b a s e   p e r f o r m a n c e .  
+ 

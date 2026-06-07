@@ -3857,27 +3857,49 @@ body {
 
 /* Premium Rich Text Editor Customizations */
 .post-job-editor-wrapper .ql-toolbar.ql-snow {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 4px !important;
+  min-height: auto !important;
+  padding: 8px 10px !important;
   border: none !important;
   border-bottom: 1px solid #e5e7eb !important;
   background-color: #f9fafb !important;
-  padding: 8px 12px !important;
-  display: block !important;
 }
 
-.post-job-editor-wrapper .ql-formats {
-  display: inline-block !important;
-  margin-right: 8px !important;
-  vertical-align: middle !important;
+.post-job-editor-wrapper .ql-toolbar.ql-snow .ql-formats {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 2px !important;
+  margin: 0 6px 0 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  flex: 0 0 auto !important;
 }
 
 .post-job-editor-wrapper .ql-toolbar.ql-snow button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   width: 28px !important;
   height: 28px !important;
-  display: inline-block !important;
-  vertical-align: middle !important;
-  padding: 3px 5px !important;
+  min-width: 28px !important;
+  max-width: 28px !important;
+  padding: 4px !important;
+  margin: 0 !important;
+  flex: 0 0 28px !important;
   border: none !important;
   background: none !important;
+}
+
+.post-job-editor-wrapper .ql-toolbar.ql-snow button svg {
+  width: 18px !important;
+  height: 18px !important;
+  display: block !important;
 }
 
 .rich-text-editor-container .ql-container.ql-snow {
