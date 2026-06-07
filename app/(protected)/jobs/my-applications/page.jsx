@@ -8,6 +8,7 @@ import { Briefcase, MapPin, Calendar, Building2, Loader2, ExternalLink, Building
 import { getCandidateAcceptanceFeePreview, getUserWalletBalance, deductCandidateAcceptanceFee } from '@/app/actions/mcreditsJobs';
 import { createJobOrderFromAcceptedApplication, cancelJobOrderByCandidate } from '@/app/actions/jobOrders';
 import { markWorkCompletedByApplicant, confirmPaymentReceivedByApplicant } from '@/app/actions/engagementLifecycle';
+import BaseModal from '@/src/components/layout/BaseModal';
 
 const SkeletonRow = () => (
   <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm animate-pulse flex items-center justify-between gap-4">
@@ -664,66 +665,69 @@ export default function MyApplicationsPage() {
       )}
 
       {/* Accept Offer Modal */}
-      {isAcceptModalOpen && appToAccept && (
-        <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
-            <h3 className="text-lg font-bold text-[#004173] mb-2">Accept Job Offer</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              You are accepting the offer for <span className="font-semibold text-gray-800">{appToAccept.job?.title}</span> at <span className="font-semibold text-gray-800">{appToAccept.job?.company}</span>.
-            </p>
+      <BaseModal
+        isOpen={isAcceptModalOpen && appToAccept !== null}
+        onClose={() => { setIsAcceptModalOpen(false); setAppToAccept(null); }}
+        title="Accept Job Offer"
+        maxWidth="600px"
+        disableBackdropClick={isAccepting}
+      >
+        <div className="flex flex-col space-y-4">
+          <p className="text-sm text-gray-600">
+            You are accepting the offer for <span className="font-semibold text-gray-800">{appToAccept?.job?.title}</span> at <span className="font-semibold text-gray-800">{appToAccept?.job?.company}</span>.
+          </p>
 
-            {!feePreview ? (
-              <div className="flex justify-center py-6">
-                <Loader2 className="animate-spin text-blue-900" size={24} />
-              </div>
-            ) : (
-              <div className={`rounded-xl p-4 mb-6 border ${
-                acceptingError && acceptingError.includes('Insufficient')
-                  ? 'bg-red-50 border-red-200' 
-                  : 'bg-emerald-50 border-emerald-200'
-              }`}>
-                <div className="flex items-start gap-3">
-                  {acceptingError && acceptingError.includes('Insufficient') ? (
-                    <AlertTriangle size={18} className="text-red-600 shrink-0 mt-0.5" />
-                  ) : (
-                    <Coins size={18} className="text-emerald-700 shrink-0 mt-0.5" />
-                  )}
-                  <div className="text-sm">
-                    <p className="font-semibold text-gray-800">
-                      Acceptance Fee: <span className="font-bold">{feePreview.fee.toFixed(2)} MC</span>
+          {!feePreview ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="animate-spin text-blue-900" size={24} />
+            </div>
+          ) : (
+            <div className={`rounded-xl px-4 py-4 border ${
+              acceptingError && acceptingError.includes('Insufficient')
+                ? 'bg-red-50 border-red-200' 
+                : 'bg-emerald-50 border-emerald-200'
+            }`}>
+              <div className="flex items-start gap-3">
+                {acceptingError && acceptingError.includes('Insufficient') ? (
+                  <AlertTriangle size={18} className="text-red-600 shrink-0 mt-0.5" />
+                ) : (
+                  <Coins size={18} className="text-emerald-700 shrink-0 mt-0.5" />
+                )}
+                <div className="text-sm w-full">
+                  <p className="font-semibold text-gray-800">
+                    Acceptance Fee: <span className="font-bold">{feePreview.fee.toFixed(2)} MC</span>
+                  </p>
+                  {walletBalance !== null && (
+                    <p className="text-gray-600 mt-0.5">
+                      Your Wallet: <span className="font-bold">{walletBalance.toFixed(2)} MC</span>
                     </p>
-                    {walletBalance !== null && (
-                      <p className="text-gray-600 mt-0.5">
-                        Your Wallet: <span className="font-bold">{walletBalance.toFixed(2)} MC</span>
-                      </p>
-                    )}
-                    {acceptingError && (
-                      <p className="text-red-700 font-semibold mt-1">{acceptingError}</p>
-                    )}
-                  </div>
+                  )}
+                  {acceptingError && (
+                    <p className="text-red-700 font-semibold mt-1.5 leading-tight">{acceptingError}</p>
+                  )}
                 </div>
               </div>
-            )}
-
-            <div className="flex justify-end gap-3">
-              <button 
-                onClick={() => { setIsAcceptModalOpen(false); setAppToAccept(null); }}
-                className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
-                disabled={isAccepting}
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleConfirmAcceptance}
-                className="bg-[#004173] hover:bg-blue-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
-                disabled={isAccepting || feePreview === null || walletBalance === null || walletBalance < feePreview.fee}
-              >
-                {isAccepting ? 'Confirming...' : 'Confirm Acceptance'}
-              </button>
             </div>
+          )}
+
+          <div className="pt-4 flex flex-col-reverse sm:flex-row justify-end gap-3">
+            <button 
+              onClick={() => { setIsAcceptModalOpen(false); setAppToAccept(null); }}
+              className="w-full sm:w-auto px-5 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors text-center shrink-0"
+              disabled={isAccepting}
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={handleConfirmAcceptance}
+              className="w-full sm:w-auto bg-[#004173] hover:bg-blue-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 text-center shrink-0"
+              disabled={isAccepting || feePreview === null || walletBalance === null || walletBalance < feePreview.fee}
+            >
+              {isAccepting ? 'Confirming...' : 'Confirm Acceptance'}
+            </button>
           </div>
         </div>
-      )}
+      </BaseModal>
 
       {/* Cancel Engagement Modal */}
       {isCancelModalOpen && appToCancel && (

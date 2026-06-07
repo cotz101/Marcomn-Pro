@@ -663,7 +663,6 @@ export default function ApplicantsPage() {
                     )}
                     
                     {/* Action buttons */}
-                    {/* Action buttons */}
                     {app.status === 'Accepted' && (() => {
                       const order = getJobOrder(app);
                       if (!order) return null;
@@ -671,22 +670,22 @@ export default function ApplicantsPage() {
                       switch (order.status) {
                         case 'Active':
                           return (
-                            <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2 justify-end">
+                            <div className="mt-5 flex flex-col sm:flex-row flex-wrap gap-2.5 justify-end">
                               <button 
                                 onClick={(e) => { e.stopPropagation(); router.push(`/profile/${app.applicant_id}`); }}
-                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                                className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                               >
                                 View Profile
                               </button>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
-                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                                className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                               >
                                 Message
                               </button>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); setAppToCancel(app); setCompanyCancelReason(''); setCompanyCancelRemarks(''); setIsCompanyCancelModalOpen(true); }}
-                                className="px-4 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-xs font-bold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
+                                className="px-4 py-2 bg-white border border-red-200 hover:bg-red-50 text-red-600 text-sm font-semibold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
                               >
                                 Cancel Engagement
                               </button>
@@ -694,22 +693,22 @@ export default function ApplicantsPage() {
                           );
                         case 'Work Completed by Applicant':
                           return (
-                            <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2 justify-end">
+                            <div className="mt-5 flex flex-col sm:flex-row flex-wrap gap-2.5 justify-end">
                               <button 
                                 onClick={(e) => { e.stopPropagation(); router.push(`/profile/${app.applicant_id}`); }}
-                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                                className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                               >
                                 View Profile
                               </button>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
-                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                                className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                               >
                                 Message
                               </button>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); handleOpenConfirmWorkModal(app); }}
-                                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
+                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
                               >
                                 Confirm Work Completed
                               </button>
@@ -717,19 +716,19 @@ export default function ApplicantsPage() {
                           );
                         case 'Completion Confirmed by Company':
                           return (
-                            <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2 justify-end items-center">
-                              <span className="text-xs font-semibold text-slate-500 mr-auto">
+                            <div className="mt-5 flex flex-col sm:flex-row flex-wrap gap-2.5 justify-end items-center">
+                              <span className="text-xs font-semibold text-slate-500 mr-auto w-full sm:w-auto text-center sm:text-left mb-2 sm:mb-0">
                                 Waiting for applicant payment confirmation
                               </span>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); router.push(`/profile/${app.applicant_id}`); }}
-                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm text-center"
+                                className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                               >
                                 View Profile
                               </button>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
-                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm text-center"
+                                className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                               >
                                 Message
                               </button>
@@ -737,22 +736,22 @@ export default function ApplicantsPage() {
                           );
                         case 'Payment Confirmed by Applicant':
                           return (
-                            <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2 justify-end">
+                            <div className="mt-5 flex flex-col sm:flex-row flex-wrap gap-2.5 justify-end">
                               <button 
                                 onClick={(e) => { e.stopPropagation(); router.push(`/profile/${app.applicant_id}`); }}
-                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                                className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                               >
                                 View Profile
                               </button>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
-                                className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                                className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                               >
                                 Message
                               </button>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); setAppToComplete(app); setFeedbackSentiment(''); setFeedbackComment(''); setFeedbackTags([]); setIsMarkCompleteModalOpen(true); }}
-                                className="px-4 py-1.5 bg-[#004173] hover:bg-blue-800 text-white text-xs font-bold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
+                                className="px-4 py-2 bg-[#004173] hover:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
                               >
                                 Close Engagement
                               </button>
@@ -764,16 +763,16 @@ export default function ApplicantsPage() {
                     })()}
 
                     {app.status === 'Completed' && (
-                      <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2 justify-end">
+                      <div className="mt-5 flex flex-col sm:flex-row flex-wrap gap-2.5 justify-end">
                         <button 
                           onClick={(e) => { e.stopPropagation(); router.push(`/profile/${app.applicant_id}`); }}
-                          className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                          className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                         >
                           View Profile
                         </button>
                         <button 
                           onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
-                          className="px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
+                          className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                         >
                           Message
                         </button>
@@ -781,10 +780,10 @@ export default function ApplicantsPage() {
                     )}
 
                     {app.status === 'Shortlisted' && (
-                      <div className="mt-4 flex justify-end">
+                      <div className="mt-5 flex flex-col sm:flex-row justify-end">
                         <button 
                           onClick={(e) => { e.stopPropagation(); setAppToOffer(app); setIsOfferModalOpen(true); }}
-                          className="px-4 py-1.5 bg-[#004173] hover:bg-blue-800 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                          className="px-4 py-2 bg-[#004173] hover:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
                         >
                           Send Job Offer
                         </button>
