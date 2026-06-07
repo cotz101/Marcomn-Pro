@@ -26,7 +26,7 @@ export default function GlobalSettingsPage() {
   const desktopInputRef = useRef(null);
   const mobileInputRef = useRef(null);
 
-  const isAuthorized = profile && ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role);
+  const isAuthorized = profile && (profile.is_platform_admin || ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role));
 
   const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/webp'];
   const maxFileSize = 2 * 1024 * 1024; // 2MB

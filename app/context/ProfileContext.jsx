@@ -94,6 +94,34 @@ export function ProfileProvider({ children, userId, userEmail }) {
     }
     
     const supabase = createClient();
+    
+    // Fetch active platform admin roles and permissions to augment client-side profile
+    const { data: userPerms } = await supabase
+      .from('platform_admin_user_roles')
+      .select(`
+        platform_admin_roles (
+          role_key,
+          platform_admin_role_permissions (
+            platform_admin_permissions ( permission_key )
+          )
+        )
+      `)
+      .eq('user_id', userId)
+      .eq('is_active', true);
+      
+    const activeRoles = userPerms?.map(r => r.platform_admin_roles?.role_key).filter(Boolean) || [];
+    
+    const permissionsSet = new Set();
+    userPerms?.forEach(ur => {
+      const rolePerms = ur.platform_admin_roles?.platform_admin_role_permissions || [];
+      rolePerms.forEach(rp => {
+        if (rp.platform_admin_permissions?.permission_key) {
+          permissionsSet.add(rp.platform_admin_permissions.permission_key);
+        }
+      });
+    });
+    const activePermissions = Array.from(permissionsSet);
+
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -118,6 +146,8 @@ export function ProfileProvider({ children, userId, userEmail }) {
         openToWork: data.openToWork || 'Not Available',
         message_privacy: data.message_privacy || 'connections',
         global_role: data.global_role || 'guest_user',
+        admin_permissions: activePermissions,
+        is_platform_admin: activeRoles.length > 0 || ['super_admin', 'admin', 'brand_manager'].includes(data.global_role || 'guest_user'),
       });
     } else {
       setOnboardingCompleted(false);

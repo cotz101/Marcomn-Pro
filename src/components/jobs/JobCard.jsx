@@ -108,13 +108,18 @@ export default function JobCard({ job, application, onClick }) {
             )}
           </div>
           
-          {/* Skill Tags */}
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
+          {/* Experience and Skill Tags */}
+          {(job.experience_level || tags.length > 0) && (
+            <div className="flex flex-wrap gap-2 mt-3 items-center">
+              {job.experience_level && (
+                <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 px-2.5 py-1 rounded-md text-xs font-bold whitespace-nowrap">
+                  {job.experience_level}
+                </span>
+              )}
               {tags.map((tag, index) => (
                 <span 
                   key={index} 
-                  className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-medium"
+                  className="bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-md text-xs font-medium"
                 >
                   {tag}
                 </span>

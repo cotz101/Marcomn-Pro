@@ -40,6 +40,7 @@ export default function JobBoard() {
           location,
           employment_type,
           salary_range,
+          experience_level,
           tags,
           required_skills,
           created_at,

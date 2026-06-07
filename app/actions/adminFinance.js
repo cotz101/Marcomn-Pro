@@ -1,20 +1,13 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { isPlatformAdmin, userHasAdminPermission } from '@/lib/adminPermissions';
 
 /**
  * Helper to check if a user is an admin.
  */
 async function checkIsAdmin(supabase, userId) {
-  // TODO: Integrate with future Role & Access Control system when implemented.
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('global_role')
-    .eq('id', userId)
-    .single();
-    
-  if (!profile) return false;
-  return ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role);
+  return await isPlatformAdmin(userId);
 }
 
 /**
@@ -26,8 +19,8 @@ export async function getFinanceDashboardSummary(filters = {}) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Unauthorized');
 
-    const isAdmin = await checkIsAdmin(supabase, user.id);
-    if (!isAdmin) throw new Error('Unauthorized: Admin access required');
+    const hasPermission = await userHasAdminPermission(user.id, 'can_view_finance_reports');
+    if (!hasPermission) throw new Error('Unauthorized: Missing finance reports permission');
 
     // 1. Fetch transactions filtered by date and owner type
     let query = supabase
@@ -174,8 +167,8 @@ export async function getFinanceTransactions(filters = {}) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Unauthorized');
 
-    const isAdmin = await checkIsAdmin(supabase, user.id);
-    if (!isAdmin) throw new Error('Unauthorized: Admin access required');
+    const hasPermission = await userHasAdminPermission(user.id, 'can_view_finance_reports');
+    if (!hasPermission) throw new Error('Unauthorized: Missing finance reports permission');
 
     let query = supabase
       .from('mcredit_transactions')
@@ -305,8 +298,8 @@ export async function getTopupReport(filters = {}) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Unauthorized');
 
-    const isAdmin = await checkIsAdmin(supabase, user.id);
-    if (!isAdmin) throw new Error('Unauthorized: Admin access required');
+    const hasPermission = await userHasAdminPermission(user.id, 'can_view_finance_reports');
+    if (!hasPermission) throw new Error('Unauthorized: Missing finance reports permission');
 
     let query = supabase
       .from('mcredit_topup_requests')

@@ -2,19 +2,14 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { createPlatformNotification } from './notifications';
+import { isPlatformAdmin, userHasAdminPermission } from '@/lib/adminPermissions';
+import { logPlatformAdminAction } from '@/lib/adminAuditLogger';
 
 /**
  * Helper to check if a user is an admin.
  */
 async function checkIsAdmin(supabase, userId) {
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('global_role')
-    .eq('id', userId)
-    .single();
-    
-  if (!profile) return false;
-  return ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role);
+  return await isPlatformAdmin(userId);
 }
 
 /**
@@ -191,8 +186,8 @@ export async function approveTopupRequest(requestId, adminNotes) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) throw new Error('Unauthorized');
 
-    const isAdmin = await checkIsAdmin(supabase, user.id);
-    if (!isAdmin) throw new Error('Unauthorized: Admin access required');
+    const hasPermission = await userHasAdminPermission(user.id, 'can_approve_topups');
+    if (!hasPermission) throw new Error('Unauthorized: Missing top-up approval permission');
 
     // Fetch the request
     const { data: request, error: fetchError } = await supabase
@@ -301,6 +296,21 @@ export async function approveTopupRequest(requestId, adminNotes) {
       senderId: null
     });
 
+    // Write platform admin audit log
+    await logPlatformAdminAction({
+      actorUserId: user.id,
+      actionKey: 'topup.approve',
+      targetType: 'topup_request',
+      targetId: requestId,
+      details: { 
+        amount: request.amount, 
+        owner_type: request.owner_type, 
+        owner_id: request.owner_id, 
+        transaction_id: actualTxId,
+        admin_notes: adminNotes || null
+      }
+    });
+
     return { success: true };
   } catch (error) {
     console.error('approveTopupRequest error:', error);
@@ -318,8 +328,8 @@ export async function rejectTopupRequest(requestId, adminNotes) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) throw new Error('Unauthorized');
 
-    const isAdmin = await checkIsAdmin(supabase, user.id);
-    if (!isAdmin) throw new Error('Unauthorized: Admin access required');
+    const hasPermission = await userHasAdminPermission(user.id, 'can_reject_topups');
+    if (!hasPermission) throw new Error('Unauthorized: Missing top-up rejection permission');
 
     const { data: request, error: fetchError } = await supabase
       .from('mcredit_topup_requests')
@@ -351,6 +361,20 @@ export async function rejectTopupRequest(requestId, adminNotes) {
       type: 'system',
       linkUrl: request.owner_type === 'company' ? '/company/wallet' : '/profile/wallet',
       senderId: null
+    });
+
+    // Write platform admin audit log
+    await logPlatformAdminAction({
+      actorUserId: user.id,
+      actionKey: 'topup.reject',
+      targetType: 'topup_request',
+      targetId: requestId,
+      details: { 
+        amount: request.amount, 
+        owner_type: request.owner_type, 
+        owner_id: request.owner_id,
+        admin_notes: adminNotes || null
+      }
     });
 
     return { success: true };
@@ -399,8 +423,8 @@ export async function getPendingTopupRequests() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
-    const isAdmin = await checkIsAdmin(supabase, user.id);
-    if (!isAdmin) return [];
+    const hasPermission = await userHasAdminPermission(user.id, 'can_view_wallet_control');
+    if (!hasPermission) return [];
 
     const { data, error } = await supabase.rpc('get_pending_topup_requests_admin');
 

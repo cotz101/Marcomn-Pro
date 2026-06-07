@@ -35,7 +35,8 @@ export default function AdminFinancePage() {
   const router = useRouter();
   const { profile, showToast } = useProfile();
 
-  const isAuthorized = profile && ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role);
+  const isLegacyAdmin = profile && ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role);
+  const isAuthorized = profile && (profile.admin_permissions?.includes('can_view_finance_reports') || isLegacyAdmin);
 
   // States
   const [activeTab, setActiveTab] = useState('overview'); // overview, transactions, topups, revenue, receipts

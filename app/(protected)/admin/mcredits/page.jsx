@@ -38,7 +38,18 @@ export default function AdminMCreditsPage() {
   const { profile, userId, showToast } = useProfile();
   const supabase = createClient();
 
-  const isAuthorized = profile && ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role);
+  const isAuthorized = profile && (profile.is_platform_admin || ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role));
+  
+  const isLegacyAdmin = profile && ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role);
+  const canGrant = profile && (profile.admin_permissions?.includes('can_grant_mcredits') || isLegacyAdmin);
+  const canDeduct = profile && (profile.admin_permissions?.includes('can_deduct_mcredits') || isLegacyAdmin);
+  const canApprove = profile && (profile.admin_permissions?.includes('can_approve_topups') || isLegacyAdmin);
+  const canReject = profile && (profile.admin_permissions?.includes('can_reject_topups') || isLegacyAdmin);
+  const canViewWalletControl = profile && (profile.admin_permissions?.includes('can_view_wallet_control') || isLegacyAdmin);
+  
+  const canViewFees = profile && (profile.admin_permissions?.includes('can_manage_global_settings') || isLegacyAdmin);
+  const canViewLedger = profile && (canViewWalletControl || canGrant || canDeduct);
+  const canViewTopups = profile && (canViewWalletControl || canApprove || canReject);
 
   // Lists
   const [profilesList, setProfilesList] = useState([]);
@@ -77,6 +88,31 @@ export default function AdminMCreditsPage() {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [actionSubmitting, setActionSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState('fees'); // 'fees', 'ledger', 'topups'
+
+  // Set default active tab based on permissions once profile is loaded
+  useEffect(() => {
+    if (!profile) return;
+    
+    if (activeTab === 'fees' && !canViewFees) {
+      if (canViewLedger) {
+        setActiveTab('ledger');
+      } else if (canViewTopups) {
+        setActiveTab('topups');
+      }
+    } else if (activeTab === 'ledger' && !canViewLedger) {
+      if (canViewFees) {
+        setActiveTab('fees');
+      } else if (canViewTopups) {
+        setActiveTab('topups');
+      }
+    } else if (activeTab === 'topups' && !canViewTopups) {
+      if (canViewFees) {
+        setActiveTab('fees');
+      } else if (canViewLedger) {
+        setActiveTab('ledger');
+      }
+    }
+  }, [profile, canViewFees, canViewLedger, canViewTopups, activeTab]);
 
   // Fetch initial option lists and settings
   useEffect(() => {
@@ -497,126 +533,134 @@ export default function AdminMCreditsPage() {
         </div>
 
         {/* Top-Up Queue Widget (Right Column Rows 1-3, stacks below header on mobile) */}
-        <div className="lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:sticky lg:top-24 w-full space-y-6">
-          <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <CreditCard size={18} className="text-[#0e2a4d]" />
-                <h2 className="text-sm font-bold text-[#0e2a4d]">Top-Up Queue</h2>
+        {canViewTopups && (
+          <div className="lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:sticky lg:top-24 w-full space-y-6">
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <CreditCard size={18} className="text-[#0e2a4d]" />
+                  <h2 className="text-sm font-bold text-[#0e2a4d]">Top-Up Queue</h2>
+                </div>
+                {pendingTopups.length > 0 && (
+                  <span className="bg-amber-50 border border-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {pendingTopups.length} Pending
+                  </span>
+                )}
               </div>
-              {pendingTopups.length > 0 && (
-                <span className="bg-amber-50 border border-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  {pendingTopups.length} Pending
-                </span>
+
+              {pendingTopups.length > 0 ? (
+                <div className="space-y-3 flex-1">
+                  {pendingTopups.slice(0, 3).map((req) => (
+                    <div key={req.id} className="p-3 bg-slate-50/50 border border-gray-100 rounded-xl flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        {req.owner_type === 'company' ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-md bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 overflow-hidden text-[10px] font-bold text-blue-600">
+                              {req.company_logo_url ? (
+                                <img src={req.company_logo_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                (req.company_name || 'C').charAt(0).toUpperCase()
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-[#0e2a4d] truncate">{req.company_name || 'Company'}</p>
+                              <p className="text-[9px] text-gray-400 truncate">By {req.requester_name || 'User'}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden text-[10px] font-bold text-slate-500">
+                              {req.requester_avatar_url ? (
+                                <img src={req.requester_avatar_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                (req.requester_name || 'U').charAt(0).toUpperCase()
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-[#0e2a4d] truncate">{req.requester_name || 'User'}</p>
+                              <p className="text-[9px] text-gray-400">Personal Account</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-bold text-[#0e2a4d]">{Number(req.amount).toFixed(2)} MC</p>
+                        <span className="inline-block text-[8px] font-bold bg-amber-50 text-amber-700 px-1.5 py-0.2 rounded-md mt-0.5">
+                          Pending
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {pendingTopups.length > 3 && (
+                    <p className="text-[10px] text-gray-400 text-center mt-1 font-medium">
+                      + {pendingTopups.length - 3} more pending requests
+                    </p>
+                  )}
+                  <button
+                    onClick={() => setActiveTab('topups')}
+                    className="w-full mt-3 bg-blue-50 hover:bg-blue-100 text-[#002b4e] text-xs font-bold py-2.5 rounded-xl transition-all text-center select-none cursor-pointer"
+                  >
+                    Manage Top-Up Queue
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-xs text-gray-400 font-medium border border-dashed border-gray-150 rounded-xl bg-slate-50/20">
+                  <span>No pending top-up requests.</span>
+                </div>
               )}
             </div>
-
-            {pendingTopups.length > 0 ? (
-              <div className="space-y-3 flex-1">
-                {pendingTopups.slice(0, 3).map((req) => (
-                  <div key={req.id} className="p-3 bg-slate-50/50 border border-gray-100 rounded-xl flex items-center justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      {req.owner_type === 'company' ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-md bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 overflow-hidden text-[10px] font-bold text-blue-600">
-                            {req.company_logo_url ? (
-                              <img src={req.company_logo_url} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              (req.company_name || 'C').charAt(0).toUpperCase()
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-bold text-[#0e2a4d] truncate">{req.company_name || 'Company'}</p>
-                            <p className="text-[9px] text-gray-400 truncate">By {req.requester_name || 'User'}</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden text-[10px] font-bold text-slate-500">
-                            {req.requester_avatar_url ? (
-                              <img src={req.requester_avatar_url} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              (req.requester_name || 'U').charAt(0).toUpperCase()
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-bold text-[#0e2a4d] truncate">{req.requester_name || 'User'}</p>
-                            <p className="text-[9px] text-gray-400">Personal Account</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs font-bold text-[#0e2a4d]">{Number(req.amount).toFixed(2)} MC</p>
-                      <span className="inline-block text-[8px] font-bold bg-amber-50 text-amber-700 px-1.5 py-0.2 rounded-md mt-0.5">
-                        Pending
-                      </span>
-                    </div>
-                  </div>
-                ))}
-                {pendingTopups.length > 3 && (
-                  <p className="text-[10px] text-gray-400 text-center mt-1 font-medium">
-                    + {pendingTopups.length - 3} more pending requests
-                  </p>
-                )}
-                <button
-                  onClick={() => setActiveTab('topups')}
-                  className="w-full mt-3 bg-blue-50 hover:bg-blue-100 text-[#002b4e] text-xs font-bold py-2.5 rounded-xl transition-all text-center select-none cursor-pointer"
-                >
-                  Manage Top-Up Queue
-                </button>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-xs text-gray-400 font-medium border border-dashed border-gray-150 rounded-xl bg-slate-50/20">
-                <span>No pending top-up requests.</span>
-              </div>
-            )}
           </div>
-        </div>
+        )}
 
         {/* Top-level Tabs (Left Column Row 2) */}
         <div className="flex border-b border-gray-200 gap-2 md:gap-6 overflow-x-auto md:overflow-x-visible pb-px w-full lg:col-start-1 lg:row-start-2 mt-4 lg:mt-0">
-          <button
-            onClick={() => setActiveTab('fees')}
-            className={`pb-3 text-xs md:text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
-              activeTab === 'fees'
-                ? 'border-[#002b4e] text-[#002b4e]'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            Platform Fee Configuration
-          </button>
-          <button
-            onClick={() => setActiveTab('ledger')}
-            className={`pb-3 text-xs md:text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
-              activeTab === 'ledger'
-                ? 'border-[#002b4e] text-[#002b4e]'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            Wallet & Ledger Adjustment
-          </button>
-          <button
-            onClick={() => setActiveTab('topups')}
-            className={`pb-3 text-xs md:text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center flex items-center justify-center gap-1.5 ${
-              activeTab === 'topups'
-                ? 'border-[#002b4e] text-[#002b4e]'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            <span>Pending Top-Up Requests</span>
-            {pendingTopups.length > 0 && (
-              <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                {pendingTopups.length}
-              </span>
-            )}
-          </button>
+          {canViewFees && (
+            <button
+              onClick={() => setActiveTab('fees')}
+              className={`pb-3 text-xs md:text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+                activeTab === 'fees'
+                  ? 'border-[#002b4e] text-[#002b4e]'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Platform Fee Configuration
+            </button>
+          )}
+          {canViewLedger && (
+            <button
+              onClick={() => setActiveTab('ledger')}
+              className={`pb-3 text-xs md:text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+                activeTab === 'ledger'
+                  ? 'border-[#002b4e] text-[#002b4e]'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Wallet & Ledger Adjustment
+            </button>
+          )}
+          {canViewTopups && (
+            <button
+              onClick={() => setActiveTab('topups')}
+              className={`pb-3 text-xs md:text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center flex items-center justify-center gap-1.5 ${
+                activeTab === 'topups'
+                  ? 'border-[#002b4e] text-[#002b4e]'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <span>Pending Top-Up Requests</span>
+              {pendingTopups.length > 0 && (
+                <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  {pendingTopups.length}
+                </span>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Active Tab Content (Left Column Row 3) */}
         <div className="lg:col-start-1 lg:row-start-3 mt-6 w-full">
           {/* TAB 1: Platform Fee Configuration */}
-          {activeTab === 'fees' && (
+          {activeTab === 'fees' && canViewFees && (
             <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-6 animate-fadeIn">
               <div className="flex items-center gap-2 mb-2">
                 <Settings size={18} className="text-[#0e2a4d]" />
@@ -710,7 +754,7 @@ export default function AdminMCreditsPage() {
           )}
 
           {/* TAB 2: Wallet & Ledger Adjustment */}
-          {activeTab === 'ledger' && (
+          {activeTab === 'ledger' && canViewLedger && (
             <div className="space-y-6 animate-fadeIn">
               
               {/* Stack Selector and Action Side-by-side */}
@@ -857,11 +901,11 @@ export default function AdminMCreditsPage() {
 
                     <button
                       type="submit"
-                      disabled={submitting || !selectedWallet}
+                      disabled={submitting || !selectedWallet || (adjustType === 'credit' ? !canGrant : !canDeduct)}
                       className="w-full bg-[#002b4e] hover:bg-[#001c33] disabled:bg-slate-300 disabled:text-gray-400 text-white font-bold text-xs py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 select-none shadow-sm"
                     >
                       {submitting && <Loader2 size={14} className="animate-spin" />}
-                      <span>Apply Wallet Change</span>
+                      <span>{(adjustType === 'credit' ? !canGrant : !canDeduct) ? 'Unauthorized for this Action' : 'Apply Wallet Change'}</span>
                     </button>
                   </form>
                 </div>
@@ -994,7 +1038,7 @@ export default function AdminMCreditsPage() {
           )}
 
           {/* TAB 3: Pending Top-Up Requests */}
-          {activeTab === 'topups' && (
+          {activeTab === 'topups' && canViewTopups && (
             <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden animate-fadeIn">
               <div className="flex flex-col gap-1 mb-6">
                 <div className="flex items-center gap-2">
@@ -1068,21 +1112,33 @@ export default function AdminMCreditsPage() {
                             <div className="flex items-center justify-center gap-2">
                               <button
                                 onClick={() => {
+                                  if (!canApprove) return;
                                   setActionTopupId(req.id);
                                   setIsApproveModalOpen(true);
                                 }}
-                                className="text-emerald-600 hover:text-emerald-800 p-1 bg-emerald-50 hover:bg-emerald-100 rounded transition-colors"
-                                title="Approve Request"
+                                disabled={!canApprove}
+                                className={`p-1 rounded transition-colors ${
+                                  canApprove 
+                                    ? 'text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 cursor-pointer' 
+                                    : 'text-gray-350 bg-gray-100 cursor-not-allowed'
+                                }`}
+                                title={canApprove ? "Approve Request" : "Unauthorized to approve top-ups"}
                               >
                                 <CheckCircle size={16} />
                               </button>
                               <button
                                 onClick={() => {
+                                  if (!canReject) return;
                                   setActionTopupId(req.id);
                                   setIsRejectModalOpen(true);
                                 }}
-                                className="text-red-600 hover:text-red-800 p-1 bg-red-50 hover:bg-red-100 rounded transition-colors"
-                                title="Reject Request"
+                                disabled={!canReject}
+                                className={`p-1 rounded transition-colors ${
+                                  canReject 
+                                    ? 'text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 cursor-pointer' 
+                                    : 'text-gray-350 bg-gray-100 cursor-not-allowed'
+                                }`}
+                                title={canReject ? "Reject Request" : "Unauthorized to reject top-ups"}
                               >
                                 <XCircle size={16} />
                               </button>

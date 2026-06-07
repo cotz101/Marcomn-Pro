@@ -108,7 +108,7 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
           <User size={18} />
           <span>View Profile</span>
         </div>
-        {profile && ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role) && (
+        {profile && (profile.is_platform_admin || ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role)) && (
           <>
             <div className="footer-link-item" onClick={() => { router.push('/settings/global'); onClose(); }}>
               <Settings size={18} className="text-[#002b4e]" />

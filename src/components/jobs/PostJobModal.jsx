@@ -245,6 +245,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           salary_range: `${formData.currency} ${formData.payAmount}/${formData.payRate}`,
           salary_numeric: parseFloat(formData.payAmount) || null,
           employment_type: formData.jobType,
+          experience_level: formData.experienceLevel,
           status: formData.postingStatus,
           required_skills: finalSkills,
           priority: formData.positionStatus === 'Active Position',
@@ -288,6 +289,33 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         }
       }
 
+      // Update related Logbook post snapshot if it exists
+      const skillPills = finalSkills.length > 0
+        ? finalSkills.map(s => `<span style="display:inline-block;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;border-radius:9999px;padding:2px 10px;font-size:12px;font-weight:700;margin:2px;">${s}</span>`).join(' ')
+        : '';
+      const tagPills = formattedTags.length > 0
+        ? formattedTags.map(t => `<span style="display:inline-block;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:9999px;padding:2px 10px;font-size:12px;font-weight:700;margin:2px;">${t}</span>`).join(' ')
+        : '';
+
+      const postContentSnapshot = [
+        `<p><strong>⚓ New Job Opportunity</strong></p>`,
+        `<p style="font-size:18px;font-weight:800;color:#000050;">${formData.title}</p>`,
+        isCompany ? `<p style="color:#475569;font-size:14px;"><strong>Company:</strong> ${identityName}</p>` : '',
+        formData.location ? `<p style="color:#475569;font-size:14px;"><strong>Location:</strong> ${formData.location}</p>` : '',
+        skillPills ? `<p style="margin-top:8px;"><strong style="font-size:13px;color:#475569;">Required Skills:</strong><br/>${skillPills}</p>` : '',
+        tagPills ? `<p style="margin-top:6px;"><strong style="font-size:13px;color:#475569;">Job Tags:</strong><br/>${tagPills}</p>` : '',
+        `<p style="margin-top:12px;"><a href="/mservices/opportunity/${jobToEdit.id}" style="color:#002b4e;font-weight:700;text-decoration:underline;">See More →</a></p>`,
+      ].filter(Boolean).join('\n');
+
+      const { error: updatePostError } = await supabase
+        .from('logbook_posts')
+        .update({ content: postContentSnapshot })
+        .ilike('content', `%href="/mservices/opportunity/${jobToEdit.id}"%`);
+      
+      if (updatePostError) {
+        console.error('Error updating logbook post snapshot:', updatePostError);
+      }
+
       setLoading(false);
       onComplete(jobData);
     } else {
@@ -303,6 +331,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           salary_range: `${formData.currency} ${formData.payAmount}/${formData.payRate}`,
           salary_numeric: salaryNumericVal,
           employment_type: formData.jobType,
+          experience_level: formData.experienceLevel,
           company_id: isCompany ? currentIdentity.id : null,
           poster_id: userId,
           status: formData.postingStatus,
