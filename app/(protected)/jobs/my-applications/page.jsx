@@ -109,7 +109,7 @@ export default function MyApplicationsPage() {
       const supabase = createClient();
       const { data: appsData, error } = await supabase
         .from('applications')
-        .select('*, job:jobs(*)')
+        .select('*, job:jobs(*, company:companies(*), poster:profiles(*))')
         .eq('applicant_id', userId)
         .order('applied_at', { ascending: false });
 
@@ -287,106 +287,72 @@ export default function MyApplicationsPage() {
     }
   };
 
-  const getStatusBadge = (status, orderStatus = null) => {
-    const baseClass = "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider";
-    if (status === 'Accepted' && orderStatus && orderStatus !== 'Active') {
-      switch (orderStatus) {
-        case 'Work Completed by Applicant':
-          return (
-            <span className={`${baseClass} bg-blue-100 text-blue-700`}>
-              Work Completed
-            </span>
-          );
-        case 'Completion Confirmed by Company':
-          return (
-            <span className={`${baseClass} bg-emerald-100 text-emerald-700`}>
-              Work Confirmed
-            </span>
-          );
-        case 'Payment Confirmed by Applicant':
-          return (
-            <span className={`${baseClass} bg-indigo-100 text-indigo-700`}>
-              Payment Confirmed
-            </span>
-          );
-        case 'Completed':
-          return (
-            <span className={`${baseClass} bg-emerald-100 text-emerald-800`}>
-              Completed
-            </span>
-          );
-        default:
-          break;
-      }
+  const renderStepper = (appStatus, orderStatus = null) => {
+    const steps = ['Applied', 'Review', 'Shortlist', 'Accepted', 'Active', 'Done'];
+    
+    let currentIndex = 0;
+    let isFailed = false;
+    let failedLabel = appStatus;
+    
+    if (appStatus === 'Pending') currentIndex = 0;
+    else if (appStatus === 'Under Review') currentIndex = 1;
+    else if (appStatus === 'Shortlisted' || appStatus === 'Offered') currentIndex = 2;
+    else if (appStatus === 'Accepted') {
+      currentIndex = 3;
+      if (orderStatus === 'Active') currentIndex = 4;
+      if (orderStatus === 'Work Completed by Applicant' || orderStatus === 'Completion Confirmed by Company' || orderStatus === 'Payment Confirmed by Applicant') currentIndex = 4;
+      if (orderStatus === 'Completed') currentIndex = 5;
     }
-    switch (status) {
-      case 'Accepted':
-        return (
-          <span className={`${baseClass} bg-green-100 text-green-700`}>
-            Accepted
-          </span>
-        );
-      case 'Offered':
-        return (
-          <span className={`${baseClass} bg-blue-100 text-blue-700`}>
-            Offer Received
-          </span>
-        );
-      case 'Expired':
-        return (
-          <span className={`${baseClass} bg-rose-100 text-rose-700`}>
-            Offer Expired
-          </span>
-        );
-      case 'Shortlisted':
-        return (
-          <span className={`${baseClass} bg-yellow-100 text-yellow-800`}>
-            Shortlisted
-          </span>
-        );
-      case 'Under Review':
-        return (
-          <span className={`${baseClass} bg-blue-100 text-blue-700`}>
-            Under Review
-          </span>
-        );
-      case 'Rejected':
-        return (
-          <span className={`${baseClass} bg-red-100 text-red-700`}>
-            Rejected
-          </span>
-        );
-      case 'Withdrawn':
-        return (
-          <span className={`${baseClass} bg-red-100 text-red-700`}>
-            Withdrawn
-          </span>
-        );
-      case 'Candidate Cancelled':
-        return (
-          <span className={`${baseClass} bg-red-100 text-red-700`}>
-            Candidate Cancelled
-          </span>
-        );
-      case 'Company Cancelled':
-        return (
-          <span className={`${baseClass} bg-red-100 text-red-700`}>
-            Company Cancelled
-          </span>
-        );
-      case 'Completed':
-        return (
-          <span className={`${baseClass} bg-emerald-100 text-emerald-800`}>
-            Completed
-          </span>
-        );
-      default:
-        return (
-          <span className={`${baseClass} bg-gray-100 text-gray-700`}>
-            {status || 'Pending'}
-          </span>
-        );
+    else if (appStatus === 'Completed') currentIndex = 5;
+    else {
+      isFailed = true;
+      if (appStatus === 'Withdrawn') currentIndex = 0;
+      else if (appStatus === 'Rejected') currentIndex = 1;
+      else if (appStatus === 'Expired') currentIndex = 2;
+      else if (appStatus.includes('Cancelled')) currentIndex = 4;
+      else currentIndex = 0;
     }
+
+    return (
+      <div className="flex w-full overflow-hidden rounded-lg border border-gray-200 mt-5 bg-gray-50 h-9 sm:h-10">
+        {steps.map((step, idx) => {
+          let displayLabel = step;
+          const isActive = idx === currentIndex && !isFailed;
+          const isPast = idx < currentIndex;
+          const isFailedStep = idx === currentIndex && isFailed;
+          
+          let bgClass = "bg-gray-100 text-gray-400";
+          if (isActive) {
+             bgClass = "bg-blue-600 text-white font-semibold";
+          } else if (isPast && !isFailed) {
+             bgClass = "bg-slate-100 text-slate-500 font-medium";
+          } else if (isFailedStep) {
+             bgClass = "bg-red-500 text-white font-semibold";
+             if (appStatus === 'Expired') bgClass = "bg-amber-500 text-white font-semibold";
+             if (appStatus === 'Withdrawn' || appStatus === 'Position Filled') bgClass = "bg-gray-400 text-white font-semibold";
+             displayLabel = failedLabel;
+          } else if (isPast && isFailed) {
+             bgClass = "bg-gray-50 text-gray-400 font-medium";
+          }
+          
+          let clipPath = 'polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%, 10px 50%)';
+          if (idx === 0) clipPath = 'polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%)';
+          if (idx === steps.length - 1) clipPath = 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 10px 50%)';
+
+          return (
+            <div 
+              key={idx} 
+              className={`flex-1 flex items-center justify-center relative ${bgClass} transition-colors -ml-[10px] first:ml-0`}
+              style={{ clipPath, paddingLeft: idx === 0 ? '0' : '10px', zIndex: steps.length - idx }}
+            >
+              <span className="text-[9px] sm:text-[11px] uppercase tracking-wider text-center px-1 truncate w-full">
+                {displayLabel}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   const getFormattedDate = (dateStr) => {
@@ -462,61 +428,131 @@ export default function MyApplicationsPage() {
             return (
               <div
                 key={app.id}
-                className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 mb-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-shadow gap-4"
+                className="flex flex-col p-6 mb-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-shadow gap-0"
               >
-                {/* Left Side: Logo and Text block wrapped in a flex container */}
-                <div className="flex items-center gap-4 min-w-0 flex-1">
-                  {/* Logo Container */}
-                  <div className="shrink-0">
-                    {job.company_logo ? (
-                      <img
-                        src={job.company_logo}
-                        alt={job.company}
-                        className="w-12 h-12 rounded-md object-cover border border-gray-200"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-md bg-blue-50 text-blue-900 flex items-center justify-center border border-blue-100">
-                        <Building size={24} />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Text Block */}
-                  <div className="min-w-0">
-                    <h3 className="text-lg font-bold text-blue-900 truncate">
-                      {job.title || 'Position Unspecified'}
-                    </h3>
-                    
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm font-medium text-gray-600">
-                      {job.company && (
-                        <span className="flex items-center gap-1.5">
-                          <Building2 size={14} className="text-gray-400 shrink-0" />
-                          {job.company}
-                        </span>
-                      )}
-                      {job.location && (
-                        <span className="flex items-center gap-1.5">
-                          <MapPin size={14} className="text-gray-400 shrink-0" />
-                          {job.location}
-                        </span>
-                      )}
+                {/* Top Section: Job Info & Status Badge */}
+                <div className="flex flex-row justify-between items-start gap-3 w-full">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    {/* Logo Container */}
+                    <div className="shrink-0">
+                      {(() => {
+                        const posterCompany = typeof job.company === 'object' ? job.company : null;
+                        
+                        // Detect if poster is a company based on joined data or legacy strings
+                        const isCompanyPoster = !!posterCompany || (typeof job.company === 'string') || !!job.company_name;
+                        
+                        // Only use logo if it's a company post. Personal avatars are explicitly ignored.
+                        const displayLogoUrl = isCompanyPoster ? (posterCompany?.logo_url || job.company_logo) : null;
+                        const shouldUseGenericIcon = !displayLogoUrl;
+                        
+                        if (!shouldUseGenericIcon) {
+                          const displayName = typeof job.company === 'string' 
+                            ? job.company 
+                            : posterCompany?.name || job.company_name || 'Company';
+                          return (
+                            <img
+                              src={displayLogoUrl}
+                              alt={displayName}
+                              className="w-10 h-10 sm:w-12 sm:h-12 rounded-md object-cover border border-gray-200"
+                            />
+                          );
+                        } else {
+                          return (
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-md bg-blue-50 text-blue-900 flex items-center justify-center border border-blue-100">
+                              <Building size={20} className="sm:w-6 sm:h-6" />
+                            </div>
+                          );
+                        }
+                      })()}
                     </div>
 
-                    <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                      <Calendar size={12} />
-                      Applied {getFormattedDate(app.applied_at)}
-                    </p>
-                  </div>
-                </div>
+                    {/* Text Block */}
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-bold text-blue-900 truncate">
+                        {job.title || 'Position Unspecified'}
+                      </h3>
+                      
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5 text-xs sm:text-sm font-medium text-gray-600">
+                        {(() => {
+                          const displayName = typeof job.company === 'string' 
+                            ? job.company 
+                            : job.company?.name || job.poster?.name || job.company_name || 'Unknown Company';
+                          
+                          return (
+                            <span className="flex items-center gap-1">
+                              <Building2 size={12} className="text-gray-400 shrink-0 sm:w-3.5 sm:h-3.5" />
+                              {displayName}
+                            </span>
+                          );
+                        })()}
+                        {job.location && (
+                          <span className="flex items-center gap-1">
+                            <MapPin size={12} className="text-gray-400 shrink-0 sm:w-3.5 sm:h-3.5" />
+                            {job.location}
+                          </span>
+                        )}
+                      </div>
 
-                {/* Right Side: Actions & Badges */}
-                <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 w-full sm:w-auto">
+                      <p className="text-[11px] sm:text-xs text-gray-400 mt-1 flex items-center gap-1">
+                        <Calendar size={12} />
+                        Applied {getFormattedDate(app.applied_at)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Top Right Badge */}
                   {(() => {
                     const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
                     const order = orderArray[0];
-                    return getStatusBadge(app.status, order?.status);
+                    if (app.status === 'Accepted' && order) {
+                      switch (order.status) {
+                        case 'Active':
+                          return (
+                            <span className="shrink-0 inline-block text-[10px] sm:text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full whitespace-nowrap">
+                              Active Engagement
+                            </span>
+                          );
+                        case 'Work Completed by Applicant':
+                          return (
+                            <span className="shrink-0 inline-block text-[10px] sm:text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-full whitespace-nowrap">
+                              Waiting for Company
+                            </span>
+                          );
+                        case 'Completion Confirmed by Company':
+                          return (
+                            <span className="shrink-0 inline-block text-[10px] sm:text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full whitespace-nowrap">
+                              Completion Confirmed
+                            </span>
+                          );
+                        case 'Payment Confirmed by Applicant':
+                          return (
+                            <span className="shrink-0 inline-block text-[10px] sm:text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full whitespace-nowrap">
+                              Payment Confirmed
+                            </span>
+                          );
+                        case 'Completed':
+                          return (
+                            <span className="shrink-0 inline-block text-[10px] sm:text-xs font-semibold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-full whitespace-nowrap">
+                              Completed
+                            </span>
+                          );
+                        default:
+                          return null;
+                      }
+                    }
+                    return null;
                   })()}
+                </div>
 
+                {/* Horizontal Stepper */}
+                {(() => {
+                  const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
+                  const order = orderArray[0];
+                  return renderStepper(app.status, order?.status);
+                })()}
+
+                {/* Dynamic Status Badges / Cancellation Infos / Action Buttons */}
+                <div className="mt-5 flex flex-col gap-3">
                   {(app.status === 'Company Cancelled' || app.status === 'Candidate Cancelled') && (() => {
                     let cancellation = app.job_cancellation;
                     if (!cancellation && app.job_cancellations?.length > 0) {
@@ -541,7 +577,7 @@ export default function MyApplicationsPage() {
                       }
 
                       return (
-                        <div className="mt-2 p-4 bg-red-50 border border-red-100 rounded-lg text-sm text-red-800 text-left w-full sm:max-w-sm">
+                        <div className="p-4 bg-red-50 border border-red-100 rounded-lg text-sm text-red-800 text-left w-full">
                           <p className="font-bold text-red-900 mb-1">{prefix} Cancellation Reason:</p>
                           <p className="mb-3">{cancellation.cancellation_reason}</p>
                           
@@ -563,100 +599,77 @@ export default function MyApplicationsPage() {
                     return null;
                   })()}
 
-                  {app.status === 'Offered' && (
-                    <div className="flex flex-col items-center gap-1.5 w-full">
-                      <button
-                        onClick={() => handleOpenAcceptModal(app)}
-                        className="px-4 py-1.5 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto text-center"
-                      >
-                        Click to Accept the Offer
-                      </button>
-                      {app.offer_expires_at && (
-                        <p className="text-[10px] text-rose-500 font-semibold uppercase tracking-wider text-center">
-                          Expires: {new Date(app.offer_expires_at).toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                  )}
+                  <div className="flex flex-row flex-wrap items-center justify-end gap-2 w-full mt-1">
+                    {app.status === 'Offered' && (
+                      <div className="flex flex-col items-center gap-1 w-full sm:w-auto">
+                        <button
+                          onClick={() => handleOpenAcceptModal(app)}
+                          className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-full text-center"
+                        >
+                          Click to Accept the Offer
+                        </button>
+                        {app.offer_expires_at && (
+                          <p className="text-[10px] text-rose-500 font-semibold uppercase tracking-wider text-center">
+                            Expires: {new Date(app.offer_expires_at).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
-                  {app.status === 'Accepted' && (() => {
-                    const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
-                    const order = orderArray[0];
-                    if (!order) return null;
+                    {app.status === 'Accepted' && (() => {
+                      const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
+                      const order = orderArray[0];
+                      if (!order) return null;
 
-                    switch (order.status) {
-                      case 'Active':
-                        return (
-                          <div className="flex flex-col items-center gap-1.5 w-full">
-                            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full w-full text-center">
-                              Active Engagement
-                            </span>
-                            <button
-                              onClick={() => handleOpenWorkCompletedModal(order.id)}
-                              className="px-4 py-1.5 text-sm font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors w-full sm:w-auto text-center mt-1"
-                            >
-                              Mark Work Completed
-                            </button>
-                            <button
-                              onClick={() => handleOpenCancelModal(app)}
-                              className="px-4 py-1.5 text-sm font-semibold bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors w-full sm:w-auto text-center mt-1"
-                            >
-                              Cancel Engagement
-                            </button>
-                          </div>
-                        );
-                      case 'Work Completed by Applicant':
-                        return (
-                          <div className="flex flex-col items-center gap-1.5 w-full">
-                            <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full w-full text-center">
-                              Waiting for company confirmation
-                            </span>
-                          </div>
-                        );
-                      case 'Completion Confirmed by Company':
-                        return (
-                          <div className="flex flex-col items-center gap-1.5 w-full">
-                            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full w-full text-center mb-1">
-                              Completion Confirmed
-                            </span>
+                      switch (order.status) {
+                        case 'Active':
+                          return (
+                            <>
+                              <button
+                                onClick={() => handleOpenWorkCompletedModal(order.id)}
+                                className="px-4 py-2 text-sm font-semibold bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors flex-1 min-w-[140px] text-center"
+                              >
+                                Mark Work Completed
+                              </button>
+                              <button
+                                onClick={() => handleOpenCancelModal(app)}
+                                className="px-4 py-2 text-sm font-semibold bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors flex-1 min-w-[140px] text-center"
+                              >
+                                Cancel Engagement
+                              </button>
+                            </>
+                          );
+                        case 'Work Completed by Applicant':
+                          return null; // Top badge handles this visually
+                        case 'Completion Confirmed by Company':
+                          return (
                             <button
                               onClick={() => handleOpenConfirmPaymentModal(order.id)}
-                              className="px-4 py-1.5 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto text-center"
+                              className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-1 min-w-[140px] text-center"
                             >
                               Press to Confirm Payment Received
                             </button>
-                          </div>
-                        );
-                      case 'Payment Confirmed by Applicant':
-                        return (
-                          <div className="flex flex-col items-center gap-1.5 w-full text-center">
-                            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full w-full">
-                              Payment received confirmed
-                            </span>
-                            <p className="text-xs text-gray-500 mt-1">
+                          );
+                        case 'Payment Confirmed by Applicant':
+                          return (
+                            <p className="text-xs text-gray-500 text-center sm:text-right w-full mb-2">
                               Waiting for company to close engagement
                             </p>
-                          </div>
-                        );
-                      case 'Completed':
-                        return (
-                          <div className="flex flex-col items-center gap-1.5 w-full">
-                            <span className="text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-full w-full text-center">
-                              Completed
-                            </span>
-                          </div>
-                        );
-                      default:
-                        return null;
-                    }
-                  })()}
+                          );
+                        case 'Completed':
+                          return null;
+                        default:
+                          return null;
+                      }
+                    })()}
 
-                  <Link
-                    href={`/mservices/opportunity/${app.job_id}?source=my-applications`}
-                    className="px-4 py-2 text-sm font-semibold text-blue-900 border border-blue-900 rounded-lg hover:bg-blue-50 transition-colors w-full sm:w-auto text-center mt-1"
-                  >
-                    View Job
-                  </Link>
+                    <Link
+                      href={`/mservices/opportunity/${app.job_id}?source=my-applications`}
+                      className="px-4 py-2 text-sm font-semibold text-blue-900 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors flex-1 min-w-[140px] text-center"
+                    >
+                      View Job
+                    </Link>
+                  </div>
                 </div>
               </div>
             );
