@@ -132,22 +132,24 @@ export default function GlobalSettingsPage() {
       
       {/* Navigation and Title */}
       <button
-        onClick={() => router.push('/profile')}
+        onClick={() => router.push('/admin')}
         className="flex items-center gap-2 text-gray-500 hover:text-[#002b4e] transition-colors mb-6 text-sm font-bold cursor-pointer"
       >
         <ArrowLeft size={16} />
-        <span>Back to Profile</span>
+        <span>Back to Platform Admin</span>
       </button>
 
-      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm mb-6 flex items-start gap-4">
-        <div className="p-3 bg-blue-50 text-blue-950 rounded-xl flex items-center justify-center shrink-0">
-          <ShieldCheck size={24} />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-[#0e2a4d] leading-tight">Global System Settings</h1>
-          <p className="text-sm text-gray-500 mt-1 font-medium">
-            Manage administrative platform configuration, system branding preferences, and global logo assets.
-          </p>
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm mb-6 relative overflow-hidden">
+        <div className="relative z-10 px-4 py-4 md:px-6 md:py-5 flex items-start gap-4">
+          <div className="p-3 bg-blue-50 text-blue-950 rounded-xl flex items-center justify-center shrink-0">
+            <ShieldCheck size={24} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-[#0e2a4d] leading-tight">Global System Settings</h1>
+            <p className="text-sm text-gray-500 mt-1 font-medium">
+              Manage administrative platform configuration, system branding preferences, and global logo assets.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -155,7 +157,7 @@ export default function GlobalSettingsPage() {
       <div className="space-y-6">
         
         {/* Section: Branding Settings */}
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden p-6">
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden px-4 py-4 md:px-6 md:py-5">
           <div className="border-b border-gray-100 pb-4 mb-6">
             <h2 className="text-base font-bold text-[#0e2a4d]">Branding Settings</h2>
             <p className="text-xs text-gray-500 mt-1 font-medium">

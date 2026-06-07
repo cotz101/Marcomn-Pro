@@ -22,7 +22,11 @@ import {
   Clock,
   Briefcase,
   AlertTriangle,
-  ClipboardList
+  ClipboardList,
+  ChevronLeft,
+  ChevronRight,
+  ArrowDown,
+  ArrowUp
 } from 'lucide-react';
 import { 
   getFinanceDashboardSummary, 
@@ -40,11 +44,34 @@ export default function AdminFinancePage() {
 
   // States
   const [activeTab, setActiveTab] = useState('overview'); // overview, transactions, topups, revenue, receipts
+  const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [topupReport, setTopupReport] = useState(null);
   const [receipts, setReceipts] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [dateSortOrder, setDateSortOrder] = useState('desc');
+  const itemsPerPage = 10;
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+    setDateSortOrder('desc');
+  };
+
+  const toggleDateSort = () => {
+    setDateSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+    setCurrentPage(1);
+  };
+
+  const sortArrayByDate = (arr, dateField = 'created_at') => {
+    return [...arr].sort((a, b) => {
+      const timeA = new Date(a[dateField]).getTime();
+      const timeB = new Date(b[dateField]).getTime();
+      return dateSortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+    });
+  };
 
   // Filter values
   const [dateFrom, setDateFrom] = useState('');
@@ -92,6 +119,7 @@ export default function AdminFinancePage() {
 
   const handleApplyFilters = (e) => {
     e.preventDefault();
+    setCurrentPage(1);
     setActiveFilters({
       dateFrom,
       dateTo,
@@ -105,12 +133,59 @@ export default function AdminFinancePage() {
     setDateTo('');
     setOwnerType('all');
     setTransactionType('all');
+    setCurrentPage(1);
     setActiveFilters({
       dateFrom: '',
       dateTo: '',
       ownerType: 'all',
       transactionType: 'all'
     });
+  };
+
+  const renderPagination = (totalItems, isTop = false) => {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    if (totalPages <= 1) return null;
+    return (
+      <div className={`flex flex-col sm:flex-row items-center justify-between px-4 md:px-6 py-4 bg-white/50 gap-4 ${!isTop ? 'border-t border-gray-100' : 'border-b border-gray-100'}`}>
+        <span className="text-sm text-gray-500 font-semibold order-2 sm:order-1">
+          Page {currentPage} of {totalPages}
+        </span>
+        <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="flex gap-1.5">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(1)}
+              className="px-3 py-1.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-[#0e2a4d] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              First
+            </button>
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              className="px-4 py-1.5 rounded-full text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-[#0e2a4d] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+            >
+              <ChevronLeft size={16} /> Prev
+            </button>
+          </div>
+          <div className="flex gap-1.5">
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              className="px-4 py-1.5 rounded-full text-sm font-bold bg-[#0e2a4d] text-white hover:bg-blue-900 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+            >
+              Next <ChevronRight size={16} />
+            </button>
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(totalPages)}
+              className="px-3 py-1.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-[#0e2a4d] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Last
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Auth block
@@ -148,7 +223,7 @@ export default function AdminFinancePage() {
   }
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 py-8 font-sans w-full">
+    <div className="max-w-[1280px] mx-auto px-4 py-8 pb-[calc(var(--mobile-nav-height,72px)+env(safe-area-inset-bottom)+32px)] md:pb-8 font-sans w-full">
       {/* Navigation */}
       <div className="flex items-center gap-4 mb-6">
         <button
@@ -171,39 +246,50 @@ export default function AdminFinancePage() {
       <div className="grid grid-cols-1 gap-6 lg:gap-7 items-start mb-8">
         
         {/* Header Card (Row 1) */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-blue-50 text-blue-950 rounded-xl flex items-center justify-center shrink-0">
-              <Coins size={24} className="text-blue-900" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-[#0e2a4d] leading-tight">Platform Finance Dashboard</h1>
-              <p className="text-sm text-gray-500 mt-1 font-medium">
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none hidden md:block">
+            <Coins size={120} />
+          </div>
+          <div className="relative z-10 px-4 py-4 md:px-6 md:py-5 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex flex-col items-start max-w-2xl w-full">
+              <h1 className="text-xl md:text-2xl font-extrabold text-[#0e2a4d] inline-flex items-center gap-3 bg-[#e0f2fe] px-4 py-1.5 rounded-md w-fit">
+                Platform Finance Dashboard
+              </h1>
+              <p className="text-sm text-gray-500 mt-3 font-medium px-1">
                 Review MCredits movement, top-ups, platform revenue, refunds, and wallet activity.
               </p>
-              <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100">
+              <div className="mt-2 ml-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100">
                 <AlertTriangle size={10} />
                 <span>MCredits reporting only. Real payment gateway settlement is not connected yet.</span>
               </div>
             </div>
-          </div>
-          <div className="shrink-0 flex gap-2">
-            <button
-              onClick={() => router.push('/admin/mcredits')}
-              className="border border-[#002b4e] text-[#002b4e] hover:bg-slate-50 text-xs font-bold py-2.5 px-4 rounded-xl transition-all select-none cursor-pointer"
-            >
-              Manage Wallets & Top-Ups
-            </button>
+            <div className="shrink-0 flex gap-2">
+              <button
+                onClick={() => router.push('/admin/mcredits')}
+                className="border border-[#002b4e] text-[#002b4e] hover:bg-slate-50 text-xs font-bold py-2.5 px-4 rounded-xl transition-all select-none cursor-pointer"
+              >
+                Manage Wallets & Top-Ups
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Filter Bar (Row 2) */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter size={16} className="text-[#0e2a4d]" />
-            <h2 className="text-sm font-bold text-[#0e2a4d]">Filter Reports</h2>
+        <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Filter size={16} className="text-[#0e2a4d]" />
+              <h2 className="text-sm font-bold text-[#0e2a4d]">Filter Reports</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className="md:hidden text-xs font-bold text-gray-500 hover:text-[#0e2a4d] border border-gray-200 px-3 py-1.5 rounded-lg"
+            >
+              {showFilters ? 'Hide Filters' : 'Show Filters'}
+            </button>
           </div>
-          <form onSubmit={handleApplyFilters} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+          <form onSubmit={handleApplyFilters} className={`grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end ${showFilters ? 'grid' : 'hidden md:grid'}`}>
             <div>
               <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Date From</label>
               <input
@@ -274,53 +360,53 @@ export default function AdminFinancePage() {
         </div>
 
         {/* Tab Row (Row 3) */}
-        <div className="flex border-b border-gray-200 gap-2 md:gap-6 overflow-x-auto md:overflow-x-visible pb-px w-full flex-nowrap md:flex-wrap lg:flex-nowrap">
+        <div className="flex bg-gray-100/70 p-1.5 rounded-full gap-2 overflow-x-auto w-full flex-nowrap hide-scrollbar mb-2">
           <button
-            onClick={() => setActiveTab('overview')}
-            className={`pb-3 text-xs md:text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+            onClick={() => handleTabChange('overview')}
+            className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
               activeTab === 'overview'
-                ? 'border-[#002b4e] text-[#002b4e]'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
+                ? 'bg-[#0e2a4d] text-white shadow-md'
+                : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
             }`}
           >
             Overview
           </button>
           <button
-            onClick={() => setActiveTab('transactions')}
-            className={`pb-3 text-xs md:text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+            onClick={() => handleTabChange('transactions')}
+            className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
               activeTab === 'transactions'
-                ? 'border-[#002b4e] text-[#002b4e]'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
+                ? 'bg-[#0e2a4d] text-white shadow-md'
+                : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
             }`}
           >
             Transactions
           </button>
           <button
-            onClick={() => setActiveTab('topups')}
-            className={`pb-3 text-xs md:text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+            onClick={() => handleTabChange('topups')}
+            className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
               activeTab === 'topups'
-                ? 'border-[#002b4e] text-[#002b4e]'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
+                ? 'bg-[#0e2a4d] text-white shadow-md'
+                : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
             }`}
           >
             Top-Up Report
           </button>
           <button
-            onClick={() => setActiveTab('revenue')}
-            className={`pb-3 text-xs md:text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+            onClick={() => handleTabChange('revenue')}
+            className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
               activeTab === 'revenue'
-                ? 'border-[#002b4e] text-[#002b4e]'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
+                ? 'bg-[#0e2a4d] text-white shadow-md'
+                : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
             }`}
           >
             Platform Revenue
           </button>
           <button
-            onClick={() => setActiveTab('receipts')}
-            className={`pb-3 text-xs md:text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+            onClick={() => handleTabChange('receipts')}
+            className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
               activeTab === 'receipts'
-                ? 'border-[#002b4e] text-[#002b4e]'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
+                ? 'bg-[#0e2a4d] text-white shadow-md'
+                : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
             }`}
           >
             Receipts
@@ -342,9 +428,9 @@ export default function AdminFinancePage() {
                 <div className="space-y-6 animate-fadeIn">
                   
                   {/* Summary Cards Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                  <div className="grid grid-rows-2 grid-flow-col auto-cols-[280px] lg:grid-rows-none lg:grid-flow-row lg:grid-cols-3 lg:auto-cols-auto gap-4 lg:gap-6 overflow-x-auto max-w-full pb-4 lg:pb-0 snap-x hide-scrollbar">
                     {/* Card 1: Total Credits In */}
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-start gap-4">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm flex items-start gap-4 snap-start">
                       <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                         <TrendingUp size={20} />
                       </div>
@@ -356,7 +442,7 @@ export default function AdminFinancePage() {
                     </div>
 
                     {/* Card 2: Total Credits Out */}
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-start gap-4">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm flex items-start gap-4 snap-start">
                       <div className="p-3 bg-red-50 text-red-600 rounded-xl">
                         <TrendingDown size={20} />
                       </div>
@@ -367,8 +453,8 @@ export default function AdminFinancePage() {
                       </div>
                     </div>
 
-                    {/* Card 3: Net Movement */}
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-start gap-4">
+                    {/* Card 4: Top-Up Volume */}
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm flex items-start gap-4 snap-start">
                       <div className="p-3 bg-blue-50 text-blue-900 rounded-xl">
                         <Coins size={20} />
                       </div>
@@ -381,8 +467,8 @@ export default function AdminFinancePage() {
                       </div>
                     </div>
 
-                    {/* Card 4: Approved Top-Ups */}
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-start gap-4">
+                    {/* Card 6: Application Spends */}
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm flex items-start gap-4 snap-start">
                       <div className="p-3 bg-blue-50 text-blue-950 rounded-xl">
                         <CheckCircle size={20} className="text-blue-900" />
                       </div>
@@ -394,7 +480,7 @@ export default function AdminFinancePage() {
                     </div>
 
                     {/* Card 5: Pending Top-Ups */}
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-start gap-4">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm flex items-start gap-4 min-w-[260px] lg:min-w-0 snap-start shrink-0">
                       <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
                         <Clock size={20} />
                       </div>
@@ -405,8 +491,8 @@ export default function AdminFinancePage() {
                       </div>
                     </div>
 
-                    {/* Card 6: Platform Revenue / Fees */}
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-start gap-4">
+                    {/* Card 3: Platform MC Balance */}
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm flex items-start gap-4 snap-start">
                       <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
                         <DollarSign size={20} />
                       </div>
@@ -418,7 +504,7 @@ export default function AdminFinancePage() {
                     </div>
 
                     {/* Card 7: Refunds */}
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-start gap-4">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm flex items-start gap-4 snap-start">
                       <div className="p-3 bg-slate-50 text-slate-600 rounded-xl">
                         <RotateCcw size={20} />
                       </div>
@@ -430,7 +516,7 @@ export default function AdminFinancePage() {
                     </div>
 
                     {/* Card 8: Penalties / Compensation */}
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-start gap-4">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm flex items-start gap-4 snap-start">
                       <div className="p-3 bg-amber-50 text-amber-700 rounded-xl">
                         <AlertTriangle size={20} />
                       </div>
@@ -442,7 +528,7 @@ export default function AdminFinancePage() {
                     </div>
 
                     {/* Card 9: Admin Adjustments */}
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-start gap-4">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm flex items-start gap-4 snap-start">
                       <div className="p-3 bg-slate-50 text-gray-600 rounded-xl">
                         <Settings size={20} />
                       </div>
@@ -460,14 +546,14 @@ export default function AdminFinancePage() {
                   </div>
 
                   {/* Recent Activity Table Preview */}
-                  <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden">
+                  <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm overflow-hidden">
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center gap-2">
                         <History size={18} className="text-[#0e2a4d]" />
                         <h2 className="text-base font-bold text-[#0e2a4d]">Recent Activity</h2>
                       </div>
                       <button
-                        onClick={() => setActiveTab('transactions')}
+                        onClick={() => handleTabChange('transactions')}
                         className="text-xs font-bold text-blue-900 hover:underline cursor-pointer"
                       >
                         View All Transactions
@@ -475,25 +561,39 @@ export default function AdminFinancePage() {
                     </div>
 
                     {transactions.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs border-collapse">
+                      <>
+                        {renderPagination(transactions.length, true)}
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs border-collapse min-w-[700px]">
                           <thead>
                             <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider font-bold">
-                              <th className="pb-3 font-semibold">Date</th>
+                              <th 
+                                className="pb-3 font-semibold cursor-pointer hover:text-gray-600 transition-colors"
+                                onClick={toggleDateSort}
+                              >
+                                <div className="flex items-center gap-1">
+                                  Date
+                                  {dateSortOrder === 'desc' ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
+                                </div>
+                              </th>
                               <th className="pb-3 font-semibold">Owner</th>
                               <th className="pb-3 font-semibold">Owner Type</th>
                               <th className="pb-3 font-semibold">Type</th>
-                              <th className="pb-3 font-semibold text-right">Amount</th>
+                              <th className="pb-3 pr-4 font-semibold text-right">Amount</th>
                               <th className="pb-3 pl-4 font-semibold">Description</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100 text-gray-600 font-medium">
-                            {transactions.slice(0, 5).map((tx) => {
+                            {sortArrayByDate(transactions).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((tx) => {
                               const isCredit = tx.direction === 'credit';
                               return (
                                 <tr key={tx.id} className="hover:bg-slate-50/30">
                                   <td className="py-3 whitespace-nowrap text-gray-500 font-mono">
-                                    {new Date(tx.created_at).toLocaleString()}
+                                    <div className="hidden sm:block">{new Date(tx.created_at).toLocaleString()}</div>
+                                    <div className="flex flex-col sm:hidden">
+                                      <span className="font-bold text-gray-700 font-sans">{new Date(tx.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/ /g, '-')}</span>
+                                      <span className="text-[10px] text-gray-400 font-sans mt-0.5">{new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    </div>
                                   </td>
                                   <td className="py-3">
                                     <span className="font-bold text-[#0e2a4d]">{tx.owner_name}</span>
@@ -508,7 +608,7 @@ export default function AdminFinancePage() {
                                       {tx.transaction_type.replace('_', ' ')}
                                     </span>
                                   </td>
-                                  <td className={`py-3 text-right font-bold ${isCredit ? 'text-emerald-700' : 'text-red-700'}`}>
+                                  <td className={`py-3 pr-4 text-right font-bold ${isCredit ? 'text-emerald-700' : 'text-red-700'}`}>
                                     {isCredit ? '+' : '-'}{Number(tx.amount).toFixed(2)} MC
                                   </td>
                                   <td className="py-3 pl-4 max-w-xs text-gray-500 truncate" title={tx.description}>
@@ -520,7 +620,9 @@ export default function AdminFinancePage() {
                           </tbody>
                         </table>
                       </div>
-                    ) : (
+                      {renderPagination(transactions.length)}
+                    </>
+                  ) : (
                       <div className="text-center py-8 text-sm text-gray-400 font-medium border border-dashed border-gray-150 rounded-xl bg-slate-50/20">
                         <span>No recent transactions found.</span>
                       </div>
@@ -532,34 +634,48 @@ export default function AdminFinancePage() {
 
               {/* TAB 2: TRANSACTIONS */}
               {activeTab === 'transactions' && (
-                <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden animate-fadeIn">
+                <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm overflow-hidden animate-fadeIn">
                   <div className="flex items-center gap-2 mb-6">
                     <History size={18} className="text-[#0e2a4d]" />
                     <h2 className="text-base font-bold text-[#0e2a4d]">Wallet Transactions</h2>
                   </div>
 
                   {transactions.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs border-collapse">
+                    <>
+                      {renderPagination(transactions.length, true)}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse min-w-[900px]">
                         <thead>
                           <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider font-bold">
-                            <th className="pb-3 font-semibold">Date</th>
+                            <th 
+                              className="pb-3 font-semibold cursor-pointer hover:text-gray-600 transition-colors"
+                              onClick={toggleDateSort}
+                            >
+                              <div className="flex items-center gap-1">
+                                Date
+                                {dateSortOrder === 'desc' ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
+                              </div>
+                            </th>
                             <th className="pb-3 font-semibold">Owner</th>
                             <th className="pb-3 font-semibold">Owner Type</th>
                             <th className="pb-3 font-semibold">Type</th>
-                            <th className="pb-3 font-semibold text-right">Amount</th>
-                            <th className="pb-3 font-semibold text-right">Balance After</th>
+                            <th className="pb-3 pr-4 font-semibold text-right">Amount</th>
+                            <th className="pb-3 pr-4 font-semibold text-right">Balance After</th>
                             <th className="pb-3 pl-4 font-semibold">Description</th>
                             <th className="pb-3 font-semibold">Reference</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 text-gray-600 font-medium">
-                          {transactions.map((tx) => {
+                          {sortArrayByDate(transactions).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((tx) => {
                             const isCredit = tx.direction === 'credit';
                             return (
                               <tr key={tx.id} className="hover:bg-slate-50/30">
                                 <td className="py-3 whitespace-nowrap text-gray-500 font-mono">
-                                  {new Date(tx.created_at).toLocaleString()}
+                                  <div className="hidden sm:block">{new Date(tx.created_at).toLocaleString()}</div>
+                                  <div className="flex flex-col sm:hidden">
+                                    <span className="font-bold text-gray-700 font-sans">{new Date(tx.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/ /g, '-')}</span>
+                                    <span className="text-[10px] text-gray-400 font-sans mt-0.5">{new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                  </div>
                                 </td>
                                 <td className="py-3">
                                   <span className="font-bold text-[#0e2a4d]">{tx.owner_name}</span>
@@ -574,10 +690,10 @@ export default function AdminFinancePage() {
                                     {tx.transaction_type.replace('_', ' ')}
                                   </span>
                                 </td>
-                                <td className={`py-3 text-right font-bold ${isCredit ? 'text-emerald-700' : 'text-red-700'}`}>
+                                <td className={`py-3 pr-4 text-right font-bold ${isCredit ? 'text-emerald-700' : 'text-red-700'}`}>
                                   {isCredit ? '+' : '-'}{Number(tx.amount).toFixed(2)} MC
                                 </td>
-                                <td className="py-3 text-right font-mono text-gray-500">
+                                <td className="py-3 pr-4 text-right font-mono text-gray-500">
                                   {tx.balance_after !== null && tx.balance_after !== undefined ? `${Number(tx.balance_after).toFixed(2)} MC` : '—'}
                                 </td>
                                 <td className="py-3 pl-4 max-w-xs text-gray-500 truncate" title={tx.description}>
@@ -586,8 +702,16 @@ export default function AdminFinancePage() {
                                 <td className="py-3 text-gray-400 font-mono text-[10px]">
                                   {tx.reference_type ? (
                                     <div title={`${tx.reference_type}: ${tx.reference_id}`}>
-                                      <span className="capitalize block text-gray-600 font-bold">{tx.reference_type.replace('_', ' ')}</span>
-                                      <span className="block mt-0.5">{tx.reference_id?.substring(0, 8)}...</span>
+                                      {tx.job_title ? (
+                                        <span className="capitalize block text-[#0e2a4d] font-bold">
+                                          {tx.reference_type === 'job_posting' ? 'Job posting fee' : 'Applicant acceptance fee'} <br/> <span className="text-gray-600 font-medium">{tx.job_title}</span>
+                                        </span>
+                                      ) : (
+                                        <>
+                                          <span className="capitalize block text-gray-600 font-bold">{tx.reference_type.replace('_', ' ')}</span>
+                                          <span className="block mt-0.5">{tx.reference_id?.substring(0, 8)}...</span>
+                                        </>
+                                      )}
                                     </div>
                                   ) : '—'}
                                 </td>
@@ -597,7 +721,9 @@ export default function AdminFinancePage() {
                         </tbody>
                       </table>
                     </div>
-                  ) : (
+                    {renderPagination(transactions.length)}
+                  </>
+                ) : (
                     <div className="text-center py-12 text-sm text-gray-400 font-medium border border-dashed border-gray-150 rounded-xl bg-slate-50/20">
                       <FileText className="mx-auto mb-2 text-gray-300" size={32} />
                       <span>No transactions found matching the filters.</span>
@@ -611,26 +737,26 @@ export default function AdminFinancePage() {
                 <div className="space-y-6 animate-fadeIn">
                   
                   {/* Stats card grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm">
                       <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Approved Amount</span>
                       <span className="block text-lg font-extrabold text-[#0e2a4d] mt-1">{topupReport.approvedAmount.toFixed(2)} MC</span>
                       <span className="block text-[10px] text-gray-400 mt-0.5">{topupReport.totalApproved} approved requests</span>
                     </div>
                     
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm">
                       <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pending Amount</span>
                       <span className="block text-lg font-extrabold text-amber-600 mt-1">{topupReport.pendingAmount.toFixed(2)} MC</span>
                       <span className="block text-[10px] text-gray-400 mt-0.5">{topupReport.totalPending} requests awaiting review</span>
                     </div>
 
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm">
                       <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Personal Top-Ups</span>
                       <span className="block text-lg font-extrabold text-[#0e2a4d] mt-1">{topupReport.userApprovedAmount.toFixed(2)} MC</span>
                       <span className="block text-[10px] text-gray-400 mt-0.5">{topupReport.userApprovedCount} instant user requests</span>
                     </div>
 
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm">
                       <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Company Approved</span>
                       <span className="block text-lg font-extrabold text-[#0e2a4d] mt-1">{topupReport.companyApprovedAmount.toFixed(2)} MC</span>
                       <span className="block text-[10px] text-gray-400 mt-0.5">{topupReport.companyApprovedCount} approved corporate requests</span>
@@ -638,32 +764,46 @@ export default function AdminFinancePage() {
                   </div>
 
                   {/* Requests Table */}
-                  <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden">
+                  <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm overflow-hidden">
                     <div className="flex items-center gap-2 mb-6">
                       <CreditCard size={18} className="text-[#0e2a4d]" />
                       <h2 className="text-base font-bold text-[#0e2a4d]">Top-Up Requests List</h2>
                     </div>
 
                     {topupReport.requests.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs border-collapse">
+                      <>
+                        {renderPagination(topupReport.requests.length, true)}
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs border-collapse min-w-[800px]">
                           <thead>
                             <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider font-bold">
-                              <th className="pb-3 font-semibold">Date</th>
+                              <th 
+                                className="pb-3 font-semibold cursor-pointer hover:text-gray-600 transition-colors"
+                                onClick={toggleDateSort}
+                              >
+                                <div className="flex items-center gap-1">
+                                  Date
+                                  {dateSortOrder === 'desc' ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
+                                </div>
+                              </th>
                               <th className="pb-3 font-semibold">Owner</th>
                               <th className="pb-3 font-semibold">Owner Type</th>
-                              <th className="pb-3 font-semibold text-right">Amount</th>
+                              <th className="pb-3 pr-4 font-semibold text-right">Amount</th>
                               <th className="pb-3 font-semibold">Status</th>
                               <th className="pb-3 pl-4 font-semibold">Remarks</th>
                               <th className="pb-3 font-semibold">Requested By</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100 text-gray-600 font-medium">
-                            {topupReport.requests.map((req) => {
+                            {sortArrayByDate(topupReport.requests).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((req) => {
                               return (
                                 <tr key={req.id} className="hover:bg-slate-50/30">
                                   <td className="py-3 whitespace-nowrap text-gray-500 font-mono">
-                                    {new Date(req.created_at).toLocaleString()}
+                                    <div className="hidden sm:block">{new Date(req.created_at).toLocaleString()}</div>
+                                    <div className="flex flex-col sm:hidden">
+                                      <span className="font-bold text-gray-700 font-sans">{new Date(req.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/ /g, '-')}</span>
+                                      <span className="text-[10px] text-gray-400 font-sans mt-0.5">{new Date(req.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    </div>
                                   </td>
                                   <td className="py-3">
                                     <span className="font-bold text-[#0e2a4d]">{req.owner_name}</span>
@@ -673,7 +813,7 @@ export default function AdminFinancePage() {
                                       {req.owner_type}
                                     </span>
                                   </td>
-                                  <td className="py-3 text-right font-bold text-[#0e2a4d]">
+                                  <td className="py-3 pr-4 text-right font-bold text-[#0e2a4d]">
                                     {Number(req.amount).toFixed(2)} MC
                                   </td>
                                   <td className="py-3">
@@ -701,7 +841,9 @@ export default function AdminFinancePage() {
                           </tbody>
                         </table>
                       </div>
-                    ) : (
+                      {renderPagination(topupReport.requests.length)}
+                    </>
+                  ) : (
                       <div className="text-center py-12 text-sm text-gray-400 font-medium border border-dashed border-gray-150 rounded-xl bg-slate-50/20">
                         <span>No top-up requests found.</span>
                       </div>
@@ -716,8 +858,8 @@ export default function AdminFinancePage() {
                 <div className="space-y-6 animate-fadeIn">
                   
                   {/* Revenue metrics cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm">
                       <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Revenue</span>
                       <span className="block text-lg font-extrabold text-[#0e2a4d] mt-1">
                         {(summary.totalJobPostingFees + summary.totalApplicantAcceptanceFees + summary.totalPlatformRevenue).toFixed(2)} MC
@@ -725,7 +867,7 @@ export default function AdminFinancePage() {
                       <span className="block text-[10px] text-gray-400 mt-0.5">Fees & cancellation revenue</span>
                     </div>
 
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm">
                       <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Job Posting Fees</span>
                       <span className="block text-lg font-extrabold text-indigo-700 mt-1">
                         {summary.totalJobPostingFees.toFixed(2)} MC
@@ -733,7 +875,7 @@ export default function AdminFinancePage() {
                       <span className="block text-[10px] text-gray-400 mt-0.5">Paid by corporate profiles</span>
                     </div>
 
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm">
                       <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Acceptance Fees</span>
                       <span className="block text-lg font-extrabold text-violet-700 mt-1">
                         {summary.totalApplicantAcceptanceFees.toFixed(2)} MC
@@ -741,7 +883,7 @@ export default function AdminFinancePage() {
                       <span className="block text-[10px] text-gray-400 mt-0.5">Paid by job applicants</span>
                     </div>
 
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm">
                       <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cancellation Share</span>
                       <span className="block text-lg font-extrabold text-blue-700 mt-1">
                         {summary.totalPlatformRevenue.toFixed(2)} MC
@@ -751,7 +893,7 @@ export default function AdminFinancePage() {
                   </div>
 
                   {/* Revenue Transactions List */}
-                  <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden">
+                  <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm overflow-hidden">
                     <div className="flex items-center gap-2 mb-6">
                       <DollarSign size={18} className="text-[#0e2a4d]" />
                       <h2 className="text-base font-bold text-[#0e2a4d]">Fee & Platform Revenue Log</h2>
@@ -761,62 +903,89 @@ export default function AdminFinancePage() {
                       t.transaction_type === 'platform_revenue' || 
                       (t.transaction_type === 'spend' && (t.reference_type === 'job_posting' || t.reference_type === 'job_application'))
                     ).length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider font-bold">
-                              <th className="pb-3 font-semibold">Date</th>
-                              <th className="pb-3 font-semibold">From Account</th>
-                              <th className="pb-3 font-semibold">Account Type</th>
-                              <th className="pb-3 font-semibold">Revenue Stream</th>
-                              <th className="pb-3 text-right font-semibold">Amount</th>
-                              <th className="pb-3 pl-4 font-semibold">Details</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100 text-gray-600 font-medium">
-                            {transactions
-                              .filter(t => 
-                                t.transaction_type === 'platform_revenue' || 
-                                (t.transaction_type === 'spend' && (t.reference_type === 'job_posting' || t.reference_type === 'job_application'))
-                              )
-                              .map((tx) => {
-                                let stream = 'Other';
-                                if (tx.reference_type === 'job_posting') {
-                                  stream = 'Job Posting Fee';
-                                } else if (tx.reference_type === 'job_application') {
-                                  stream = 'Applicant Acceptance Fee';
-                                } else if (tx.transaction_type === 'platform_revenue') {
-                                  stream = 'Cancellation Platform Share';
-                                }
+                      <>
+                        {renderPagination(
+                          transactions.filter(t => 
+                            t.transaction_type === 'platform_revenue' || 
+                            (t.transaction_type === 'spend' && (t.reference_type === 'job_posting' || t.reference_type === 'job_application'))
+                          ).length, true
+                        )}
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs border-collapse min-w-[800px]">
+                            <thead>
+                              <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider font-bold">
+                                <th 
+                                  className="pb-3 font-semibold cursor-pointer hover:text-gray-600 transition-colors"
+                                  onClick={toggleDateSort}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    Date
+                                    {dateSortOrder === 'desc' ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
+                                  </div>
+                                </th>
+                                <th className="pb-3 font-semibold">From Account</th>
+                                <th className="pb-3 font-semibold">Account Type</th>
+                                <th className="pb-3 font-semibold">Revenue Stream</th>
+                                <th className="pb-3 pr-4 text-right font-semibold">Amount</th>
+                                <th className="pb-3 pl-4 font-semibold">Details</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 text-gray-600 font-medium">
+                              {sortArrayByDate(transactions)
+                                .filter(t => 
+                                  t.transaction_type === 'platform_revenue' || 
+                                  (t.transaction_type === 'spend' && (t.reference_type === 'job_posting' || t.reference_type === 'job_application'))
+                                )
+                                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                                .map((tx) => {
+                                  let stream = 'Other';
+                                  if (tx.reference_type === 'job_posting') {
+                                    stream = 'Job Posting Fee';
+                                  } else if (tx.reference_type === 'job_application') {
+                                    stream = 'Applicant Acceptance Fee';
+                                  } else if (tx.transaction_type === 'platform_revenue') {
+                                    stream = 'Cancellation Platform Share';
+                                  }
 
-                                return (
-                                  <tr key={tx.id} className="hover:bg-slate-50/30">
-                                    <td className="py-3 whitespace-nowrap text-gray-500 font-mono">
-                                      {new Date(tx.created_at).toLocaleString()}
-                                    </td>
-                                    <td className="py-3 font-bold text-[#0e2a4d]">
-                                      {tx.owner_name}
-                                    </td>
-                                    <td className="py-3 capitalize">
-                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 border border-gray-100 text-slate-700">
-                                        {tx.owner_type}
-                                      </span>
-                                    </td>
-                                    <td className="py-3 whitespace-nowrap font-bold text-[#0e2a4d]">
-                                      {stream}
-                                    </td>
-                                    <td className="py-3 text-right font-extrabold text-indigo-700">
-                                      {Number(tx.amount).toFixed(2)} MC
-                                    </td>
-                                    <td className="py-3 pl-4 text-gray-500 max-w-xs truncate" title={tx.description}>
-                                      {tx.description || '—'}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                          </tbody>
-                        </table>
-                      </div>
+                                  return (
+                                    <tr key={tx.id} className="hover:bg-slate-50/30">
+                                      <td className="py-3 whitespace-nowrap text-gray-500 font-mono">
+                                        <div className="hidden sm:block">{new Date(tx.created_at).toLocaleString()}</div>
+                                        <div className="flex flex-col sm:hidden">
+                                          <span className="font-bold text-gray-700 font-sans">{new Date(tx.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/ /g, '-')}</span>
+                                          <span className="text-[10px] text-gray-400 font-sans mt-0.5">{new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                      </td>
+                                      <td className="py-3 font-bold text-[#0e2a4d]">
+                                        {tx.owner_name}
+                                      </td>
+                                      <td className="py-3 capitalize">
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 border border-gray-100 text-slate-700">
+                                          {tx.owner_type}
+                                        </span>
+                                      </td>
+                                      <td className="py-3 whitespace-nowrap font-bold text-[#0e2a4d]">
+                                        {stream}
+                                      </td>
+                                      <td className="py-3 pr-4 text-right font-extrabold text-indigo-700">
+                                        {Number(tx.amount).toFixed(2)} MC
+                                      </td>
+                                      <td className="py-3 pl-4 text-gray-500 max-w-xs truncate" title={tx.description}>
+                                        {tx.description || '—'}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                            </tbody>
+                          </table>
+                        </div>
+                        {renderPagination(
+                          transactions.filter(t => 
+                            t.transaction_type === 'platform_revenue' || 
+                            (t.transaction_type === 'spend' && (t.reference_type === 'job_posting' || t.reference_type === 'job_application'))
+                          ).length
+                        )}
+                      </>
                     ) : (
                       <div className="text-center py-12 text-sm text-gray-400 font-medium border border-dashed border-gray-150 rounded-xl bg-slate-50/20">
                         <span>No revenue-generating transactions found in this period.</span>
@@ -829,7 +998,7 @@ export default function AdminFinancePage() {
 
               {/* TAB 5: RECEIPTS */}
               {activeTab === 'receipts' && (
-                <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-6 animate-fadeIn">
+                <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm space-y-6 animate-fadeIn">
                   <div className="flex items-center gap-2 mb-2">
                     <ClipboardList size={18} className="text-[#0e2a4d]" />
                     <h2 className="text-base font-bold text-[#0e2a4d]">E-Receipt Records</h2>
@@ -847,23 +1016,37 @@ export default function AdminFinancePage() {
                   </div>
 
                   {receipts.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs border-collapse">
+                    <>
+                      {renderPagination(receipts.length, true)}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse min-w-[700px]">
                         <thead>
                           <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider font-bold">
-                            <th className="pb-3 font-semibold">Issued Date</th>
+                            <th 
+                              className="pb-3 font-semibold cursor-pointer hover:text-gray-600 transition-colors"
+                              onClick={toggleDateSort}
+                            >
+                              <div className="flex items-center gap-1">
+                                Issued Date
+                                {dateSortOrder === 'desc' ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
+                              </div>
+                            </th>
                             <th className="pb-3 font-semibold">Receipt No.</th>
                             <th className="pb-3 font-semibold">Issued To</th>
-                            <th className="pb-3 font-semibold text-right">Amount</th>
+                            <th className="pb-3 pr-4 font-semibold text-right">Amount</th>
                             <th className="pb-3 pl-4 font-semibold">Method</th>
                             <th className="pb-3 font-semibold">Status</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 text-gray-600 font-medium">
-                          {receipts.map((rec) => (
+                          {sortArrayByDate(receipts, 'issued_at').slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((rec) => (
                             <tr key={rec.id} className="hover:bg-slate-50/30">
                               <td className="py-3 whitespace-nowrap text-gray-500 font-mono">
-                                {new Date(rec.issued_at).toLocaleString()}
+                                <div className="hidden sm:block">{new Date(rec.issued_at).toLocaleString()}</div>
+                                <div className="flex flex-col sm:hidden">
+                                  <span className="font-bold text-gray-700 font-sans">{new Date(rec.issued_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/ /g, '-')}</span>
+                                  <span className="text-[10px] text-gray-400 font-sans mt-0.5">{new Date(rec.issued_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
                               </td>
                               <td className="py-3 font-mono font-bold text-[#0e2a4d]">
                                 {rec.receipt_number}
@@ -872,11 +1055,11 @@ export default function AdminFinancePage() {
                                 <span className="block font-bold text-slate-800">{rec.issued_to_company_name || rec.issued_to_name}</span>
                                 <span className="block text-[10px] text-gray-400 capitalize">{rec.owner_type}</span>
                               </td>
-                              <td className="py-3 text-right font-extrabold text-emerald-700">
+                              <td className="py-3 pr-4 text-right font-extrabold text-emerald-700">
                                 {Number(rec.amount).toFixed(2)} MC
                               </td>
                               <td className="py-3 pl-4 uppercase text-[10px] font-bold text-gray-500">
-                                {rec.payment_method.replace('_', ' ')}
+                                {rec.payment_method === 'dummy_manual' ? 'Internal Record' : rec.payment_method.replace('_', ' ')}
                               </td>
                               <td className="py-3">
                                 <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
@@ -888,7 +1071,9 @@ export default function AdminFinancePage() {
                         </tbody>
                       </table>
                     </div>
-                  ) : (
+                    {renderPagination(receipts.length)}
+                  </>
+                ) : (
                     <div className="text-center py-12 text-sm text-gray-400 font-medium border border-dashed border-gray-150 rounded-xl bg-slate-50/20">
                       <FileText className="mx-auto mb-2 text-gray-300" size={32} />
                       <span>No receipts generated yet.</span>

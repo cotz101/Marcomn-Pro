@@ -16,7 +16,9 @@ import {
   Palette,
   Bell,
   ToggleRight,
-  Receipt
+  Receipt,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -24,6 +26,7 @@ export default function PlatformAdminDashboard() {
   const router = useRouter();
   const { profile } = useProfile();
   const [mounted, setMounted] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState({ 0: true });
 
   useEffect(() => {
     setMounted(true);
@@ -193,13 +196,13 @@ export default function PlatformAdminDashboard() {
   }).filter(section => section.items.length > 0);
 
   return (
-    <div className="max-w-[1000px] mx-auto px-4 py-8 font-sans w-full">
-      <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm mb-8 relative overflow-hidden">
+    <div className="max-w-[1000px] mx-auto px-4 md:px-8 py-6 md:py-8 pb-[calc(var(--mobile-nav-height,72px)+env(safe-area-inset-bottom)+32px)] md:pb-8 font-sans w-full">
+      <div className="bg-white border border-gray-100 rounded-3xl shadow-sm mb-6 md:mb-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
           <ShieldCheck size={120} />
         </div>
-        <div className="relative z-10">
-          <h1 className="text-2xl font-extrabold text-[#0e2a4d] flex items-center gap-3">
+        <div className="relative z-10 px-4 py-4 md:px-6 md:py-5 pr-20 md:pr-28">
+          <h1 className="text-xl md:text-2xl font-extrabold text-[#0e2a4d] inline-flex items-center gap-3 bg-[#e0f2fe] px-3 py-1.5 rounded-md w-fit">
             Platform Admin
           </h1>
           <p className="text-gray-500 mt-2 font-medium max-w-xl">
@@ -211,23 +214,31 @@ export default function PlatformAdminDashboard() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-10">
+      <div className="flex flex-col gap-8 md:gap-10">
         {adminSections.map((section, idx) => {
           // Only show group if there's at least one active item or if we're showing all (including coming soon)
           // For now, we show all so they see the planned structure.
           return (
-            <div key={idx} className="flex flex-col gap-4">
-              <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider pl-2">
-                {section.group}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div key={idx} className="flex flex-col gap-3 md:gap-4">
+              <div 
+                className="flex items-center justify-between cursor-pointer md:cursor-default py-1 md:py-0" 
+                onClick={() => setExpandedGroups(prev => ({ ...prev, [idx]: !prev[idx] }))}
+              >
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider pl-1 md:pl-2">
+                  {section.group}
+                </h2>
+                <div className="md:hidden text-gray-400 pr-2">
+                  {expandedGroups[idx] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                </div>
+              </div>
+              <div className={`${expandedGroups[idx] ? 'grid' : 'hidden'} md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4`}>
                 {section.items.map((item, itemIdx) => {
                   if (item.active) {
                     return (
                       <Link 
                         key={itemIdx} 
                         href={item.href}
-                        className="bg-white border border-gray-100 hover:border-blue-200 hover:shadow-md rounded-2xl p-5 transition-all flex flex-col gap-3 group"
+                        className="bg-white border border-gray-100 hover:border-blue-200 hover:shadow-md rounded-2xl p-4 md:p-6 transition-all flex flex-col gap-3 group"
                       >
                         <div className="flex items-center justify-between">
                           <div className="p-2.5 bg-blue-50 text-blue-900 rounded-xl group-hover:bg-[#0e2a4d] group-hover:text-white transition-colors">
@@ -238,7 +249,7 @@ export default function PlatformAdminDashboard() {
                           <h3 className="text-[15px] font-bold text-gray-800 group-hover:text-blue-900 transition-colors">
                             {item.name}
                           </h3>
-                          <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                          <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
                             {item.description}
                           </p>
                         </div>
@@ -248,7 +259,7 @@ export default function PlatformAdminDashboard() {
                     return (
                       <div 
                         key={itemIdx} 
-                        className="bg-gray-50 border border-gray-100 rounded-2xl p-5 flex flex-col gap-3 opacity-60"
+                        className="bg-gray-50 border border-gray-100 rounded-2xl p-4 md:p-6 flex flex-col gap-3 opacity-60"
                       >
                         <div className="flex items-center justify-between">
                           <div className="p-2.5 bg-gray-200 text-gray-500 rounded-xl">
@@ -269,7 +280,7 @@ export default function PlatformAdminDashboard() {
                           <h3 className="text-[15px] font-bold text-gray-500">
                             {item.name}
                           </h3>
-                          <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                          <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
                             {item.description}
                           </p>
                         </div>

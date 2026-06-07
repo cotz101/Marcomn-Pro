@@ -1,4 +1,4 @@
-import { User, LogOut, Plus, Check, Settings, Coins } from 'lucide-react';
+import { User, LogOut, Plus, Check, Settings, Coins, ShieldCheck } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
@@ -108,18 +108,36 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
           <User size={18} />
           <span>View Profile</span>
         </div>
-        {profile && (profile.is_platform_admin || ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role)) && (
-          <>
-            <div className="footer-link-item" onClick={() => { router.push('/settings/global'); onClose(); }}>
-              <Settings size={18} className="text-[#002b4e]" />
-              <span className="font-bold text-[#002b4e]">Global Settings</span>
+        {(() => {
+          if (!profile) return null;
+          const isLegacyAdmin = ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role);
+          const perms = profile.admin_permissions || [];
+          const hasPerm = (key) => isLegacyAdmin || perms.includes(key);
+
+          const hasGlobalSettings = hasPerm('can_manage_global_settings');
+          const hasWalletControl = hasPerm('can_view_wallet_summary') || 
+                                   hasPerm('can_view_wallet_control') || 
+                                   hasPerm('can_grant_mcredits') || 
+                                   hasPerm('can_deduct_mcredits') || 
+                                   hasPerm('can_approve_topups') || 
+                                   hasPerm('can_reject_topups');
+          const hasFinance = hasPerm('can_view_finance_reports') || 
+                             hasPerm('can_view_platform_wallet') || 
+                             hasPerm('can_view_finance_dashboard');
+          const hasRolesControl = hasPerm('can_manage_admin_roles');
+          const hasAuditLogs = hasPerm('can_view_admin_audit_logs');
+          
+          const isPlatformAdmin = isLegacyAdmin || hasGlobalSettings || hasWalletControl || hasFinance || hasRolesControl || hasAuditLogs;
+
+          if (!isPlatformAdmin) return null;
+
+          return (
+            <div className="footer-link-item" onClick={() => { router.push('/admin'); onClose(); }}>
+              <ShieldCheck size={18} className="text-[#002b4e]" />
+              <span className="font-bold text-[#002b4e]">Platform Admin</span>
             </div>
-            <div className="footer-link-item" onClick={() => { router.push('/admin/mcredits'); onClose(); }}>
-              <Coins size={18} className="text-[#002b4e]" />
-              <span className="font-bold text-[#002b4e]">MCredits / Wallet Control</span>
-            </div>
-          </>
-        )}
+          );
+        })()}
         <div className="footer-link-item" onClick={() => { router.push('/settings/notifications'); onClose(); }}>
           <Settings size={18} />
           <span>Notification Settings</span>

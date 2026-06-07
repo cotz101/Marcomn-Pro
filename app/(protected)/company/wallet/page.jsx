@@ -688,7 +688,7 @@ export default function CompanyWalletPage() {
               )}
               <div className="flex justify-between items-center">
                 <span className="text-gray-500">Payment Method</span>
-                <span className="font-bold text-gray-800 uppercase text-xs">{selectedReceipt.payment_method.replace('_', ' ')}</span>
+                <span className="font-bold text-gray-800 uppercase text-xs">{selectedReceipt.payment_method === 'dummy_manual' ? 'Internal Record' : selectedReceipt.payment_method.replace('_', ' ')}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-500">Status</span>

@@ -496,7 +496,7 @@ export default function AdminMCreditsPage() {
   }
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 py-8 font-sans w-full">
+    <div className="max-w-[1280px] mx-auto px-4 py-8 pb-[calc(var(--mobile-nav-height,72px)+env(safe-area-inset-bottom)+56px)] md:pb-8 font-sans w-full">
       {/* Navigation */}
       <button
         onClick={() => router.push('/admin')}
@@ -506,11 +506,11 @@ export default function AdminMCreditsPage() {
         <span>Back to Admin Dashboard</span>
       </button>
 
-      {/* Main Grid: Responsive layout (stacked on mobile, side-by-side on desktop) */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 lg:gap-7 items-start mb-8">
+      {/* Main Layout */}
+      <div className="flex flex-col gap-6 lg:gap-7 items-start mb-8 w-full">
         
-        {/* Header Info (Left Column Row 1) */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 lg:col-start-1 lg:row-start-1">
+        {/* Header Info */}
+        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
           <div className="flex items-start gap-4">
             <div className="p-3 bg-blue-50 text-blue-950 rounded-xl flex items-center justify-center shrink-0">
               <Coins size={24} className="text-blue-900" />
@@ -532,95 +532,36 @@ export default function AdminMCreditsPage() {
           </div>
         </div>
 
-        {/* Top-Up Queue Widget (Right Column Rows 1-3, stacks below header on mobile) */}
-        {canViewTopups && (
-          <div className="lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:sticky lg:top-24 w-full space-y-6">
-            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <CreditCard size={18} className="text-[#0e2a4d]" />
-                  <h2 className="text-sm font-bold text-[#0e2a4d]">Top-Up Queue</h2>
-                </div>
-                {pendingTopups.length > 0 && (
-                  <span className="bg-amber-50 border border-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    {pendingTopups.length} Pending
-                  </span>
-                )}
+        {/* Pending Top-Ups Alert */}
+        {canViewTopups && pendingTopups.length > 0 && activeTab !== 'topups' && (
+          <div className="w-full bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-fadeIn">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-100 text-amber-600 rounded-xl shrink-0">
+                <ShieldAlert size={20} />
               </div>
-
-              {pendingTopups.length > 0 ? (
-                <div className="space-y-3 flex-1">
-                  {pendingTopups.slice(0, 3).map((req) => (
-                    <div key={req.id} className="p-3 bg-slate-50/50 border border-gray-100 rounded-xl flex items-center justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        {req.owner_type === 'company' ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-md bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 overflow-hidden text-[10px] font-bold text-blue-600">
-                              {req.company_logo_url ? (
-                                <img src={req.company_logo_url} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                (req.company_name || 'C').charAt(0).toUpperCase()
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-bold text-[#0e2a4d] truncate">{req.company_name || 'Company'}</p>
-                              <p className="text-[9px] text-gray-400 truncate">By {req.requester_name || 'User'}</p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden text-[10px] font-bold text-slate-500">
-                              {req.requester_avatar_url ? (
-                                <img src={req.requester_avatar_url} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                (req.requester_name || 'U').charAt(0).toUpperCase()
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-bold text-[#0e2a4d] truncate">{req.requester_name || 'User'}</p>
-                              <p className="text-[9px] text-gray-400">Personal Account</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xs font-bold text-[#0e2a4d]">{Number(req.amount).toFixed(2)} MC</p>
-                        <span className="inline-block text-[8px] font-bold bg-amber-50 text-amber-700 px-1.5 py-0.2 rounded-md mt-0.5">
-                          Pending
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                  {pendingTopups.length > 3 && (
-                    <p className="text-[10px] text-gray-400 text-center mt-1 font-medium">
-                      + {pendingTopups.length - 3} more pending requests
-                    </p>
-                  )}
-                  <button
-                    onClick={() => setActiveTab('topups')}
-                    className="w-full mt-3 bg-blue-50 hover:bg-blue-100 text-[#002b4e] text-xs font-bold py-2.5 rounded-xl transition-all text-center select-none cursor-pointer"
-                  >
-                    Manage Top-Up Queue
-                  </button>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-xs text-gray-400 font-medium border border-dashed border-gray-150 rounded-xl bg-slate-50/20">
-                  <span>No pending top-up requests.</span>
-                </div>
-              )}
+              <div>
+                <h3 className="text-sm font-bold text-[#0e2a4d]">Pending Top-Up Requests</h3>
+                <p className="text-xs text-amber-800 mt-0.5"><span className="font-bold text-amber-900 bg-amber-200/50 px-1 rounded">{pendingTopups.length}</span> top-up request(s) require admin review.</p>
+              </div>
             </div>
+            <button
+              onClick={() => setActiveTab('topups')}
+              className="bg-[#0e2a4d] hover:bg-[#081a30] text-white text-xs font-bold py-2.5 px-5 rounded-xl transition-all shadow-sm cursor-pointer whitespace-nowrap self-start sm:self-auto shrink-0"
+            >
+              Review Pending Top-Ups
+            </button>
           </div>
         )}
 
-        {/* Top-level Tabs (Left Column Row 2) */}
-        <div className="flex border-b border-gray-200 gap-2 md:gap-6 overflow-x-auto md:overflow-x-visible pb-px w-full lg:col-start-1 lg:row-start-2 mt-4 lg:mt-0">
+        {/* Top-level Tabs */}
+        <div className="flex bg-gray-100/70 p-1.5 rounded-full gap-2 overflow-x-auto w-full mt-2">
           {canViewFees && (
             <button
               onClick={() => setActiveTab('fees')}
-              className={`pb-3 text-xs md:text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+              className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center flex items-center justify-center ${
                 activeTab === 'fees'
-                  ? 'border-[#002b4e] text-[#002b4e]'
-                  : 'border-transparent text-gray-400 hover:text-gray-600'
+                  ? 'bg-[#0e2a4d] text-white shadow-md'
+                  : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
               }`}
             >
               Platform Fee Configuration
@@ -629,10 +570,10 @@ export default function AdminMCreditsPage() {
           {canViewLedger && (
             <button
               onClick={() => setActiveTab('ledger')}
-              className={`pb-3 text-xs md:text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+              className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center flex items-center justify-center ${
                 activeTab === 'ledger'
-                  ? 'border-[#002b4e] text-[#002b4e]'
-                  : 'border-transparent text-gray-400 hover:text-gray-600'
+                  ? 'bg-[#0e2a4d] text-white shadow-md'
+                  : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
               }`}
             >
               Wallet & Ledger Adjustment
@@ -641,15 +582,17 @@ export default function AdminMCreditsPage() {
           {canViewTopups && (
             <button
               onClick={() => setActiveTab('topups')}
-              className={`pb-3 text-xs md:text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center flex items-center justify-center gap-1.5 ${
+              className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center flex items-center justify-center gap-2 ${
                 activeTab === 'topups'
-                  ? 'border-[#002b4e] text-[#002b4e]'
-                  : 'border-transparent text-gray-400 hover:text-gray-600'
+                  ? 'bg-[#0e2a4d] text-white shadow-md'
+                  : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
               }`}
             >
               <span>Pending Top-Up Requests</span>
               {pendingTopups.length > 0 && (
-                <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  activeTab === 'topups' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'
+                }`}>
                   {pendingTopups.length}
                 </span>
               )}
@@ -657,11 +600,11 @@ export default function AdminMCreditsPage() {
           )}
         </div>
 
-        {/* Active Tab Content (Left Column Row 3) */}
-        <div className="lg:col-start-1 lg:row-start-3 mt-6 w-full">
+        {/* Active Tab Content */}
+        <div className="mt-2 w-full">
           {/* TAB 1: Platform Fee Configuration */}
           {activeTab === 'fees' && canViewFees && (
-            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-6 animate-fadeIn">
+            <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm space-y-6 animate-fadeIn">
               <div className="flex items-center gap-2 mb-2">
                 <Settings size={18} className="text-[#0e2a4d]" />
                 <h2 className="text-base font-bold text-[#0e2a4d]">Platform Fee Configuration</h2>
@@ -761,7 +704,7 @@ export default function AdminMCreditsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 {/* Select Wallet block */}
-                <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+                <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm flex flex-col justify-between">
                   <div>
                     <h2 className="text-base font-bold text-[#0e2a4d] mb-4">Select Wallet</h2>
                     
@@ -839,7 +782,7 @@ export default function AdminMCreditsPage() {
                 </div>
 
                 {/* Ledger Adjustment Actions block */}
-                <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm">
                   <h2 className="text-base font-bold text-[#0e2a4d] mb-4">Ledger Adjustment</h2>
 
                   <form onSubmit={handleAdjustmentSubmit} className="space-y-4">
@@ -912,7 +855,7 @@ export default function AdminMCreditsPage() {
               </div>
 
               {/* Wallet Transaction Audit Trail under adjusts */}
-              <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden">
+              <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm overflow-hidden">
                 <div className="flex items-center gap-2 mb-6">
                   <History size={18} className="text-[#0e2a4d]" />
                   <h2 className="text-base font-bold text-[#0e2a4d]">Wallet Transaction Audit Trail</h2>
@@ -1039,7 +982,7 @@ export default function AdminMCreditsPage() {
 
           {/* TAB 3: Pending Top-Up Requests */}
           {activeTab === 'topups' && canViewTopups && (
-            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden animate-fadeIn">
+            <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm overflow-hidden animate-fadeIn">
               <div className="flex flex-col gap-1 mb-6">
                 <div className="flex items-center gap-2">
                   <CreditCard size={18} className="text-[#0e2a4d]" />
@@ -1250,6 +1193,9 @@ export default function AdminMCreditsPage() {
           </div>
         </div>
       )}
+
+      {/* Robust Mobile Bottom Spacer */}
+      <div className="block h-[calc(var(--mobile-nav-height,72px)+env(safe-area-inset-bottom)+56px)] md:hidden w-full shrink-0" aria-hidden="true" />
     </div>
   );
 }

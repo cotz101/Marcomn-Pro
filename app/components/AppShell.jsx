@@ -43,7 +43,7 @@ import { createClient } from '@/lib/supabase';
 export default function AppShell({ children, userEmail, userId }) {
   const router = useRouter();
   const pathname = usePathname();
-  const isWideAdminRoute = pathname?.startsWith('/admin/mcredits') || pathname?.startsWith('/admin/finance');
+  const isWideAdminRoute = pathname?.startsWith('/admin');
   const { 
     profile, setProfile, onboardingCompleted, setOnboardingCompleted,
     companies, refreshCompanies, currentIdentity, setCurrentIdentity,
@@ -492,7 +492,7 @@ export default function AppShell({ children, userEmail, userId }) {
       )}
 
       {/* Contextual Speed Dial FAB */}
-      {!pathname?.startsWith('/messages') && !pathname?.startsWith('/profile') && !pathname?.startsWith('/company/') && (
+      {!pathname?.startsWith('/messages') && !pathname?.startsWith('/profile') && !pathname?.startsWith('/company/') && !pathname?.startsWith('/admin') && !pathname?.startsWith('/settings') && (
         <>
           {isFabExpanded && (
             <div className="fab-overlay show" onClick={() => setIsFabExpanded(false)}></div>
@@ -599,13 +599,13 @@ export default function AppShell({ children, userEmail, userId }) {
             </div>
           ) : (
             <div className={`main-grid ${
-              (pathname?.startsWith('/jobs/my-postings') || pathname?.endsWith('/wallet') || pathname?.startsWith('/admin/mcredits') || pathname?.startsWith('/admin/finance')) ? 'hide-sidebar-right' : ''
+              (pathname?.startsWith('/jobs/my-postings') || pathname?.endsWith('/wallet') || pathname?.startsWith('/admin')) ? 'hide-sidebar-right' : ''
             }`}>
               <SidebarLeft />
               <div className="center-feed">
                 {children}
               </div>
-              {!(pathname?.startsWith('/jobs/my-postings') || pathname?.endsWith('/wallet') || pathname?.startsWith('/admin/mcredits') || pathname?.startsWith('/admin/finance')) && <SidebarRight />}
+              {!(pathname?.startsWith('/jobs/my-postings') || pathname?.endsWith('/wallet') || pathname?.startsWith('/admin')) && <SidebarRight />}
             </div>
           )}
         </div>

@@ -226,6 +226,26 @@ export async function getFinanceTransactions(filters = {}) {
     const uniqueUserIds = [...new Set(userIds)];
     const uniqueCompanyIds = [...new Set(companyIds)];
 
+    // Batch resolve job details
+    const jobIds = [];
+    txs?.forEach(tx => {
+      if ((tx.reference_type === 'job_posting' || tx.reference_type === 'job_application') && tx.reference_id) {
+        jobIds.push(tx.reference_id);
+      }
+    });
+    const uniqueJobIds = [...new Set(jobIds)];
+
+    const jobMap = {};
+    if (uniqueJobIds.length > 0) {
+      const { data: jobs } = await supabase
+        .from('jobs')
+        .select('id, title')
+        .in('id', uniqueJobIds);
+      jobs?.forEach(j => {
+        jobMap[j.id] = j.title;
+      });
+    }
+
     const userMap = {};
     if (uniqueUserIds.length > 0) {
       const { data: profiles } = await supabase
@@ -266,19 +286,36 @@ export async function getFinanceTransactions(filters = {}) {
         ownerAvatar = company?.logo_url || null;
       }
 
+      let description = tx.justification_note || tx.description || '';
+      
+      // Fallback description formatting for jobs
+      let jobTitleFallback = null;
+      if (tx.reference_type === 'job_posting' || tx.reference_type === 'job_application') {
+        if (tx.reference_id) {
+          const jobTitle = jobMap[tx.reference_id];
+          if (jobTitle) {
+            jobTitleFallback = jobTitle;
+            description = `${tx.reference_type === 'job_posting' ? 'Job posting fee' : 'Applicant acceptance fee'} — ${jobTitle}`;
+          } else {
+            description = `${tx.reference_type === 'job_posting' ? 'Job posting fee' : 'Applicant acceptance fee'} — Job reference: ${tx.reference_id.substring(0, 8)}...`;
+          }
+        }
+      }
+
       return {
         id: tx.id,
         created_at: tx.created_at,
         transaction_type: tx.transaction_type,
         direction: tx.direction,
         amount: tx.amount,
-        description: tx.justification_note || tx.description || '',
+        description: description,
         reference_type: tx.reference_type,
         reference_id: tx.reference_id,
         balance_after: tx.balance_after,
         owner_name: ownerName,
         owner_avatar: ownerAvatar,
-        owner_type: ownerType
+        owner_type: ownerType,
+        job_title: jobTitleFallback
       };
     }) || [];
 
