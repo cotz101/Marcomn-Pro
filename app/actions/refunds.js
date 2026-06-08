@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
+import { createClient, createServiceClient } from '@/lib/supabase-server';
 import {
   getMCreditSetting,
 } from '@/lib/services/mcreditService';
@@ -66,7 +66,9 @@ async function getWalletId(supabase, ownerType, ownerId = null) {
  * purchase_completed | spend | refund | adjustment | penalty | platform_revenue
  */
 async function creditWallet(supabase, { walletId, type, amount, justification, referenceType, referenceId }) {
-  const { data, error } = await supabase.rpc('adjust_wallet_balance', {
+  // Use service client to bypass RLS and execute privilege restrictions on adjust_wallet_balance
+  const serviceSupabase = createServiceClient();
+  const { data, error } = await serviceSupabase.rpc('adjust_wallet_balance', {
     p_wallet_id: walletId,
     p_amount: Number(amount),
     p_direction: 'credit',

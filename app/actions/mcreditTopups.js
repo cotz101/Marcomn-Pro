@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
+import { createClient, createServiceClient } from '@/lib/supabase-server';
 import { createPlatformNotification } from './notifications';
 import { isPlatformAdmin, userHasAdminPermission } from '@/lib/adminPermissions';
 import { logPlatformAdminAction } from '@/lib/adminAuditLogger';
@@ -45,37 +45,12 @@ export async function createTopupRequest({ ownerType, ownerId, amount, remarks }
       }
     }
 
-    // ── Personal top-up: instant credit via SECURITY DEFINER RPC ──────────
-    if (ownerType === 'user') {
-      const { data: result, error: rpcError } = await supabase.rpc('instant_personal_topup', {
-        p_requester_id: user.id,
-        p_amount: Number(amount),
-        p_remarks: remarks || null,
-      });
-
-      if (rpcError) throw new Error(`Instant top-up failed: ${rpcError.message}`);
-      if (!result) throw new Error('No result returned from instant top-up RPC');
-
-      // Create receipt for instant topup
-      try {
-        const { createReceiptForTopup } = await import('./mcreditReceipts');
-        await createReceiptForTopup({
-          topupRequestId: result.request_id,
-          transactionId: result.tx_id
-        });
-      } catch (receiptErr) {
-        console.error('Failed to generate receipt for instant topup:', receiptErr);
-      }
-
-      return { success: true, instantCredit: true, result };
-    }
-
-    // ── Company top-up: insert as Pending, wait for admin approval ─────────
+    // ── Top-up: insert as Pending, wait for admin approval ─────────
     const { data: request, error: insertError } = await supabase
       .from('mcredit_topup_requests')
       .insert({
         requester_id: user.id,
-        owner_type: 'company',
+        owner_type: ownerType,
         owner_id: ownerId,
         amount: Number(amount),
         status: 'Pending',
@@ -89,12 +64,22 @@ export async function createTopupRequest({ ownerType, ownerId, amount, remarks }
 
     // Send notifications to all admins
     try {
-      const { data: companyData } = await supabase
-        .from('companies')
-        .select('name')
-        .eq('id', ownerId)
-        .single();
-      const companyName = companyData?.name || 'Company';
+      let displayName = 'User';
+      if (ownerType === 'user') {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', ownerId)
+          .single();
+        displayName = profile?.full_name || 'Personal Account';
+      } else {
+        const { data: companyData } = await supabase
+          .from('companies')
+          .select('name')
+          .eq('id', ownerId)
+          .single();
+        displayName = companyData?.name || 'Company';
+      }
 
       const { data: adminProfiles } = await supabase
         .from('profiles')
@@ -107,7 +92,7 @@ export async function createTopupRequest({ ownerType, ownerId, amount, remarks }
             createPlatformNotification({
               userId: admin.id,
               title: 'New Top-Up Request',
-              message: `New company MCredits top-up request submitted by ${companyName}.`,
+              message: `New MCredits top-up request submitted by ${displayName}.`,
               type: 'wallet_topup',
               linkUrl: '/admin/mcredits',
               senderId: null
@@ -213,8 +198,9 @@ export async function approveTopupRequest(requestId, adminNotes) {
       ? 'Personal MCredits top-up approved' 
       : 'Company MCredits top-up approved';
 
-    // Credit wallet using RPC
-    const { data: txId, error: creditError } = await supabase.rpc('adjust_wallet_balance', {
+    // Credit wallet using RPC (using service client to bypass RLS and restricted EXECUTE privileges)
+    const serviceSupabase = createServiceClient();
+    const { data: txId, error: creditError } = await serviceSupabase.rpc('adjust_wallet_balance', {
       p_wallet_id: walletId,
       p_amount: request.amount,
       p_direction: 'credit',
@@ -230,7 +216,7 @@ export async function approveTopupRequest(requestId, adminNotes) {
     if (creditError) {
       // Fallback to admin_grant if purchase_completed is not allowed
       if (creditError.message.includes('Invalid transaction_type')) {
-        const { data: fallbackTxId, error: fallbackError } = await supabase.rpc('adjust_wallet_balance', {
+        const { data: fallbackTxId, error: fallbackError } = await serviceSupabase.rpc('adjust_wallet_balance', {
           p_wallet_id: walletId,
           p_amount: request.amount,
           p_direction: 'credit',

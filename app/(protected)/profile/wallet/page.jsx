@@ -133,7 +133,7 @@ export default function PersonalWalletPage() {
         remarks: topupRemarks
       });
       if (!res.success) throw new Error(res.error);
-      setTopupMessage({ type: 'success', text: `${Number(topupAmount).toFixed(2)} MCredits credited to your wallet instantly.` });
+      setTopupMessage({ type: 'success', text: `Top-up request for ${Number(topupAmount).toFixed(2)} MC submitted and pending admin approval.` });
       setTopupAmount('');
       setTopupRemarks('');
       await fetchWalletData();
@@ -282,7 +282,7 @@ export default function PersonalWalletPage() {
                   MCredits are used to accept job offers and access selected MarComn services.
                 </p>
                 <p>
-                  Personal top-ups are instant in dummy mode.
+                  Personal top-ups require platform admin approval.
                 </p>
               </div>
             </div>
@@ -472,7 +472,7 @@ export default function PersonalWalletPage() {
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <h2 className="text-lg font-bold text-[#0e2a4d] mb-2">Request MCredits Top-Up</h2>
             <p className="text-xs text-gray-500 mb-4">
-              Personal instant top-ups are credited immediately in dummy mode.
+              Personal top-ups require platform admin approval.
             </p>
             {topupMessage && (
               <div className={`mb-4 px-4 py-3 rounded-xl text-sm font-semibold ${
