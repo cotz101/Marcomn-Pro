@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import DiscoveryGrid from './DiscoveryGrid';
-import { UserPlus, Users, Link as LinkIcon, Mail, Search } from 'lucide-react';
+import FriendsGrid from './FriendsGrid';
+import FriendRequestsGrid from './FriendRequestsGrid';
+import { UserPlus, Users, Link as LinkIcon, Mail, Search, UserCheck } from 'lucide-react';
 
 export default function ConnectionsHub() {
   const [activeTab, setActiveTab] = useState('discovery');
@@ -10,6 +12,8 @@ export default function ConnectionsHub() {
 
   const tabs = [
     { id: 'discovery', label: 'Discover', icon: UserPlus },
+    { id: 'friends', label: 'Friends', icon: UserCheck },
+    { id: 'requests', label: 'Requests', icon: Mail },
     { id: 'following', label: 'Following', icon: LinkIcon },
   ];
 
@@ -50,7 +54,11 @@ export default function ConnectionsHub() {
           </div>
 
           <div className="connections-content w-full min-w-0">
-            <DiscoveryGrid activeTab={activeTab} searchTerm={searchTerm} />
+            {activeTab === 'friends' && <FriendsGrid />}
+            {activeTab === 'requests' && <FriendRequestsGrid />}
+            {(activeTab === 'discovery' || activeTab === 'following') && (
+              <DiscoveryGrid activeTab={activeTab} searchTerm={searchTerm} />
+            )}
           </div>
       </div>
     </div>

@@ -62,7 +62,12 @@ export default function AppShell({ children, userEmail, userId }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadMessageCount = notifications.filter(n => 
+    !n.is_read && 
+    ['message', 'direct_message', 'group_message', 'application_message'].includes(n.type)
+  ).length;
   
   const avatarRef = useRef(null);
   const notificationsRef = useRef(null);
@@ -228,6 +233,32 @@ export default function AppShell({ children, userEmail, userId }) {
     router.refresh();
   };
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handleResize = () => {
+        setIsMobile(window.innerWidth <= 767);
+      };
+      handleResize();
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) {
+      setShowNotifications(false);
+    }
+  }, [isMobile]);
+
+  const handleNotificationClick = (e) => {
+    e?.preventDefault();
+    if (isMobile) {
+      router.push('/notifications');
+    } else {
+      setShowNotifications(prev => !prev);
+    }
+  };
+
 
   const isCompany = currentIdentity?.type === 'company';
   const identityImage = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (profile?.profilePic || '/avatar_placeholder.png');
@@ -338,8 +369,13 @@ export default function AppShell({ children, userEmail, userId }) {
             <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
               
               {/* Message Icon (Mobile + Desktop) */}
-              <button className="header-icon-btn scale-110 md:scale-100 flex-shrink-0" onClick={() => router.push('/messages')}>
+              <button className="header-icon-btn scale-110 md:scale-100 flex-shrink-0 relative" onClick={() => router.push('/messages')}>
                 <MessageSquare size={26} />
+                {unreadMessageCount > 0 && (
+                  <span className="absolute top-0.5 right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center border-2 border-white shadow-sm animate-pulse">
+                    {unreadMessageCount}
+                  </span>
+                )}
               </button>
 
               {/* Desktop-only Notifications */}
@@ -347,7 +383,7 @@ export default function AppShell({ children, userEmail, userId }) {
                 <button 
                   ref={bellButtonRef}
                   className={`header-icon-btn relative ${showNotifications ? 'text-indigo-600 bg-indigo-50/50' : ''}`}
-                  onClick={() => setShowNotifications(!showNotifications)}
+                  onClick={handleNotificationClick}
                 >
                   <Bell size={22} />
                   {unreadCount > 0 && (
@@ -436,11 +472,8 @@ export default function AppShell({ children, userEmail, userId }) {
           <span className="mobile-nav-label">MBlogs</span>
         </Link>
         <button 
-          onClick={(e) => {
-            e.preventDefault();
-            setShowNotifications(!showNotifications);
-          }}
-          className={`mobile-nav-item relative ${showNotifications ? 'active' : ''}`}
+          onClick={handleNotificationClick}
+          className={`mobile-nav-item relative ${(showNotifications || pathname === '/notifications') ? 'active' : ''}`}
           style={{ '--active-color': '#002b4e', background: 'none', border: 'none', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
         >
           <Bell size={24} className="mobile-nav-icon" />
@@ -610,7 +643,7 @@ export default function AppShell({ children, userEmail, userId }) {
           )}
         </div>
       </main>
-      {showNotifications && (
+      {showNotifications && !isMobile && (
         <div className="sm:hidden">
           <NotificationDropdown 
             notifications={notifications}

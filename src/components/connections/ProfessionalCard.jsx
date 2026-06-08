@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserPlus, UserCheck, Users, MapPin, MessageSquare } from 'lucide-react';
+import { UserPlus, UserCheck, Users, MapPin, MessageSquare, Clock } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
+import { useProfile } from '@/app/context/ProfileContext';
+import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest, removeFriend } from '@/app/actions/friendships';
 import BaseModal from '../layout/BaseModal';
 import ProfileDetailModal from '../profile/ProfileDetailModal';
 
@@ -15,6 +17,16 @@ export default function ProfessionalCard({ profile, currentUser, onFollow }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const isOnline = profile.isOnline ?? (profile.id.charCodeAt(0) % 2 === 0); // Mock logic for demo
   const supabase = createClient();
+  const { currentIdentity } = useProfile();
+  
+  const [friendStatus, setFriendStatus] = useState(null); // { status: 'pending'|'accepted', isRequester: true|false, friendshipId: uuid }
+  const [friendActionLoading, setFriendActionLoading] = useState(false);
+  
+  const isCompanyProfile = currentIdentity?.type === 'company';
+  // Check if target profile is a company? 
+  // For now, DiscoveryGrid only shows `profiles` table which are all personal profiles!
+  // If we ever render a company here, we'd need to check. But DiscoveryGrid queries 'profiles'.
+  const canFriend = !isCompanyProfile && currentUser?.id !== profile.id;
 
   useEffect(() => {
     async function checkFollowStatus() {
@@ -48,10 +60,15 @@ export default function ProfessionalCard({ profile, currentUser, onFollow }) {
         .maybeSingle();
 
       if (profileData) setMessagePrivacy(profileData.message_privacy || 'connections');
+      
+      if (canFriend) {
+        const fs = await getFriendshipStatus(profile.id);
+        setFriendStatus(fs);
+      }
     }
 
     checkFollowStatus();
-  }, [profile.id, currentUser]);
+  }, [profile.id, currentUser, canFriend]);
 
   const handleFollowClick = async () => {
     if (!currentUser) return;
@@ -128,12 +145,9 @@ export default function ProfessionalCard({ profile, currentUser, onFollow }) {
   const handleMessageClick = async () => {
     if (!currentUser || !profile.id) return;
     
-    // Privacy check: respect profile privacy configuration (connections or anyone)
-    const areConnected = isFollowing && isFollowedBack;
-    const canMessage = currentUser.id === profile.id || messagePrivacy === 'anyone' || areConnected;
-
-    if (!canMessage) {
-      alert('This user has restricted their inbox to connections only.');
+    const isFriend = friendStatus?.status === 'accepted';
+    if (isCompanyProfile || !isFriend) {
+      alert('Direct messaging is restricted to accepted friends only.');
       return;
     }
 
@@ -186,6 +200,31 @@ export default function ProfessionalCard({ profile, currentUser, onFollow }) {
     }
   };
 
+  const handleFriendAction = async () => {
+    if (!currentUser || friendActionLoading) return;
+    setFriendActionLoading(true);
+
+    try {
+      if (!friendStatus) {
+        // Send request
+        const res = await sendFriendRequest(profile.id);
+        if (res.success) {
+          setFriendStatus({ status: 'pending', isRequester: true, friendshipId: res.friendshipId });
+        }
+      } else if (friendStatus.status === 'pending' && !friendStatus.isRequester) {
+        // Accept request
+        await acceptFriendRequest(friendStatus.friendshipId);
+        setFriendStatus({ ...friendStatus, status: 'accepted' });
+      }
+      // If it's accepted or pending (requester), do nothing here (cancel/remove via Hub tabs for now)
+    } catch (err) {
+      console.error('Friend action error:', err);
+      alert(err.message || 'Action failed');
+    } finally {
+      setFriendActionLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="professional-card card w-full">
@@ -210,11 +249,11 @@ export default function ProfessionalCard({ profile, currentUser, onFollow }) {
             <span className="text-xs font-medium tracking-wide">{profile.location || 'Global Operations'}</span>
           </div>
 
-          <div className="flex items-center justify-center gap-6 pt-4 border-t border-slate-50">
+          <div className="flex flex-wrap items-start justify-center gap-3 md:gap-4 lg:gap-6 pt-4 border-t border-slate-50">
             {currentUser?.id !== profile.id && (
               <>
                 <button 
-                  className={`flex flex-col items-center gap-1.5 font-bold text-[11px] uppercase tracking-tighter transition-all hover:scale-105 ${isFollowing ? 'text-white' : 'text-[#004173]'}`}
+                  className={`flex flex-col items-center gap-1.5 font-bold text-[11px] uppercase tracking-tighter transition-all hover:scale-105 w-[70px] text-center ${isFollowing ? 'text-white' : 'text-[#004173]'}`}
                   onClick={handleFollowClick}
                 >
                   <div className={`w-12 h-12 rounded-full border border-slate-100 flex items-center justify-center shadow-sm ${isFollowing ? 'bg-[#002b4e] text-white border-[#002b4e]' : 'bg-white text-[#004173]'}`}>
@@ -223,23 +262,72 @@ export default function ProfessionalCard({ profile, currentUser, onFollow }) {
                   <span className={isFollowing ? 'text-[#002b4e]' : 'text-[#004173]'}>{isFollowing ? 'Following' : 'Follow'}</span>
                 </button>
                 
-                <button 
-                  onClick={handleMessageClick}
-                  className="flex flex-col items-center gap-1.5 text-[#004173] font-bold text-[11px] uppercase tracking-tighter hover:opacity-80 transition-all hover:scale-105"
-                >
-                  <div className="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center text-[#004173] shadow-sm">
-                    <MessageSquare size={23} />
-                  </div>
-                  <span>Message</span>
-                </button>
+                {(() => {
+                  const isFriend = friendStatus?.status === 'accepted';
+                  const canMessage = !isCompanyProfile && isFriend;
+
+                  if (canMessage) {
+                    return (
+                      <button 
+                        onClick={handleMessageClick}
+                        className="flex flex-col items-center gap-1.5 text-[#004173] font-bold text-[11px] uppercase tracking-tighter hover:opacity-80 transition-all hover:scale-105 w-[70px] text-center"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center text-[#004173] shadow-sm shrink-0">
+                          <MessageSquare size={23} />
+                        </div>
+                        <span>Message</span>
+                      </button>
+                    );
+                  } else {
+                    return (
+                      <button 
+                        disabled
+                        className="flex flex-col items-center gap-1.5 text-slate-300 font-bold text-[11px] uppercase tracking-tighter cursor-not-allowed opacity-60 w-[70px] text-center"
+                        title="Messaging requires friendship"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 shadow-sm shrink-0">
+                          <MessageSquare size={23} />
+                        </div>
+                        <span className="leading-tight">Add Friend<br/>to Message</span>
+                      </button>
+                    );
+                  }
+                })()}
+                
+                {canFriend && (
+                  <button 
+                    className={`flex flex-col items-center gap-1.5 font-bold text-[11px] uppercase tracking-tighter transition-all hover:scale-105 w-[70px] text-center ${
+                      friendStatus?.status === 'accepted' ? 'text-emerald-600' : 
+                      friendStatus?.status === 'pending' ? 'text-amber-500' : 
+                      'text-[#004173]'
+                    }`}
+                    onClick={handleFriendAction}
+                    disabled={friendActionLoading || (friendStatus?.status === 'pending' && friendStatus.isRequester) || friendStatus?.status === 'accepted'}
+                  >
+                    <div className={`w-12 h-12 rounded-full border border-slate-100 flex items-center justify-center shadow-sm ${
+                      friendStatus?.status === 'accepted' ? 'bg-emerald-50 border-emerald-100' : 
+                      friendStatus?.status === 'pending' ? 'bg-amber-50 border-amber-100' : 
+                      'bg-white text-[#004173]'
+                    }`}>
+                      {friendStatus?.status === 'accepted' ? <UserCheck size={23} /> : 
+                       friendStatus?.status === 'pending' ? <Clock size={23} /> : 
+                       <UserPlus size={23} />}
+                    </div>
+                    <span>
+                      {friendStatus?.status === 'accepted' ? 'Friends' : 
+                       friendStatus?.status === 'pending' ? (friendStatus.isRequester ? 'Pending' : 'Accept') : 
+                       'Add Friend'}
+                    </span>
+                  </button>
+                )}
               </>
             )}
 
             <button 
-              className="flex flex-col items-center gap-1.5 text-[#004173] font-bold text-[11px] uppercase tracking-tighter hover:opacity-80 transition-all hover:scale-105"
+              className="flex flex-col items-center gap-1.5 text-[#004173] font-bold text-[11px] uppercase tracking-tighter hover:opacity-80 transition-all hover:scale-105 w-[70px] text-center"
               onClick={() => router.push(`/profile/${profile.id}`)}
             >
-              <div className="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center text-[#004173] shadow-sm">
+              <div className="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center text-[#004173] shadow-sm shrink-0">
                 <Users size={23} />
               </div>
               <span>View ID</span>

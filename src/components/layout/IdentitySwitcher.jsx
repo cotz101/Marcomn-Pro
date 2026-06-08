@@ -1,6 +1,6 @@
 import { User, LogOut, Plus, Check, Settings, Coins, ShieldCheck } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 
 export default function IdentitySwitcher({ onClose, onCreateCompany }) {
@@ -12,14 +12,31 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
     setCurrentIdentity 
   } = useProfile();
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleSwitch = (identity) => {
     setCurrentIdentity(identity);
     onClose();
+    
+    let isInvalidRoute = false;
+    
     if (identity.type === 'company') {
-      router.push(`/company/${identity.id}`);
+      // Routes invalid for company identities
+      if (pathname.includes('/profile/wallet') || pathname.includes('/jobs/my-applications') || pathname.includes('/admin')) {
+        isInvalidRoute = true;
+      }
     } else {
-      router.push('/profile');
+      // Routes invalid for user identities
+      if (pathname.includes('/company/wallet')) {
+        isInvalidRoute = true;
+      }
+    }
+
+    if (isInvalidRoute) {
+      router.push('/logbook');
+    } else {
+      // Stay on the current page and update server components context
+      router.refresh();
     }
   };
 
@@ -132,16 +149,18 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
           if (!isPlatformAdmin) return null;
 
           return (
-            <div className="footer-link-item" onClick={() => { router.push('/admin'); onClose(); }}>
-              <ShieldCheck size={18} className="text-[#002b4e]" />
-              <span className="font-bold text-[#002b4e]">Platform Admin</span>
-            </div>
+            <>
+              <div className="footer-link-item" onClick={() => { router.push('/admin'); onClose(); }}>
+                <ShieldCheck size={18} className="text-[#002b4e]" />
+                <span className="font-bold text-[#002b4e]">Platform Admin</span>
+              </div>
+              <div className="footer-link-item" onClick={() => { router.push('/settings/notifications'); onClose(); }}>
+                <Settings size={18} />
+                <span>Notification Settings</span>
+              </div>
+            </>
           );
         })()}
-        <div className="footer-link-item" onClick={() => { router.push('/settings/notifications'); onClose(); }}>
-          <Settings size={18} />
-          <span>Notification Settings</span>
-        </div>
         <div className="footer-link-item sign-out-item" onClick={handleSignOut} style={{ color: '#ff4d4f', fontWeight: '600', cursor: 'pointer' }}>
           <LogOut size={18} />
           <span>Sign Out</span>

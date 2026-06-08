@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Search, Filter, RefreshCcw, Calendar, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Loader2, Search, Filter, RefreshCcw, Calendar, AlertTriangle, ShieldCheck, ChevronLeft, ChevronRight, ArrowDown, ArrowUp } from 'lucide-react';
 import { fetchFilteredAuditLogs } from '@/app/actions/adminAuditActions';
 
 export default function AuditLogViewer() {
@@ -18,6 +18,11 @@ export default function AuditLogViewer() {
 
   // Expandable details state
   const [expandedRow, setExpandedRow] = useState(null);
+
+  // Pagination and Sorting
+  const [currentPage, setCurrentPage] = useState(1);
+  const [dateSortOrder, setDateSortOrder] = useState('desc');
+  const itemsPerPage = 10;
 
   const loadLogs = useCallback(async () => {
     setLoading(true);
@@ -49,6 +54,7 @@ export default function AuditLogViewer() {
 
   const handleApplyFilters = (e) => {
     e.preventDefault();
+    setCurrentPage(1);
     loadLogs();
   };
 
@@ -58,6 +64,7 @@ export default function AuditLogViewer() {
     setTargetType('');
     setDateFrom('');
     setDateTo('');
+    setCurrentPage(1);
     // Need a tiny delay for state to settle before reloading, or just load directly with empty args
     setLoading(true);
     fetchFilteredAuditLogs({ limit: 100 }).then(res => {
@@ -70,6 +77,34 @@ export default function AuditLogViewer() {
   const toggleRow = (id) => {
     if (expandedRow === id) setExpandedRow(null);
     else setExpandedRow(id);
+  };
+
+  const toggleDateSort = () => {
+    setDateSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+    setCurrentPage(1);
+  };
+
+  const sortedLogs = [...logs].sort((a, b) => {
+    const timeA = new Date(a.created_at).getTime();
+    const timeB = new Date(b.created_at).getTime();
+    return dateSortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+  });
+
+  const totalPages = Math.ceil(sortedLogs.length / itemsPerPage);
+  const paginatedLogs = sortedLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const renderSummary = (details) => {
+    if (!details || typeof details !== 'object') return null;
+    const entries = Object.entries(details).filter(([k,v]) => typeof v === 'string' || typeof v === 'number');
+    if (entries.length === 0) return <span className="text-xs text-gray-500 italic">See payload for details</span>;
+    return entries.map(([k, v]) => {
+      const keyName = k.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      return (
+        <div key={k} className="text-[11px] text-gray-700 font-medium leading-tight mb-0.5">
+          {keyName}: <span className="font-normal text-gray-500">{v}</span>
+        </div>
+      );
+    });
   };
 
   if (error === 'Permission denied') {
@@ -194,7 +229,18 @@ export default function AuditLogViewer() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/80 border-b border-gray-100">
-                <th className="p-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider w-[140px]">Date/Time</th>
+                <th 
+                  className="p-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider w-[140px] cursor-pointer hover:bg-slate-100/80 transition-colors group"
+                  onClick={toggleDateSort}
+                >
+                  <div className="flex items-center gap-1.5">
+                    Date/Time
+                    <div className="flex flex-col text-gray-400 group-hover:text-blue-600">
+                      <ArrowUp size={10} className={dateSortOrder === 'asc' ? 'text-blue-600' : ''} />
+                      <ArrowDown size={10} className={`-mt-0.5 ${dateSortOrder === 'desc' ? 'text-blue-600' : ''}`} />
+                    </div>
+                  </div>
+                </th>
                 <th className="p-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Actor Email</th>
                 <th className="p-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Action</th>
                 <th className="p-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Target Type</th>
@@ -210,7 +256,7 @@ export default function AuditLogViewer() {
                     <p className="text-sm font-medium text-gray-400">Fetching secure audit records...</p>
                   </td>
                 </tr>
-              ) : logs.length === 0 ? (
+              ) : paginatedLogs.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="p-12 text-center">
                     <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-3">
@@ -221,7 +267,7 @@ export default function AuditLogViewer() {
                   </td>
                 </tr>
               ) : (
-                logs.map(log => {
+                paginatedLogs.map(log => {
                   const isExpanded = expandedRow === log.id;
                   const dateObj = new Date(log.created_at);
                   const detailsStr = JSON.stringify(log.details);
@@ -254,9 +300,9 @@ export default function AuditLogViewer() {
                       </td>
                       <td className="p-4 align-top">
                         {log.details ? (
-                          <div>
-                            <div className="text-[11px] text-gray-600 font-mono truncate max-w-[200px] mb-1">
-                              {detailsStr.substring(0, 40)}{detailsStr.length > 40 ? '...' : ''}
+                          <div className="space-y-1.5">
+                            <div className="bg-gray-50 p-2 rounded-lg border border-gray-100 mb-1 max-w-[300px]">
+                              {renderSummary(log.details)}
                             </div>
                             <button 
                               onClick={() => toggleRow(log.id)}
@@ -265,8 +311,8 @@ export default function AuditLogViewer() {
                               {isExpanded ? 'Hide Payload' : 'View Payload'}
                             </button>
                             {isExpanded && (
-                              <div className="mt-2 p-3 bg-gray-900 rounded-lg overflow-x-auto">
-                                <pre className="text-[10px] text-green-400 font-mono leading-relaxed m-0">
+                              <div className="mt-2 p-3 bg-[#0e2a4d] rounded-lg overflow-x-auto max-w-[300px] sm:max-w-md">
+                                <pre className="text-[10px] text-emerald-400 font-mono leading-relaxed m-0">
                                   {JSON.stringify(log.details, null, 2)}
                                 </pre>
                               </div>
@@ -283,6 +329,49 @@ export default function AuditLogViewer() {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Section */}
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between px-4 md:px-6 py-4 bg-white/50 gap-4 border-t border-gray-100">
+            <span className="text-sm text-gray-500 font-semibold order-2 sm:order-1">
+              Page {currentPage} of {totalPages}
+            </span>
+            <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="flex gap-1.5">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(1)}
+                  className="px-3 py-1.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-[#0e2a4d] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  First
+                </button>
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  className="px-4 py-1.5 rounded-full text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-[#0e2a4d] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+                >
+                  <ChevronLeft size={16} /> Prev
+                </button>
+              </div>
+              <div className="flex gap-1.5">
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  className="px-4 py-1.5 rounded-full text-sm font-bold bg-[#0e2a4d] text-white hover:bg-blue-900 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+                >
+                  Next <ChevronRight size={16} />
+                </button>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(totalPages)}
+                  className="px-3 py-1.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-[#0e2a4d] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

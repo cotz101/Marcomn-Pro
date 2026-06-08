@@ -180,11 +180,12 @@ export default function NotificationsFeedPage() {
       );
     }
 
-    const hasCompanyContext = notification.metadata?.actor_type === 'company' || notification.metadata?.actor_company_id;
+    const isAppMsgCompany = notification.type === 'application_message' && notification.metadata?.sender_display_type === 'company';
+    const hasCompanyContext = notification.metadata?.actor_type === 'company' || notification.metadata?.actor_company_id || isAppMsgCompany;
     
     if (hasCompanyContext) {
-      const companyLogo = notification.metadata.actor_company_logo_url;
-      const companyName = notification.metadata.actor_company_name || 'Company';
+      const companyLogo = notification.metadata.actor_company_logo_url || notification.metadata.sender_avatar_url;
+      const companyName = notification.metadata.actor_company_name || notification.metadata.sender_display_name || 'Company';
       
       if (companyLogo) {
         return (

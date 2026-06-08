@@ -136,7 +136,7 @@ export function ProfileProvider({ children, userId, userEmail }) {
         currentRole: data.currentRole || '',
         bio: data.bio || '',
         location: data.location || '',
-        profilePic: data.avatar_url || DEFAULT_PROFILE.profilePic,
+        profilePic: data.avatar_url || data.profile_pic_url || DEFAULT_PROFILE.profilePic,
         coverPhoto: data.cover_photo_url || DEFAULT_PROFILE.coverPhoto,
         isSailing: data.isSailing || false,
         vesselName: data.vesselName || '',
@@ -191,7 +191,7 @@ export function ProfileProvider({ children, userId, userEmail }) {
 
   return (
     <ProfileContext.Provider value={{ 
-      profile, setProfile, loading, refreshProfile: fetchProfile, userId, 
+      profile, setProfile, loading, refreshProfile: fetchProfile, userId, userEmail,
       onboardingCompleted, setOnboardingCompleted,
       companies, setCompanies, refreshCompanies: fetchCompanies,
       currentIdentity, setCurrentIdentity,

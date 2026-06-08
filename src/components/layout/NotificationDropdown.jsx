@@ -172,13 +172,27 @@ export default function NotificationDropdown({
       );
     }
 
-    // Graceful default if sender profile reference is missing or null
-    const hasAvatar = notification.sender && notification.sender.avatar_url;
+    const isAppMsg = notification.type === 'application_message';
+    const metadata = notification.metadata || {};
+    const isCompanySender = isAppMsg && metadata.sender_display_type === 'company';
+    
+    let displayAvatarUrl = null;
+    let displayName = '';
+    
+    if (isCompanySender) {
+       displayAvatarUrl = metadata.sender_avatar_url;
+       displayName = metadata.sender_display_name;
+    } else {
+       displayAvatarUrl = notification.sender?.avatar_url;
+       displayName = notification.sender?.name;
+    }
+
+    const hasAvatar = !!displayAvatarUrl;
     
     if (hasAvatar) {
       return (
         <img 
-          src={notification.sender.avatar_url} 
+          src={displayAvatarUrl} 
           alt="" 
           className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-sm"
           onError={(e) => {
@@ -188,7 +202,7 @@ export default function NotificationDropdown({
             if (parent) {
               const fallback = document.createElement('div');
               fallback.className = "w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shadow-sm font-bold text-sm";
-              fallback.innerText = notification.sender?.name ? notification.sender.name.charAt(0).toUpperCase() : (notification.title ? notification.title.charAt(0).toUpperCase() : 'N');
+              fallback.innerText = displayName ? displayName.charAt(0).toUpperCase() : (notification.title ? notification.title.charAt(0).toUpperCase() : 'N');
               parent.appendChild(fallback);
             }
           }}
@@ -197,8 +211,8 @@ export default function NotificationDropdown({
     }
 
     // Default icon or placeholder character badge
-    const char = notification.sender?.name 
-      ? notification.sender.name.charAt(0).toUpperCase() 
+    const char = displayName 
+      ? displayName.charAt(0).toUpperCase() 
       : (notification.title ? notification.title.charAt(0).toUpperCase() : 'N');
 
     return (

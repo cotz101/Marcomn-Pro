@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { 
   ChevronLeft, 
@@ -18,9 +19,12 @@ import {
   AlertTriangle 
 } from 'lucide-react';
 import DOMPurify from 'dompurify';
+import { useProfile } from '@/app/context/ProfileContext';
 
 export default function GroupPage({ groupId: propGroupId }) {
   const supabase = createClient();
+  const searchParams = useSearchParams();
+  const threadIdParam = searchParams.get('thread');
 
   // Resolve groupId from prop or fallback safely
   const [groupId, setGroupId] = useState(propGroupId);
@@ -59,6 +63,18 @@ export default function GroupPage({ groupId: propGroupId }) {
 
   const messagesEndRef = useRef(null);
   const composerRef = useRef(null);
+
+  const { currentIdentity } = useProfile();
+
+  if (currentIdentity?.type === 'company') {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-center text-gray-400 mt-20 w-full h-full">
+        <AlertTriangle size={44} className="text-gray-300 mb-4" />
+        <p className="text-lg font-semibold text-gray-600">Company groups not supported yet</p>
+        <p className="text-sm text-gray-400 mt-1">Please switch to your personal profile to access this group.</p>
+      </div>
+    );
+  }
 
   // Sync propGroupId if it changes
   useEffect(() => {
@@ -288,6 +304,14 @@ export default function GroupPage({ groupId: propGroupId }) {
       setThreads(pData);
       const uids = [...new Set(pData.map(p => p.created_by))];
       fetchProfiles(uids);
+
+      // Auto-open thread if threadIdParam is present
+      if (threadIdParam && view !== 'thread') {
+        const targetThread = pData.find(t => t.id === threadIdParam);
+        if (targetThread) {
+          openThread(targetThread);
+        }
+      }
     }
   };
 

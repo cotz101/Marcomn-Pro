@@ -678,7 +678,7 @@ export default function ApplicantsPage() {
                                 View Profile
                               </button>
                               <button 
-                                onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
+                                onClick={(e) => { e.stopPropagation(); router.push(`/messages?application=${app.id}`); }}
                                 className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                               >
                                 Message
@@ -701,7 +701,7 @@ export default function ApplicantsPage() {
                                 View Profile
                               </button>
                               <button 
-                                onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
+                                onClick={(e) => { e.stopPropagation(); router.push(`/messages?application=${app.id}`); }}
                                 className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                               >
                                 Message
@@ -727,7 +727,7 @@ export default function ApplicantsPage() {
                                 View Profile
                               </button>
                               <button 
-                                onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
+                                onClick={(e) => { e.stopPropagation(); router.push(`/messages?application=${app.id}`); }}
                                 className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                               >
                                 Message
@@ -744,7 +744,7 @@ export default function ApplicantsPage() {
                                 View Profile
                               </button>
                               <button 
-                                onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
+                                onClick={(e) => { e.stopPropagation(); router.push(`/messages?application=${app.id}`); }}
                                 className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                               >
                                 Message
@@ -771,7 +771,7 @@ export default function ApplicantsPage() {
                           View Profile
                         </button>
                         <button 
-                          onClick={(e) => { e.stopPropagation(); router.push(`/messages?user=${app.applicant_id}`); }}
+                          onClick={(e) => { e.stopPropagation(); router.push(`/messages?application=${app.id}`); }}
                           className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-colors shadow-sm flex-1 sm:flex-none text-center"
                         >
                           Message

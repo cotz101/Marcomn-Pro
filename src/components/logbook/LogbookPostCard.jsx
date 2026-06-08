@@ -735,7 +735,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
           <div className="flex items-start gap-3 min-w-0 flex-1 pr-4">
             <div className="flex-shrink-0">
               <Link
-                href={`/profile/${post.user_id}`}
+                href={(post.posted_as_company_id || post.company) ? `/company/${post.posted_as_company_id || post.company?.id}` : `/profile/${post.user_id}`}
                 onClick={(e) => e.stopPropagation()}
                 className="shrink-0 cursor-pointer block"
                 aria-label="Open poster profile"
@@ -758,7 +758,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="font-semibold text-[#0e2a4d] text-[15px] sm:text-base leading-tight truncate">
                   <Link
-                    href={`/profile/${post.user_id}`}
+                    href={(post.posted_as_company_id || post.company) ? `/company/${post.posted_as_company_id || post.company?.id}` : `/profile/${post.user_id}`}
                     onClick={(e) => e.stopPropagation()}
                     className="hover:underline cursor-pointer"
                   >

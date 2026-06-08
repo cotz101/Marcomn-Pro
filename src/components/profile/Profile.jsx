@@ -1,14 +1,17 @@
 'use client';
 import { useRef, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useProfile } from '@/app/context/ProfileContext';
 
 import { createClient } from '@/lib/supabase';
 import { getCandidateReputation } from '@/app/actions/reputation';
-import { Camera, Briefcase, MapPin, Edit3, X, Check, Plus, ArrowLeft, Ship, MessageSquare, Lock, Coins } from 'lucide-react';
+import { Camera, Briefcase, MapPin, Edit3, X, Check, Plus, ArrowLeft, Ship, MessageSquare, Lock, Coins, UserCheck, Clock, UserPlus } from 'lucide-react';
+import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest } from '@/app/actions/friendships';
 
 export default function Profile({ profile: initialProfile, setProfile: setInitialProfile, userId: currentUserId }) {
   const router = useRouter();
   const params = useParams();
+  const { userEmail, currentIdentity } = useProfile();
   const viewUid = params?.id;
   const isOwnProfile = !viewUid || viewUid === currentUserId;
 
@@ -34,6 +37,11 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
   const [toastType, setToastType] = useState('success');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const [friendStatus, setFriendStatus] = useState(null);
+  const [friendActionLoading, setFriendActionLoading] = useState(false);
+  const isCompanyProfile = currentIdentity?.type === 'company';
+  const canFriend = !isOwnProfile && !isCompanyProfile && currentUserId;
 
   
   const coverPhotoInputRef = useRef(null);
@@ -62,7 +70,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
           setProfile({
             ...data,
             name: data.name,
-            profilePic: data.avatar_url || data.profile_pic_url,
+            profilePic: data.avatar_url || data.profile_pic_url || '/avatar_placeholder.png',
             coverPhoto: data.cover_photo_url,
           });
           
@@ -87,12 +95,17 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
           setIsFollowedBack(!!followBackData);
         }
         setLoading(false);
+        
+        // Fetch friend status if applicable
+        if (!isOwnProfile && currentUserId && !isCompanyProfile) {
+          getFriendshipStatus(viewUid).then(fs => setFriendStatus(fs));
+        }
       };
       fetchViewedProfile();
     } else if (isOwnProfile && initialProfile) {
       setProfile(initialProfile);
     }
-  }, [viewUid, isOwnProfile, initialProfile, currentUserId]);
+  }, [viewUid, isOwnProfile, initialProfile, currentUserId, isCompanyProfile]);
 
   useEffect(() => {
     const fetchReputation = async () => {
@@ -285,8 +298,39 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
     }
   };
 
+  const handleFriendAction = async () => {
+    if (!currentUserId || friendActionLoading) return;
+    setFriendActionLoading(true);
+
+    try {
+      if (!friendStatus) {
+        const res = await sendFriendRequest(viewUid);
+        if (res.success) {
+          setFriendStatus({ status: 'pending', isRequester: true, friendshipId: res.friendshipId });
+          showToast('Friend request sent!');
+        }
+      } else if (friendStatus.status === 'pending' && !friendStatus.isRequester) {
+        await acceptFriendRequest(friendStatus.friendshipId);
+        setFriendStatus({ ...friendStatus, status: 'accepted' });
+        showToast('Friend request accepted!');
+      }
+    } catch (err) {
+      console.error('Friend action error:', err);
+      showToast(err.message || 'Action failed', 'error');
+    } finally {
+      setFriendActionLoading(false);
+    }
+  };
+
   const handleMessageClick = async () => {
     if (!currentUserId || !viewUid) return;
+    
+    const isFriend = friendStatus?.status === 'accepted';
+    if (isCompanyProfile || !isFriend) {
+      showToast('Direct messaging is restricted to accepted friends only.', 'error');
+      return;
+    }
+
     const supabase = createClient();
     
     try {
@@ -430,7 +474,11 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
               </button>
             </div>
             <h2 className="profile-headline">{profile.currentRole}</h2>
-
+            {isOwnProfile && userEmail && (
+              <div className="text-xs text-slate-400 font-medium mt-0.5 mb-2">
+                Login Email: {userEmail}
+              </div>
+            )}
 
             <div className="flex flex-row flex-wrap items-center justify-between w-full mt-2">
               {profile.location && (
@@ -449,9 +497,29 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
                     {isFollowing ? <Check size={16} /> : <Plus size={16} />}
                     {isFollowing ? 'Following' : 'Follow'}
                   </button>
+
+                  {canFriend && (
+                    <button 
+                      className={`flex-1 md:flex-initial w-auto px-5 py-2.5 md:px-4 md:py-1.5 text-sm md:text-xs inline-flex items-center justify-center gap-2 font-bold rounded-lg transition-all shadow-sm active:scale-[0.98] ${
+                        friendStatus?.status === 'accepted' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
+                        friendStatus?.status === 'pending' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 
+                        'bg-white text-[#002b4e] border-2 border-[#002b4e] hover:bg-slate-50'
+                      }`}
+                      onClick={handleFriendAction}
+                      disabled={friendActionLoading || (friendStatus?.status === 'pending' && friendStatus.isRequester) || friendStatus?.status === 'accepted'}
+                    >
+                      {friendStatus?.status === 'accepted' ? <UserCheck size={16} /> : 
+                       friendStatus?.status === 'pending' ? <Clock size={16} /> : 
+                       <UserPlus size={16} />}
+                      {friendStatus?.status === 'accepted' ? 'Friends' : 
+                       friendStatus?.status === 'pending' ? (friendStatus.isRequester ? 'Pending Request' : 'Accept Request') : 
+                       'Add Friend'}
+                    </button>
+                  )}
+
                   {(() => {
-                    const areConnected = isFollowing && isFollowedBack;
-                    const canMessage = isOwnProfile || (profile.message_privacy === 'anyone') || areConnected;
+                    const isFriend = friendStatus?.status === 'accepted';
+                    const canMessage = isOwnProfile || (!isCompanyProfile && isFriend);
 
                     if (canMessage) {
                       return (
@@ -470,7 +538,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
                           className="flex-1 md:flex-initial w-auto px-5 py-2.5 md:px-4 md:py-1.5 text-sm md:text-xs inline-flex items-center justify-center gap-2 bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed font-medium rounded-lg shadow-sm"
                         >
                           <Lock size={16} />
-                          Inbox Private
+                          Add Friend to Message
                         </button>
                       );
                     }
