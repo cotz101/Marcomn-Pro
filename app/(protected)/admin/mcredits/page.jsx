@@ -73,6 +73,7 @@ export default function AdminMCreditsPage() {
   const [acceptanceFeePercent, setAcceptanceFeePercent] = useState('5');
   const [offerExpiryOptions, setOfferExpiryOptions] = useState('24, 48, 72');
   const [defaultOfferExpiry, setDefaultOfferExpiry] = useState('48');
+  const [mcreditsPerUsd, setMcreditsPerUsd] = useState('1.0');
   const [savingSettings, setSavingSettings] = useState(false);
 
   // Calculations test fields
@@ -144,11 +145,13 @@ export default function AdminMCreditsPage() {
           const accFee = settings.find(s => s.key === 'candidate_acceptance_fee_percent');
           const expiryOpts = settings.find(s => s.key === 'job_offer_expiry_options_hours');
           const defaultExpiry = settings.find(s => s.key === 'default_job_offer_expiry_hours');
+          const rateSetting = settings.find(s => s.key === 'mcredits_per_usd');
 
           if (postFee) setPostingFeePercent(postFee.value);
           if (accFee) setAcceptanceFeePercent(accFee.value);
           if (expiryOpts) setOfferExpiryOptions(expiryOpts.value);
           if (defaultExpiry) setDefaultOfferExpiry(defaultExpiry.value);
+          if (rateSetting) setMcreditsPerUsd(rateSetting.value);
         }
 
         // Fetch pending topups
@@ -314,6 +317,13 @@ export default function AdminMCreditsPage() {
           if (cancellationTypes.includes(tx.reference_type) && tx.reference_id && cancelMap[tx.reference_id]) {
             enriched.cancellationDetails = cancelMap[tx.reference_id];
           }
+          if (tx.transaction_type === 'purchase_completed') {
+            if (tx.reference_type === 'stripe_checkout') {
+              enriched.transaction_type = 'stripe_top_up';
+            } else if (tx.reference_type === 'topup_request') {
+              enriched.transaction_type = 'manual_top_up';
+            }
+          }
           return enriched;
         });
 
@@ -371,7 +381,16 @@ export default function AdminMCreditsPage() {
           updated_at: new Date().toISOString()
         });
 
-      if (postErr || accErr || optsErr || defErr) throw (postErr || accErr || optsErr || defErr);
+      const { error: rateErr } = await supabase
+        .from('platform_settings')
+        .upsert({
+          key: 'mcredits_per_usd',
+          value: mcreditsPerUsd.toString(),
+          updated_by: userId,
+          updated_at: new Date().toISOString()
+        });
+
+      if (postErr || accErr || optsErr || defErr || rateErr) throw (postErr || accErr || optsErr || defErr || rateErr);
 
       showToast('Platform fee configuration updated successfully!', 'success');
     } catch (err) {
@@ -656,6 +675,19 @@ export default function AdminMCreditsPage() {
                     onChange={(e) => setDefaultOfferExpiry(e.target.value)}
                     className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-blue-900 transition-colors"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">MCredits per USD</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={mcreditsPerUsd}
+                    onChange={(e) => setMcreditsPerUsd(e.target.value)}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-blue-900 transition-colors"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1 font-medium">Example: 1.0 means USD 1 = 1 MCredit.</p>
                 </div>
               </div>
 

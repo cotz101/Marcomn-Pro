@@ -94,8 +94,8 @@ export async function createReceiptForTopup({ topupRequestId, transactionId }) {
        const { data: emailData } = await supabase.rpc('get_user_email', { user_id: requesterId });
        if (emailData) issuedToEmail = emailData;
        
-       const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', requesterId).single();
-       if (profile) issuedToName = profile.full_name;
+       const { data: profile } = await supabase.from('profiles').select('name').eq('id', requesterId).single();
+       if (profile) issuedToName = profile.name;
     }
     
     if (ownerType === 'company') {
@@ -103,8 +103,8 @@ export async function createReceiptForTopup({ topupRequestId, transactionId }) {
        if (company) issuedToCompany = company.name;
     } else {
        if (!issuedToName) {
-         const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', ownerId).single();
-         if (profile) issuedToName = profile.full_name;
+         const { data: profile } = await supabase.from('profiles').select('name').eq('id', ownerId).single();
+         if (profile) issuedToName = profile.name;
        }
        if (!issuedToEmail && ownerId === user.id) {
          issuedToEmail = user.email;
@@ -120,6 +120,7 @@ export async function createReceiptForTopup({ topupRequestId, transactionId }) {
       transaction_id: transactionId || null,
       amount: amount,
       payment_method: topupData?.payment_method || 'dummy_manual',
+      payment_reference: topupData?.payment_reference || null,
       issued_to_name: issuedToName,
       issued_to_email: issuedToEmail,
       issued_to_company_name: issuedToCompany,

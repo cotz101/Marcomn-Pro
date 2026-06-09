@@ -119,12 +119,23 @@ export async function getFinanceDashboardSummary(filters = {}) {
     let totalTopupAmount = 0;
     let totalPendingTopups = 0;
     let totalRejectedTopups = 0;
+    let stripeTopupsCount = 0;
+    let stripeTopupsAmount = 0;
+    let manualTopupsCount = 0;
+    let manualTopupsAmount = 0;
 
     topups?.forEach(req => {
       const amt = Number(req.amount || 0);
       if (req.status === 'Approved') {
         totalTopupsApproved += 1;
         totalTopupAmount += amt;
+        if (req.payment_method === 'stripe') {
+          stripeTopupsCount += 1;
+          stripeTopupsAmount += amt;
+        } else {
+          manualTopupsCount += 1;
+          manualTopupsAmount += amt;
+        }
       } else if (req.status === 'Pending') {
         totalPendingTopups += 1;
       } else if (req.status === 'Rejected') {
@@ -142,6 +153,10 @@ export async function getFinanceDashboardSummary(filters = {}) {
         totalTopupAmount,
         totalPendingTopups,
         totalRejectedTopups,
+        stripeTopupsCount,
+        stripeTopupsAmount,
+        manualTopupsCount,
+        manualTopupsAmount,
         totalJobPostingFees,
         totalApplicantAcceptanceFees,
         totalRefunds,
@@ -287,6 +302,15 @@ export async function getFinanceTransactions(filters = {}) {
       }
 
       let description = tx.justification_note || tx.description || '';
+      let txType = tx.transaction_type;
+      
+      // Override description for Stripe top-ups to present details cleanly
+      if (tx.transaction_type === 'purchase_completed' && tx.reference_type === 'stripe_checkout') {
+        description = tx.justification_note || 'Stripe Top-Up';
+        txType = 'stripe_top_up';
+      } else if (tx.transaction_type === 'purchase_completed' && tx.reference_type === 'topup_request') {
+        txType = 'manual_top_up';
+      }
       
       // Fallback description formatting for jobs
       let jobTitleFallback = null;
@@ -305,7 +329,7 @@ export async function getFinanceTransactions(filters = {}) {
       return {
         id: tx.id,
         created_at: tx.created_at,
-        transaction_type: tx.transaction_type,
+        transaction_type: txType,
         direction: tx.direction,
         amount: tx.amount,
         description: description,

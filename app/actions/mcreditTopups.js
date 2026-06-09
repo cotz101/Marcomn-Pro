@@ -68,10 +68,10 @@ export async function createTopupRequest({ ownerType, ownerId, amount, remarks }
       if (ownerType === 'user') {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('full_name')
+          .select('name')
           .eq('id', ownerId)
           .single();
-        displayName = profile?.full_name || 'Personal Account';
+        displayName = profile?.name || 'Personal Account';
       } else {
         const { data: companyData } = await supabase
           .from('companies')

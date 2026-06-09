@@ -467,15 +467,27 @@ export default function AdminFinancePage() {
                       </div>
                     </div>
 
-                    {/* Card 6: Application Spends */}
+                    {/* Card 6a: Approved Stripe Top-Ups */}
                     <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm flex items-start gap-4 snap-start">
-                      <div className="p-3 bg-blue-50 text-blue-950 rounded-xl">
-                        <CheckCircle size={20} className="text-blue-900" />
+                      <div className="p-3 bg-indigo-50 text-indigo-900 rounded-xl">
+                        <CreditCard size={20} />
                       </div>
                       <div className="min-w-0">
-                        <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Approved Top-Ups</span>
-                        <span className="block text-lg font-extrabold text-[#0e2a4d] mt-1">{summary.totalTopupAmount.toFixed(2)} MC</span>
-                        <span className="block text-[10px] text-gray-400 mt-0.5">{summary.totalTopupsApproved} requests completed</span>
+                        <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Stripe Top-Ups</span>
+                        <span className="block text-lg font-extrabold text-[#0e2a4d] mt-1">{(summary.stripeTopupsAmount || 0).toFixed(2)} MC</span>
+                        <span className="block text-[10px] text-gray-400 mt-0.5">{(summary.stripeTopupsCount || 0)} payments completed</span>
+                      </div>
+                    </div>
+
+                    {/* Card 6b: Approved Manual Top-Ups */}
+                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-5 md:py-5 shadow-sm flex items-start gap-4 snap-start">
+                      <div className="p-3 bg-blue-50 text-blue-950 rounded-xl">
+                        <Coins size={20} className="text-blue-900" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Manual Top-Ups</span>
+                        <span className="block text-lg font-extrabold text-[#0e2a4d] mt-1">{(summary.manualTopupsAmount || 0).toFixed(2)} MC</span>
+                        <span className="block text-[10px] text-gray-400 mt-0.5">{(summary.manualTopupsCount || 0)} requests approved</span>
                       </div>
                     </div>
 
@@ -787,55 +799,71 @@ export default function AdminFinancePage() {
                                 </div>
                               </th>
                               <th className="pb-3 font-semibold">Owner</th>
-                              <th className="pb-3 font-semibold">Owner Type</th>
-                              <th className="pb-3 pr-4 font-semibold text-right">Amount</th>
-                              <th className="pb-3 font-semibold">Status</th>
-                              <th className="pb-3 pl-4 font-semibold">Remarks</th>
-                              <th className="pb-3 font-semibold">Requested By</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100 text-gray-600 font-medium">
-                            {sortArrayByDate(topupReport.requests).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((req) => {
-                              return (
-                                <tr key={req.id} className="hover:bg-slate-50/30">
-                                  <td className="py-3 whitespace-nowrap text-gray-500 font-mono">
-                                    <div className="hidden sm:block">{new Date(req.created_at).toLocaleString()}</div>
-                                    <div className="flex flex-col sm:hidden">
-                                      <span className="font-bold text-gray-700 font-sans">{new Date(req.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/ /g, '-')}</span>
-                                      <span className="text-[10px] text-gray-400 font-sans mt-0.5">{new Date(req.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                    </div>
-                                  </td>
-                                  <td className="py-3">
-                                    <span className="font-bold text-[#0e2a4d]">{req.owner_name}</span>
-                                  </td>
-                                  <td className="py-3 capitalize">
-                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 border border-gray-100 text-slate-700">
-                                      {req.owner_type}
-                                    </span>
-                                  </td>
-                                  <td className="py-3 pr-4 text-right font-bold text-[#0e2a4d]">
-                                    {Number(req.amount).toFixed(2)} MC
-                                  </td>
-                                  <td className="py-3">
-                                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                      req.status === 'Approved'
-                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                                        : req.status === 'Pending'
-                                        ? 'bg-amber-50 text-amber-700 border-amber-100'
-                                        : req.status === 'Rejected'
-                                        ? 'bg-red-50 text-red-700 border-red-100'
-                                        : 'bg-slate-50 text-slate-600 border-slate-100'
-                                    }`}>
-                                      {req.status}
-                                    </span>
-                                  </td>
-                                  <td className="py-3 pl-4 max-w-xs text-gray-500 truncate" title={req.remarks}>
-                                    {req.remarks || '—'}
-                                  </td>
-                                  <td className="py-3 text-[#0e2a4d] font-semibold">
-                                    {req.requester_name}
-                                  </td>
-                                </tr>
+                               <th className="pb-3 font-semibold">Owner Type</th>
+                               <th className="pb-3 font-semibold">Method</th>
+                               <th className="pb-3 pr-4 font-semibold text-right">Amount</th>
+                               <th className="pb-3 font-semibold">Status</th>
+                               <th className="pb-3 pl-4 font-semibold">Remarks / Reference</th>
+                               <th className="pb-3 font-semibold">Requested By</th>
+                             </tr>
+                           </thead>
+                           <tbody className="divide-y divide-gray-100 text-gray-600 font-medium">
+                             {sortArrayByDate(topupReport.requests).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((req) => {
+                               return (
+                                 <tr key={req.id} className="hover:bg-slate-50/30">
+                                   <td className="py-3 whitespace-nowrap text-gray-500 font-mono">
+                                     <div className="hidden sm:block">{new Date(req.created_at).toLocaleString()}</div>
+                                     <div className="flex flex-col sm:hidden">
+                                       <span className="font-bold text-gray-700 font-sans">{new Date(req.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/ /g, '-')}</span>
+                                       <span className="text-[10px] text-gray-400 font-sans mt-0.5">{new Date(req.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                     </div>
+                                   </td>
+                                   <td className="py-3">
+                                     <span className="font-bold text-[#0e2a4d]">{req.owner_name}</span>
+                                   </td>
+                                   <td className="py-3 capitalize">
+                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 border border-gray-100 text-slate-700">
+                                       {req.owner_type}
+                                     </span>
+                                   </td>
+                                   <td className="py-3">
+                                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                       req.payment_method === 'stripe'
+                                         ? 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                                         : 'bg-slate-50 text-slate-600 border-slate-100'
+                                     }`}>
+                                       {req.payment_method === 'stripe' ? 'Stripe' : 'Manual'}
+                                     </span>
+                                   </td>
+                                   <td className="py-3 pr-4 text-right font-bold text-[#0e2a4d]">
+                                     {Number(req.amount).toFixed(2)} MC
+                                   </td>
+                                   <td className="py-3">
+                                     <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                       req.status === 'Approved'
+                                         ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                         : req.status === 'Pending'
+                                         ? 'bg-amber-50 text-amber-700 border-amber-100'
+                                         : req.status === 'Rejected'
+                                         ? 'bg-red-50 text-red-700 border-red-100'
+                                         : 'bg-slate-50 text-slate-600 border-slate-100'
+                                     }`}>
+                                       {req.status}
+                                     </span>
+                                   </td>
+                                   <td className="py-3 pl-4 max-w-xs text-gray-500 truncate" title={req.payment_method === 'stripe' ? req.payment_reference : req.remarks}>
+                                     {req.payment_method === 'stripe' ? (
+                                       <span className="font-mono text-[10px] bg-slate-50 px-1 py-0.5 rounded border border-slate-100 block truncate max-w-[200px]" title={req.payment_reference}>
+                                         {req.payment_reference || 'Pending Checkout'}
+                                       </span>
+                                    ) : (
+                                      req.remarks || '—'
+                                    )}
+                                   </td>
+                                   <td className="py-3 text-[#0e2a4d] font-semibold">
+                                     {req.requester_name}
+                                   </td>
+                                 </tr>
                               );
                             })}
                           </tbody>

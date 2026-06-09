@@ -40,6 +40,30 @@ export default function PersonalWalletPage() {
   const [submittingTopup, setSubmittingTopup] = useState(false);
   const [topupMessage, setTopupMessage] = useState(null);  // { type: 'success'|'error', text: string }
 
+  const [modalTab, setModalTab] = useState('stripe'); // 'stripe' or 'manual'
+  const [mcreditsPerUsd, setMcreditsPerUsd] = useState(1.0);
+  const [submittingStripe, setSubmittingStripe] = useState(false);
+  const [pageMessage, setPageMessage] = useState(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('success') === 'true') {
+        setPageMessage({
+          type: 'success',
+          text: 'Payment received. Your MCredit balance will update after confirmation.'
+        });
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (params.get('cancelled') === 'true') {
+        setPageMessage({
+          type: 'error',
+          text: 'Payment checkout was cancelled.'
+        });
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
+
   const fetchWalletData = useCallback(async () => {
     if (!userId || !profile) {
       setLoading(false);
@@ -56,6 +80,17 @@ export default function PersonalWalletPage() {
         .eq('owner_type', 'user')
         .eq('owner_id', userId)
         .maybeSingle();
+
+      // Fetch exchange rate
+      const { data: settingData } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', 'mcredits_per_usd')
+        .maybeSingle();
+
+      if (settingData) {
+        setMcreditsPerUsd(Number(settingData.value) || 1.0);
+      }
 
       if (walletError) throw walletError;
 
@@ -90,10 +125,18 @@ export default function PersonalWalletPage() {
         }
 
         const enrichedTxs = txs.map(tx => {
+          const updatedTx = { ...tx };
           if (tx.reference_type === 'job_posting' && tx.reference_id && jobMap[tx.reference_id]) {
-            return { ...tx, jobDetails: jobMap[tx.reference_id] };
+            updatedTx.jobDetails = jobMap[tx.reference_id];
           }
-          return tx;
+          if (tx.transaction_type === 'purchase_completed') {
+            if (tx.reference_type === 'stripe_checkout') {
+              updatedTx.transaction_type = 'stripe_top_up';
+            } else if (tx.reference_type === 'topup_request') {
+              updatedTx.transaction_type = 'manual_top_up';
+            }
+          }
+          return updatedTx;
         });
 
         setTransactions(enrichedTxs);
@@ -147,6 +190,40 @@ export default function PersonalWalletPage() {
       setTopupMessage({ type: 'error', text: err.message || 'Failed to submit request' });
     } finally {
       setSubmittingTopup(false);
+    }
+  };
+
+  const handleStripeCheckout = async (packageAmount) => {
+    setSubmittingStripe(true);
+    setTopupMessage(null);
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ownerType: 'user',
+          ownerId: userId,
+          packageAmount
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText || 'Failed to initiate checkout session');
+      }
+
+      const { url } = await response.json();
+      if (url) {
+        window.location.href = url; // Redirect to Stripe Checkout
+      } else {
+        throw new Error('No redirect URL returned from checkout session');
+      }
+    } catch (err) {
+      console.error('Stripe Checkout error:', err);
+      setTopupMessage({ type: 'error', text: err.message || 'Failed to initiate checkout session' });
+      setSubmittingStripe(false);
     }
   };
 
@@ -215,6 +292,19 @@ export default function PersonalWalletPage() {
         <ArrowLeft size={16} />
         <span>Back to Profile</span>
       </Link>
+
+      {pageMessage && (
+        <div className={`mb-6 p-4 rounded-xl text-sm font-semibold border flex justify-between items-center ${
+          pageMessage.type === 'success'
+            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+            : 'bg-red-50 text-red-800 border-red-200'
+        }`}>
+          <span>{pageMessage.text}</span>
+          <button onClick={() => setPageMessage(null)} className="text-xs font-bold hover:underline select-none cursor-pointer bg-none border-none outline-none">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Top row: Wallet header & About MCredits side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 items-stretch">
@@ -469,11 +559,35 @@ export default function PersonalWalletPage() {
       {/* Top-Up Modal */}
       {isTopupModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
             <h2 className="text-lg font-bold text-[#0e2a4d] mb-2">Request MCredits Top-Up</h2>
-            <p className="text-xs text-gray-500 mb-4">
-              Personal top-ups require platform admin approval.
-            </p>
+            
+            {/* Modal Tabs */}
+            <div className="flex border-b border-gray-150 mb-4 mt-2">
+              <button
+                type="button"
+                onClick={() => { setModalTab('stripe'); setTopupMessage(null); }}
+                className={`flex-1 pb-2.5 text-xs font-bold text-center border-b-2 transition-all ${
+                  modalTab === 'stripe'
+                    ? 'border-[#0e2a4d] text-[#0e2a4d]'
+                    : 'border-transparent text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                Instant Top-Up (Card)
+              </button>
+              <button
+                type="button"
+                onClick={() => { setModalTab('manual'); setTopupMessage(null); }}
+                className={`flex-1 pb-2.5 text-xs font-bold text-center border-b-2 transition-all ${
+                  modalTab === 'manual'
+                    ? 'border-[#0e2a4d] text-[#0e2a4d]'
+                    : 'border-transparent text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                Manual Top-Up
+              </button>
+            </div>
+
             {topupMessage && (
               <div className={`mb-4 px-4 py-3 rounded-xl text-sm font-semibold ${
                 topupMessage.type === 'success'
@@ -483,48 +597,102 @@ export default function PersonalWalletPage() {
                 {topupMessage.text}
               </div>
             )}
-            <form onSubmit={handleTopupSubmit}>
-              <div className="mb-4">
-                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Amount</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  required
-                  value={topupAmount}
-                  onChange={(e) => setTopupAmount(e.target.value)}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-900"
-                  placeholder="e.g. 500"
-                />
+
+            {modalTab === 'stripe' ? (
+              <div className="space-y-4">
+                <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                  Select a package to top up your personal wallet instantly via Stripe Checkout.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {[10, 25, 50, 100, 250, 500].map((amount) => {
+                    const credits = amount * mcreditsPerUsd;
+                    return (
+                      <button
+                        key={amount}
+                        type="button"
+                        disabled={submittingStripe}
+                        onClick={() => handleStripeCheckout(amount)}
+                        className="border border-gray-200 hover:border-[#0e2a4d] hover:bg-slate-50 disabled:opacity-50 p-4 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer group"
+                      >
+                        <span className="text-sm font-extrabold text-[#0e2a4d]">${amount} USD</span>
+                        <span className="text-xs font-semibold text-emerald-600 mt-1 select-none">
+                          +{credits.toFixed(0)} MC
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold bg-gray-50 p-2.5 rounded-lg select-none">
+                  <span>Exchange Rate: 1 USD = {mcreditsPerUsd.toFixed(1)} MC</span>
+                  <span>Instant Auto-Approval</span>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsTopupModalOpen(false)}
+                    disabled={submittingStripe}
+                    className="px-5 py-2 text-xs font-bold text-gray-500 hover:bg-gray-150 rounded-xl transition-colors cursor-pointer select-none"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                {submittingStripe && (
+                  <div className="absolute inset-0 bg-white/80 z-20 rounded-2xl flex flex-col items-center justify-center space-y-3">
+                    <Loader2 size={32} className="animate-spin text-blue-900" />
+                    <span className="text-xs text-gray-500 font-bold">Redirecting to Stripe Checkout...</span>
+                  </div>
+                )}
               </div>
-              <div className="mb-6">
-                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Remarks (Optional)</label>
-                <textarea
-                  value={topupRemarks}
-                  onChange={(e) => setTopupRemarks(e.target.value)}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-900 resize-none h-20"
-                  placeholder="Payment reference or note"
-                />
-              </div>
-              <div className="flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsTopupModalOpen(false)}
-                  disabled={submittingTopup}
-                  className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingTopup}
-                  className="bg-[#0e2a4d] text-white px-4 py-2 text-sm font-bold rounded-xl flex items-center gap-2"
-                >
-                  {submittingTopup && <Loader2 size={14} className="animate-spin" />}
-                  Submit Request
-                </button>
-              </div>
-            </form>
+            ) : (
+              <form onSubmit={handleTopupSubmit}>
+                <p className="text-xs text-gray-500 mb-4 leading-relaxed font-medium">
+                  Submit a manual top-up request. It will remain pending until approved by a platform administrator.
+                </p>
+                <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Amount (MCredits)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    value={topupAmount}
+                    onChange={(e) => setTopupAmount(e.target.value)}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-900"
+                    placeholder="e.g. 500"
+                  />
+                </div>
+                <div className="mb-6">
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Remarks / Note (Optional)</label>
+                  <textarea
+                    value={topupRemarks}
+                    onChange={(e) => setTopupRemarks(e.target.value)}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-900 resize-none h-20"
+                    placeholder="Bank reference, deposit info, or other notes..."
+                  />
+                </div>
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsTopupModalOpen(false)}
+                    disabled={submittingTopup}
+                    className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingTopup}
+                    className="bg-[#0e2a4d] text-white px-4 py-2 text-sm font-bold rounded-xl flex items-center gap-2"
+                  >
+                    {submittingTopup && <Loader2 size={14} className="animate-spin" />}
+                    Submit Request
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
