@@ -139,10 +139,11 @@ export async function POST(req) {
       }
 
       // 7. Generate Receipt in mcredit_receipts
+      let issuedToName = 'User';
+      let issuedToEmail = null;
+      let issuedToCompany = null;
+      
       try {
-        let issuedToName = 'User';
-        let issuedToEmail = null;
-        let issuedToCompany = null;
 
         const { data: profile } = await supabase.from('profiles').select('name').eq('id', requesterId).maybeSingle();
         if (profile) issuedToName = profile.name;
