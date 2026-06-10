@@ -1,12 +1,5 @@
 import Link from 'next/link';
-
-const AnchorIcon = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="5" r="3"/>
-    <line x1="12" y1="8" x2="12" y2="22"/>
-    <path d="M5 12H2a10 10 0 0 0 20 0h-3"/>
-  </svg>
-);
+import LandingLogo from '@/app/components/LandingLogo';
 
 export default function LandingPage() {
   return (
@@ -14,10 +7,7 @@ export default function LandingPage() {
       {/* Header */}
       <header className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-3 flex items-center w-full">
-          <div className="flex items-center gap-2 font-bold text-xl" style={{ color: '#0e2a4d' }}>
-            <AnchorIcon />
-            MarComn
-          </div>
+          <LandingLogo />
         </div>
       </header>
 
