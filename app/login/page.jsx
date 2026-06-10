@@ -15,7 +15,6 @@ export default function LoginPage() {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
-  const [guestLoading, setGuestLoading] = useState(false);
   const inputRefs = useRef([]);
 
   const handleSendOtp = async (e) => {
@@ -58,20 +57,6 @@ export default function LoginPage() {
     });
     if (error) { setError(error.message); setStep('otp'); }
     else router.push('/logbook');
-  };
-
-  const handleGuestLogin = async () => {
-    setGuestLoading(true);
-    setError('');
-    // Anonymous sign-in — creates a real session the middleware recognises.
-    // Enable "Anonymous sign-ins" in Supabase dashboard: Auth → Settings → Anonymous sign-ins
-    const { error } = await supabase.auth.signInAnonymously();
-    if (error) {
-      setError('Guest login unavailable: ' + error.message);
-      setGuestLoading(false);
-    } else {
-      router.push('/logbook');
-    }
   };
 
   return (
@@ -124,23 +109,6 @@ export default function LoginPage() {
                   {sending ? 'Sending…' : 'Send Secure Code'}
                 </button>
               </form>
-
-              {/* Divider */}
-              <div className="flex items-center gap-3 my-5">
-                <div className="flex-1 h-px bg-gray-100"></div>
-                <span className="text-xs text-gray-300">or</span>
-                <div className="flex-1 h-px bg-gray-100"></div>
-              </div>
-
-              {/* Guest / dev bypass */}
-              <button
-                onClick={handleGuestLogin}
-                disabled={guestLoading}
-                className="w-full py-2.5 rounded-lg text-xs font-medium text-gray-400 border border-dashed border-gray-200 hover:border-gray-300 hover:text-gray-500 transition-all disabled:opacity-50"
-              >
-                {guestLoading ? 'Entering…' : '⚡ Quick Login — Guest Mode'}
-              </button>
-              <p className="text-center text-xs text-gray-300 mt-2">Dev bypass · bypasses email OTP</p>
             </>
           )}
 
