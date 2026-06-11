@@ -699,8 +699,16 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                 {mcreditError && (
                   <div className="text-red-700 font-semibold mt-1">
                     <p>{mcreditError}</p>
+                    <div className="mt-1.5 text-xs">
+                      <a 
+                        href={isCompany ? "/company/wallet" : "/profile/wallet"} 
+                        className="text-red-600 hover:text-red-800 underline inline-flex items-center gap-1"
+                      >
+                        Top up your wallet now →
+                      </a>
+                    </div>
                     {jobToEdit && (
-                      <div className="mt-1.5 text-xs space-y-1">
+                      <div className="mt-2 text-xs space-y-1">
                         <p className="font-semibold text-red-700">Insufficient MCredits to publish this job. You can keep it as draft or top up your wallet.</p>
                         <p className="text-gray-500 font-normal">Draft jobs can be saved without MCredits. MCredits are only required when publishing.</p>
                       </div>
