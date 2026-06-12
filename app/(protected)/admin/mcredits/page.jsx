@@ -50,6 +50,7 @@ export default function AdminMCreditsPage() {
   const canViewFees = profile && (profile.admin_permissions?.includes('can_manage_global_settings') || isLegacyAdmin);
   const canViewLedger = profile && (canViewWalletControl || canGrant || canDeduct);
   const canViewTopups = profile && (canViewWalletControl || canApprove || canReject);
+  const canViewSummary = profile && (profile.admin_permissions?.includes('can_view_wallet_summary') || canViewWalletControl || isLegacyAdmin);
 
   // Lists
   const [profilesList, setProfilesList] = useState([]);
@@ -75,6 +76,14 @@ export default function AdminMCreditsPage() {
   const [defaultOfferExpiry, setDefaultOfferExpiry] = useState('48');
   const [mcreditsPerUsd, setMcreditsPerUsd] = useState('1.0');
   const [savingSettings, setSavingSettings] = useState(false);
+  const [stripePackages, setStripePackages] = useState([
+    { id: 'pkg_10', usdPrice: 10, mcreditAmount: 10, isActive: true, displayOrder: 1 },
+    { id: 'pkg_25', usdPrice: 25, mcreditAmount: 25, isActive: true, displayOrder: 2 },
+    { id: 'pkg_50', usdPrice: 50, mcreditAmount: 50, isActive: true, displayOrder: 3 },
+    { id: 'pkg_100', usdPrice: 100, mcreditAmount: 100, isActive: true, displayOrder: 4 },
+    { id: 'pkg_250', usdPrice: 250, mcreditAmount: 250, isActive: true, displayOrder: 5 },
+    { id: 'pkg_500', usdPrice: 500, mcreditAmount: 500, isActive: true, displayOrder: 6 }
+  ]);
 
   // Calculations test fields
   const [testSalary, setTestSalary] = useState('100000');
@@ -88,7 +97,7 @@ export default function AdminMCreditsPage() {
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [actionSubmitting, setActionSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState('fees'); // 'fees', 'ledger', 'topups'
+  const [activeTab, setActiveTab] = useState('fees'); // 'fees', 'ledger', 'topups', 'summary'
 
   // Set default active tab based on permissions once profile is loaded
   useEffect(() => {
@@ -99,21 +108,35 @@ export default function AdminMCreditsPage() {
         setActiveTab('ledger');
       } else if (canViewTopups) {
         setActiveTab('topups');
+      } else if (canViewSummary) {
+        setActiveTab('summary');
       }
     } else if (activeTab === 'ledger' && !canViewLedger) {
       if (canViewFees) {
         setActiveTab('fees');
       } else if (canViewTopups) {
         setActiveTab('topups');
+      } else if (canViewSummary) {
+        setActiveTab('summary');
       }
     } else if (activeTab === 'topups' && !canViewTopups) {
       if (canViewFees) {
         setActiveTab('fees');
       } else if (canViewLedger) {
         setActiveTab('ledger');
+      } else if (canViewSummary) {
+        setActiveTab('summary');
+      }
+    } else if (activeTab === 'summary' && !canViewSummary) {
+      if (canViewFees) {
+        setActiveTab('fees');
+      } else if (canViewLedger) {
+        setActiveTab('ledger');
+      } else if (canViewTopups) {
+        setActiveTab('topups');
       }
     }
-  }, [profile, canViewFees, canViewLedger, canViewTopups, activeTab]);
+  }, [profile, canViewFees, canViewLedger, canViewTopups, canViewSummary, activeTab]);
 
   // Fetch initial option lists and settings
   useEffect(() => {
@@ -146,12 +169,23 @@ export default function AdminMCreditsPage() {
           const expiryOpts = settings.find(s => s.key === 'job_offer_expiry_options_hours');
           const defaultExpiry = settings.find(s => s.key === 'default_job_offer_expiry_hours');
           const rateSetting = settings.find(s => s.key === 'mcredits_per_usd');
+          const packagesSetting = settings.find(s => s.key === 'mcredit_topup_packages');
 
           if (postFee) setPostingFeePercent(postFee.value);
           if (accFee) setAcceptanceFeePercent(accFee.value);
           if (expiryOpts) setOfferExpiryOptions(expiryOpts.value);
           if (defaultExpiry) setDefaultOfferExpiry(defaultExpiry.value);
           if (rateSetting) setMcreditsPerUsd(rateSetting.value);
+          if (packagesSetting) {
+            try {
+              const parsed = JSON.parse(packagesSetting.value);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setStripePackages(parsed);
+              }
+            } catch (e) {
+              console.error('Error parsing stripe packages:', e);
+            }
+          }
         }
 
         // Fetch pending topups
@@ -341,8 +375,78 @@ export default function AdminMCreditsPage() {
     loadWallet();
   }, [loadWallet]);
 
+  const handleAddPackage = () => {
+    const nextOrder = stripePackages.length > 0 
+      ? Math.max(...stripePackages.map(p => Number(p.displayOrder) || 0)) + 1 
+      : 1;
+    setStripePackages([
+      ...stripePackages,
+      {
+        id: `pkg_${Date.now()}`,
+        usdPrice: 10,
+        mcreditAmount: 10,
+        isActive: true,
+        displayOrder: nextOrder
+      }
+    ]);
+  };
+
+  const handleUpdatePackage = (index, field, value) => {
+    const updated = [...stripePackages];
+    updated[index] = {
+      ...updated[index],
+      [field]: value
+    };
+    setStripePackages(updated);
+  };
+
+  const handleDeletePackage = (index) => {
+    const updated = stripePackages.filter((_, i) => i !== index);
+    setStripePackages(updated);
+  };
+
   // Save Settings Changes
   const handleSaveSettings = async () => {
+    // 1. Validate Stripe packages
+    const uniqueIds = new Set();
+    for (const pkg of stripePackages) {
+      if (!pkg.id || !pkg.id.trim()) {
+        showToast('All Stripe packages must have an ID.', 'error');
+        return;
+      }
+      const cleanedId = pkg.id.trim();
+      if (uniqueIds.has(cleanedId)) {
+        showToast(`Duplicate package ID found: "${cleanedId}". Package IDs must be unique.`, 'error');
+        return;
+      }
+      uniqueIds.add(cleanedId);
+
+      const usdPriceNum = Number(pkg.usdPrice);
+      const mcreditAmountNum = Number(pkg.mcreditAmount);
+      const displayOrderNum = Number(pkg.displayOrder);
+
+      if (isNaN(usdPriceNum) || usdPriceNum <= 0) {
+        showToast(`Invalid USD Price for package "${cleanedId}". Price must be greater than 0.`, 'error');
+        return;
+      }
+      if (isNaN(mcreditAmountNum) || mcreditAmountNum <= 0) {
+        showToast(`Invalid MCredit Amount for package "${cleanedId}". Amount must be greater than 0.`, 'error');
+        return;
+      }
+      if (isNaN(displayOrderNum)) {
+        showToast(`Invalid Display Order for package "${cleanedId}". Must be a valid number.`, 'error');
+        return;
+      }
+    }
+
+    const cleanedPackages = stripePackages.map(pkg => ({
+      id: pkg.id.trim(),
+      usdPrice: Number(pkg.usdPrice),
+      mcreditAmount: Number(pkg.mcreditAmount),
+      isActive: Boolean(pkg.isActive),
+      displayOrder: Number(pkg.displayOrder)
+    }));
+
     setSavingSettings(true);
     try {
       const { error: postErr } = await supabase
@@ -390,7 +494,18 @@ export default function AdminMCreditsPage() {
           updated_at: new Date().toISOString()
         });
 
-      if (postErr || accErr || optsErr || defErr || rateErr) throw (postErr || accErr || optsErr || defErr || rateErr);
+      const { error: pkgErr } = await supabase
+        .from('platform_settings')
+        .upsert({
+          key: 'mcredit_topup_packages',
+          value: JSON.stringify(cleanedPackages),
+          updated_by: userId,
+          updated_at: new Date().toISOString()
+        });
+
+      if (postErr || accErr || optsErr || defErr || rateErr || pkgErr) {
+        throw (postErr || accErr || optsErr || defErr || rateErr || pkgErr);
+      }
 
       showToast('Platform fee configuration updated successfully!', 'success');
     } catch (err) {
@@ -598,6 +713,18 @@ export default function AdminMCreditsPage() {
               Wallet & Ledger Adjustment
             </button>
           )}
+          {canViewSummary && (
+            <button
+              onClick={() => setActiveTab('summary')}
+              className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center flex items-center justify-center ${
+                activeTab === 'summary'
+                  ? 'bg-[#0e2a4d] text-white shadow-md'
+                  : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
+              }`}
+            >
+              Wallet Summary
+            </button>
+          )}
           {canViewTopups && (
             <button
               onClick={() => setActiveTab('topups')}
@@ -711,6 +838,125 @@ export default function AdminMCreditsPage() {
                     <span className="block text-[10px] font-bold text-gray-400 uppercase">Acceptance Fee (Candidate)</span>
                     <span className="text-xs font-bold text-[#0e2a4d]">{candidateFeePreview.toFixed(2)} MC</span>
                   </div>
+                </div>
+              </div>
+
+              {/* Stripe Top-Up Package Manager Section */}
+              <div className="border-t border-gray-100 pt-6 mt-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-[#0e2a4d] flex items-center gap-2">
+                      <CreditCard size={16} />
+                      <span>Stripe Top-Up Package Manager</span>
+                    </h3>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      Configure preset USD packages and their corresponding MCredit values for instant card top-ups.
+                    </p>
+                  </div>
+                  {canViewFees && (
+                    <button
+                      type="button"
+                      onClick={handleAddPackage}
+                      disabled={savingSettings}
+                      className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-xs py-1.5 px-3 rounded-lg transition-all cursor-pointer flex items-center gap-1 shrink-0 select-none disabled:opacity-50"
+                    >
+                      <Plus size={14} />
+                      <span>Add Package</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto border border-gray-200 rounded-xl">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-gray-200 text-gray-500 uppercase tracking-wider font-bold">
+                        <th className="py-2 px-3">Package ID</th>
+                        <th className="py-2 px-3">USD Price ($)</th>
+                        <th className="py-2 px-3">MCredits Amount</th>
+                        <th className="py-2 px-3 text-center">Active</th>
+                        <th className="py-2 px-3 text-center">Display Order</th>
+                        {canViewFees && <th className="py-2 px-3 text-right">Actions</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 text-gray-700 font-medium">
+                      {stripePackages.map((pkg, idx) => (
+                        <tr key={pkg.id || idx} className="hover:bg-slate-50/50">
+                          <td className="py-2 px-3 font-mono">
+                            <input
+                              type="text"
+                              value={pkg.id}
+                              disabled={!canViewFees || savingSettings}
+                              onChange={(e) => handleUpdatePackage(idx, 'id', e.target.value)}
+                              className="bg-white border border-gray-200 rounded px-2 py-1 font-mono text-[11px] w-full max-w-[120px] focus:border-blue-900 outline-none disabled:bg-slate-50 disabled:text-gray-400"
+                              placeholder="pkg_xx"
+                            />
+                          </td>
+                          <td className="py-2 px-3">
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0.01"
+                              value={pkg.usdPrice}
+                              disabled={!canViewFees || savingSettings}
+                              onChange={(e) => handleUpdatePackage(idx, 'usdPrice', e.target.value)}
+                              className="bg-white border border-gray-200 rounded px-2 py-1 w-full max-w-[80px] focus:border-blue-900 outline-none disabled:bg-slate-50 disabled:text-gray-400"
+                              placeholder="Price"
+                            />
+                          </td>
+                          <td className="py-2 px-3">
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0.01"
+                              value={pkg.mcreditAmount}
+                              disabled={!canViewFees || savingSettings}
+                              onChange={(e) => handleUpdatePackage(idx, 'mcreditAmount', e.target.value)}
+                              className="bg-white border border-gray-200 rounded px-2 py-1 w-full max-w-[80px] focus:border-blue-900 outline-none disabled:bg-slate-50 disabled:text-gray-400"
+                              placeholder="Credits"
+                            />
+                          </td>
+                          <td className="py-2 px-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={pkg.isActive}
+                              disabled={!canViewFees || savingSettings}
+                              onChange={(e) => handleUpdatePackage(idx, 'isActive', e.target.checked)}
+                              className="rounded border-gray-300 text-blue-900 focus:ring-blue-900 cursor-pointer disabled:opacity-50"
+                            />
+                          </td>
+                          <td className="py-2 px-3 text-center">
+                            <input
+                              type="number"
+                              min="1"
+                              value={pkg.displayOrder}
+                              disabled={!canViewFees || savingSettings}
+                              onChange={(e) => handleUpdatePackage(idx, 'displayOrder', e.target.value)}
+                              className="bg-white border border-gray-200 rounded px-2 py-1 w-full max-w-[60px] text-center focus:border-blue-900 outline-none disabled:bg-slate-50 disabled:text-gray-400"
+                            />
+                          </td>
+                          {canViewFees && (
+                            <td className="py-2 px-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePackage(idx)}
+                                disabled={savingSettings}
+                                className="text-red-500 hover:text-red-700 font-semibold cursor-pointer disabled:opacity-50 select-none text-xs"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                      {stripePackages.length === 0 && (
+                        <tr>
+                          <td colSpan={canViewFees ? 6 : 5} className="py-4 text-center text-gray-400 font-medium">
+                            No packages configured. Click "Add Package" above to get started.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -891,6 +1137,236 @@ export default function AdminMCreditsPage() {
                 <div className="flex items-center gap-2 mb-6">
                   <History size={18} className="text-[#0e2a4d]" />
                   <h2 className="text-base font-bold text-[#0e2a4d]">Wallet Transaction Audit Trail</h2>
+                </div>
+
+                {transactions.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider font-bold">
+                          <th className="pb-3 font-semibold">Date</th>
+                          <th className="pb-3 font-semibold">Type</th>
+                          <th className="pb-3 font-semibold">Direction</th>
+                          <th className="pb-3 font-semibold text-right">Amount</th>
+                          <th className="pb-3 font-semibold text-right">Before</th>
+                          <th className="pb-3 font-semibold text-right">After</th>
+                          <th className="pb-3 font-semibold pl-4">Justification Note</th>
+                          <th className="pb-3 font-semibold">Performed By</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 text-gray-600 font-medium">
+                        {transactions.map((tx) => {
+                          const isCredit = tx.direction === 'credit';
+                          return (
+                            <tr key={tx.id} className="hover:bg-slate-50/30">
+                              <td className="py-3 whitespace-nowrap text-gray-500 font-mono">
+                                {new Date(tx.created_at).toLocaleString()}
+                              </td>
+                              <td className="py-3 capitalize whitespace-nowrap">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-50 border border-gray-100 text-slate-700">
+                                  {tx.transaction_type.replace('_', ' ')}
+                                </span>
+                              </td>
+                              <td className="py-3 whitespace-nowrap">
+                                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  isCredit 
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+                                    : 'bg-red-50 text-red-700 border border-red-100'
+                                }`}>
+                                  {isCredit ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                                  <span className="capitalize">{tx.direction}</span>
+                                </span>
+                              </td>
+                              <td className={`py-3 text-right font-bold ${isCredit ? 'text-emerald-700' : 'text-red-700'}`}>
+                                {isCredit ? '+' : '-'}{Number(tx.amount).toFixed(2)} MC
+                              </td>
+                              <td className="py-3 text-right font-mono text-gray-500">{Number(tx.balance_before).toFixed(2)} MC</td>
+                              <td className="py-3 text-right font-bold font-mono text-slate-800">{Number(tx.balance_after).toFixed(2)} MC</td>
+                              <td className="py-3 pl-4 max-w-xs text-gray-500 font-medium" title={
+                                tx.cancellationDetails 
+                                  ? `${tx.justification_note || tx.description || ''} (Job: ${tx.cancellationDetails.jobTitle || ''}, Candidate: ${tx.cancellationDetails.candidateName || ''})`
+                                  : tx.jobDetails
+                                  ? `${tx.justification_note || tx.description || ''} (Job: ${tx.jobDetails.title})`
+                                  : tx.justification_note || tx.description || ''
+                              }>
+                                {tx.cancellationDetails ? (
+                                  <div className="flex flex-col">
+                                    <span className="truncate block">
+                                      {tx.reference_type === 'candidate_cancellation' && (
+                                        tx.cancellationDetails.candidateName 
+                                          ? `Candidate Cancellation Compensation — ${tx.cancellationDetails.candidateName}`
+                                          : 'Candidate Cancellation Compensation'
+                                      )}
+                                      {tx.reference_type === 'company_cancellation_refund' && (
+                                        tx.cancellationDetails.candidateName 
+                                          ? `Company Cancellation Refund — ${tx.cancellationDetails.candidateName}`
+                                          : 'Company Cancellation Refund'
+                                      )}
+                                      {tx.reference_type === 'candidate_cancellation_platform' && (
+                                        tx.cancellationDetails.candidateName 
+                                          ? `Platform Share (Candidate Cancel) — ${tx.cancellationDetails.candidateName}`
+                                          : 'Platform Share (Candidate Cancel)'
+                                      )}
+                                    </span>
+                                    {tx.cancellationDetails.jobTitle && (
+                                      <span className="text-[10px] text-gray-400 block mt-0.5 truncate">
+                                        Job: {tx.cancellationDetails.jobTitle}
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : tx.jobDetails ? (
+                                  <div className="flex flex-col">
+                                    <span className="truncate block">Job Posting Fee: {tx.jobDetails.title}</span>
+                                    <span className="text-[10px] text-gray-400 block mt-0.5 truncate">
+                                      {(() => {
+                                        const note = tx.justification_note || tx.description || '';
+                                        const match = note.match(/\(([^)]+)\)/);
+                                        return match ? `Posting fee: ${match[1]}` : note;
+                                      })()}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="truncate block">{tx.justification_note || tx.description || '-'}</span>
+                                )}
+                              </td>
+                              <td className="py-3 whitespace-nowrap font-semibold text-[#0e2a4d]">
+                                {tx.created_by ? (
+                                  <div title={tx.created_by}>
+                                    <span>Admin action</span>
+                                    <span className="block text-[10px] text-gray-400 font-mono mt-0.5">
+                                      {tx.created_by.substring(0, 8)}...
+                                    </span>
+                                  </div>
+                                ) : (
+                                  'System / Automated'
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-sm text-gray-400 font-medium bg-slate-50/20 border border-dashed border-gray-150 rounded-xl">
+                    <FileText className="mx-auto mb-2 text-gray-300" size={32} />
+                    <span>No transactions found for this wallet.</span>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 4: Wallet Summary (Read-Only) */}
+          {activeTab === 'summary' && canViewSummary && (
+            <div className="space-y-6 animate-fadeIn animate-duration-300">
+              
+              {/* Stack Selector and Details Side-by-side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Select Wallet block */}
+                <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <h2 className="text-base font-bold text-[#0e2a4d] mb-4">Select Wallet</h2>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Owner Type</label>
+                        <select
+                          value={ownerType}
+                          onChange={(e) => {
+                            setOwnerType(e.target.value);
+                            setSelectedOwnerId('');
+                            setSelectedWallet(null);
+                            setTransactions([]);
+                          }}
+                          className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-blue-900 transition-colors"
+                        >
+                          <option value="user">Personal / User Wallet</option>
+                          <option value="company">Company Wallet</option>
+                          <option value="platform">MarComn Platform Wallet</option>
+                        </select>
+                      </div>
+
+                      {ownerType !== 'platform' && (
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                            {ownerType === 'user' ? 'Select User Account' : 'Select Company'}
+                          </label>
+                          <select
+                            value={selectedOwnerId}
+                            onChange={(e) => setSelectedOwnerId(e.target.value)}
+                            className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-blue-900 transition-colors"
+                          >
+                            <option value="">-- Choose Option --</option>
+                            {ownerType === 'user' 
+                              ? profilesList.map(p => (
+                                  <option key={p.id} value={p.id}>{p.name} (@{p.username || 'unknown'})</option>
+                                ))
+                              : companiesList.map(c => (
+                                  <option key={c.id} value={c.id}>{c.name}</option>
+                                ))
+                            }
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {loadingWallet ? (
+                    <div className="flex items-center justify-center py-8 space-x-2 text-gray-400">
+                      <Loader2 size={20} className="animate-spin text-blue-900" />
+                      <span className="text-sm font-semibold">Retrieving wallet data...</span>
+                    </div>
+                  ) : selectedWallet ? (
+                    <div className="bg-slate-50/50 border border-gray-100 rounded-xl p-4 mt-6 space-y-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-gray-400 font-bold uppercase tracking-wider">Wallet ID</span>
+                        <span className="font-mono text-gray-600 truncate max-w-[140px]" title={selectedWallet.id}>{selectedWallet.id}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-gray-400 font-bold uppercase tracking-wider">Status</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 capitalize">
+                          {selectedWallet.status}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs pt-2 border-t border-gray-200">
+                        <span className="text-gray-400 font-bold uppercase tracking-wider">Current Balance</span>
+                        <span className="text-sm font-extrabold text-[#0e2a4d]">{Number(selectedWallet.balance).toFixed(2)} MC</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-sm text-gray-400 font-medium mt-6">
+                      {ownerType === 'platform' ? 'Click selection to load' : 'Select owner to check balance.'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Read-Only Info Block */}
+                <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <h2 className="text-base font-bold text-[#0e2a4d] mb-4">Support Reference</h2>
+                    <div className="text-sm text-gray-500 space-y-3 font-medium">
+                      <p>You are viewing wallet information under **Support Admin** access.</p>
+                      <p>Support administrators have read-only permissions to inspect balances, statuses, and transaction details to resolve disputes or assist users.</p>
+                      <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-xl text-xs text-blue-900 flex items-start gap-2.5">
+                        <Coins size={16} className="shrink-0 mt-0.5 text-blue-900" />
+                        <div>
+                          <p className="font-bold text-blue-950">Action Restricted</p>
+                          <p className="mt-0.5 text-gray-600 font-normal">Only Finance or Wallet administrators can modify balances, grant adjustments, or approve top-ups.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Wallet Transaction Audit Trail under adjusts */}
+              <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm overflow-hidden">
+                <div className="flex items-center gap-2 mb-6">
+                  <History size={18} className="text-[#0e2a4d]" />
+                  <h2 className="text-base font-bold text-[#0e2a4d]">Wallet Transaction Audit Trail (Read-Only)</h2>
                 </div>
 
                 {transactions.length > 0 ? (

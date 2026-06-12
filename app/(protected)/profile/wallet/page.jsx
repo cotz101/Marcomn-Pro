@@ -42,6 +42,7 @@ export default function PersonalWalletPage() {
 
   const [modalTab, setModalTab] = useState('stripe'); // 'stripe' or 'manual'
   const [mcreditsPerUsd, setMcreditsPerUsd] = useState(1.0);
+  const [stripePackages, setStripePackages] = useState([]);
   const [submittingStripe, setSubmittingStripe] = useState(false);
   const [pageMessage, setPageMessage] = useState(null);
 
@@ -90,6 +91,27 @@ export default function PersonalWalletPage() {
 
       if (settingData) {
         setMcreditsPerUsd(Number(settingData.value) || 1.0);
+      }
+
+      // Fetch top-up packages
+      const { data: packagesData } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', 'mcredit_topup_packages')
+        .maybeSingle();
+
+      if (packagesData) {
+        try {
+          const parsed = JSON.parse(packagesData.value);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const activeSorted = parsed
+              .filter(pkg => pkg.isActive)
+              .sort((a, b) => (Number(a.displayOrder) || 0) - (Number(b.displayOrder) || 0));
+            setStripePackages(activeSorted);
+          }
+        } catch (e) {
+          console.error('Failed to parse stripe packages:', e);
+        }
       }
 
       if (walletError) throw walletError;
@@ -193,7 +215,7 @@ export default function PersonalWalletPage() {
     }
   };
 
-  const handleStripeCheckout = async (packageAmount) => {
+  const handleStripeCheckout = async (packageAmount, packageId) => {
     setSubmittingStripe(true);
     setTopupMessage(null);
     try {
@@ -205,7 +227,8 @@ export default function PersonalWalletPage() {
         body: JSON.stringify({
           ownerType: 'user',
           ownerId: userId,
-          packageAmount
+          packageAmount,
+          packageId
         }),
       });
 
@@ -238,6 +261,13 @@ export default function PersonalWalletPage() {
       alert(err.message || 'Failed to cancel request');
     }
   };
+
+  const displayPackages = stripePackages.length > 0 ? stripePackages : [10, 25, 50, 100, 250, 500].map(amount => ({
+    id: `pkg_${amount}`,
+    usdPrice: amount,
+    mcreditAmount: amount * mcreditsPerUsd,
+    isActive: true
+  }));
 
   if (loading) {
     return (
@@ -604,19 +634,18 @@ export default function PersonalWalletPage() {
                   Select a package to top up your personal wallet instantly via Stripe Checkout.
                 </p>
                 <div className="grid grid-cols-2 gap-3">
-                  {[10, 25, 50, 100, 250, 500].map((amount) => {
-                    const credits = amount * mcreditsPerUsd;
+                  {displayPackages.map((pkg) => {
                     return (
                       <button
-                        key={amount}
+                        key={pkg.id}
                         type="button"
                         disabled={submittingStripe}
-                        onClick={() => handleStripeCheckout(amount)}
+                        onClick={() => handleStripeCheckout(pkg.usdPrice, pkg.id)}
                         className="border border-gray-200 hover:border-[#0e2a4d] hover:bg-slate-50 disabled:opacity-50 p-4 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer group"
                       >
-                        <span className="text-sm font-extrabold text-[#0e2a4d]">${amount} USD</span>
+                        <span className="text-sm font-extrabold text-[#0e2a4d]">${pkg.usdPrice} USD</span>
                         <span className="text-xs font-semibold text-emerald-600 mt-1 select-none">
-                          +{credits.toFixed(0)} MC
+                          +{pkg.mcreditAmount.toFixed(0)} MC
                         </span>
                       </button>
                     );

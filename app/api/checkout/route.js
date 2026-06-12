@@ -6,8 +6,6 @@ import { createClient } from '@/lib/supabase-server';
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
-const ALLOWED_PACKAGES = [10, 25, 50, 100, 250, 500];
-
 export async function POST(req) {
   try {
     if (!stripe) {
@@ -22,13 +20,62 @@ export async function POST(req) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const { ownerType, ownerId, packageAmount } = await req.json();
+    const { ownerType, ownerId, packageId, packageAmount } = await req.json();
 
-    // 1. Validate package amount
-    const usdAmount = Number(packageAmount);
-    if (!ALLOWED_PACKAGES.includes(usdAmount)) {
-      return new NextResponse('Invalid package amount. Must be one of 10, 25, 50, 100, 250, or 500 USD.', { status: 400 });
+    // 1. Fetch top-up packages from platform settings
+    const { data: packagesSetting } = await supabase
+      .from('platform_settings')
+      .select('value')
+      .eq('key', 'mcredit_topup_packages')
+      .maybeSingle();
+
+    let packageInfo = null;
+
+    if (packagesSetting) {
+      try {
+        const parsed = JSON.parse(packagesSetting.value);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          if (packageId) {
+            packageInfo = parsed.find(pkg => pkg.id === packageId && pkg.isActive);
+          } else if (packageAmount) {
+            const usdAmountVal = Number(packageAmount);
+            packageInfo = parsed.find(pkg => pkg.usdPrice === usdAmountVal && pkg.isActive);
+          }
+        }
+      } catch (e) {
+        console.error('Checkout API: Failed to parse stripe packages from settings:', e);
+      }
     }
+
+    // Fallback if no packageInfo found (settings missing or invalid)
+    if (!packageInfo) {
+      const fallbackDefaults = [10, 25, 50, 100, 250, 500];
+      const usdAmountVal = Number(packageAmount);
+      
+      if (fallbackDefaults.includes(usdAmountVal)) {
+        const { data: rateSetting } = await supabase
+          .from('platform_settings')
+          .select('value')
+          .eq('key', 'mcredits_per_usd')
+          .maybeSingle();
+          
+        const rateVal = rateSetting ? Number(rateSetting.value) : 1.0;
+        packageInfo = {
+          id: `pkg_${usdAmountVal}`,
+          usdPrice: usdAmountVal,
+          mcreditAmount: usdAmountVal * rateVal,
+          isActive: true
+        };
+      }
+    }
+
+    if (!packageInfo || !packageInfo.isActive || packageInfo.usdPrice <= 0 || packageInfo.mcreditAmount <= 0) {
+      return new NextResponse('Invalid or inactive package selected.', { status: 400 });
+    }
+
+    const usdAmount = packageInfo.usdPrice;
+    const mcreditsAmount = packageInfo.mcreditAmount;
+    const rate = usdAmount > 0 ? (mcreditsAmount / usdAmount) : 1.0;
 
     // 2. Validate ownership & permission
     if (ownerType === 'user' && ownerId !== user.id) {
@@ -47,16 +94,6 @@ export async function POST(req) {
         return new NextResponse('Unauthorized access to company wallet.', { status: 403 });
       }
     }
-
-    // 3. Fetch exchange rate (cost of 1 MCredit in USD)
-    const { data: setting } = await supabase
-      .from('platform_settings')
-      .select('value')
-      .eq('key', 'mcredits_per_usd')
-      .maybeSingle();
-
-    const rate = setting ? Number(setting.value) : 1.0;
-    const mcreditsAmount = usdAmount * rate;
 
     // 4. Create Pending top-up request
     const { data: request, error: requestError } = await supabase
@@ -92,7 +129,7 @@ export async function POST(req) {
               name: `MCredits Top-Up Package`,
               description: `Purchase of ${mcreditsAmount.toFixed(2)} MCredits (Package: USD ${usdAmount})`,
             },
-            unit_amount: usdAmount * 100, // unit amount in cents
+            unit_amount: Math.round(usdAmount * 100), // unit amount in cents
           },
           quantity: 1,
         },
