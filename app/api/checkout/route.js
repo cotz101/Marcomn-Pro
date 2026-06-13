@@ -20,52 +20,83 @@ export async function POST(req) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const { ownerType, ownerId, packageId, packageAmount } = await req.json();
+    const { ownerType, ownerId, packageId, packageAmount, customAmount } = await req.json();
 
-    // 1. Fetch top-up packages from platform settings
-    const { data: packagesSetting } = await supabase
-      .from('platform_settings')
-      .select('value')
-      .eq('key', 'mcredit_topup_packages')
-      .maybeSingle();
-
+    // 1. Validate package amount/ID or custom amount against platform settings configuration
     let packageInfo = null;
 
-    if (packagesSetting) {
-      try {
-        const parsed = JSON.parse(packagesSetting.value);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          if (packageId) {
-            packageInfo = parsed.find(pkg => pkg.id === packageId && pkg.isActive);
-          } else if (packageAmount) {
-            const usdAmountVal = Number(packageAmount);
-            packageInfo = parsed.find(pkg => pkg.usdPrice === usdAmountVal && pkg.isActive);
-          }
-        }
-      } catch (e) {
-        console.error('Checkout API: Failed to parse stripe packages from settings:', e);
+    if (customAmount !== undefined && customAmount !== null) {
+      const customUsd = Number(customAmount);
+      if (isNaN(customUsd)) {
+        return new NextResponse('Invalid custom amount. Must be a valid number.', { status: 400 });
       }
-    }
+      if (customUsd < 5) {
+        return new NextResponse('Custom amount must be at least 5 USD.', { status: 400 });
+      }
+      if (customUsd > 10000) {
+        return new NextResponse('Custom amount cannot exceed 10,000 USD.', { status: 400 });
+      }
+      if (Number(customUsd.toFixed(2)) !== customUsd) {
+        return new NextResponse('Custom amount cannot have more than 2 decimal places.', { status: 400 });
+      }
 
-    // Fallback if no packageInfo found (settings missing or invalid)
-    if (!packageInfo) {
-      const fallbackDefaults = [10, 25, 50, 100, 250, 500];
-      const usdAmountVal = Number(packageAmount);
-      
-      if (fallbackDefaults.includes(usdAmountVal)) {
-        const { data: rateSetting } = await supabase
-          .from('platform_settings')
-          .select('value')
-          .eq('key', 'mcredits_per_usd')
-          .maybeSingle();
-          
-        const rateVal = rateSetting ? Number(rateSetting.value) : 1.0;
-        packageInfo = {
-          id: `pkg_${usdAmountVal}`,
-          usdPrice: usdAmountVal,
-          mcreditAmount: usdAmountVal * rateVal,
-          isActive: true
-        };
+      // Fetch exchange rate to compute custom mcredits amount
+      const { data: rateSetting } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', 'mcredits_per_usd')
+        .maybeSingle();
+        
+      const rateVal = rateSetting ? Number(rateSetting.value) : 1.0;
+      packageInfo = {
+        id: 'stripe_custom',
+        usdPrice: customUsd,
+        mcreditAmount: customUsd * rateVal,
+        isActive: true
+      };
+    } else {
+      const { data: packagesSetting } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', 'mcredit_topup_packages')
+        .maybeSingle();
+
+      if (packagesSetting) {
+        try {
+          const parsed = JSON.parse(packagesSetting.value);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            if (packageId) {
+              packageInfo = parsed.find(pkg => pkg.id === packageId && pkg.isActive);
+            } else if (packageAmount) {
+              const usdAmountVal = Number(packageAmount);
+              packageInfo = parsed.find(pkg => pkg.usdPrice === usdAmountVal && pkg.isActive);
+            }
+          }
+        } catch (e) {
+          console.error('Checkout API: Failed to parse stripe packages from settings:', e);
+        }
+      }
+
+      // Fallback if no packageInfo found (settings missing or invalid)
+      if (!packageInfo) {
+        const fallbackDefaults = [10, 25, 50, 100, 250, 500];
+        const usdAmountVal = Number(packageAmount);
+        
+        if (fallbackDefaults.includes(usdAmountVal)) {
+          const { data: rateSetting } = await supabase
+            .from('platform_settings')
+            .select('value')
+            .eq('key', 'mcredits_per_usd')
+            .maybeSingle();
+            
+          const rateVal = rateSetting ? Number(rateSetting.value) : 1.0;
+          packageInfo = {
+            id: `pkg_${usdAmountVal}`,
+            usdPrice: usdAmountVal,
+            mcreditAmount: usdAmountVal * rateVal,
+            isActive: true
+          };
+        }
       }
     }
 
@@ -105,7 +136,9 @@ export async function POST(req) {
         amount: mcreditsAmount,
         status: 'Pending',
         payment_method: 'stripe',
-        remarks: `Stripe Checkout: USD ${usdAmount} package`,
+        remarks: packageInfo.id === 'stripe_custom'
+          ? `Stripe Checkout: USD ${usdAmount} custom amount`
+          : `Stripe Checkout: USD ${usdAmount} package`,
       })
       .select()
       .single();
@@ -126,8 +159,10 @@ export async function POST(req) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `MCredits Top-Up Package`,
-              description: `Purchase of ${mcreditsAmount.toFixed(2)} MCredits (Package: USD ${usdAmount})`,
+              name: `MCredits Top-Up`,
+              description: packageInfo.id === 'stripe_custom'
+                ? `Purchase of ${mcreditsAmount.toFixed(2)} MCredits (Custom: USD ${usdAmount})`
+                : `Purchase of ${mcreditsAmount.toFixed(2)} MCredits (Package: USD ${usdAmount})`,
             },
             unit_amount: Math.round(usdAmount * 100), // unit amount in cents
           },
@@ -136,7 +171,7 @@ export async function POST(req) {
       ],
       mode: 'payment',
       success_url: `${origin}/${ownerType === 'company' ? 'company' : 'profile'}/wallet?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/${ownerType === 'company' ? 'company' : 'profile'}/wallet?cancelled=true`,
+      cancel_url: `${origin}/${ownerType === 'company' ? 'company' : 'profile'}/wallet?cancelled=true&session_id={CHECKOUT_SESSION_ID}`,
       metadata: {
         topupRequestId: request.id,
         ownerType,
@@ -145,6 +180,7 @@ export async function POST(req) {
         usdAmount: usdAmount.toString(),
         mcreditsAmount: mcreditsAmount.toString(),
         exchangeRate: rate.toString(),
+        topupType: packageInfo.id === 'stripe_custom' ? 'stripe_custom' : 'stripe_package',
         environment,
       },
     });

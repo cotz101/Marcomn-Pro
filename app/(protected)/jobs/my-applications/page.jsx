@@ -716,7 +716,19 @@ export default function MyApplicationsPage() {
                     </p>
                   )}
                   {acceptingError && (
-                    <p className="text-red-700 font-semibold mt-1.5 leading-tight">{acceptingError}</p>
+                    <div className="mt-1.5 space-y-2">
+                      <p className="text-red-700 font-semibold leading-tight">{acceptingError}</p>
+                      {acceptingError.includes('Insufficient') && (
+                        <div className="pt-0.5">
+                          <Link
+                            href="/profile/wallet"
+                            className="inline-flex items-center justify-center rounded-md border border-[#004173]/20 bg-[#eaf3fb] px-4 py-2 text-sm font-semibold text-[#004173] hover:bg-[#dcecf8] transition-colors"
+                          >
+                            Top up your wallet
+                          </Link>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

@@ -35,9 +35,15 @@ export default function LandingPage() {
         </Link>
       </main>
 
-      <footer className="text-center py-6 text-sm text-gray-400">
-        © 2026 Marcomn.{' '}
-        <span className="text-blue-500">The professional network.</span>
+      <footer className="text-center py-6 text-sm text-gray-400 flex flex-col items-center gap-2">
+        <div>
+          © 2026 Marcomn. <span className="text-blue-500">The professional network.</span>
+        </div>
+        <div className="flex gap-4 text-xs font-semibold text-gray-500">
+          <Link href="/credits" className="hover:text-blue-500 transition-colors">MCredits</Link>
+          <span>•</span>
+          <Link href="/legal/payments" className="hover:text-blue-500 transition-colors">Payment Policies</Link>
+        </div>
       </footer>
     </div>
   );

@@ -426,3 +426,67 @@ export async function getPendingTopupRequests() {
     return [];
   }
 }
+
+/**
+ * Cancel the latest pending Stripe top-up request for the current user/company.
+ */
+export async function cancelLatestPendingStripeTopup({ ownerType, ownerId, sessionId }) {
+  const supabase = await createClient();
+
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) throw new Error('Unauthorized');
+
+    let query = supabase
+      .from('mcredit_topup_requests')
+      .select('*')
+      .eq('owner_type', ownerType)
+      .eq('owner_id', ownerId)
+      .eq('status', 'Pending')
+      .eq('payment_method', 'stripe');
+
+    if (sessionId) {
+      query = query.eq('payment_reference', sessionId);
+    } else {
+      query = query.order('created_at', { ascending: false }).limit(1);
+    }
+
+    const { data: request, error: fetchError } = await query.maybeSingle();
+
+    if (fetchError) throw new Error(fetchError.message);
+    if (!request) {
+      console.log('No pending Stripe top-up request found to cancel.');
+      return { success: false, error: 'No pending request found.' };
+    }
+
+    // Verify ownership
+    if (request.owner_type === 'user' && request.owner_id !== user.id) {
+      throw new Error('Unauthorized');
+    }
+    if (request.owner_type === 'company') {
+      const { data: member } = await supabase
+        .from('company_members')
+        .select('id')
+        .eq('company_id', request.owner_id)
+        .eq('profile_id', user.id)
+        .maybeSingle();
+      if (!member) throw new Error('Unauthorized');
+    }
+
+    // Update request
+    const { error: updateError } = await supabase
+      .from('mcredit_topup_requests')
+      .update({
+        status: 'Cancelled',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', request.id);
+
+    if (updateError) throw new Error(updateError.message);
+
+    return { success: true, requestId: request.id };
+  } catch (error) {
+    console.error('cancelLatestPendingStripeTopup error:', error);
+    return { success: false, error: error.message };
+  }
+}

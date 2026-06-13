@@ -51,9 +51,10 @@ export default function PlatformAdminDashboard() {
                      hasPerm('can_view_finance_dashboard');
   const hasRolesControl = hasPerm('can_manage_admin_roles');
   const hasAuditLogs = hasPerm('can_view_admin_audit_logs');
+  const hasContentManagement = hasPerm('can_manage_content_pages') || hasPerm('can_manage_faqs');
 
   // Guard: User must have at least one valid mapped permission
-  const isPlatformAdmin = isLegacyAdmin || hasGlobalSettings || hasWalletControl || hasFinance || hasRolesControl || hasAuditLogs;
+  const isPlatformAdmin = isLegacyAdmin || hasGlobalSettings || hasWalletControl || hasFinance || hasRolesControl || hasAuditLogs || hasContentManagement;
 
   if (!profile) return null;
 
@@ -91,6 +92,13 @@ export default function PlatformAdminDashboard() {
           icon: <Settings size={20} />,
           href: '/settings/global',
           active: hasGlobalSettings,
+        },
+        {
+          name: 'Website Content & Legal Pages',
+          description: 'Manage CMS pages, sections, and frequently asked questions.',
+          icon: <FileText size={20} />,
+          href: '/admin/content',
+          active: hasContentManagement,
         },
         {
           name: 'Branding / Logo',

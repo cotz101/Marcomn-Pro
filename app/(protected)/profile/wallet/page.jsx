@@ -15,9 +15,10 @@ import {
   Info,
   Plus,
   XCircle,
-  CreditCard
+  CreditCard,
+  X
 } from 'lucide-react';
-import { createTopupRequest, cancelTopupRequest, getMyTopupRequests } from '@/app/actions/mcreditTopups';
+import { createTopupRequest, cancelTopupRequest, getMyTopupRequests, cancelLatestPendingStripeTopup } from '@/app/actions/mcreditTopups';
 import { getMyReceipts } from '@/app/actions/mcreditReceipts';
 
 export default function PersonalWalletPage() {
@@ -40,30 +41,12 @@ export default function PersonalWalletPage() {
   const [submittingTopup, setSubmittingTopup] = useState(false);
   const [topupMessage, setTopupMessage] = useState(null);  // { type: 'success'|'error', text: string }
 
-  const [modalTab, setModalTab] = useState('stripe'); // 'stripe' or 'manual'
+  const [modalTab, setModalTab] = useState('package'); // 'package' or 'custom'
   const [mcreditsPerUsd, setMcreditsPerUsd] = useState(1.0);
   const [stripePackages, setStripePackages] = useState([]);
   const [submittingStripe, setSubmittingStripe] = useState(false);
   const [pageMessage, setPageMessage] = useState(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('success') === 'true') {
-        setPageMessage({
-          type: 'success',
-          text: 'Payment received. Your MCredit balance will update after confirmation.'
-        });
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } else if (params.get('cancelled') === 'true') {
-        setPageMessage({
-          type: 'error',
-          text: 'Payment checkout was cancelled.'
-        });
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    }
-  }, []);
 
   const fetchWalletData = useCallback(async () => {
     if (!userId || !profile) {
@@ -180,6 +163,33 @@ export default function PersonalWalletPage() {
   }, [userId, profile]);
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && userId) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('cancelled') === 'true') {
+        const sessionId = params.get('session_id') || null;
+        setPageMessage({
+          type: 'error',
+          text: 'Payment checkout was cancelled.'
+        });
+        cancelLatestPendingStripeTopup({
+          ownerType: 'user',
+          ownerId: userId,
+          sessionId
+        }).then(() => {
+          fetchWalletData();
+          window.history.replaceState({}, document.title, window.location.pathname);
+        });
+      } else if (params.get('success') === 'true') {
+        setPageMessage({
+          type: 'success',
+          text: 'Payment received. Your MCredit balance will update after confirmation.'
+        });
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, [userId, fetchWalletData]);
+
+  useEffect(() => {
     if (userId !== undefined && profile !== undefined) {
       fetchWalletData();
     }
@@ -215,7 +225,7 @@ export default function PersonalWalletPage() {
     }
   };
 
-  const handleStripeCheckout = async (packageAmount, packageId) => {
+  const handleStripeCheckout = async (packageAmount, packageId, customAmount) => {
     setSubmittingStripe(true);
     setTopupMessage(null);
     try {
@@ -228,7 +238,8 @@ export default function PersonalWalletPage() {
           ownerType: 'user',
           ownerId: userId,
           packageAmount,
-          packageId
+          packageId,
+          customAmount
         }),
       });
 
@@ -397,13 +408,21 @@ export default function PersonalWalletPage() {
                 <span>About MCredits</span>
               </h3>
               
-              <div className="space-y-3 text-xs text-blue-100/90 leading-relaxed">
+              <div className="space-y-3 text-xs text-blue-100/90 leading-relaxed font-medium">
                 <p>
                   MCredits are used to accept job offers and access selected MarComn services.
                 </p>
                 <p>
-                  Personal top-ups require platform admin approval.
+                  Top up your wallet securely online via card through Stripe for instant credit.
                 </p>
+                <div className="pt-1 select-none">
+                  <Link 
+                    href="/credits" 
+                    className="text-xs text-blue-300 hover:text-white underline font-bold transition-colors"
+                  >
+                    Learn how MCredits work →
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -588,139 +607,191 @@ export default function PersonalWalletPage() {
 
       {/* Top-Up Modal */}
       {isTopupModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-            <h2 className="text-lg font-bold text-[#0e2a4d] mb-2">Request MCredits Top-Up</h2>
-            
-            {/* Modal Tabs */}
-            <div className="flex border-b border-gray-150 mb-4 mt-2">
-              <button
-                type="button"
-                onClick={() => { setModalTab('stripe'); setTopupMessage(null); }}
-                className={`flex-1 pb-2.5 text-xs font-bold text-center border-b-2 transition-all ${
-                  modalTab === 'stripe'
-                    ? 'border-[#0e2a4d] text-[#0e2a4d]'
-                    : 'border-transparent text-gray-400 hover:text-gray-600'
-                }`}
+        <div className="modal-overlay-glass" onClick={() => { setIsTopupModalOpen(false); setTopupAmount(''); }}>
+          <div 
+            className="modal-content-standard max-w-md" 
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '448px' }}
+          >
+            {/* Header with Dark Navy bar */}
+            <div className="modal-header-navy">
+              <h2 className="modal-title-white">Buy MCredits</h2>
+              <button 
+                onClick={() => { setIsTopupModalOpen(false); setTopupAmount(''); }}
+                className="modal-close-btn-white"
+                disabled={submittingStripe}
               >
-                Instant Top-Up (Card)
-              </button>
-              <button
-                type="button"
-                onClick={() => { setModalTab('manual'); setTopupMessage(null); }}
-                className={`flex-1 pb-2.5 text-xs font-bold text-center border-b-2 transition-all ${
-                  modalTab === 'manual'
-                    ? 'border-[#0e2a4d] text-[#0e2a4d]'
-                    : 'border-transparent text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                Manual Top-Up
+                <X size={20} />
               </button>
             </div>
 
-            {topupMessage && (
-              <div className={`mb-4 px-4 py-3 rounded-xl text-sm font-semibold ${
-                topupMessage.type === 'success'
-                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                  : 'bg-red-50 text-red-800 border border-red-200'
-              }`}>
-                {topupMessage.text}
-              </div>
-            )}
+            {/* Internal padded content wrapper */}
+            <div className="px-5 sm:px-6 py-6 space-y-6">
+              {/* Subtitle / Intro */}
+              <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                Top up your wallet securely via Stripe. Credits are applied automatically after payment.
+              </p>
 
-            {modalTab === 'stripe' ? (
-              <div className="space-y-4">
-                <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                  Select a package to top up your personal wallet instantly via Stripe Checkout.
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {displayPackages.map((pkg) => {
-                    return (
-                      <button
-                        key={pkg.id}
-                        type="button"
-                        disabled={submittingStripe}
-                        onClick={() => handleStripeCheckout(pkg.usdPrice, pkg.id)}
-                        className="border border-gray-200 hover:border-[#0e2a4d] hover:bg-slate-50 disabled:opacity-50 p-4 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer group"
-                      >
-                        <span className="text-sm font-extrabold text-[#0e2a4d]">${pkg.usdPrice} USD</span>
-                        <span className="text-xs font-semibold text-emerald-600 mt-1 select-none">
-                          +{pkg.mcreditAmount.toFixed(0)} MC
-                        </span>
-                      </button>
-                    );
-                  })}
+              {/* Message/Toast */}
+              {topupMessage && (
+                <div className={`px-4 py-3 rounded-xl text-sm font-semibold border ${
+                  topupMessage.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-red-50 text-red-800 border-red-200'
+                }`}>
+                  {topupMessage.text}
                 </div>
-                
-                <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold bg-gray-50 p-2.5 rounded-lg select-none">
-                  <span>Exchange Rate: 1 USD = {mcreditsPerUsd.toFixed(1)} MC</span>
-                  <span>Instant Auto-Approval</span>
-                </div>
+              )}
 
-                <div className="flex justify-end pt-2">
+              {/* Tabs Header */}
+              <div className="select-none">
+                <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
                   <button
                     type="button"
-                    onClick={() => setIsTopupModalOpen(false)}
-                    disabled={submittingStripe}
-                    className="px-5 py-2 text-xs font-bold text-gray-500 hover:bg-gray-150 rounded-xl transition-colors cursor-pointer select-none"
+                    onClick={() => setModalTab('package')}
+                    className={`flex-1 py-2 text-xs font-bold text-center rounded-lg transition-all ${
+                      modalTab === 'package'
+                        ? 'bg-white text-[#0e2a4d] shadow-3xs'
+                        : 'text-gray-400 hover:text-gray-600 hover:bg-slate-200/50'
+                    }`}
                   >
-                    Close
+                    Package Top-Up
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalTab('custom')}
+                    className={`flex-1 py-2 text-xs font-bold text-center rounded-lg transition-all ${
+                      modalTab === 'custom'
+                        ? 'bg-white text-[#0e2a4d] shadow-3xs'
+                        : 'text-gray-400 hover:text-gray-600 hover:bg-slate-200/50'
+                    }`}
+                  >
+                    Custom Amount
                   </button>
                 </div>
+              </div>
 
-                {submittingStripe && (
-                  <div className="absolute inset-0 bg-white/80 z-20 rounded-2xl flex flex-col items-center justify-center space-y-3">
-                    <Loader2 size={32} className="animate-spin text-blue-900" />
-                    <span className="text-xs text-gray-500 font-bold">Redirecting to Stripe Checkout...</span>
+              {/* Tab Content */}
+              <div>
+                {modalTab === 'package' && (
+                  <div className="space-y-4">
+                    <div>
+                      <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">Preset Packages</span>
+                      <div className="grid grid-cols-2 gap-3">
+                        {displayPackages.map((pkg) => {
+                          return (
+                            <button
+                              key={pkg.id}
+                              type="button"
+                              disabled={submittingStripe}
+                              onClick={() => handleStripeCheckout(pkg.usdPrice, pkg.id)}
+                              className="border border-gray-200 hover:border-[#0e2a4d] hover:bg-slate-50 disabled:opacity-50 p-4 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer group"
+                            >
+                              <span className="text-sm font-extrabold text-[#0e2a4d]">${pkg.usdPrice} USD</span>
+                              <span className="text-xs font-semibold text-emerald-600 mt-1 select-none">
+                                +{pkg.mcreditAmount.toFixed(0)} MC
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {modalTab === 'custom' && (
+                  <div className="space-y-4">
+                    <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                      Enter a custom USD amount below. Paid securely online by card via Stripe and credited to your wallet automatically upon successful payment.
+                    </p>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Custom Amount (USD)</label>
+                        <div className="relative rounded-xl shadow-3xs">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 sm:text-sm">$</span>
+                          </div>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="5"
+                            max="10000"
+                            value={topupAmount}
+                            disabled={submittingStripe}
+                            onChange={(e) => setTopupAmount(e.target.value)}
+                            className="w-full bg-white border border-gray-200 rounded-xl pl-7 pr-3 py-2 text-sm outline-none focus:border-blue-900 font-medium"
+                            placeholder="e.g. 150.00"
+                          />
+                        </div>
+                        
+                        {/* Real-time calculated MCredits preview */}
+                        {topupAmount && !isNaN(Number(topupAmount)) && Number(topupAmount) > 0 && (
+                          <div className="flex justify-between items-center mt-2 px-1 text-xs select-none">
+                            <span className="text-gray-500 font-medium">Estimated MCredits:</span>
+                            <span className="font-extrabold text-emerald-600 flex items-center gap-1">
+                              <Coins size={12} />
+                              <span>+{(Number(topupAmount) * mcreditsPerUsd).toFixed(2)} MC</span>
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Validation Messages */}
+                        {topupAmount !== '' && Number(topupAmount) < 5 && (
+                          <p className="text-[11px] text-red-600 font-semibold mt-1.5 px-1">Minimum top-up is $5.00 USD.</p>
+                        )}
+                        {topupAmount !== '' && Number(topupAmount) > 10000 && (
+                          <p className="text-[11px] text-red-600 font-semibold mt-1.5 px-1">Maximum top-up is $10,000.00 USD.</p>
+                        )}
+                        {topupAmount !== '' && Number(topupAmount) >= 5 && Number(topupAmount) <= 10000 && Number(Number(topupAmount).toFixed(2)) !== Number(topupAmount) && (
+                          <p className="text-[11px] text-red-600 font-semibold mt-1.5 px-1">Maximum 2 decimal places allowed.</p>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={submittingStripe || !topupAmount || isNaN(Number(topupAmount)) || Number(topupAmount) < 5 || Number(topupAmount) > 10000 || Number(Number(topupAmount).toFixed(2)) !== Number(topupAmount)}
+                        onClick={() => handleStripeCheckout(null, null, Number(topupAmount))}
+                        className="w-full bg-[#0e2a4d] hover:bg-[#071c35] text-white py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-3xs disabled:bg-slate-200 disabled:text-gray-400 disabled:border-transparent"
+                      >
+                        {submittingStripe ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <CreditCard size={14} />
+                        )}
+                        <span>Checkout Custom Amount</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
-            ) : (
-              <form onSubmit={handleTopupSubmit}>
-                <p className="text-xs text-gray-500 mb-4 leading-relaxed font-medium">
-                  Submit a manual top-up request. It will remain pending until approved by a platform administrator.
-                </p>
-                <div className="mb-4">
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Amount (MCredits)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    required
-                    value={topupAmount}
-                    onChange={(e) => setTopupAmount(e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-900"
-                    placeholder="e.g. 500"
-                  />
-                </div>
-                <div className="mb-6">
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Remarks / Note (Optional)</label>
-                  <textarea
-                    value={topupRemarks}
-                    onChange={(e) => setTopupRemarks(e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-900 resize-none h-20"
-                    placeholder="Bank reference, deposit info, or other notes..."
-                  />
-                </div>
-                <div className="flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsTopupModalOpen(false)}
-                    disabled={submittingTopup}
-                    className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submittingTopup}
-                    className="bg-[#0e2a4d] text-white px-4 py-2 text-sm font-bold rounded-xl flex items-center gap-2"
-                  >
-                    {submittingTopup && <Loader2 size={14} className="animate-spin" />}
-                    Submit Request
-                  </button>
-                </div>
-              </form>
+
+              {/* Terms disclaimer */}
+              <div className="text-[11px] text-gray-400 text-center leading-normal mt-2 px-1 select-none font-medium">
+                By purchasing MCredits, you agree to MarComn’s{' '}
+                <Link href="/credits" className="text-blue-500 hover:underline font-semibold">How MCredits Work</Link>
+                {' '}and{' '}
+                <Link href="/legal/payments" className="text-blue-500 hover:underline font-semibold">Terms & Refund Policy</Link>.
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-center pt-4 border-t border-gray-150">
+                <button
+                  type="button"
+                  onClick={() => { setIsTopupModalOpen(false); setTopupAmount(''); }}
+                  disabled={submittingStripe}
+                  className="px-5 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer select-none"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            {submittingStripe && (
+              <div className="absolute inset-0 bg-white/90 z-20 rounded-2xl flex flex-col items-center justify-center space-y-3">
+                <Loader2 size={32} className="animate-spin text-[#0e2a4d]" />
+                <span className="text-xs text-gray-500 font-bold">Redirecting to Stripe Checkout...</span>
+              </div>
             )}
           </div>
         </div>
