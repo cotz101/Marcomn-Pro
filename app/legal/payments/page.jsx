@@ -91,7 +91,7 @@ export default async function PaymentsLegalPage() {
   // Fallback 1: Page missing/unpublished
   if (!data) {
     return (
-      <div className="min-h-screen flex flex-col bg-slate-50">
+      <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#e8f1fb] via-[#f3f7fb] to-[#f3f7fb]">
         <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-6 md:px-12 py-3 flex items-center justify-between w-full">
             <Link href="/" className="flex items-center">
@@ -112,7 +112,8 @@ export default async function PaymentsLegalPage() {
           </p>
           <Link 
             href="/" 
-            className="text-sm font-bold bg-[#0e2a4d] text-white px-6 py-3 rounded-xl hover:bg-[#071c35] transition-colors"
+            className="text-sm font-bold px-6 py-3 rounded-xl transition-all hover:opacity-90"
+            style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
           >
             Back to Home
           </Link>
@@ -124,7 +125,7 @@ export default async function PaymentsLegalPage() {
   const { page, sections, faqs } = data;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#e8f1fb] via-[#f3f7fb] to-[#f3f7fb]">
       {/* Header */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-3 flex items-center justify-between w-full">
@@ -155,7 +156,7 @@ export default async function PaymentsLegalPage() {
 
         {/* Fallback 2: No Sections */}
         {sections.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-150 p-8 text-center shadow-3xs">
+          <div className="bg-white rounded-2xl p-8 text-center shadow-[0_8px_30px_rgba(14,42,77,0.025)] border-0">
             <p className="text-sm text-gray-500 font-medium">No content sections available yet.</p>
           </div>
         ) : (
@@ -165,7 +166,7 @@ export default async function PaymentsLegalPage() {
               return (
                 <section 
                   key={section.id} 
-                  className="bg-white rounded-2xl border border-gray-150 p-6 sm:p-8 shadow-3xs"
+                  className="bg-white rounded-2xl p-6 sm:p-8 shadow-[0_8px_30px_rgba(14,42,77,0.025)] border-0"
                 >
                   <h2 className="text-lg font-bold text-[#0e2a4d] mb-4 border-b border-slate-50 pb-2">
                     {section.title}
@@ -191,7 +192,7 @@ export default async function PaymentsLegalPage() {
               {faqs.map((faq) => (
                 <div 
                   key={faq.id} 
-                  className="bg-white rounded-2xl border border-gray-150 p-6 shadow-3xs"
+                  className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgba(14,42,77,0.025)] border-0"
                 >
                   <h3 className="font-bold text-[#0e2a4d] text-sm mb-2">
                     {faq.question}

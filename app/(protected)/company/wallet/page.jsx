@@ -36,6 +36,17 @@ export default function CompanyWalletPage() {
   const [receipts, setReceipts] = useState([]);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
 
+  // Refund Modal State
+  const [refundRequests, setRefundRequests] = useState([]);
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+  const [selectedTopupForRefund, setSelectedTopupForRefund] = useState(null);
+  const [refundReason, setRefundReason] = useState('unused_credits');
+  const [refundNote, setRefundNote] = useState('');
+  const [refundAmount, setRefundAmount] = useState('');
+  const [submittingRefund, setSubmittingRefund] = useState(false);
+  const [refundSuccessMessage, setRefundSuccessMessage] = useState(null);
+  const [refundErrorMessage, setRefundErrorMessage] = useState(null);
+
   // Top-Up Modal State
   const [isTopupModalOpen, setIsTopupModalOpen] = useState(false);
   const [topupAmount, setTopupAmount] = useState('');
@@ -240,6 +251,13 @@ export default function CompanyWalletPage() {
         // Fetch Receipts
         const userReceipts = await getMyReceipts('company', myCompany.id);
         setReceipts(userReceipts || []);
+
+        // Fetch Refund Requests
+        const { data: refundsData } = await supabase
+          .from('mcredit_refund_requests')
+          .select('*')
+          .eq('wallet_id', walletData.id);
+        setRefundRequests(refundsData || []);
       }
     } catch (err) {
       console.error('Error fetching company wallet:', err);
@@ -407,6 +425,133 @@ export default function CompanyWalletPage() {
     );
   }
 
+  const handleRefundSubmit = async (e) => {
+    e.preventDefault();
+    if (!refundAmount || Number(refundAmount) <= 0) return;
+    if (Number(refundAmount) > selectedTopupForRefund?.remainingRefundable) {
+      setRefundErrorMessage(`Cannot exceed remaining refundable amount of ${selectedTopupForRefund.remainingRefundable} MC`);
+      return;
+    }
+
+    setSubmittingRefund(true);
+    setRefundErrorMessage(null);
+    setRefundSuccessMessage(null);
+
+    try {
+      const response = await fetch('/api/mcredits/refund-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          walletId: wallet.id,
+          topupRequestId: selectedTopupForRefund.request.id,
+          requestedMcredits: Number(refundAmount),
+          reason: refundReason,
+          userNote: refundNote
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText || 'Failed to submit refund request');
+      }
+
+      setRefundSuccessMessage("Your refund request has been submitted for review. You will be notified once it has been reviewed.");
+
+      setTimeout(async () => {
+        setIsRefundModalOpen(false);
+        setSelectedTopupForRefund(null);
+        setRefundReason('unused_credits');
+        setRefundNote('');
+        setRefundAmount('');
+        setRefundSuccessMessage(null);
+        await fetchWalletData();
+      }, 3500);
+    } catch (err) {
+      console.error('Submit refund error:', err);
+      setRefundErrorMessage(err.message || 'Failed to submit refund request');
+    } finally {
+      setSubmittingRefund(false);
+    }
+  };
+
+  const renderRefundStatus = (topupId, topupAmount, isTransactionsTab = false) => {
+    const allTopupRequests = refundRequests.filter(r => r.topup_request_id === topupId);
+    const sortedRefunds = [...allTopupRequests].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const latestRefund = sortedRefunds[0] || null;
+
+    const topupRefunds = refundRequests.filter(r => r.topup_request_id === topupId && r.status !== 'rejected' && r.status !== 'cancelled' && r.status !== 'failed');
+    const refundedMcredits = topupRefunds.reduce((acc, r) => acc + Number(r.approved_mcredits || r.requested_mcredits), 0);
+    const remainingRefundable = Math.max(0, Number(topupAmount) - refundedMcredits);
+    const hasActiveRequest = topupRefunds.some(r => ['pending_review', 'processing'].includes(r.status));
+
+    let statusText = '';
+    let statusColor = 'text-gray-500';
+
+    if (latestRefund) {
+      if (latestRefund.status === 'pending_review') {
+        statusText = 'Refund Pending';
+        statusColor = 'text-amber-600';
+      } else if (latestRefund.status === 'processing') {
+        statusText = 'Refund Processing';
+        statusColor = 'text-amber-600';
+      } else if (latestRefund.status === 'refunded') {
+        statusText = remainingRefundable <= 0 ? 'Fully Refunded' : 'Refunded';
+        statusColor = 'text-emerald-600';
+      } else if (latestRefund.status === 'rejected') {
+        statusText = 'Refund Rejected';
+        statusColor = 'text-rose-600';
+      } else if (latestRefund.status === 'failed') {
+        statusText = 'Refund Failed';
+        statusColor = 'text-rose-600';
+      } else if (latestRefund.status === 'cancelled') {
+        statusText = 'Refund Cancelled';
+        statusColor = 'text-gray-500';
+      }
+    }
+
+    const canRequestNew = remainingRefundable > 0 && !hasActiveRequest;
+
+    return (
+      <div className={`flex flex-col ${isTransactionsTab ? 'items-start' : 'items-end'} gap-1 mt-1`}>
+        {statusText && (
+          <span className={`text-[10px] font-bold select-none ${statusColor} px-2 py-0.5 bg-slate-50 rounded-md border border-gray-100`}>
+            {statusText}
+          </span>
+        )}
+        {canRequestNew && (
+          <button
+            onClick={() => {
+              const topupReq = topupRequests.find(r => r.id === topupId);
+              if (topupReq) {
+                setSelectedTopupForRefund({
+                  request: topupReq,
+                  remainingRefundable,
+                });
+                setRefundAmount(remainingRefundable.toString());
+                setIsRefundModalOpen(true);
+              }
+            }}
+            className="text-[11px] text-[#00B4D8] hover:text-blue-800 font-bold hover:underline cursor-pointer block w-fit"
+          >
+            Request Refund
+          </button>
+        )}
+        {canRequestNew && latestRefund && latestRefund.status === 'rejected' && (
+          <span className={`text-[9px] text-gray-400 font-medium max-w-[150px] leading-tight ${isTransactionsTab ? 'text-left' : 'text-right'}`}>
+            Previous refund request was rejected. You may submit a new request if eligible.
+          </span>
+        )}
+        {!canRequestNew && remainingRefundable <= 0 && !latestRefund && (
+          <span className="text-[10px] text-gray-400 font-semibold select-none">
+            Fully Refunded
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 font-sans">
       {/* Navigation */}
@@ -541,6 +686,17 @@ export default function CompanyWalletPage() {
           </button>
         </div>
 
+        {/* Refund Helper Note */}
+        <div className="mb-6 text-xs text-gray-500 bg-slate-50/60 p-3.5 rounded-xl border border-gray-100 flex flex-col gap-1 font-medium justify-center">
+          <div className="flex items-center gap-2">
+            <Info size={14} className="text-[#00B4D8] shrink-0" />
+            <span>Refund requests are available for eligible unused Stripe top-ups.</span>
+          </div>
+          <div className="text-[10px] text-gray-400 font-medium pl-5.5">
+            Top-up status and refund request status are tracked separately.
+          </div>
+        </div>
+
         {/* Tab content */}
         {activeTab === 'transactions' ? (
           <div>
@@ -629,6 +785,21 @@ export default function CompanyWalletPage() {
                                   </span>
                                 </>
                               )}
+                              {(() => {
+                                const isStripeTopup = tx.transaction_type === 'stripe_top_up' || 
+                                  (tx.transaction_type === 'purchase_completed' && tx.reference_type === 'stripe_checkout');
+                                
+                                if (!isStripeTopup) return null;
+                                
+                                const topupReq = topupRequests.find(r => r.id === tx.reference_id);
+                                if (!topupReq) return null;
+
+                                return (
+                                  <div className="mt-1">
+                                    {renderRefundStatus(topupReq.id, topupReq.amount, true)}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </td>
                           <td className="py-4 px-2 text-right whitespace-nowrap">
@@ -699,16 +870,19 @@ export default function CompanyWalletPage() {
                             </button>
                           )}
                           {req.status === 'Approved' && (
-                            <button
-                              onClick={() => {
-                                const receipt = receipts.find(r => r.topup_request_id === req.id);
-                                if (receipt) setSelectedReceipt(receipt);
-                                else alert('Receipt not generated yet.');
-                              }}
-                              className="text-blue-600 hover:text-blue-800 font-bold hover:underline"
-                            >
-                              View Receipt
-                            </button>
+                            <div className="flex flex-col items-end gap-1.5">
+                              <button
+                                onClick={() => {
+                                  const receipt = receipts.find(r => r.topup_request_id === req.id);
+                                  if (receipt) setSelectedReceipt(receipt);
+                                  else alert('Receipt not generated yet.');
+                                }}
+                                className="text-blue-600 hover:text-blue-800 font-bold hover:underline"
+                              >
+                                View Receipt
+                              </button>
+                              {renderRefundStatus(req.id, req.amount, false)}
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -976,6 +1150,159 @@ export default function CompanyWalletPage() {
                 PDF download functionality is planned for a future update.
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Refund Modal */}
+      {isRefundModalOpen && selectedTopupForRefund && (
+        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4" onClick={() => { if (!submittingRefund) setIsRefundModalOpen(false); }}>
+          <div 
+            className="bg-white rounded-2xl w-full max-w-lg shadow-xl border border-gray-100 relative overflow-hidden" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-[#0e2a4d] px-6 py-4 flex justify-between items-center text-white">
+              <h2 className="text-base font-bold">Request MCredit Refund</h2>
+              <button 
+                disabled={submittingRefund}
+                onClick={() => setIsRefundModalOpen(false)}
+                className="text-white/85 hover:text-white disabled:opacity-50"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleRefundSubmit} className="p-6 space-y-5">
+              {/* Messages */}
+              {refundSuccessMessage && (
+                <div className="p-3 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-semibold animate-fadeIn">
+                  {refundSuccessMessage}
+                </div>
+              )}
+              {refundErrorMessage && (
+                <div className="p-3 bg-red-50 text-red-800 border border-red-200 rounded-xl text-xs font-semibold animate-fadeIn">
+                  {refundErrorMessage}
+                </div>
+              )}
+
+              {/* Details info */}
+              <div className="bg-slate-50 rounded-xl p-4 space-y-2 text-xs font-medium text-gray-600">
+                <div className="flex justify-between">
+                  <span>Original Purchase:</span>
+                  <span className="font-bold text-gray-800">
+                    +{Number(selectedTopupForRefund.request.amount).toFixed(2)} MC
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Current Wallet Balance:</span>
+                  <span className="font-bold text-gray-800">
+                    {wallet ? Number(wallet.balance).toFixed(2) : '0.00'} MC
+                  </span>
+                </div>
+                <div className="flex justify-between text-emerald-700">
+                  <span>Max Refundable remaining:</span>
+                  <span className="font-bold">
+                    {Number(selectedTopupForRefund.remainingRefundable).toFixed(2)} MC
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Refund Method:</span>
+                  <span className="font-bold text-gray-800">Original Stripe payment method</span>
+                </div>
+              </div>
+
+              {/* Amount input */}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Refund Amount (MCredits)
+                </label>
+                <input 
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  max={selectedTopupForRefund.remainingRefundable}
+                  required
+                  disabled={submittingRefund}
+                  value={refundAmount}
+                  onChange={(e) => setRefundAmount(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-700 font-bold outline-none focus:border-blue-900 transition-colors"
+                />
+              </div>
+
+              {/* Reason dropdown */}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Reason for Refund
+                </label>
+                <select
+                  required
+                  disabled={submittingRefund}
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-700 font-bold outline-none focus:border-blue-900 transition-colors"
+                >
+                  <option value="unused_credits">Unused Credits</option>
+                  <option value="duplicate_payment">Duplicate Payment</option>
+                  <option value="technical_payment_issue">Technical Payment Issue</option>
+                  <option value="incorrect_crediting">Incorrect Crediting</option>
+                  <option value="unauthorized_charge_concern">Unauthorized Charge Concern</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              {/* Optional note */}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Additional Notes (Optional)
+                </label>
+                <textarea 
+                  disabled={submittingRefund}
+                  value={refundNote}
+                  onChange={(e) => setRefundNote(e.target.value)}
+                  rows={3}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2 text-xs text-gray-700 outline-none focus:border-blue-900 transition-colors resize-none"
+                  placeholder="Provide any additional details for review..."
+                />
+              </div>
+
+              {/* Policy Wording */}
+              <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-3.5 text-[10px] text-amber-800 leading-relaxed font-medium">
+                <p className="font-bold mb-1">MCredit Refund Policy:</p>
+                <p className="mb-1">
+                  MCredit purchases may be eligible for refund only for unused MCredit balance. Once MCredits have been used for job posting, job acceptance, platform services, fees, or completed transactions, those used credits are considered consumed and are non-refundable.
+                </p>
+                <p>
+                  Approved refunds are processed back to the original Stripe payment method whenever possible. MarComn does not collect bank details for normal Stripe refunds. The refundable amount must not exceed the user’s current available unused MCredit balance.
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 justify-end pt-2">
+                <button
+                   type="button"
+                   disabled={submittingRefund}
+                   onClick={() => setIsRefundModalOpen(false)}
+                   className="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-gray-600 text-xs font-bold rounded-xl transition-colors cursor-pointer border border-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingRefund || !refundAmount || Number(refundAmount) <= 0}
+                  className="px-6 py-2.5 bg-[#00B4D8] hover:bg-cyan-600 text-[#0e2a4d] text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                >
+                  {submittingRefund ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <span>Submit Refund Request</span>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

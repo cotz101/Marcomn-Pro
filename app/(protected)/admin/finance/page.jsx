@@ -26,7 +26,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowDown,
-  ArrowUp
+  ArrowUp,
+  X
 } from 'lucide-react';
 import { 
   getFinanceDashboardSummary, 
@@ -34,16 +35,28 @@ import {
   getTopupReport 
 } from '@/app/actions/adminFinance';
 import { getAdminReceipts } from '@/app/actions/mcreditReceipts';
+import { 
+  getAdminRefundRequests, 
+  rejectRefundRequest, 
+  approveRefundRequest 
+} from '@/app/actions/mcreditRefunds';
 
 export default function AdminFinancePage() {
   const router = useRouter();
   const { profile, showToast } = useProfile();
 
   const isLegacyAdmin = profile && ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role);
-  const isAuthorized = profile && (profile.admin_permissions?.includes('can_view_finance_reports') || isLegacyAdmin);
+  
+  const hasFinanceView = profile && (profile.admin_permissions?.includes('can_view_finance_reports') || isLegacyAdmin);
+  const hasRefundView = profile && (
+    profile.admin_permissions?.includes('can_view_wallet_summary') || 
+    profile.admin_permissions?.includes('can_manage_refund_reviews') || 
+    isLegacyAdmin
+  );
+  const isAuthorized = hasFinanceView || hasRefundView;
 
   // States
-  const [activeTab, setActiveTab] = useState('overview'); // overview, transactions, topups, revenue, receipts
+  const [activeTab, setActiveTab] = useState('overview'); // overview, transactions, topups, revenue, receipts, refunds
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
@@ -53,6 +66,25 @@ export default function AdminFinancePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [dateSortOrder, setDateSortOrder] = useState('desc');
   const itemsPerPage = 10;
+
+  // Refund states
+  const [refundRequests, setRefundRequests] = useState([]);
+  const [enableStripeRefunds, setEnableStripeRefunds] = useState(false);
+  const [selectedRefundRequest, setSelectedRefundRequest] = useState(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [adminNote, setAdminNote] = useState('');
+  const [approvedAmount, setApprovedAmount] = useState('');
+  const [submittingAction, setSubmittingAction] = useState(false);
+
+  // Set default tab once profile loads
+  useEffect(() => {
+    if (profile) {
+      const hasFinance = profile.admin_permissions?.includes('can_view_finance_reports') || isLegacyAdmin;
+      if (!hasFinance && (profile.admin_permissions?.includes('can_view_wallet_summary') || profile.admin_permissions?.includes('can_manage_refund_reviews'))) {
+        setActiveTab('refunds');
+      }
+    }
+  }, [profile, isLegacyAdmin]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -90,19 +122,47 @@ export default function AdminFinancePage() {
     if (!isAuthorized) return;
     setLoading(true);
     try {
-      const [summaryRes, txsRes, topupRes, receiptsData] = await Promise.all([
-        getFinanceDashboardSummary(activeFilters),
-        getFinanceTransactions(activeFilters),
-        getTopupReport(activeFilters),
-        getAdminReceipts()
-      ]);
+      const promises = [];
+      
+      // Only fetch finance metrics if authorized
+      if (hasFinanceView) {
+        promises.push(getFinanceDashboardSummary(activeFilters));
+        promises.push(getFinanceTransactions(activeFilters));
+        promises.push(getTopupReport(activeFilters));
+        promises.push(getAdminReceipts());
+      } else {
+        promises.push(Promise.resolve({ success: true, summary: null }));
+        promises.push(Promise.resolve({ success: true, transactions: [] }));
+        promises.push(Promise.resolve({ success: true, report: null }));
+        promises.push(Promise.resolve([]));
+      }
 
-      if (summaryRes.success) setSummary(summaryRes.summary);
-      if (txsRes.success) setTransactions(txsRes.transactions);
-      if (topupRes.success) setTopupReport(topupRes.report);
-      setReceipts(receiptsData || []);
+      // Always fetch refunds if authorized to view them
+      if (hasRefundView) {
+        promises.push(getAdminRefundRequests());
+      } else {
+        promises.push(Promise.resolve({ success: true, requests: [], enableStripeRefunds: false }));
+      }
 
-      if (!summaryRes.success || !txsRes.success || !topupRes.success) {
+      const [summaryRes, txsRes, topupRes, receiptsData, refundRes] = await Promise.all(promises);
+
+      if (hasFinanceView) {
+        if (summaryRes.success) setSummary(summaryRes.summary);
+        if (txsRes.success) setTransactions(txsRes.transactions);
+        if (topupRes.success) setTopupReport(topupRes.report);
+        setReceipts(receiptsData || []);
+      }
+
+      if (hasRefundView) {
+        if (refundRes.success) {
+          setRefundRequests(refundRes.requests || []);
+          setEnableStripeRefunds(refundRes.enableStripeRefunds || false);
+        } else {
+          showToast('Error loading refund requests: ' + refundRes.error, 'error');
+        }
+      }
+
+      if (hasFinanceView && (!summaryRes.success || !txsRes.success || !topupRes.success)) {
         showToast('Error loading some reporting data', 'error');
       }
     } catch (err) {
@@ -111,11 +171,90 @@ export default function AdminFinancePage() {
     } finally {
       setLoading(false);
     }
-  }, [isAuthorized, activeFilters, showToast]);
+  }, [isAuthorized, hasFinanceView, hasRefundView, activeFilters, showToast]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const handleApproveRefund = async () => {
+    if (!selectedRefundRequest || submittingAction) return;
+
+    if (!approvedAmount || Number(approvedAmount) <= 0) {
+      showToast('Approved amount must be greater than 0', 'error');
+      return;
+    }
+
+    if (Number(approvedAmount) > Number(selectedRefundRequest.max_refundable_mcredits_snapshot)) {
+      showToast(`Approved amount cannot exceed max refundable snapshot of ${Number(selectedRefundRequest.max_refundable_mcredits_snapshot).toFixed(2)} MC`, 'error');
+      return;
+    }
+
+    setSubmittingAction(true);
+    try {
+      const response = await fetch(`/api/admin/mcredits/refund-requests/${selectedRefundRequest.id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          approvedMcredits: Number(approvedAmount),
+          adminNote: adminNote || null
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        let parsedError;
+        try {
+          parsedError = JSON.parse(errText);
+        } catch (_) {}
+        throw new Error(parsedError?.error || errText || 'Failed to approve refund request');
+      }
+
+      showToast('Refund request approved and processed successfully', 'success');
+      setIsReviewModalOpen(false);
+      setSelectedRefundRequest(null);
+      fetchData(); // Reload requests list
+    } catch (err) {
+      console.error('Approve refund error:', err);
+      showToast(err.message || 'Failed to approve refund request', 'error');
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const handleRejectRefund = async () => {
+    if (!selectedRefundRequest || submittingAction) return;
+
+    setSubmittingAction(true);
+    try {
+      const response = await fetch(`/api/admin/mcredits/refund-requests/${selectedRefundRequest.id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminNote: adminNote || null
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        let parsedError;
+        try {
+          parsedError = JSON.parse(errText);
+        } catch (_) {}
+        throw new Error(parsedError?.error || errText || 'Failed to reject refund request');
+      }
+
+      showToast('Refund request rejected successfully', 'success');
+      setIsReviewModalOpen(false);
+      setSelectedRefundRequest(null);
+      fetchData(); // Reload requests list
+    } catch (err) {
+      console.error('Reject refund error:', err);
+      showToast(err.message || 'Failed to reject refund request', 'error');
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
 
   const handleApplyFilters = (e) => {
     e.preventDefault();
@@ -361,56 +500,72 @@ export default function AdminFinancePage() {
 
         {/* Tab Row (Row 3) */}
         <div className="flex bg-gray-100/70 p-1.5 rounded-full gap-2 overflow-x-auto w-full flex-nowrap hide-scrollbar mb-2">
-          <button
-            onClick={() => handleTabChange('overview')}
-            className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
-              activeTab === 'overview'
-                ? 'bg-[#0e2a4d] text-white shadow-md'
-                : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
-            }`}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => handleTabChange('transactions')}
-            className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
-              activeTab === 'transactions'
-                ? 'bg-[#0e2a4d] text-white shadow-md'
-                : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
-            }`}
-          >
-            Transactions
-          </button>
-          <button
-            onClick={() => handleTabChange('topups')}
-            className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
-              activeTab === 'topups'
-                ? 'bg-[#0e2a4d] text-white shadow-md'
-                : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
-            }`}
-          >
-            Top-Up Report
-          </button>
-          <button
-            onClick={() => handleTabChange('revenue')}
-            className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
-              activeTab === 'revenue'
-                ? 'bg-[#0e2a4d] text-white shadow-md'
-                : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
-            }`}
-          >
-            Platform Revenue
-          </button>
-          <button
-            onClick={() => handleTabChange('receipts')}
-            className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
-              activeTab === 'receipts'
-                ? 'bg-[#0e2a4d] text-white shadow-md'
-                : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
-            }`}
-          >
-            Receipts
-          </button>
+          {hasFinanceView && (
+            <>
+              <button
+                onClick={() => handleTabChange('overview')}
+                className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+                  activeTab === 'overview'
+                    ? 'bg-[#0e2a4d] text-white shadow-md'
+                    : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
+                }`}
+              >
+                Overview
+              </button>
+              <button
+                onClick={() => handleTabChange('transactions')}
+                className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+                  activeTab === 'transactions'
+                    ? 'bg-[#0e2a4d] text-white shadow-md'
+                    : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
+                }`}
+              >
+                Transactions
+              </button>
+              <button
+                onClick={() => handleTabChange('topups')}
+                className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+                  activeTab === 'topups'
+                    ? 'bg-[#0e2a4d] text-white shadow-md'
+                    : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
+                }`}
+              >
+                Top-Up Report
+              </button>
+              <button
+                onClick={() => handleTabChange('revenue')}
+                className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+                  activeTab === 'revenue'
+                    ? 'bg-[#0e2a4d] text-white shadow-md'
+                    : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
+                }`}
+              >
+                Platform Revenue
+              </button>
+              <button
+                onClick={() => handleTabChange('receipts')}
+                className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+                  activeTab === 'receipts'
+                    ? 'bg-[#0e2a4d] text-white shadow-md'
+                    : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
+                }`}
+              >
+                Receipts
+              </button>
+            </>
+          )}
+          {hasRefundView && (
+            <button
+              onClick={() => handleTabChange('refunds')}
+              className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+                activeTab === 'refunds'
+                  ? 'bg-[#0e2a4d] text-white shadow-md'
+                  : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
+              }`}
+            >
+              Refund Requests
+            </button>
+          )}
         </div>
 
         {/* Tab Content (Row 4) */}
@@ -1110,11 +1265,431 @@ export default function AdminFinancePage() {
                 </div>
               )}
 
+              {/* TAB 6: REFUND REQUESTS */}
+              {/* TAB 6: REFUND REQUESTS */}
+              {activeTab === 'refunds' && (
+                <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm overflow-hidden animate-fadeIn">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <ClipboardList size={18} className="text-[#0e2a4d]" />
+                      <h2 className="text-base font-bold text-[#0e2a4d]">MCredit Refund Requests</h2>
+                    </div>
+                  </div>
+
+                  {refundRequests.length > 0 ? (
+                    <>
+                      {renderPagination(refundRequests.length, true)}
+                      
+                      {/* Desktop Table View */}
+                      <div className="hidden md:block overflow-x-auto pb-4 custom-scrollbar">
+                        <table className="w-full text-left text-xs border-collapse min-w-[900px]">
+                          <thead>
+                            <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider font-bold">
+                              <th 
+                                className="pb-3 px-4 font-semibold cursor-pointer hover:text-gray-600 transition-colors"
+                                onClick={toggleDateSort}
+                              >
+                                <div className="flex items-center gap-1">
+                                  Date Requested
+                                  {dateSortOrder === 'desc' ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
+                                </div>
+                              </th>
+                              <th className="pb-3 px-4 font-semibold">Requester</th>
+                              <th className="pb-3 px-4 font-semibold">Wallet Type</th>
+                              <th className="pb-3 pr-4 pl-2 font-semibold text-right">Requested MC</th>
+                              <th className="pb-3 pr-4 pl-2 font-semibold text-right">Max Refundable</th>
+                              <th className="pb-3 px-4 font-semibold">Reason</th>
+                              <th className="pb-3 px-4 text-center font-semibold">Status</th>
+                              <th className="pb-3 px-4 text-center font-semibold">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 text-gray-600 font-medium">
+                            {sortArrayByDate(refundRequests).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((req) => {
+                              return (
+                                <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
+                                  <td className="py-4 px-4 whitespace-nowrap text-gray-500 font-mono">
+                                    {new Date(req.created_at).toLocaleString()}
+                                  </td>
+                                  <td className="py-4 px-4">
+                                    <div className="flex items-center gap-2">
+                                      {req.profile?.avatar_url ? (
+                                        <img 
+                                          src={req.profile.avatar_url} 
+                                          alt="" 
+                                          className="w-6 h-6 rounded-full object-cover border border-gray-150"
+                                        />
+                                      ) : (
+                                        <div className="w-6 h-6 rounded-full bg-[#e0f2fe] text-[#0369a1] flex items-center justify-center text-[10px] font-bold">
+                                          {req.profile?.name?.charAt(0).toUpperCase() || 'U'}
+                                        </div>
+                                      )}
+                                      <span className="font-bold text-[#0e2a4d]">{req.profile?.name || 'Unknown'}</span>
+                                    </div>
+                                  </td>
+                                  <td className="py-4 px-4">
+                                    {req.company_id ? (
+                                      <span className="inline-flex flex-col">
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 border border-purple-100 text-purple-700 w-fit">Company</span>
+                                        {req.company && <span className="text-[10px] text-gray-400 mt-0.5 max-w-[120px] truncate">{req.company.name}</span>}
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 border border-blue-100 text-blue-700 w-fit">Personal</span>
+                                    )}
+                                  </td>
+                                  <td className="py-4 pr-4 pl-2 text-right font-bold text-slate-800">
+                                    {Number(req.requested_mcredits).toFixed(2)} MC
+                                  </td>
+                                  <td className="py-4 pr-4 pl-2 text-right font-semibold text-gray-500">
+                                    {Number(req.max_refundable_mcredits_snapshot).toFixed(2)} MC
+                                  </td>
+                                  <td className="py-4 px-4 text-gray-500 capitalize">
+                                    {req.reason.replace(/_/g, ' ')}
+                                  </td>
+                                  <td className="py-4 px-4 text-center whitespace-nowrap">
+                                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                                      req.status === 'refunded' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
+                                      req.status === 'pending_review' ? 'bg-amber-50 border-amber-100 text-amber-700' :
+                                      req.status === 'rejected' ? 'bg-red-50 border-red-100 text-red-700' :
+                                      req.status === 'processing' ? 'bg-blue-50 border-blue-100 text-blue-700 animate-pulse' :
+                                      'bg-gray-50 border-gray-100 text-gray-600'
+                                    }`}>
+                                      {req.status.replace(/_/g, ' ')}
+                                    </span>
+                                  </td>
+                                  <td className="py-4 px-4 text-center">
+                                    <button
+                                      onClick={() => {
+                                        setSelectedRefundRequest(req);
+                                        setAdminNote(req.admin_note || '');
+                                        setApprovedAmount(req.requested_mcredits.toString());
+                                        setIsReviewModalOpen(true);
+                                      }}
+                                      className="px-3.5 py-1.5 bg-[#0e2a4d] hover:bg-blue-900 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-sm"
+                                    >
+                                      Review
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile Cards View */}
+                      <div className="block md:hidden space-y-4">
+                        {sortArrayByDate(refundRequests).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((req) => (
+                          <div key={req.id} className="bg-slate-50/50 hover:bg-slate-50 rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4 transition-all">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] text-gray-400 font-mono font-semibold">{new Date(req.created_at).toLocaleDateString()}</span>
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                                req.status === 'refunded' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
+                                req.status === 'pending_review' ? 'bg-amber-50 border-amber-100 text-amber-700' :
+                                req.status === 'rejected' ? 'bg-red-50 border-red-100 text-red-700' :
+                                req.status === 'processing' ? 'bg-blue-50 border-blue-100 text-blue-700' :
+                                'bg-gray-50 border-gray-100 text-gray-600'
+                              }`}>
+                                {req.status.replace(/_/g, ' ')}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {req.profile?.avatar_url ? (
+                                <img 
+                                  src={req.profile.avatar_url} 
+                                  alt="" 
+                                  className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-[#e0f2fe] text-[#0369a1] flex items-center justify-center text-xs font-bold border border-gray-100">
+                                  {req.profile?.name?.charAt(0).toUpperCase() || 'U'}
+                                </div>
+                              )}
+                              <div>
+                                <div className="text-xs font-bold text-gray-800">{req.profile?.name || 'Unknown'}</div>
+                                {req.company_id && req.company && (
+                                  <div className="text-[10px] text-purple-700 font-semibold">{req.company.name} (Company)</div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100/80 text-xs text-gray-500">
+                              <div>
+                                <span className="block text-[10px] text-gray-400 uppercase font-bold mb-0.5">Requested</span>
+                                <span className="font-extrabold text-blue-900">{Number(req.requested_mcredits).toFixed(2)} MC</span>
+                              </div>
+                              <div>
+                                <span className="block text-[10px] text-gray-400 uppercase font-bold mb-0.5">Max Refundable</span>
+                                <span className="font-bold text-slate-700">{Number(req.max_refundable_mcredits_snapshot).toFixed(2)} MC</span>
+                              </div>
+                              <div className="col-span-2">
+                                <span className="block text-[10px] text-gray-400 uppercase font-bold mb-0.5">Reason</span>
+                                <span className="capitalize font-semibold text-slate-600">{req.reason.replace(/_/g, ' ')}</span>
+                              </div>
+                            </div>
+                            <div className="pt-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedRefundRequest(req);
+                                  setAdminNote(req.admin_note || '');
+                                  setApprovedAmount(req.requested_mcredits.toString());
+                                  setIsReviewModalOpen(true);
+                                }}
+                                className="w-full py-2.5 bg-[#0e2a4d] hover:bg-blue-900 text-white text-xs font-bold rounded-xl transition-all cursor-pointer text-center shadow-sm"
+                              >
+                                Review Request
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {renderPagination(refundRequests.length)}
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-sm text-gray-400 font-medium border border-dashed border-gray-150 rounded-xl bg-slate-50/20">
+                      <span>No refund requests found.</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
             </div>
           )}
         </div>
-
       </div>
+
+      {/* Review Refund Request Modal */}
+      {isReviewModalOpen && selectedRefundRequest && (
+
+        <div className="modal-overlay-glass" onClick={() => { setIsReviewModalOpen(false); setSelectedRefundRequest(null); }}>
+          <div 
+            className="modal-content-standard max-w-lg" 
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '512px' }}
+          >
+            {/* Modal Header */}
+            <div className="modal-header-navy">
+              <h3 className="modal-title-white flex items-center gap-2">
+                <ClipboardList size={20} />
+                <span>Review Refund Request</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsReviewModalOpen(false);
+                  setSelectedRefundRequest(null);
+                }}
+                className="modal-close-btn-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6 overflow-y-auto max-h-[60vh] md:max-h-[70vh]">
+              {/* Requester Information Card */}
+              <div className="flex items-center gap-3 bg-slate-50/50 p-5 rounded-2xl border border-slate-100/80 shadow-sm">
+                {selectedRefundRequest.profile?.avatar_url ? (
+                  <img
+                    src={selectedRefundRequest.profile.avatar_url}
+                    alt=""
+                    className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-[#e0f2fe] text-[#0369a1] flex items-center justify-center font-bold text-sm border border-gray-100">
+                    {selectedRefundRequest.profile?.name?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
+                <div>
+                  <div className="text-sm font-bold text-gray-800">{selectedRefundRequest.profile?.name || 'Unknown User'}</div>
+                  <div className="text-[10px] text-gray-400 font-mono mt-0.5 select-all">User ID: {selectedRefundRequest.user_id}</div>
+                  {selectedRefundRequest.company_id && (
+                    <div className="text-[11px] text-purple-700 font-semibold mt-1">
+                      Company: {selectedRefundRequest.company?.name || 'Unknown Company'}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Transaction Context Card */}
+              <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100/80 shadow-sm space-y-3">
+                <h4 className="text-[10px] font-extrabold text-[#0e2a4d] uppercase tracking-wider border-b border-gray-100 pb-1.5">References & IDs</h4>
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <span className="block text-[10px] text-gray-400 uppercase font-bold mb-1">Wallet ID</span>
+                    <span className="font-mono text-gray-600 block select-all break-all" title={selectedRefundRequest.wallet_id}>
+                      {selectedRefundRequest.wallet_id}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-gray-400 uppercase font-bold mb-1">Top-up Request ID</span>
+                    <span className="font-mono text-gray-600 block select-all break-all" title={selectedRefundRequest.topup_request_id}>
+                      {selectedRefundRequest.topup_request_id || '—'}
+                    </span>
+                  </div>
+                  {selectedRefundRequest.stripe_payment_intent_id && (
+                    <div className="col-span-2">
+                      <span className="block text-[10px] text-gray-400 uppercase font-bold mb-1">Stripe PaymentIntent ID</span>
+                      <span className="font-mono text-[11px] text-slate-700 bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm block break-all select-all font-semibold">
+                        {selectedRefundRequest.stripe_payment_intent_id}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Amounts & Reason Card */}
+              <div className="grid grid-cols-2 gap-4 p-5 bg-blue-50/40 rounded-2xl border border-blue-100/40 shadow-sm text-xs">
+                <div>
+                  <span className="block text-[10px] text-blue-800/60 uppercase font-bold mb-1">Requested Refund</span>
+                  <span className="text-lg font-extrabold text-blue-900">{Number(selectedRefundRequest.requested_mcredits).toFixed(2)} MC</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-slate-500 uppercase font-bold mb-1">Max Refundable snapshot</span>
+                  <span className="text-lg font-extrabold text-slate-700">{Number(selectedRefundRequest.max_refundable_mcredits_snapshot).toFixed(2)} MC</span>
+                </div>
+                <div className="col-span-2 pt-2 border-t border-blue-100/20">
+                  <span className="block text-[10px] text-slate-500 uppercase font-bold mb-1">Reason</span>
+                  <span className="font-semibold text-slate-700 capitalize">{selectedRefundRequest.reason.replace(/_/g, ' ')}</span>
+                </div>
+                {selectedRefundRequest.user_note && (
+                  <div className="col-span-2 pt-2 border-t border-blue-100/20">
+                    <span className="block text-[10px] text-slate-500 uppercase font-bold mb-1">User Note</span>
+                    <p className="text-gray-600 leading-relaxed whitespace-pre-line mt-1.5 bg-white p-3.5 text-xs rounded-xl border border-gray-150 shadow-sm font-medium select-text">
+                      {selectedRefundRequest.user_note}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Status details if already processed */}
+              {selectedRefundRequest.status !== 'pending_review' && (
+                <div className="p-5 bg-slate-50/60 rounded-2xl border border-slate-100/80 shadow-sm text-xs space-y-3">
+                  <div className="flex justify-between border-b border-gray-150/40 pb-2">
+                    <span className="text-gray-400 font-bold uppercase text-[10px]">Status</span>
+                    <span className={`font-extrabold capitalize ${
+                      selectedRefundRequest.status === 'refunded' ? 'text-emerald-600' :
+                      selectedRefundRequest.status === 'rejected' ? 'text-rose-600' :
+                      'text-slate-800'
+                    }`}>{selectedRefundRequest.status}</span>
+                  </div>
+                  {selectedRefundRequest.stripe_refund_id && (
+                    <div className="flex flex-col gap-1 border-b border-gray-150/40 pb-2 font-mono text-[11px]">
+                      <span className="text-gray-400 uppercase font-bold font-sans text-[10px]">Stripe Refund ID</span>
+                      <span className="text-gray-600 select-all break-all">{selectedRefundRequest.stripe_refund_id}</span>
+                    </div>
+                  )}
+                  {selectedRefundRequest.admin_note && (
+                    <div>
+                      <span className="text-gray-400 font-bold uppercase text-[10px] block mb-1">Previous Admin Note</span>
+                      <p className="text-gray-600 italic font-medium bg-white p-3 rounded-xl border border-slate-100">{selectedRefundRequest.admin_note}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Input for approved amount & admin note (only if pending) */}
+              {selectedRefundRequest.status === 'pending_review' && (
+                <div className="space-y-4">
+                  {/* Permission warning/error for view-only users */}
+                  {!profile.admin_permissions?.includes('can_manage_refund_reviews') && (
+                    <div className="p-3 bg-amber-50 text-amber-800 rounded-xl border border-amber-150 text-xs font-semibold flex items-center gap-2">
+                      <ShieldAlert size={16} className="shrink-0" />
+                      <span>View-Only Mode: You do not have permissions to approve or reject requests.</span>
+                    </div>
+                  )}
+
+                  {profile.admin_permissions?.includes('can_manage_refund_reviews') && (
+                    <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100/80 shadow-sm space-y-4">
+                      <h4 className="text-[10px] font-extrabold text-[#0e2a4d] uppercase tracking-wider border-b border-gray-100 pb-1.5">Review Decision</h4>
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-gray-500 uppercase mb-1">
+                          Approve Amount (MCredits)
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          max={selectedRefundRequest.max_refundable_mcredits_snapshot}
+                          value={approvedAmount}
+                          onChange={(e) => setApprovedAmount(e.target.value)}
+                          className="w-full bg-white border border-gray-200 rounded-xl px-4.5 py-3 text-sm font-semibold text-gray-700 outline-none focus:border-blue-900 transition-colors font-sans shadow-sm"
+                          placeholder="Approved MCredits"
+                        />
+                        <span className="text-[10px] text-gray-400 font-medium mt-1.5 block">
+                          Cannot exceed max refundable snapshot: {Number(selectedRefundRequest.max_refundable_mcredits_snapshot).toFixed(2)} MC
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-gray-500 uppercase mb-1">
+                          Admin Review Note
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={adminNote}
+                          onChange={(e) => setAdminNote(e.target.value)}
+                          className="w-full bg-white border border-gray-200 rounded-xl px-4.5 py-3 text-xs font-medium text-gray-700 outline-none focus:border-blue-900 transition-colors resize-none font-sans shadow-sm"
+                          placeholder="Provide audit notes for this review decision..."
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            {selectedRefundRequest.status === 'pending_review' && profile.admin_permissions?.includes('can_manage_refund_reviews') && (
+              <div className="bg-slate-50 px-6 py-4.5 border-t border-gray-150/40 flex flex-col gap-3.5 font-sans">
+                {/* Safety flag indicator */}
+                {!enableStripeRefunds && (
+                  <div className="p-4 bg-red-50 text-red-950 rounded-2xl border border-red-100 text-[11px] leading-relaxed font-semibold flex items-start gap-3 select-text shadow-sm">
+                    <AlertTriangle size={18} className="shrink-0 text-red-600 mt-0.5 animate-pulse" />
+                    <div>
+                      <span className="font-bold block text-red-900 mb-0.5">Stripe Refund Execution Disabled</span>
+                      <span>Stripe refund execution is currently disabled. Enable <code>ENABLE_MCREDIT_STRIPE_REFUNDS=true</code> after final testing.</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3 justify-end">
+                  <button
+                    type="button"
+                    disabled={submittingAction}
+                    onClick={handleRejectRefund}
+                    className="flex-1 sm:flex-initial px-6 py-3 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm disabled:opacity-50"
+                  >
+                    {submittingAction ? 'Processing...' : 'Reject Request'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={submittingAction || !enableStripeRefunds}
+                    onClick={handleApproveRefund}
+                    className="flex-1 sm:flex-initial px-6 py-3 bg-[#00B4D8] hover:bg-[#0096B4] text-[#0e2a4d] disabled:bg-gray-100 disabled:text-gray-400 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {submittingAction ? 'Processing...' : 'Approve & Refund'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Footer for non-pending / closed requests */}
+            {(selectedRefundRequest.status !== 'pending_review' || !profile.admin_permissions?.includes('can_manage_refund_reviews')) && (
+              <div className="bg-slate-50 px-6 py-4 border-t border-gray-150/40 flex justify-end font-sans">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsReviewModalOpen(false);
+                    setSelectedRefundRequest(null);
+                  }}
+                  className="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
