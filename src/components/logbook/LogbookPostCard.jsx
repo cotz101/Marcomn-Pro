@@ -77,48 +77,56 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
     setCommentsList(post.comments || []);
   }, [post.likes, post.comments]);
 
-  // Resilient author resolver supporting multiple formats and fallbacks
+  const isCompanyPost = !!(post.posted_as_company_id || post.company);
+
+  // Resilient author resolver with strict identity isolation
   const getAuthorInfo = () => {
-    // 0. Check for company identity override
-    if (post.company) {
+    // 0. If posted as company, strictly use company details (no fallback to personal author)
+    if (isCompanyPost) {
+      const companyObj = post.company;
       return {
-        id: post.company.id,
-        name: post.company.name,
-        avatar_url: post.company.logo_url,
-        headline: post.company.industry || 'Company'
+        id: companyObj?.id || post.posted_as_company_id,
+        name: companyObj?.name || 'Company Profile',
+        avatar_url: companyObj?.logo_url || '/company_placeholder.png',
+        headline: companyObj?.industry || 'Corporate Identity',
+        isCompany: true
       };
     }
-    // 1. Check post.author
+
+    // 1. Check post.author (personal)
     if (post.author) {
       const name = post.author.name || post.author.full_name || post.author.display_name;
       if (name) {
         return {
-          id: post.author.id,
+          id: post.author.id || post.user_id || post.author_id,
           name: name,
           avatar_url: post.author.avatar_url,
-          headline: post.author.headline || 'MarComn Member'
+          headline: post.author.headline || 'MarComn Member',
+          isCompany: false
         };
       }
     }
-    // 2. Check alternative profile objects
+    // 2. Check alternative profile objects (personal)
     const alternativeProfile = post.profiles || post.user || post.profile;
     if (alternativeProfile) {
       const name = alternativeProfile.name || alternativeProfile.full_name || alternativeProfile.display_name || alternativeProfile.fullName;
       if (name) {
         return {
-          id: alternativeProfile.id,
+          id: alternativeProfile.id || post.user_id || post.author_id,
           name: name,
           avatar_url: alternativeProfile.avatar_url || alternativeProfile.profilePic,
-          headline: alternativeProfile.headline || alternativeProfile.currentRole || 'MarComn Member'
+          headline: alternativeProfile.headline || alternativeProfile.currentRole || 'MarComn Member',
+          isCompany: false
         };
       }
     }
-    // 3. Fallback
+    // 3. Fallback (personal)
     return {
       id: post.user_id || post.author_id,
       name: 'Maritime Professional',
       avatar_url: null,
-      headline: 'MarComn Member'
+      headline: 'MarComn Member',
+      isCompany: false
     };
   };
 
@@ -735,7 +743,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
           <div className="flex items-start gap-3 min-w-0 flex-1 pr-4">
             <div className="flex-shrink-0">
               <Link
-                href={(post.posted_as_company_id || post.company) ? `/company/${post.posted_as_company_id || post.company?.id}` : `/profile/${post.user_id}`}
+                href={author.isCompany ? `/company/${author.id}` : `/profile/${author.id}`}
                 onClick={(e) => e.stopPropagation()}
                 className="shrink-0 cursor-pointer block"
                 aria-label="Open poster profile"
@@ -744,10 +752,14 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                   <img
                     src={author.avatar_url}
                     alt={author.name}
-                    className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-xs hover:opacity-90 transition-opacity"
+                    className="w-10 h-10 object-cover border border-gray-100 shadow-xs hover:opacity-90 transition-opacity"
+                    style={{ borderRadius: author.isCompany ? '8px' : '50%' }}
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-100 hover:bg-gray-200 transition-colors">
+                  <div 
+                    className="w-10 h-10 bg-gray-100 flex items-center justify-center border border-gray-100 hover:bg-gray-200 transition-colors"
+                    style={{ borderRadius: author.isCompany ? '8px' : '50%' }}
+                  >
                     <User size={18} className="text-gray-400" />
                   </div>
                 )}
@@ -758,7 +770,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="font-semibold text-[#0e2a4d] text-[15px] sm:text-base leading-tight truncate">
                   <Link
-                    href={(post.posted_as_company_id || post.company) ? `/company/${post.posted_as_company_id || post.company?.id}` : `/profile/${post.user_id}`}
+                    href={author.isCompany ? `/company/${author.id}` : `/profile/${author.id}`}
                     onClick={(e) => e.stopPropagation()}
                     className="hover:underline cursor-pointer"
                   >

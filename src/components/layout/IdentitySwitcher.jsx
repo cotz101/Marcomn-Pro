@@ -61,8 +61,8 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
       <div className="identities-list">
         {/* Personal Identity */}
         <div 
-          className={`identity-item ${currentIdentity.type === 'user' ? 'active' : ''}`}
-          onClick={() => handleSwitch({ type: 'user', id: userId })}
+          className={`identity-item ${!currentIdentity?.isCompany ? 'active' : ''}`}
+          onClick={() => handleSwitch({ type: 'personal', id: userId, isCompany: false, data: profile })}
         >
           <div className="identity-avatar-container" style={{ borderRadius: '50%' }}>
             <img src={profile.profilePic || '/profile_pic.png'} alt={profile.name} className="identity-avatar" />
@@ -71,7 +71,7 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
             <div className="identity-name">{profile.name}</div>
             <div className="identity-role">Personal Profile</div>
           </div>
-          {currentIdentity.type === 'user' && (
+          {!currentIdentity?.isCompany && (
             <Check size={18} className="active-check" />
           )}
         </div>
@@ -80,8 +80,8 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
         {companies.map((company) => (
           <div 
             key={company.id} 
-            className={`identity-item ${currentIdentity.type === 'company' && currentIdentity.id === company.id ? 'active' : ''}`}
-            onClick={() => handleSwitch({ type: 'company', id: company.id, data: company })}
+            className={`identity-item ${currentIdentity?.isCompany && currentIdentity?.id === company.id ? 'active' : ''}`}
+            onClick={() => handleSwitch({ type: 'company', id: company.id, isCompany: true, data: company })}
           >
             <div className="identity-avatar-container">
               {company.logo_url ? (
@@ -96,7 +96,7 @@ export default function IdentitySwitcher({ onClose, onCreateCompany }) {
               <div className="identity-name">{company.name}</div>
               <div className="identity-role">Corporate Profile</div>
             </div>
-            {currentIdentity.type === 'company' && currentIdentity.id === company.id && (
+            {currentIdentity?.isCompany && currentIdentity?.id === company.id && (
               <Check size={18} className="active-check" />
             )}
           </div>

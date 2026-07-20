@@ -28,7 +28,24 @@ export function ProfileProvider({ children, userId, userEmail }) {
   const [loading, setLoading] = useState(true);
   const [onboardingCompleted, setOnboardingCompleted] = useState(true); // default true to avoid flash
   const [companies, setCompanies] = useState([]);
-  const [currentIdentity, setCurrentIdentityState] = useState({ type: 'user', id: userId }); // { type: 'user' | 'company', id: string, data: object }
+  const [currentIdentity, setCurrentIdentityState] = useState({ 
+    type: 'personal', 
+    id: userId, 
+    isCompany: false, 
+    data: null 
+  });
+
+  const normalizeIdentity = (raw) => {
+    if (!raw) return { type: 'personal', id: userId, isCompany: false, data: null };
+    const rawType = raw.type === 'company' ? 'company' : 'personal';
+    return {
+      type: rawType,
+      id: raw.id || userId,
+      isCompany: rawType === 'company',
+      data: raw.data || null
+    };
+  };
+
   const [toast, setToast] = useState(null);
 
   const [showPostJob, setShowPostJob] = useState(false);
@@ -45,7 +62,13 @@ export function ProfileProvider({ children, userId, userEmail }) {
     setShowPostJob(false);
   };
 
-  // ... (localStorage logic kept) ...
+  // Keep identity state synchronized with userId if personal
+  useEffect(() => {
+    if (userId && currentIdentity?.type === 'personal' && currentIdentity?.id !== userId) {
+      setCurrentIdentityState(prev => ({ ...prev, id: userId }));
+    }
+  }, [userId, currentIdentity?.type, currentIdentity?.id]);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('marcomn_identity');
@@ -53,7 +76,7 @@ export function ProfileProvider({ children, userId, userEmail }) {
         try {
           const parsed = JSON.parse(saved);
           if (parsed && parsed.id) {
-            setCurrentIdentityState(parsed);
+            setCurrentIdentityState(normalizeIdentity(parsed));
           }
         } catch (e) {
           console.error('Error parsing saved identity:', e);
@@ -63,9 +86,10 @@ export function ProfileProvider({ children, userId, userEmail }) {
   }, []);
 
   const setCurrentIdentity = (identity) => {
-    setCurrentIdentityState(identity);
+    const normalized = normalizeIdentity(identity);
+    setCurrentIdentityState(normalized);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('marcomn_identity', JSON.stringify(identity));
+      localStorage.setItem('marcomn_identity', JSON.stringify(normalized));
     }
   };
 

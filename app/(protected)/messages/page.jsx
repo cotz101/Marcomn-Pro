@@ -90,6 +90,15 @@ export default function InboxPage() {
   // 1. Fetch all conversations and cache profiles
   useEffect(() => {
     if (!userId) return;
+    let isActive = true;
+
+    if (currentIdentity?.isCompany || currentIdentity?.type === 'company') {
+      setConversations([]);
+      setProfiles({});
+      setLastMessages({});
+      setLoading(false);
+      return;
+    }
 
     async function loadInbox() {
       try {
@@ -101,6 +110,7 @@ export default function InboxPage() {
           .or(`participant_one.eq.${userId},participant_two.eq.${userId}`)
           .order('created_at', { ascending: false });
 
+        if (!isActive) return;
         if (convError) throw convError;
 
         const conversationsList = convData || [];
@@ -186,22 +196,33 @@ export default function InboxPage() {
   // 2.2 Fetch App Threads
   useEffect(() => {
     if (activeTab !== 'applications' || !userId) return;
+    let isActive = true;
+    setAppThreads([]);
 
     async function loadAppThreads() {
       try {
         setLoadingApps(true);
-        
-        // If activeAppId exists, ensure thread is created
+
+        // Auto-create thread if missing and activeAppId present
         if (activeAppId) {
-          const { data: existing } = await supabase.from('application_threads').select('id').eq('application_id', activeAppId).maybeSingle();
+          const { data: existing } = await supabase
+            .from('application_threads')
+            .select('id')
+            .eq('application_id', activeAppId)
+            .maybeSingle();
+
           if (!existing) {
-            const { data: appData } = await supabase.from('applications').select('job_id, applicant_id, job:jobs(poster_id, company_id)').eq('id', activeAppId).maybeSingle();
-            if (appData) {
+            const { data: appData } = await supabase
+              .from('applications')
+              .select('id, applicant_id, job:jobs!job_id(user_id, company_id)')
+              .eq('id', activeAppId)
+              .maybeSingle();
+
+            if (appData && appData.job) {
               await supabase.from('application_threads').insert({
                 application_id: activeAppId,
-                job_id: appData.job_id,
                 applicant_id: appData.applicant_id,
-                poster_user_id: appData.job.poster_id,
+                poster_user_id: appData.job.user_id,
                 company_id: appData.job.company_id || null
               });
             }
@@ -215,9 +236,12 @@ export default function InboxPage() {
           .or(`applicant_id.eq.${userId},poster_user_id.eq.${userId}`)
           .order('last_message_at', { ascending: false });
 
+        if (!isActive) return;
+
         if (!error && threads) {
+          const isComp = currentIdentity?.isCompany || currentIdentity?.type === 'company';
           const filteredThreads = threads.filter(t => {
-            if (currentIdentity?.type === 'company') {
+            if (isComp) {
               return t.company_id === currentIdentity.id;
             } else {
               return t.applicant_id === userId || (t.poster_user_id === userId && !t.company_id);
@@ -232,11 +256,15 @@ export default function InboxPage() {
       } catch (err) {
         console.error('Error app threads:', err);
       } finally {
-        setLoadingApps(false);
+        if (isActive) setLoadingApps(false);
       }
     }
     loadAppThreads();
-  }, [activeTab, userId, activeAppId, currentIdentity]);
+
+    return () => {
+      isActive = false;
+    };
+  }, [activeTab, userId, activeAppId, currentIdentity?.id, currentIdentity?.type, currentIdentity?.isCompany]);
 
   // Fetch Group Threads (Restored from M1)
   useEffect(() => {

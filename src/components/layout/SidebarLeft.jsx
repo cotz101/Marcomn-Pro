@@ -12,83 +12,121 @@ import {
   Handshake, 
   FileText, 
   Send,
-  BarChart2,
   Library,
   BookOpen,
-  TrendingUp,
-  Award,
-  MapPin,
-  Briefcase
+  Award
 } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import { createClient } from '@/lib/supabase';
+import PersonalTopCard from './PersonalTopCard';
+import CompanyTopCard from './CompanyTopCard';
+import PersonalOverview from './PersonalOverview';
+import CompanyOverview from './CompanyOverview';
 
 export default function SidebarLeft() {
   const pathname = usePathname();
-  const { profile, currentIdentity } = useProfile();
+  const { profile, currentIdentity, userId } = useProfile();
   
-  const isCompany = currentIdentity?.type === 'company';
-
+  const isCompany = currentIdentity?.isCompany || currentIdentity?.type === 'company';
   const supabase = createClient();
+
+  const [personalData, setPersonalData] = useState(null);
+  const [companyData, setCompanyData] = useState(null);
+  const [loadingData, setLoadingData] = useState(true);
+
   const [topContributors, setTopContributors] = useState([]);
   const [loadingContributors, setLoadingContributors] = useState(true);
 
   const isMBlogPage = pathname?.includes('/mblog');
 
-  const [connectionCount, setConnectionCount] = useState(0);
-  const [groupCount, setGroupCount] = useState(0);
-  const [fetchedProfileData, setFetchedProfileData] = useState(null);
-  const [loadingMetrics, setLoadingMetrics] = useState(true);
+  // Async Safety Identity Data Fetcher
+  useEffect(() => {
+    let isActive = true;
+    setLoadingData(true);
+
+    const loadIdentityData = async () => {
+      if (isCompany) {
+        // Clear personal data immediately to prevent cross-leakage
+        setPersonalData(null);
+
+        const companyId = currentIdentity?.id;
+        if (!companyId) {
+          if (isActive) {
+            setCompanyData(currentIdentity?.data || null);
+            setLoadingData(false);
+          }
+          return;
+        }
+
+        try {
+          const { data, error } = await supabase
+            .from('companies')
+            .select('id, name, logo_url, industry, location, bio, website, services')
+            .eq('id', companyId)
+            .maybeSingle();
+
+          if (isActive) {
+            if (!error && data) {
+              setCompanyData(data);
+            } else {
+              setCompanyData(currentIdentity?.data || null);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching company data for sidebar:', err);
+          if (isActive) setCompanyData(currentIdentity?.data || null);
+        } finally {
+          if (isActive) setLoadingData(false);
+        }
+
+      } else {
+        // Clear company data immediately to prevent cross-leakage
+        setCompanyData(null);
+
+        const activeUserId = profile?.id || userId;
+        if (!activeUserId) {
+          if (isActive) {
+            setPersonalData(profile || null);
+            setLoadingData(false);
+          }
+          return;
+        }
+
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id, name, currentRole, previousRole, location, yearsOfExperience, bio, avatar_url, skills')
+            .eq('id', activeUserId)
+            .maybeSingle();
+
+          if (isActive) {
+            if (!error && data) {
+              setPersonalData({ ...profile, ...data });
+            } else {
+              setPersonalData(profile || null);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching personal profile for sidebar:', err);
+          if (isActive) setPersonalData(profile || null);
+        } finally {
+          if (isActive) setLoadingData(false);
+        }
+      }
+    };
+
+    loadIdentityData();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isCompany, currentIdentity?.id, profile?.id, userId]);
 
   useEffect(() => {
     if (isMBlogPage) {
       fetchTopContributors();
     }
   }, [isMBlogPage]);
-
-  useEffect(() => {
-    const fetchUserMetrics = async () => {
-      const currentUserId = profile?.id;
-      if (!currentUserId) return;
-      
-      setLoadingMetrics(true);
-      try {
-        // Explicit Profile Fetch
-        const { data: profData, error: profErr } = await supabase
-          .from('profiles')
-          .select('name, currentRole, previousRole, location, yearsOfExperience, bio, avatar_url, skills')
-          .eq('id', currentUserId)
-          .single();
-        
-        if (!profErr && profData) {
-          setFetchedProfileData(profData);
-        }
-
-        // Connections
-        const { count: cCount, error: cErr } = await supabase
-          .from('follows')
-          .select('*', { count: 'exact', head: true })
-          .or(`follower_id.eq.${currentUserId},following_id.eq.${currentUserId}`);
-        
-        // Groups
-        const { count: gCount, error: gErr } = await supabase
-          .from('group_members')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', currentUserId);
-
-        if (!cErr) setConnectionCount(cCount || 0);
-        if (!gErr) setGroupCount(gCount || 0);
-      } catch (err) {
-        console.error('Error fetching user metrics:', err);
-      } finally {
-        setLoadingMetrics(false);
-      }
-    };
-
-    if (profile?.id) {
-      fetchUserMetrics();
-    }
-  }, [profile?.id]);
 
   const fetchTopContributors = async () => {
     try {
@@ -138,11 +176,6 @@ export default function SidebarLeft() {
 
   let navLinks = [];
   let sidebarTitle = "MNetwork";
-  let showStats = true;
-  let statsLabel1 = "Profile viewers";
-  let statsValue1 = "42";
-  let statsLabel2 = "Post impressions";
-  let statsValue2 = "1.2k";
 
   if (pathname?.startsWith('/mservices') || pathname?.startsWith('/partners') || pathname?.startsWith('/jobs')) {
     sidebarTitle = "Manage MServices";
@@ -152,17 +185,12 @@ export default function SidebarLeft() {
       { name: 'My Job Posting', href: '/jobs/my-postings', icon: FileText },
       { name: 'My Job Application', href: '/jobs/my-applications', icon: Send },
     ];
-    statsLabel1 = "Active Jobs";
-    statsValue1 = "12";
-    statsLabel2 = "New Applicants";
-    statsValue2 = "48";
   } else if (pathname?.includes('/mblog')) {
     sidebarTitle = "Manage my insights";
     navLinks = [
       { name: 'All MBlogs', href: '/mblog?view=all', icon: Library },
       { name: 'My MBlogs', href: '/mblog?view=my', icon: BookOpen },
     ];
-    showStats = false; // Will show Contributors instead
   } else {
     // Default: MNetwork
     navLinks = [
@@ -173,85 +201,28 @@ export default function SidebarLeft() {
     ];
   }
 
-  const activeConnections = connectionCount || 0;
-  const activeGroups = groupCount || 0;
-
-  // Dynamic Metadata Priority Extraction Logic
-  const sourceProfile = { ...fetchedProfileData, ...profile };
-  
-  const name = isCompany ? currentIdentity.data?.name : (sourceProfile.name || sourceProfile.fullName || 'MarComn Member');
-  const image = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (sourceProfile.profilePic || sourceProfile.avatar_url || '/avatar_placeholder.png');
-  const displayRole = sourceProfile.currentRole || sourceProfile.previousRole || 'MarComn Professional';
-  const headline = isCompany ? 'Maritime Enterprise' : displayRole;
-
-  const experience = sourceProfile.yearsOfExperience || sourceProfile.yearsExperience;
-  const location = sourceProfile.location;
-  const skills = sourceProfile.skills;
-  const bio = sourceProfile.bio;
-
   return (
     <aside className="sidebar-left">
       <div className="post-card rounded-[16px] border border-[#e5e7eb] overflow-hidden bg-white flex flex-col">
         {/* Content Section */}
         <div className="post-inner p-5 relative flex flex-col">
-          {/* Avatar Overlap */}
-          <div className="flex justify-center mb-3">
-            <img 
-              src={image} 
-              alt={name} 
-              className="w-20 h-20 rounded-full object-cover bg-white shadow-sm"
-            />
-          </div>
-          
-          <div className="flex flex-col items-center mb-4 text-center">
-            <h3 className="font-sans font-bold text-lg text-[#0e2a4d] tracking-tight leading-tight">{name}</h3>
-            <p className="text-[15px] text-gray-600 mt-0.5 font-sans font-medium">{headline}</p>
-            {location && (
-              <div className="flex items-center gap-1.5 text-gray-500 text-[13px] mt-1.5 font-['Public_Sans',sans-serif]">
-                <MapPin size={14} className="text-gray-400" />
-                <span>{location}</span>
-              </div>
-            )}
-          </div>
-          
-          {/* Professional Overview */}
-          {showStats && (!loadingMetrics && (skills?.length > 0 || experience || bio)) && (
-            <div className="flex flex-col w-full mb-2">
-              <div className="uppercase text-[11px] font-extrabold text-gray-400 tracking-wider mb-2.5 font-['Public_Sans',sans-serif]">
-                Professional Overview
-              </div>
-              
-              <div className="flex flex-col gap-3.5 w-full">
-                {skills && skills.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {skills.map((skill, sIdx) => (
-                      <span key={sIdx} className="px-2.5 py-1 bg-gray-50 border border-gray-200 text-[#0e2a4d] rounded-full text-[11px] font-semibold whitespace-nowrap font-sans">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                
-                {experience && (
-                  <div className="flex items-center gap-2 text-[#4b5563] text-[13px] font-medium font-['Public_Sans',sans-serif]">
-                    <Briefcase size={14} className="text-gray-400" />
-                    <span>{experience} Years of Experience</span>
-                  </div>
-                )}
-
-                {bio && (
-                  <div className="text-gray-500 text-[13px] line-clamp-2 leading-relaxed font-['Public_Sans',sans-serif]">
-                    {bio}
-                  </div>
-                )}
-              </div>
+          {loadingData ? (
+            <div className="flex flex-col items-center animate-pulse py-4">
+              <div className="w-20 h-20 bg-gray-200 rounded-full mb-3"></div>
+              <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+              <div className="h-3 bg-gray-100 rounded w-24"></div>
             </div>
+          ) : isCompany ? (
+            <>
+              <CompanyTopCard company={companyData || currentIdentity?.data} isCompany={true} />
+              <CompanyOverview company={companyData || currentIdentity?.data} isCompany={true} />
+            </>
+          ) : (
+            <>
+              <PersonalTopCard profile={personalData || profile} isCompany={false} />
+              <PersonalOverview profile={personalData || profile} isCompany={false} />
+            </>
           )}
-
-          {/* Footer Section */}
-          <Link href={isCompany ? `/company/${currentIdentity?.id || ''}` : `/profile/${profile?.id || ''}`} className="block w-full py-2 mt-4 text-center text-[13px] font-medium text-blue-950 bg-transparent hover:text-blue-700 hover:underline transition-all font-sans">
-            View Profile
-          </Link>
         </div>
       </div>
 
