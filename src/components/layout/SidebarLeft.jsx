@@ -33,6 +33,7 @@ export default function SidebarLeft() {
   const [personalData, setPersonalData] = useState(null);
   const [companyData, setCompanyData] = useState(null);
   const [loadingData, setLoadingData] = useState(true);
+  const [activeAppCount, setActiveAppCount] = useState(0);
 
   const [topContributors, setTopContributors] = useState([]);
   const [loadingContributors, setLoadingContributors] = useState(true);
@@ -48,6 +49,7 @@ export default function SidebarLeft() {
       if (isCompany) {
         // Clear personal data immediately to prevent cross-leakage
         setPersonalData(null);
+        setActiveAppCount(0);
 
         const companyId = currentIdentity?.id;
         if (!companyId) {
@@ -93,17 +95,49 @@ export default function SidebarLeft() {
         }
 
         try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('id, name, currentRole, previousRole, location, yearsOfExperience, bio, avatar_url, skills')
-            .eq('id', activeUserId)
-            .maybeSingle();
+          const [{ data: profData }, { data: userApps }] = await Promise.all([
+            supabase
+              .from('profiles')
+              .select('id, name, currentRole, previousRole, location, yearsOfExperience, bio, avatar_url, skills')
+              .eq('id', activeUserId)
+              .maybeSingle(),
+            supabase
+              .from('applications')
+              .select('id, status, job_orders(status)')
+              .eq('applicant_id', activeUserId)
+          ]);
 
           if (isActive) {
-            if (!error && data) {
-              setPersonalData({ ...profile, ...data });
+            if (profData) {
+              setPersonalData({ ...profile, ...profData });
             } else {
               setPersonalData(profile || null);
+            }
+
+            if (userApps) {
+              const activeCount = userApps.filter(app => {
+                if (!app) return false;
+                const status = (app.status || '').trim().toLowerCase();
+                if (
+                  status === 'completed' || 
+                  status === 'done' || 
+                  status === 'rejected' || 
+                  status === 'withdrawn' || 
+                  status === 'expired' || 
+                  status.includes('cancel')
+                ) {
+                  return false;
+                }
+                const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
+                const order = orderArray[0];
+                const orderStatus = (order?.status || '').trim().toLowerCase();
+                if (orderStatus === 'completed' || orderStatus === 'done') {
+                  return false;
+                }
+                return true;
+              }).length;
+
+              setActiveAppCount(activeCount);
             }
           }
         } catch (err) {
@@ -183,7 +217,7 @@ export default function SidebarLeft() {
       { name: 'Opportunity', href: '/mservices', icon: Lightbulb },
       { name: 'Partners', href: '/partners', icon: Handshake },
       { name: 'My Job Posting', href: '/jobs/my-postings', icon: FileText },
-      { name: 'My Job Application', href: '/jobs/my-applications', icon: Send },
+      { name: 'My Job Application', href: '/jobs/my-applications', icon: Send, badge: activeAppCount > 0 ? activeAppCount : null },
     ];
   } else if (pathname?.includes('/mblog')) {
     sidebarTitle = "Manage my insights";
@@ -248,6 +282,11 @@ export default function SidebarLeft() {
               >
                 <Icon size={18} />
                 <span>{link.name}</span>
+                {link.badge && (
+                  <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-[#0e2a4d] rounded-full shadow-2xs">
+                    {link.badge}
+                  </span>
+                )}
               </Link>
             );
           })}

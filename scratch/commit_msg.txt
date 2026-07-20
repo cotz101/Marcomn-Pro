@@ -1,0 +1,10 @@
+feat: add MCredit refund request workflow
+
+- Added MCredit refund request database foundation
+- Added refund request server actions and API routes
+- Added personal/company wallet Request Refund UI
+- Added requester refund status display
+- Added Admin Finance Refund Requests tab and review modal
+- Added Stripe refund approval safety gate
+- Kept live Stripe refund execution disabled unless explicitly enabled
+- Updated walkthrough documentation

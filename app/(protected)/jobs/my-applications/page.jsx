@@ -9,6 +9,7 @@ import { getCandidateAcceptanceFeePreview, getUserWalletBalance, deductCandidate
 import { createJobOrderFromAcceptedApplication, cancelJobOrderByCandidate } from '@/app/actions/jobOrders';
 import { markWorkCompletedByApplicant, confirmPaymentReceivedByApplicant } from '@/app/actions/engagementLifecycle';
 import BaseModal from '@/src/components/layout/BaseModal';
+import ApplicationStatusTabs, { getApplicationCategory } from '@/src/components/jobs/ApplicationStatusTabs';
 
 const SkeletonRow = () => (
   <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm animate-pulse flex items-center justify-between gap-4">
@@ -26,6 +27,9 @@ export default function MyApplicationsPage() {
   const { userId, currentIdentity } = useProfile();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [selectedStatus, setSelectedStatus] = useState('All');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
   const [appToAccept, setAppToAccept] = useState(null);
@@ -378,15 +382,47 @@ export default function MyApplicationsPage() {
     );
   }
 
+  const filteredApplications = applications.filter((app) => {
+    if (selectedStatus !== 'All') {
+      const category = getApplicationCategory(app);
+      if (category !== selectedStatus) return false;
+    }
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      const jobTitle = (app.job?.title || '').toLowerCase();
+      const companyName = (
+        typeof app.job?.company === 'string'
+          ? app.job?.company
+          : app.job?.company?.name || app.job?.company_name || ''
+      ).toLowerCase();
+      const location = (app.job?.location || '').toLowerCase();
+      return jobTitle.includes(term) || companyName.includes(term) || location.includes(term);
+    }
+
+    return true;
+  });
+
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6">
       {/* Header bar */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-blue-900">My Job Applications</h1>
         <p className="text-sm text-gray-600 mt-1">
           Review and track the real-time status of your maritime career applications.
         </p>
       </div>
+
+      {/* Modern Status Filter & Search Tabs */}
+      {!loading && currentIdentity?.type !== 'company' && applications.length > 0 && (
+        <ApplicationStatusTabs
+          selectedStatus={selectedStatus}
+          onSelectStatus={setSelectedStatus}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          applications={applications}
+        />
+      )}
 
       {/* Main List panel */}
       {loading ? (
@@ -421,9 +457,26 @@ export default function MyApplicationsPage() {
             Browse Opportunities
           </Link>
         </div>
+      ) : filteredApplications.length === 0 ? (
+        <div className="text-center p-12 bg-white border border-gray-100 rounded-xl shadow-sm">
+          <div className="text-gray-300 mb-3 flex justify-center">
+            <Briefcase size={44} />
+          </div>
+          <h3 className="text-base font-bold text-gray-800">No applications match your filter</h3>
+          <p className="text-gray-500 mt-1 mb-4 text-xs max-w-xs mx-auto">
+            There are no applications with status "{selectedStatus}"{searchTerm ? ` and keyword "${searchTerm}"` : ''}.
+          </p>
+          <button
+            type="button"
+            onClick={() => { setSelectedStatus('All'); setSearchTerm(''); }}
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer font-sans"
+          >
+            Reset Filters
+          </button>
+        </div>
       ) : (
         <div className="space-y-4">
-          {applications.map((app) => {
+          {filteredApplications.map((app) => {
             const job = app.job || {};
             return (
               <div
