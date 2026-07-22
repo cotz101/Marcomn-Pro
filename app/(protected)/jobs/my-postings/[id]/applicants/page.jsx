@@ -226,7 +226,7 @@ export default function ApplicantsPage() {
       );
 
       if (showToast) {
-        showToast(`Application status updated to "${newStatus}"`, 'success');
+        showToast(`Application status updated to "${newStatus === 'Rejected' ? 'Job Unsuccessful' : newStatus}"`, 'success');
       }
     } catch (err) {
       console.error('Error updating application status:', err);
@@ -633,7 +633,7 @@ export default function ApplicantsPage() {
                           <option value="Pending">Pending</option>
                           <option value="Under Review">Under Review</option>
                           <option value="Shortlisted">Shortlisted</option>
-                          <option value="Rejected">Rejected</option>
+                          <option value="Rejected">Job Unsuccessful</option>
                         </select>
                       )}
                     </div>
@@ -917,7 +917,7 @@ export default function ApplicantsPage() {
                         </span>
                       ) : (
                         <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide ${getStatusStyles(selectedApplicant.status || 'Pending')}`}>
-                          {selectedApplicant.status || 'Pending'}
+                          {selectedApplicant.status === 'Rejected' ? 'Job Unsuccessful' : (selectedApplicant.status || 'Pending')}
                         </span>
                       )}
                     </div>
