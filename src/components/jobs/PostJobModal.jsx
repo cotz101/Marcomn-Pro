@@ -37,6 +37,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
 
   const isCompany = currentIdentity?.type === 'company' || currentIdentity?.role === 'company';
   const identityName = isCompany ? currentIdentity?.data?.name : (profile?.fullName || 'Anonymous');
+  const isPublishedJob = jobToEdit && ['published', 'open'].includes((jobToEdit.status || '').toLowerCase());
 
   useEffect(() => {
     if (isOpen) {
@@ -476,20 +477,22 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
               <input 
                 type="number" 
                 name="payAmount" 
-                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900" 
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" 
                 placeholder="e.g. 50"
                 value={formData.payAmount}
                 onChange={handleInputChange}
                 required
+                disabled={isPublishedJob}
               />
             </div>
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Currency</label>
               <select 
                 name="currency" 
-                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white" 
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" 
                 value={formData.currency}
                 onChange={handleInputChange}
+                disabled={isPublishedJob}
               >
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
@@ -506,9 +509,10 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Pay Rate</label>
               <select 
                 name="payRate" 
-                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white" 
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" 
                 value={formData.payRate}
                 onChange={handleInputChange}
+                disabled={isPublishedJob}
               >
                 <option value="Hour">Hour</option>
                 <option value="Day">Day</option>
@@ -517,6 +521,12 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
               </select>
             </div>
           </div>
+
+          {isPublishedJob && (
+            <p className="text-xs text-amber-600 font-semibold mt-1">
+              Compensation cannot be modified after publication. Withdraw and republish the job to change salary.
+            </p>
+          )}
 
           {/* Row 4: Job Type and Experience Level - stack on mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
