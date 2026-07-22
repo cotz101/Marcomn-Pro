@@ -4526,4 +4526,15 @@ body.liker-modal-active .btn-leave {
   box-shadow: 0 0 0 2px rgba(0, 65, 115, 0.15) !important;
 }
 
+/* 📱 MOBILE FLOATING ACTION BUTTON POSITIONING ENHANCEMENT */
+@media (max-width: 767px) {
+  .fab-container,
+  .mobile-fab-container {
+    bottom: calc(var(--mobile-nav-height, 72px) + env(safe-area-inset-bottom) + 16px) !important;
+    right: 16px !important;
+    z-index: 9999 !important; /* Ensure it stays above page content but below modallers */
+  }
+}
+
+
 
