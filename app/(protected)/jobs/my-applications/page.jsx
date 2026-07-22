@@ -10,6 +10,7 @@ import { createJobOrderFromAcceptedApplication, cancelJobOrderByCandidate } from
 import { markWorkCompletedByApplicant, confirmPaymentReceivedByApplicant } from '@/app/actions/engagementLifecycle';
 import BaseModal from '@/src/components/layout/BaseModal';
 import ApplicationStatusTabs, { getApplicationCategory } from '@/src/components/jobs/ApplicationStatusTabs';
+import EngagementTimeline from '@/src/components/engagement/EngagementTimeline';
 
 const SkeletonRow = () => (
   <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm animate-pulse flex items-center justify-between gap-4">
@@ -603,6 +604,15 @@ export default function MyApplicationsPage() {
                   const order = orderArray[0];
                   return renderStepper(app.status, order?.status);
                 })()}
+
+                {/* Engagement Timeline */}
+                <div className="mt-6 pt-6 border-t border-slate-100 text-left">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Engagement Timeline</h4>
+                  <EngagementTimeline 
+                    jobOrder={Array.isArray(app.job_orders) ? app.job_orders[0] : app.job_orders} 
+                    application={app} 
+                  />
+                </div>
 
                 {/* Dynamic Status Badges / Cancellation Infos / Action Buttons */}
                 <div className="mt-5 flex flex-col gap-3">

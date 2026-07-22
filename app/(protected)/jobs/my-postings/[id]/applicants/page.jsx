@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase';
 import { cancelJobOrderByCompany } from '@/app/actions/jobOrders';
 import { markJobOrderCompleted } from '@/app/actions/reputation';
 import { confirmWorkCompletedByCompany, closeCompletedEngagementByCompany } from '@/app/actions/engagementLifecycle';
+import EngagementTimeline from '@/src/components/engagement/EngagementTimeline';
 import {
   ArrowLeft,
   Briefcase,
@@ -845,6 +846,13 @@ export default function ApplicantsPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Engagement Timeline */}
+                    <div className="pl-[10px] mt-6 pt-6 border-t border-slate-100">
+                      <h4 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2.5">Engagement Timeline</h4>
+                      <EngagementTimeline jobOrder={getJobOrder(selectedApplicant)} application={selectedApplicant} />
+                    </div>
+
                     <div className="flex justify-center mt-6">
                       <button onClick={() => router.push(`/profile/${selectedApplicant.applicant_id}`)} className="inline-flex items-center justify-center gap-2 bg-white text-[#004173] border border-[#004173]/30 hover:bg-blue-50 px-6 py-3 min-h-[44px] rounded-xl font-semibold shadow-sm w-[calc(100%-10px)] transition-all duration-200">
                         View Full Profile<ExternalLink size={16} />
@@ -957,6 +965,12 @@ export default function ApplicantsPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Engagement Timeline */}
+                  <div className="mb-6 pt-6 border-t border-slate-100">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Engagement Timeline</h4>
+                    <EngagementTimeline jobOrder={getJobOrder(selectedApplicant)} application={selectedApplicant} />
+                  </div>
                   
                   <div className="flex justify-center mt-12 mb-6">
                     <button onClick={() => router.push(`/profile/${selectedApplicant.applicant_id}`)} className="inline-flex items-center justify-center gap-2 px-8 py-3 min-h-[44px] bg-white text-[#004173] border border-[#004173]/30 hover:bg-[#EAF3FA] active:bg-blue-100 text-[15px] font-bold rounded-xl shadow-sm transition-colors w-fit">
