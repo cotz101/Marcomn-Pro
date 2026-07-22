@@ -197,7 +197,7 @@ export default function EmployerDashboardPage() {
           <span className="text-xs text-gray-400 font-medium">
             Created {getFormattedDate(job.created_at)}
           </span>
-          <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-100 px-2.5 py-1 text-xs font-semibold text-[#004173]">
+          <span className="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
             {job.applications?.[0]?.count || 0} {job.applications?.[0]?.count === 1 ? 'Applicant' : 'Applicants'}
           </span>
         </div>
