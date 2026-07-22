@@ -338,7 +338,7 @@ export default function OpportunityDetailsPage() {
   };
 
   return (
-    <div className="max-w-4xl w-full mx-auto px-3 sm:px-6 md:px-8 py-8 space-y-6">
+    <div className="max-w-4xl w-full mx-auto px-3 sm:px-6 md:px-8 pt-8 pb-[calc(var(--mobile-nav-height,72px)+env(safe-area-inset-bottom)+32px)] md:pb-8 space-y-6">
       {/* Bullet styling override for rich-text lists */}
       <style dangerouslySetInnerHTML={{__html: `
         .rich-text-content,
@@ -405,7 +405,7 @@ export default function OpportunityDetailsPage() {
       </button>
 
       {/* Main Premium Card (Sharp modernist corners) */}
-      <div className="bg-white !rounded-none shadow-sm border border-slate-200 overflow-hidden flex flex-col" style={{ borderRadius: '0' }}>
+      <div className="bg-white !rounded-none shadow-sm border border-slate-200 sm:overflow-hidden flex flex-col" style={{ borderRadius: '0' }}>
         
         {/* Profile/Company Header Block (Flat, integrated layout) */}
         <div className="border-b border-slate-100 pt-8 sm:pt-10 pb-6 px-5 sm:px-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 bg-slate-50/30 !rounded-none" style={{ borderRadius: '0' }}>
@@ -525,7 +525,7 @@ export default function OpportunityDetailsPage() {
         </div>
 
         {/* Premium Control Sticky Footer Action Bar */}
-        <div className="flex items-center justify-end gap-3 py-6 sm:py-8 px-4 sm:px-8 border-t border-slate-100 bg-slate-50 mt-4 sm:mt-8">
+        <div className="flex items-center justify-end gap-3 py-6 sm:py-8 px-4 sm:px-8 border-t border-slate-100 bg-slate-50 mt-4 sm:mt-8 job-detail-action-bar">
           {isOwner ? (
             <>
               <button 

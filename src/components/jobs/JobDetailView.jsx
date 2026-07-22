@@ -330,7 +330,7 @@ export default function OpportunityDetailsPage() {
   };
 
   return (
-    <div className="max-w-4xl w-full mx-auto px-4 md:px-8 py-8 space-y-6">
+    <div className="max-w-4xl w-full mx-auto px-4 md:px-8 pt-8 pb-[calc(var(--mobile-nav-height,72px)+env(safe-area-inset-bottom)+32px)] md:pb-8 space-y-6">
       {/* Back button link */}
       <button 
         onClick={() => router.push('/mservices')}
@@ -341,7 +341,7 @@ export default function OpportunityDetailsPage() {
       </button>
 
       {/* Main Premium Card */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden flex flex-col">
+      <div className="bg-white rounded-xl shadow-md border border-gray-100 sm:overflow-hidden flex flex-col">
         
         {/* Profile/Company Header Block */}
         <div className="border-b border-gray-100 py-6 px-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/30">
@@ -461,7 +461,7 @@ export default function OpportunityDetailsPage() {
         </div>
 
         {/* Premium Control Sticky Footer Action Bar */}
-        <div className="flex items-center justify-end gap-3 py-5 px-8 border-t border-gray-100 bg-slate-50">
+        <div className="flex items-center justify-end gap-3 py-5 px-8 border-t border-gray-100 bg-slate-50 job-detail-action-bar">
           {isOwner ? (
             <>
               <button 

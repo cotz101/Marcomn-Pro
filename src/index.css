@@ -4526,13 +4526,22 @@ body.liker-modal-active .btn-leave {
   box-shadow: 0 0 0 2px rgba(0, 65, 115, 0.15) !important;
 }
 
-/* 📱 MOBILE FLOATING ACTION BUTTON POSITIONING ENHANCEMENT */
+/* 📱 MOBILE FLOATING ACTION BUTTON & QUICK APPLY ACTION BAR ENHANCEMENT */
 @media (max-width: 767px) {
   .fab-container,
   .mobile-fab-container {
     bottom: calc(var(--mobile-nav-height, 72px) + env(safe-area-inset-bottom) + 16px) !important;
     right: 16px !important;
     z-index: 9999 !important; /* Ensure it stays above page content but below modallers */
+  }
+
+  .job-detail-action-bar {
+    position: sticky !important;
+    bottom: calc(var(--mobile-nav-height, 72px) + env(safe-area-inset-bottom)) !important;
+    z-index: 40 !important;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08) !important;
+    background-color: #f8fafc !important; /* Slate-50 fallback to clip text bleed */
+    border-top: 1.5px solid rgba(0, 43, 78, 0.08) !important;
   }
 }
 
