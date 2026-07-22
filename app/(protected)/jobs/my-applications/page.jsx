@@ -750,7 +750,7 @@ export default function MyApplicationsPage() {
       >
         <div className="flex flex-col space-y-4">
           <p className="text-sm text-gray-600">
-            You are accepting the offer for <span className="font-semibold text-gray-800">{appToAccept?.job?.title}</span> at <span className="font-semibold text-gray-800">{typeof appToAccept?.job?.company === 'string' ? appToAccept.job.company : appToAccept?.job?.company?.name || appToAccept?.job?.company_name || 'Company'}</span>.
+            You are accepting the offer for <span className="font-semibold text-gray-800">{appToAccept?.job?.title}</span> from <span className="font-semibold text-gray-800">{appToAccept?.job?.company_id && appToAccept?.job?.company?.name ? appToAccept.job.company.name : (appToAccept?.job?.poster?.name || 'the poster')}</span>.
           </p>
 
           {!feePreview ? (
