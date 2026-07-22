@@ -599,7 +599,7 @@ export default function AppShell({ children, userEmail, userId }) {
                   )}
                   {pathname?.includes('/mblog') && (
                     <button className="w-full text-center" style={{ color: 'white' }} onClick={() => { setIsFabExpanded(false); router.push('/mblog?compose=true'); }}>
-                      Post an MBlog
+                      Post a MBlog
                     </button>
                   )}
                 </div>

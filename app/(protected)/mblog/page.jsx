@@ -61,7 +61,7 @@ function MBlogPageContent() {
             className="mblog-header-post-btn flex items-center gap-2 px-4 py-2 bg-[#002b4e] text-white rounded-lg font-bold text-sm hover:bg-[#001f38] transition-all shadow-sm border-none cursor-pointer whitespace-nowrap"
           >
             <Plus size={18} />
-            <span>Post an MBlog</span>
+            <span>Post a MBlog</span>
           </button>
         </div>
       </div>

@@ -31,7 +31,7 @@ export default function SpeedDialFAB() {
       case '/mblog':
         return {
           color: 'var(--primary)',
-          primaryAction: 'Post an MBlog',
+          primaryAction: 'Post a MBlog',
           primaryPath: '/mblog?compose=true',
           shortcuts: [
             { label: 'My MBlogs', icon: BookOpen, path: '/mblog?view=my' },
