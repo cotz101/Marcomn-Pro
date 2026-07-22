@@ -33,7 +33,7 @@ export default function JobBoard() {
       const user = userData?.user;
 
       let jobsQuery = supabase
-        .from('jobs')
+        .from('jobs_search_view')
         .select(`
           id,
           title,
@@ -46,13 +46,14 @@ export default function JobBoard() {
           created_at,
           company_id,
           poster_id,
-          status
+          status,
+          description
         `)
         .in('status', ['Published', 'published', 'Open', 'open'])
         .order('created_at', { ascending: false });
 
       if (debouncedSearchTerm) {
-        jobsQuery = jobsQuery.or(`title.ilike.%${debouncedSearchTerm}%,location.ilike.%${debouncedSearchTerm}%,salary_range.ilike.%${debouncedSearchTerm}%,employment_type.ilike.%${debouncedSearchTerm}%`);
+        jobsQuery = jobsQuery.or(`title.ilike.%${debouncedSearchTerm}%,company_name.ilike.%${debouncedSearchTerm}%,location.ilike.%${debouncedSearchTerm}%,description.ilike.%${debouncedSearchTerm}%,skills_text.ilike.%${debouncedSearchTerm}%,tags_text.ilike.%${debouncedSearchTerm}%`);
       }
 
       const [jobsResponse, appsResponse] = await Promise.all([
