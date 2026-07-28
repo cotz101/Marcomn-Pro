@@ -8,6 +8,8 @@ import { Briefcase, MapPin, Calendar, Building2, Loader2, ExternalLink, Building
 import { getCandidateAcceptanceFeePreview, getUserWalletBalance, deductCandidateAcceptanceFee } from '@/app/actions/mcreditsJobs';
 import { createJobOrderFromAcceptedApplication, cancelJobOrderByCandidate } from '@/app/actions/jobOrders';
 import { markWorkCompletedByApplicant, confirmPaymentReceivedByApplicant } from '@/app/actions/engagementLifecycle';
+import { requestAdvancePayment, cancelAdvanceRequest, acceptCounterOffer, declineCounterOffer, confirmReceipt, disputeReceipt } from '@/app/actions/advances';
+import { calculateAdvanceLedger } from '@/lib/advancesLedger';
 import BaseModal from '@/src/components/layout/BaseModal';
 import ApplicationStatusTabs, { getApplicationCategory } from '@/src/components/jobs/ApplicationStatusTabs';
 import EngagementTimeline from '@/src/components/engagement/EngagementTimeline';
@@ -23,6 +25,58 @@ const SkeletonRow = () => (
     <div className="w-24 h-9 bg-gray-250 rounded-lg"></div>
   </div>
 );
+
+const isThresholdSatisfied = (currentStatus, threshold) => {
+  const status = (currentStatus || '').toLowerCase();
+  const th = (threshold || 'shortlisted').toLowerCase();
+  if (th === 'shortlisted') {
+    return ['shortlisted', 'offered', 'accepted'].includes(status);
+  }
+  if (th === 'offered') {
+    return ['offered', 'accepted'].includes(status);
+  }
+  if (th === 'accepted') {
+    return ['accepted'].includes(status);
+  }
+  return false;
+};
+
+const getAdvanceEligibility = (job, requests = []) => {
+  const salary = Number(job.salary_numeric || 0);
+  let maxEligible = 0;
+  if (job.advance_payment_type === 'percentage') {
+    maxEligible = (salary * Number(job.advance_payment_value || 0)) / 100;
+  } else {
+    maxEligible = Number(job.advance_payment_value || 0);
+  }
+  if (job.advance_payment_max !== null) {
+    maxEligible = Math.min(maxEligible, Number(job.advance_payment_max));
+  }
+
+  let totalConfirmed = 0;
+  let totalActive = 0;
+  let hasActiveOrConfirmed = false;
+
+  for (const r of requests) {
+    const isExpiredOrCancelled = ['rejected', 'cancelled', 'expired', 'review_closed'].includes(r.status);
+    if (r.status === 'confirmed') {
+      totalConfirmed += Number(r.approved_amount || r.requested_amount || 0);
+      hasActiveOrConfirmed = true;
+    } else if (!isExpiredOrCancelled) {
+      totalActive += Number(r.counter_amount !== null ? r.counter_amount : r.requested_amount);
+      hasActiveOrConfirmed = true;
+    }
+  }
+
+  const remaining = Math.max(0, maxEligible - totalConfirmed - totalActive);
+  return {
+    maxEligible,
+    totalConfirmed,
+    totalActive,
+    remaining,
+    hasActiveOrConfirmed
+  };
+};
 
 export default function MyApplicationsPage() {
   const { userId, currentIdentity } = useProfile();
@@ -51,6 +105,158 @@ export default function MyApplicationsPage() {
   const [workCompletedNote, setWorkCompletedNote] = useState('');
   const [paymentConfirmationNote, setPaymentConfirmationNote] = useState('');
   const [submittingLifecycle, setSubmittingLifecycle] = useState(false);
+
+  // Advance Payment states
+  const [isAdvanceModalOpen, setIsAdvanceModalOpen] = useState(false);
+  const [selectedAppForAdvance, setSelectedAppForAdvance] = useState(null);
+  const [advanceAmountInput, setAdvanceAmountInput] = useState('');
+  const [advanceNotesInput, setAdvanceNotesInput] = useState('');
+  const [isSubmittingAdvance, setIsSubmittingAdvance] = useState(false);
+  const [advanceRequestError, setAdvanceRequestError] = useState('');
+
+  // Dispute states
+  const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
+  const [requestToDispute, setRequestToDispute] = useState(null);
+  const [disputeReasonInput, setDisputeReasonInput] = useState('');
+  const [isSubmittingDispute, setIsSubmittingDispute] = useState(false);
+  const [disputeError, setDisputeError] = useState('');
+
+  const handleOpenAdvanceModal = (app) => {
+    setSelectedAppForAdvance(app);
+    setAdvanceAmountInput('');
+    setAdvanceNotesInput('');
+    setAdvanceRequestError('');
+    setIsAdvanceModalOpen(true);
+  };
+
+  const handleSubmitAdvanceRequest = async () => {
+    if (!selectedAppForAdvance) return;
+    const amount = parseFloat(advanceAmountInput);
+    if (isNaN(amount) || amount <= 0) {
+      setAdvanceRequestError('Please enter a positive amount.');
+      return;
+    }
+    
+    setIsSubmittingAdvance(true);
+    setAdvanceRequestError('');
+    
+    try {
+      const res = await requestAdvancePayment({
+        applicationId: selectedAppForAdvance.id,
+        amount,
+        applicantNotes: advanceNotesInput
+      });
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to submit advance request.');
+      }
+      setIsAdvanceModalOpen(false);
+      setSelectedAppForAdvance(null);
+      await fetchApplications();
+      alert('Advance payment request submitted successfully!');
+    } catch (err) {
+      console.error(err);
+      setAdvanceRequestError(err.message || 'An error occurred.');
+    } finally {
+      setIsSubmittingAdvance(false);
+    }
+  };
+
+  const handleCancelAdvance = async (requestId) => {
+    if (!confirm('Are you sure you want to cancel this request?')) return;
+    try {
+      const res = await cancelAdvanceRequest({ requestId });
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to cancel request.');
+      }
+      await fetchApplications();
+      alert('Request cancelled successfully.');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'An error occurred.');
+    }
+  };
+
+  const handleAcceptCounter = async (requestId) => {
+    if (!confirm('Are you sure you want to accept this counter offer?')) return;
+    try {
+      const res = await acceptCounterOffer({ requestId });
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to accept counter offer.');
+      }
+      await fetchApplications();
+      alert('Counter offer accepted successfully!');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'An error occurred.');
+    }
+  };
+
+  const handleDeclineCounter = async (requestId) => {
+    if (!confirm('Are you sure you want to decline this counter offer?')) return;
+    try {
+      const res = await declineCounterOffer({ requestId });
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to decline counter offer.');
+      }
+      await fetchApplications();
+      alert('Counter offer declined.');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'An error occurred.');
+    }
+  };
+
+  const handleConfirmReceipt = async (requestId) => {
+    if (!confirm('Are you sure you want to confirm receipt of the advance payment? This will finalize the request as CONFIRMED.')) return;
+    try {
+      const res = await confirmReceipt({ requestId });
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to confirm receipt.');
+      }
+      await fetchApplications();
+      alert('Advance payment receipt confirmed!');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'An error occurred.');
+    }
+  };
+
+  const handleOpenDisputeModal = (req) => {
+    setRequestToDispute(req);
+    setDisputeReasonInput('');
+    setDisputeError('');
+    setIsDisputeModalOpen(true);
+  };
+
+  const handleSubmitDispute = async () => {
+    if (!requestToDispute) return;
+    if (!disputeReasonInput.trim()) {
+      setDisputeError('Dispute reason is required.');
+      return;
+    }
+    
+    setIsSubmittingDispute(true);
+    setDisputeError('');
+    
+    try {
+      const res = await disputeReceipt({
+        requestId: requestToDispute.id,
+        disputeReason: disputeReasonInput
+      });
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to dispute request.');
+      }
+      setIsDisputeModalOpen(false);
+      setRequestToDispute(null);
+      await fetchApplications();
+      alert('Issue reported. The platform administration has been notified.');
+    } catch (err) {
+      console.error(err);
+      setDisputeError(err.message || 'An error occurred.');
+    } finally {
+      setIsSubmittingDispute(false);
+    }
+  };
 
   const handleOpenWorkCompletedModal = (orderId) => {
     setSelectedOrderId(orderId);
@@ -134,7 +340,16 @@ export default function MyApplicationsPage() {
         let fetchedOrders = (!ordersError && jobOrders) ? jobOrders : [];
         let orderIds = fetchedOrders.map(o => o.id);
         
-        // 3. Fetch job_cancellations for job_order IDs
+        // 3. Fetch job_advance_requests for application IDs
+        const { data: advanceRequests, error: advanceError } = await supabase
+          .from('job_advance_requests')
+          .select('*, job_advance_audit_logs(*)')
+          .in('application_id', appIds)
+          .order('created_at', { ascending: false });
+
+        const fetchedAdvanceReqs = (!advanceError && advanceRequests) ? advanceRequests : [];
+
+        // 4. Fetch job_cancellations for job_order IDs
         let fetchedCancellations = [];
         if (orderIds.length > 0) {
           const { data: jobCancellations, error: cancelError } = await supabase
@@ -146,7 +361,7 @@ export default function MyApplicationsPage() {
           }
         }
         
-        // 4. Manually attach the latest cancellation record to each application object
+        // 5. Manually attach the latest cancellation record and advance requests to each application object
         applications = applications.map(app => {
           // Find orders for this app
           const appOrders = fetchedOrders.filter(o => o.application_id === app.id);
@@ -160,16 +375,19 @@ export default function MyApplicationsPage() {
             const orderCancellations = fetchedCancellations.filter(c => c.job_order_id === latestOrder.id);
             // Get the latest cancellation
             if (orderCancellations.length > 0) {
-              // Sort descending by created_at if possible, or just take first
               orderCancellations.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
               appCancellation = orderCancellations[0];
             }
           }
+
+          // Filter advance requests for this app
+          const appAdvanceRequests = fetchedAdvanceReqs.filter(r => r.application_id === app.id);
           
           return {
             ...app,
             job_orders: appOrders,
-            job_cancellation: appCancellation
+            job_cancellation: appCancellation,
+            advance_requests: appAdvanceRequests
           };
         });
       }
@@ -404,6 +622,111 @@ export default function MyApplicationsPage() {
     return true;
   });
 
+  const renderAdvancePaymentLedgerAndTimeline = (job, requests = []) => {
+    const ledger = calculateAdvanceLedger(job, requests);
+    const currency = job?.salary_range ? job.salary_range.split(' ')[0] : 'USD';
+
+    // Active requests (for checking status/timeline)
+    const nonIgnoredRequests = requests.filter(r => !['rejected', 'cancelled', 'expired'].includes(r.status));
+    const activeRequest = nonIgnoredRequests[0] || null; // Render details/timeline for the latest active request
+
+    // Build the audit timeline events from the active request audit logs
+    let timelineEvents = [];
+    if (activeRequest && Array.isArray(activeRequest.job_advance_audit_logs)) {
+      timelineEvents = [...activeRequest.job_advance_audit_logs].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+    }
+
+    return (
+      <div className="mt-4 border border-slate-150 rounded-xl bg-white p-4 space-y-4 font-sans text-xs">
+        {/* Contract Summary & Advance Summary (Ledger) */}
+        <div>
+          <h4 className="text-[11px] font-bold text-[#0e2a4d] uppercase tracking-wider mb-3">Advance Payment Ledger</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              <span className="text-gray-400 font-bold block text-[9px] uppercase">Contract Value</span>
+              <span className="text-xs font-extrabold text-[#0e2a4d]">${ledger.contractValue.toFixed(2)} {currency}</span>
+            </div>
+            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              <span className="text-gray-400 font-bold block text-[9px] uppercase">Max Eligible Limit</span>
+              <span className="text-xs font-extrabold text-[#0e2a4d]">${ledger.maxEligible.toFixed(2)} {currency}</span>
+            </div>
+            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Requested</span>
+              <span className="text-xs font-bold text-gray-800">${ledger.totalRequested.toFixed(2)} {currency}</span>
+            </div>
+            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Approved</span>
+              <span className="text-xs font-bold text-green-700">${ledger.totalApproved.toFixed(2)} {currency}</span>
+            </div>
+            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Transferred</span>
+              <span className="text-xs font-bold text-purple-700">${ledger.totalTransferred.toFixed(2)} {currency}</span>
+            </div>
+            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Confirmed</span>
+              <span className="text-xs font-bold text-emerald-700">${ledger.totalConfirmed.toFixed(2)} {currency}</span>
+            </div>
+            <div className="bg-blue-50/50 p-2.5 rounded-lg border border-blue-100/50 col-span-2 sm:col-span-1">
+              <span className="text-[#0e2a4d]/70 font-extrabold block text-[9px] uppercase">Remaining Eligible Cap</span>
+              <span className="text-xs font-extrabold text-blue-900">${ledger.remainingEligibility.toFixed(2)} {currency}</span>
+            </div>
+            <div className="bg-amber-50/50 p-2.5 rounded-lg border border-amber-100/50 col-span-2 sm:col-span-1">
+              <span className="text-amber-800/70 font-extrabold block text-[9px] uppercase">Remaining Payout Salary</span>
+              <span className="text-xs font-extrabold text-amber-900">${ledger.remainingSalary.toFixed(2)} {currency}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Timeline Summary */}
+        {activeRequest && (
+          <div className="pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-[11px] font-bold text-[#0e2a4d] uppercase tracking-wider">Workflow Progress Timeline</h4>
+              <span className="text-[9px] bg-slate-100 text-[#0e2a4d] font-bold px-2 py-0.5 rounded-full uppercase border border-slate-200">
+                Status: {activeRequest.status.replace(/_/g, ' ')}
+              </span>
+            </div>
+
+            {timelineEvents.length > 0 ? (
+              <div className="relative pl-4 border-l border-slate-200 space-y-4">
+                {timelineEvents.map((evt, idx) => {
+                  const dateStr = new Date(evt.created_at).toLocaleString();
+                  const displayAction = evt.action.replace(/_/g, ' ');
+                  const actorRole = evt.actor_id === activeRequest.applicant_id ? 'Applicant' : 'Company';
+                  const note = evt.payload?.company_notes || evt.payload?.admin_notes || evt.payload?.dispute_reason || evt.payload?.counter_notes || evt.payload?.applicant_notes || '';
+
+                  return (
+                    <div key={evt.id || idx} className="relative text-left">
+                      {/* Timeline Dot */}
+                      <div className="absolute -left-[21.5px] top-1 w-2.5 h-2.5 bg-[#004173] rounded-full border border-white" />
+                      <div>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                          <span className="font-bold text-gray-800 capitalize text-[11px]">{displayAction} ({actorRole})</span>
+                          <span className="text-[9px] text-gray-400 font-mono">{dateStr}</span>
+                        </div>
+                        {note && (
+                          <p className="mt-1 text-gray-500 italic bg-slate-50 px-2.5 py-1 rounded border border-slate-100 leading-snug">
+                            {note}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-2 text-gray-400 italic">
+                No timeline records.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6">
       {/* Header bar */}
@@ -604,6 +927,207 @@ export default function MyApplicationsPage() {
                   const order = orderArray[0];
                   return renderStepper(app.status, order?.status);
                 })()}
+
+                {/* Advance Payment requests */}
+                {job.advance_payment_enabled && (
+                  <div className="mt-6 pt-6 border-t border-slate-100 text-left">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5 font-sans">
+                        <Coins size={14} className="text-blue-900" />
+                        Advance Payment Requests
+                      </h4>
+                      {(() => {
+                        const thresholdMet = isThresholdSatisfied(app.status, job.advance_payment_availability);
+                        const ledger = getAdvanceEligibility(job, app.advance_requests || []);
+                        const canRequest = thresholdMet && (!job.advance_payment_allow_multiple ? !ledger.hasActiveOrConfirmed : ledger.remaining > 0);
+                        if (canRequest) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAdvanceModal(app)}
+                              className="text-xs font-semibold text-blue-900 hover:text-blue-800 flex items-center gap-1 cursor-pointer focus:outline-none bg-transparent border-0 p-0"
+                            >
+                              + Request Advance
+                            </button>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+
+                    {/* Request List */}
+                    {Array.isArray(app.advance_requests) && app.advance_requests.length > 0 ? (
+                      <>
+                        <div className="space-y-2 mb-3">
+                          {app.advance_requests.map((req) => {
+                            let statusBg = "bg-gray-50 text-gray-600 border-gray-200";
+                            let displayStatus = req.status.replace('_', ' ');
+                            if (req.status === 'pending') statusBg = "bg-amber-50 text-amber-700 border-amber-200";
+                            else if (req.status === 'countered') statusBg = "bg-blue-50 text-blue-700 border-blue-200";
+                            else if (req.status === 'approved') statusBg = "bg-green-50 text-green-700 border-green-200";
+                            else if (req.status === 'transfer_recorded') statusBg = "bg-purple-50 text-purple-700 border-purple-200";
+                            else if (req.status === 'confirmed') statusBg = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                            else if (req.status === 'rejected') statusBg = "bg-rose-50 text-rose-700 border-rose-200";
+                            else if (req.status === 'disputed') statusBg = "bg-red-50 text-red-800 border-red-200";
+                            else if (req.status === 'review_closed') statusBg = "bg-slate-50 text-slate-700 border-slate-250";
+
+                            const displayAmount = Number(req.counter_amount !== null ? req.counter_amount : req.requested_amount).toFixed(2);
+
+                            return (
+                              <div key={req.id} className="p-3.5 border border-slate-100 rounded-xl bg-slate-50/30 text-sm space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <span className="font-bold text-gray-800">${displayAmount} {req.currency}</span>
+                                    {req.counter_amount !== null && (
+                                      <span className="text-xs text-amber-650 ml-1.5 font-semibold">(Counter Offer)</span>
+                                    )}
+                                    {req.expires_at && ['pending', 'countered'].includes(req.status) && (
+                                      <p className="text-[10px] text-gray-400 mt-0.5 font-sans">
+                                        Expires: {new Date(req.expires_at).toLocaleDateString()}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border rounded-full ${statusBg}`}>
+                                    {displayStatus}
+                                  </span>
+                                </div>
+
+                                {/* Rich Details for recorded transfers / confirmed / disputed */}
+                                {['transfer_recorded', 'confirmed', 'disputed', 'review_closed'].includes(req.status) && (
+                                  <div className="text-xs text-gray-600 bg-white border border-slate-100 rounded-lg p-3 space-y-1.5 font-sans">
+                                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                                      <div>
+                                        <span className="text-gray-400 font-bold block">Method</span>
+                                        <span className="font-semibold text-gray-700 capitalize">{(req.payment_method || '—').replace('_', ' ')}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-gray-400 font-bold block">Date</span>
+                                        <span className="font-semibold text-gray-700">{req.transfer_date || '—'}</span>
+                                      </div>
+                                      <div className="col-span-2">
+                                        <span className="text-gray-400 font-bold block">Reference Number</span>
+                                        <span className="font-mono font-semibold text-gray-800">{req.reference_number || '—'}</span>
+                                      </div>
+                                    </div>
+                                    
+                                    {req.company_notes && (
+                                      <div className="pt-1.5 border-t border-slate-50 text-[11px]">
+                                        <span className="text-gray-400 font-bold block">Company Note</span>
+                                        <p className="text-gray-600 italic mt-0.5 leading-snug">{req.company_notes}</p>
+                                      </div>
+                                    )}
+                                    
+                                    {req.proof_url && (
+                                      <div className="pt-1 text-[11px]">
+                                        <a 
+                                          href={req.proof_url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer" 
+                                          className="inline-flex items-center gap-1 text-[#004173] font-bold hover:underline"
+                                        >
+                                          Download Payment Proof
+                                        </a>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Dispute reason if disputed */}
+                                {req.status === 'disputed' && req.dispute_reason && (
+                                  <div className="text-xs text-rose-800 bg-rose-50 border border-rose-100 rounded-lg p-2.5 font-sans font-semibold">
+                                    Disputed Reason: {req.dispute_reason}
+                                  </div>
+                                )}
+
+                                {/* Action buttons */}
+                                <div className="flex items-center justify-end gap-2 pt-1">
+                                  {req.status === 'pending' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCancelAdvance(req.id)}
+                                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 font-semibold text-xs rounded-lg transition-colors cursor-pointer"
+                                    >
+                                      Cancel Request
+                                    </button>
+                                  )}
+                                  
+                                  {req.status === 'countered' && (
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAcceptCounter(req.id)}
+                                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer border-0"
+                                      >
+                                        Accept Counter
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeclineCounter(req.id)}
+                                        className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 font-semibold text-xs rounded-lg transition-colors cursor-pointer"
+                                      >
+                                        Decline
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {req.status === 'transfer_recorded' && (
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleConfirmReceipt(req.id)}
+                                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer border-0"
+                                      >
+                                        Confirm Receipt
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenDisputeModal(req)}
+                                        className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 font-semibold text-xs rounded-lg transition-colors cursor-pointer"
+                                      >
+                                        Report Issue
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {renderAdvancePaymentLedgerAndTimeline(job, app.advance_requests)}
+                      </>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic mb-2">No advance payment requests created yet.</p>
+                    )}
+
+                    {/* Eligibility Status Banner */}
+                    {(() => {
+                      const thresholdMet = isThresholdSatisfied(app.status, job.advance_payment_availability);
+                      const ledger = getAdvanceEligibility(job, app.advance_requests || []);
+                      if (!thresholdMet) {
+                        return (
+                          <div className="p-2.5 bg-slate-50 border border-slate-150 rounded-lg text-xs text-slate-500 leading-normal font-sans">
+                            Advance requests will be available when application reaches status: <span className="font-bold capitalize">{job.advance_payment_availability}</span>.
+                          </div>
+                        );
+                      }
+                      if (!job.advance_payment_allow_multiple && ledger.hasActiveOrConfirmed) {
+                        return (
+                          <div className="p-2.5 bg-amber-50/50 border border-amber-100 rounded-lg text-xs text-amber-700 font-sans">
+                            Maximum request limit reached (only one advance request permitted).
+                          </div>
+                        );
+                      }
+                      if (ledger.remaining <= 0) {
+                        return (
+                          <div className="p-2.5 bg-amber-50/50 border border-amber-100 rounded-lg text-xs text-amber-700 font-sans">
+                            No remaining advance eligibility ($0.00 left of ${ledger.maxEligible.toFixed(2)} cap).
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
+                )}
 
                 {/* Engagement Timeline */}
                 <div className="mt-6 pt-6 border-t border-slate-100 text-left">
@@ -952,6 +1476,149 @@ export default function MyApplicationsPage() {
                 disabled={submittingLifecycle}
               >
                 {submittingLifecycle ? 'Confirming...' : 'Press to Confirm Payment Received'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Request Advance Modal */}
+      <BaseModal
+        isOpen={isAdvanceModalOpen && selectedAppForAdvance !== null}
+        onClose={() => { setIsAdvanceModalOpen(false); setSelectedAppForAdvance(null); }}
+        title="Request Advance Payment"
+        maxWidth="600px"
+        disableBackdropClick={isSubmittingAdvance}
+      >
+        {selectedAppForAdvance && (() => {
+          const job = selectedAppForAdvance.job || {};
+          const ledger = getAdvanceEligibility(job, selectedAppForAdvance.advance_requests || []);
+          const currency = job.salary_range ? job.salary_range.split(' ')[0] : 'USD';
+          
+          return (
+            <div className="flex flex-col space-y-4 text-left">
+              <p className="text-sm text-gray-600 font-sans">
+                You are requesting an advance payment for the job: <span className="font-semibold text-gray-800">{job.title}</span>.
+              </p>
+
+              {/* Company Terms */}
+              {job.advance_payment_notes && (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-sans">
+                  <p className="font-bold text-slate-700 mb-1">Company Advance Terms & Instructions:</p>
+                  <p className="text-slate-600 whitespace-pre-wrap">{job.advance_payment_notes}</p>
+                </div>
+              )}
+
+              {/* Eligibility Stats */}
+              <div className="grid grid-cols-2 gap-4 p-3 bg-blue-50/50 border border-blue-100 rounded-lg text-xs font-sans">
+                <div>
+                  <p className="text-gray-500 font-medium">Maximum Eligible Cap</p>
+                  <p className="text-sm font-bold text-blue-900">${ledger.maxEligible.toFixed(2)} {currency}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 font-medium">Remaining Eligibility Limit</p>
+                  <p className="text-sm font-bold text-blue-900">${ledger.remaining.toFixed(2)} {currency}</p>
+                </div>
+              </div>
+
+              {/* Form Input fields */}
+              <div className="space-y-4 font-sans">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Requested Amount ({currency})</label>
+                  <input
+                    type="number"
+                    value={advanceAmountInput}
+                    onChange={(e) => setAdvanceAmountInput(e.target.value)}
+                    placeholder={`e.g. 250`}
+                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900"
+                    min="1"
+                    max={ledger.remaining}
+                    step="any"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Justification / Notes for Company</label>
+                  <textarea
+                    value={advanceNotesInput}
+                    onChange={(e) => setAdvanceNotesInput(e.target.value)}
+                    placeholder="Provide details about why you need this advance (e.g. travel fees, equipment)..."
+                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900 min-h-[90px]"
+                  />
+                </div>
+              </div>
+
+              {advanceRequestError && (
+                <div className="p-3 bg-rose-50 border border-rose-250 rounded-lg text-xs text-rose-700 font-semibold font-sans">
+                  {advanceRequestError}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="pt-4 flex flex-col-reverse sm:flex-row justify-end gap-3 border-t border-slate-100 font-sans">
+                <button
+                  type="button"
+                  onClick={() => { setIsAdvanceModalOpen(false); setSelectedAppForAdvance(null); }}
+                  className="w-full sm:w-auto px-5 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors text-center cursor-pointer bg-transparent border-0"
+                  disabled={isSubmittingAdvance}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmitAdvanceRequest}
+                  className="w-full sm:w-auto bg-[#004173] hover:bg-blue-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 text-center cursor-pointer border-0"
+                  disabled={isSubmittingAdvance || !advanceAmountInput || parseFloat(advanceAmountInput) <= 0 || parseFloat(advanceAmountInput) > ledger.remaining}
+                >
+                  {isSubmittingAdvance ? 'Submitting...' : 'Submit Request'}
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+      </BaseModal>
+      {/* Dispute Advance Payment Transfer Modal */}
+      {isDisputeModalOpen && requestToDispute && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl text-left font-sans">
+            <h3 className="text-lg font-bold text-red-650 mb-2">Report Issue / Dispute Transfer</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              If you did not receive the funds, or the amount does not match, please report the issue. Platform administrators will be notified to review the offline audit trail.
+            </p>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Specify Issue / Reason *</label>
+                <textarea 
+                  value={disputeReasonInput}
+                  onChange={(e) => setDisputeReasonInput(e.target.value)}
+                  placeholder="Explain the issue in detail (e.g. money not received after 3 days, incorrect amount received)..."
+                  className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900 min-h-[100px]"
+                  required
+                />
+              </div>
+            </div>
+
+            {disputeError && (
+              <div className="p-3 bg-rose-50 border border-rose-250 rounded-lg text-xs text-rose-700 font-semibold mb-4">
+                {disputeError}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+              <button 
+                onClick={() => { setIsDisputeModalOpen(false); setRequestToDispute(null); }}
+                className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer bg-transparent border-0"
+                disabled={isSubmittingDispute}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSubmitDispute}
+                className="bg-red-650 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 cursor-pointer border-0"
+                disabled={isSubmittingDispute || !disputeReasonInput.trim()}
+              >
+                {isSubmittingDispute ? 'Submitting...' : 'Report Issue'}
               </button>
             </div>
           </div>

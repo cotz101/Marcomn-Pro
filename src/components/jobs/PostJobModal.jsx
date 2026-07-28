@@ -30,6 +30,18 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
   const [withdrawalLimit, setWithdrawalLimit] = useState(3);
   const [tagsString, setTagsString] = useState('');
 
+  // Advance Payment states
+  const [advanceSectionExpanded, setAdvanceSectionExpanded] = useState(false);
+  const [advancedSettingsExpanded, setAdvancedSettingsExpanded] = useState(false);
+  const [advancePaymentEnabled, setAdvancePaymentEnabled] = useState(false);
+  const [advancePaymentType, setAdvancePaymentType] = useState('fixed');
+  const [advancePaymentValue, setAdvancePaymentValue] = useState('');
+  const [advancePaymentMax, setAdvancePaymentMax] = useState('');
+  const [advancePaymentAllowMultiple, setAdvancePaymentAllowMultiple] = useState(false);
+  const [advancePaymentAvailability, setAdvancePaymentAvailability] = useState('shortlisted');
+  const [advancePaymentExpiryDays, setAdvancePaymentExpiryDays] = useState('never');
+  const [advancePaymentNotes, setAdvancePaymentNotes] = useState('');
+
   // MCredit state
   const [feePreview, setFeePreview] = useState(null); // { feePercent, fee }
   const [walletBalance, setWalletBalance] = useState(null);
@@ -88,6 +100,17 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         }
         setWithdrawalLimit(jobToEdit.withdrawal_limit ?? 3);
         setTagsString(jobToEdit.tags ? jobToEdit.tags.join(', ') : '');
+
+        setAdvancePaymentEnabled(jobToEdit.advance_payment_enabled || false);
+        setAdvancePaymentType(jobToEdit.advance_payment_type || 'fixed');
+        setAdvancePaymentValue(jobToEdit.advance_payment_value !== null ? jobToEdit.advance_payment_value.toString() : '');
+        setAdvancePaymentMax(jobToEdit.advance_payment_max !== null ? jobToEdit.advance_payment_max.toString() : '');
+        setAdvancePaymentAllowMultiple(jobToEdit.advance_payment_allow_multiple || false);
+        setAdvancePaymentAvailability(jobToEdit.advance_payment_availability || 'shortlisted');
+        setAdvancePaymentExpiryDays(jobToEdit.advance_payment_expiry_days !== null ? jobToEdit.advance_payment_expiry_days.toString() : 'never');
+        setAdvancePaymentNotes(jobToEdit.advance_payment_notes || '');
+        setAdvanceSectionExpanded(jobToEdit.advance_payment_enabled || false);
+        setAdvancedSettingsExpanded(false);
       } else {
         setFormData({
           title: '',
@@ -106,6 +129,16 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         setSkills([]);
         setWithdrawalLimit(3);
         setTagsString('');
+        setAdvancePaymentEnabled(false);
+        setAdvancePaymentType('fixed');
+        setAdvancePaymentValue('');
+        setAdvancePaymentMax('');
+        setAdvancePaymentAllowMultiple(false);
+        setAdvancePaymentAvailability('shortlisted');
+        setAdvancePaymentExpiryDays('never');
+        setAdvancePaymentNotes('');
+        setAdvanceSectionExpanded(false);
+        setAdvancedSettingsExpanded(false);
       }
     }
   }, [jobToEdit, isOpen]);
@@ -181,6 +214,29 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
       return;
     }
 
+    if (advancePaymentEnabled) {
+      const val = parseFloat(advancePaymentValue);
+      const max = parseFloat(advancePaymentMax);
+      const salary = parseFloat(formData.payAmount);
+
+      if (isNaN(val) || val <= 0) {
+        alert('Advance Value must be a positive number.');
+        return;
+      }
+      if (isNaN(max) || max <= 0) {
+        alert('Maximum Advance Cap must be a positive number.');
+        return;
+      }
+      if (advancePaymentType === 'percentage' && (val < 1 || val > 100)) {
+        alert('Percentage value must be between 1 and 100.');
+        return;
+      }
+      if (!isNaN(salary) && max > salary) {
+        alert('Maximum Advance Cap cannot exceed the Job Salary.');
+        return;
+      }
+    }
+
     setLoading(true);
     const supabase = createClient();
 
@@ -252,6 +308,14 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           priority: formData.positionStatus === 'Active Position',
           withdrawal_limit: parseInt(withdrawalLimit, 10),
           tags: formattedTags,
+          advance_payment_enabled: advancePaymentEnabled,
+          advance_payment_type: advancePaymentEnabled ? advancePaymentType : null,
+          advance_payment_value: advancePaymentEnabled ? (parseFloat(advancePaymentValue) || null) : null,
+          advance_payment_max: advancePaymentEnabled ? (parseFloat(advancePaymentMax) || null) : null,
+          advance_payment_allow_multiple: advancePaymentEnabled ? advancePaymentAllowMultiple : false,
+          advance_payment_availability: advancePaymentEnabled ? advancePaymentAvailability : 'shortlisted',
+          advance_payment_expiry_days: advancePaymentEnabled && advancePaymentExpiryDays !== 'never' ? parseInt(advancePaymentExpiryDays, 10) : null,
+          advance_payment_notes: advancePaymentEnabled ? advancePaymentNotes : null,
         })
         .eq('id', jobToEdit.id)
         .select()
@@ -340,6 +404,14 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           priority: formData.positionStatus === 'Active Position',
           withdrawal_limit: parseInt(withdrawalLimit, 10),
           tags: formattedTags,
+          advance_payment_enabled: advancePaymentEnabled,
+          advance_payment_type: advancePaymentEnabled ? advancePaymentType : null,
+          advance_payment_value: advancePaymentEnabled ? (parseFloat(advancePaymentValue) || null) : null,
+          advance_payment_max: advancePaymentEnabled ? (parseFloat(advancePaymentMax) || null) : null,
+          advance_payment_allow_multiple: advancePaymentEnabled ? advancePaymentAllowMultiple : false,
+          advance_payment_availability: advancePaymentEnabled ? advancePaymentAvailability : 'shortlisted',
+          advance_payment_expiry_days: advancePaymentEnabled && advancePaymentExpiryDays !== 'never' ? parseInt(advancePaymentExpiryDays, 10) : null,
+          advance_payment_notes: advancePaymentEnabled ? advancePaymentNotes : null,
         })
         .select()
         .maybeSingle();
@@ -622,6 +694,188 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             <p className="text-xs text-gray-400 mt-1.5">
               Separate multiple tags with commas. These help candidates find your job.
             </p>
+          </div>
+
+          {/* Row 5d: Advance Payment (Optional) */}
+          <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50/50">
+            <button
+              type="button"
+              onClick={() => setAdvanceSectionExpanded(!advanceSectionExpanded)}
+              className="flex items-center justify-between w-full p-4 font-semibold text-gray-800 hover:bg-slate-100/80 transition-colors text-sm focus:outline-none"
+            >
+              <span className="flex items-center gap-2">
+                <Coins size={16} className="text-blue-900" />
+                Advance Payment (Optional)
+              </span>
+              <span className="text-gray-500 text-xs font-normal">
+                {advanceSectionExpanded ? 'Hide ▲' : 'Show ▼'}
+              </span>
+            </button>
+
+            {advanceSectionExpanded && (
+              <div className="p-4 border-t border-slate-200 space-y-4 bg-white">
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Allow shortlisted, offered, or accepted applicants to request an advance payment directly from your company. Payments are arranged outside MarComn and are recorded here for tracking and audit purposes only.
+                </p>
+
+                {/* Enable Advance Payment */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="advance_payment_enabled"
+                    name="advance_payment_enabled"
+                    checked={advancePaymentEnabled}
+                    onChange={(e) => setAdvancePaymentEnabled(e.target.checked)}
+                    className="h-4 w-4 text-blue-900 focus:ring-blue-900 border-gray-300 rounded cursor-pointer"
+                  />
+                  <label htmlFor="advance_payment_enabled" className="text-sm font-semibold text-gray-700 cursor-pointer">
+                    Enable Advance Payment
+                  </label>
+                </div>
+
+                {advancePaymentEnabled && (
+                  <div className="space-y-4 pt-2 border-t border-slate-100">
+                    
+                    {/* Advance Type */}
+                    <div>
+                      <label className="text-sm font-semibold text-gray-700 block mb-1.5 font-medium">Advance Type</label>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="advance_payment_type"
+                            value="fixed"
+                            checked={advancePaymentType === 'fixed'}
+                            onChange={() => setAdvancePaymentType('fixed')}
+                            className="h-4 w-4 text-blue-900 focus:ring-blue-900 border-gray-300"
+                          />
+                          Fixed Amount (USD)
+                        </label>
+                        <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="advance_payment_type"
+                            value="percentage"
+                            checked={advancePaymentType === 'percentage'}
+                            onChange={() => setAdvancePaymentType('percentage')}
+                            className="h-4 w-4 text-blue-900 focus:ring-blue-900 border-gray-300"
+                          />
+                          Percentage of Salary
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Value & Maximum Cap */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+                          Advance Value {advancePaymentType === 'percentage' ? '(%)' : '($)'}
+                        </label>
+                        <input
+                          type="number"
+                          name="advance_payment_value"
+                          value={advancePaymentValue}
+                          onChange={(e) => setAdvancePaymentValue(e.target.value)}
+                          placeholder={advancePaymentType === 'percentage' ? 'e.g. 10' : 'e.g. 500'}
+                          className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900"
+                          required={advancePaymentEnabled}
+                          min="0"
+                          step="any"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+                          Maximum Advance Cap ($)
+                        </label>
+                        <input
+                          type="number"
+                          name="advance_payment_max"
+                          value={advancePaymentMax}
+                          onChange={(e) => setAdvancePaymentMax(e.target.value)}
+                          placeholder="e.g. 1000"
+                          className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900"
+                          required={advancePaymentEnabled}
+                          min="0"
+                          step="any"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Allow Multiple Requests */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="advance_payment_allow_multiple"
+                        checked={advancePaymentAllowMultiple}
+                        onChange={(e) => setAdvancePaymentAllowMultiple(e.target.checked)}
+                        className="h-4 w-4 text-blue-900 focus:ring-blue-900 border-gray-300 rounded cursor-pointer"
+                      />
+                      <label htmlFor="advance_payment_allow_multiple" className="text-sm font-medium text-gray-700 cursor-pointer">
+                        Allow Multiple Requests
+                      </label>
+                    </div>
+
+                    {/* Collapsible Advanced Settings */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setAdvancedSettingsExpanded(!advancedSettingsExpanded)}
+                        className="text-xs font-semibold text-blue-950 hover:underline flex items-center gap-1 focus:outline-none"
+                      >
+                        {advancedSettingsExpanded ? 'Advanced Settings ▲' : 'Advanced Settings ▼'}
+                      </button>
+
+                      {advancedSettingsExpanded && (
+                        <div className="mt-3 p-3 border border-slate-100 rounded-md bg-slate-50 space-y-4">
+                          
+                          {/* Availability Threshold & Expiry */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-xs font-bold text-gray-700 block mb-1">Availability Threshold</label>
+                              <select
+                                value={advancePaymentAvailability}
+                                onChange={(e) => setAdvancePaymentAvailability(e.target.value)}
+                                className="border border-gray-300 rounded-md p-1.5 text-xs w-full focus:ring-1 focus:ring-blue-900 bg-white"
+                              >
+                                <option value="shortlisted">Shortlisted</option>
+                                <option value="offered">Offered</option>
+                                <option value="accepted">Accepted</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-xs font-bold text-gray-700 block mb-1">Request Expiry</label>
+                              <select
+                                value={advancePaymentExpiryDays}
+                                onChange={(e) => setAdvancePaymentExpiryDays(e.target.value)}
+                                className="border border-gray-300 rounded-md p-1.5 text-xs w-full focus:ring-1 focus:ring-blue-900 bg-white"
+                              >
+                                <option value="never">Never</option>
+                                <option value="7">7 Days</option>
+                                <option value="14">14 Days</option>
+                                <option value="30">30 Days</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Company Notes */}
+                          <div>
+                            <label className="text-xs font-bold text-gray-700 block mb-1">Company Terms / Instructions</label>
+                            <textarea
+                              value={advancePaymentNotes}
+                              onChange={(e) => setAdvancePaymentNotes(e.target.value)}
+                              placeholder="Enter instructions regarding advance payments (e.g. proof required, transfer timeframes)..."
+                              className="border border-gray-300 rounded-md p-2 text-xs w-full h-20 focus:ring-1 focus:ring-blue-900"
+                            />
+                          </div>
+
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Row 6: Required Skills */}

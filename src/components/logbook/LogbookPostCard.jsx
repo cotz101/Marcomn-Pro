@@ -2,12 +2,60 @@
 
 import React, { useState, useEffect, memo } from 'react';
 import Link from 'next/link';
-import { User, Calendar, ThumbsUp, MessageSquare, Save, X, Loader2, BookOpen } from 'lucide-react';
+import { User, Calendar, ThumbsUp, MessageSquare, Save, X, Loader2, BookOpen, FileText, Eye, Download } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 import LogbookActionBar from './LogbookActionBar';
 import RichTextEditor from '@/src/components/common/RichTextEditor';
 import LikersModal from '@/src/components/modals/LikersModal';
+
+const detectMediaType = (url, type) => {
+  if (!url) return null;
+
+  if (type) {
+    const lowerType = type.toLowerCase();
+    if (lowerType.startsWith('image/')) return 'image';
+    if (lowerType.startsWith('video/')) return 'video';
+    if (lowerType === 'application/pdf' || lowerType === 'pdf') return 'pdf';
+    if (
+      lowerType.startsWith('application/vnd.openxmlformats') ||
+      lowerType.startsWith('application/msword') ||
+      lowerType.startsWith('application/vnd.ms-') ||
+      ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'document'].includes(lowerType)
+    ) {
+      return 'document';
+    }
+    if (lowerType === 'image') return 'image';
+    if (lowerType === 'video') return 'video';
+  }
+
+  const cleanUrl = url.split('?')[0].split('#')[0];
+  const extension = cleanUrl.substring(cleanUrl.lastIndexOf('.') + 1).toLowerCase();
+
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'jfif'].includes(extension)) {
+    return 'image';
+  }
+  if (['mp4', 'mov', 'webm', 'ogg', 'avi', 'mkv'].includes(extension)) {
+    return 'video';
+  }
+  if (extension === 'pdf') {
+    return 'pdf';
+  }
+  if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(extension)) {
+    return 'document';
+  }
+
+  return 'image';
+};
+
+const getFileName = (url) => {
+  if (!url) return 'attachment';
+  const cleanUrl = url.split('?')[0].split('#')[0];
+  const parts = cleanUrl.split('/');
+  const name = parts[parts.length - 1];
+  const cleanName = name.replace(/^\d+_[0-9.]+_/, '');
+  return decodeURIComponent(cleanName);
+};
 
 const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, resolveMediaUrl }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -29,8 +77,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
     const file = e.target.files[0];
     if (file) {
       setEditFile(file);
-      const isVideo = file.type.startsWith('video/');
-      setEditMediaType(isVideo ? 'video' : 'image');
+      setEditMediaType(file.type);
 
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -704,7 +751,9 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
     }
 
     if (mediaUrl) {
-      if (mediaType === 'video') {
+      const type = detectMediaType(mediaUrl, mediaType);
+
+      if (type === 'video') {
         return (
           <div id={`post-video-${post.id}`} className="mt-4 w-full">
             <video
@@ -712,6 +761,67 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
               controls
               className="w-full rounded-lg"
             />
+          </div>
+        );
+      } else if (type === 'pdf') {
+        return (
+          <div className="mt-4 flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl hover:bg-slate-100/70 transition-colors">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 bg-red-100 text-red-700 rounded-lg shrink-0">
+                <FileText size={20} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-800 truncate" title={getFileName(mediaUrl)}>
+                  {getFileName(mediaUrl)}
+                </p>
+                <p className="text-xs text-slate-400 font-medium uppercase">PDF Document</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <a
+                href={resolveMediaUrl(mediaUrl)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 hover:bg-white hover:shadow-xs border border-transparent hover:border-slate-200 rounded-lg text-slate-600 transition-all cursor-pointer flex items-center justify-center"
+                title="Open in browser"
+              >
+                <Eye size={16} />
+              </a>
+              <a
+                href={resolveMediaUrl(mediaUrl)}
+                download={getFileName(mediaUrl)}
+                className="p-1.5 hover:bg-white hover:shadow-xs border border-transparent hover:border-slate-200 rounded-lg text-slate-600 transition-all cursor-pointer flex items-center justify-center"
+                title="Download"
+              >
+                <Download size={16} />
+              </a>
+            </div>
+          </div>
+        );
+      } else if (type === 'document') {
+        return (
+          <div className="mt-4 flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl hover:bg-slate-100/70 transition-colors">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 bg-blue-100 text-blue-700 rounded-lg shrink-0">
+                <FileText size={20} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-800 truncate" title={getFileName(mediaUrl)}>
+                  {getFileName(mediaUrl)}
+                </p>
+                <p className="text-xs text-slate-400 font-medium uppercase">Office Document</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <a
+                href={resolveMediaUrl(mediaUrl)}
+                download={getFileName(mediaUrl)}
+                className="p-1.5 hover:bg-white hover:shadow-xs border border-transparent hover:border-slate-200 rounded-lg text-slate-600 transition-all cursor-pointer flex items-center justify-center"
+                title="Download"
+              >
+                <Download size={16} />
+              </a>
+            </div>
           </div>
         );
       } else {
@@ -722,7 +832,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
               alt="Post media"
               className="w-full h-auto object-contain rounded-lg"
               onError={(e) => {
-                console.error('DEBUG: Image failed to load:', e.target.src);
+                // If it fails, don't throw console error, just hide it
                 e.target.style.display = 'none';
               }}
             />
@@ -847,12 +957,33 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
 
             {/* Media Preview inside Edit Mode */}
             {editMediaPreview && (
-              <div className="relative mt-4 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 max-h-[220px] flex items-center justify-center flex-shrink-0">
-                {editMediaType === 'video' ? (
-                  <video src={editMediaPreview} controls className="max-h-[220px] w-auto" />
-                ) : (
-                  <img src={editMediaPreview} alt="Selected attachment" className="max-h-[220px] w-auto object-contain" />
-                )}
+              <div className="relative mt-4 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 max-h-[220px] flex items-center justify-center flex-shrink-0 p-4">
+                {(() => {
+                  const type = detectMediaType(editMediaPreview, editMediaType);
+                  if (type === 'video') {
+                    return <video src={editMediaPreview} controls className="max-h-[220px] w-auto rounded-lg" />;
+                  } else if (type === 'pdf') {
+                    return (
+                      <div className="p-4 flex items-center gap-3 bg-white border border-gray-200 rounded-lg shadow-xs">
+                        <FileText className="text-red-600" size={24} />
+                        <span className="text-sm font-semibold text-slate-700 truncate max-w-[200px]" title={editFile ? editFile.name : getFileName(post.media_url)}>
+                          {editFile ? editFile.name : getFileName(post.media_url)}
+                        </span>
+                      </div>
+                    );
+                  } else if (type === 'document') {
+                    return (
+                      <div className="p-4 flex items-center gap-3 bg-white border border-gray-200 rounded-lg shadow-xs">
+                        <FileText className="text-blue-600" size={24} />
+                        <span className="text-sm font-semibold text-slate-700 truncate max-w-[200px]" title={editFile ? editFile.name : getFileName(post.media_url)}>
+                          {editFile ? editFile.name : getFileName(post.media_url)}
+                        </span>
+                      </div>
+                    );
+                  } else {
+                    return <img src={editMediaPreview} alt="Selected attachment" className="max-h-[220px] w-auto object-contain rounded-lg" />;
+                  }
+                })()}
                 <button
                   type="button"
                   onClick={() => {
@@ -882,7 +1013,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                     type="button"
                     onClick={() => {
                       if (editFileInputRef.current) {
-                        editFileInputRef.current.accept = 'image/*,video/mp4';
+                        editFileInputRef.current.accept = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx';
                         editFileInputRef.current.click();
                       }
                     }}

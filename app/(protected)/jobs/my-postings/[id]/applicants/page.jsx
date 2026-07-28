@@ -9,6 +9,8 @@ import { cancelJobOrderByCompany } from '@/app/actions/jobOrders';
 import { markJobOrderCompleted } from '@/app/actions/reputation';
 import { confirmWorkCompletedByCompany, closeCompletedEngagementByCompany } from '@/app/actions/engagementLifecycle';
 import EngagementTimeline from '@/src/components/engagement/EngagementTimeline';
+import { approveAdvance, rejectAdvance, counterAdvance, recordTransfer } from '@/app/actions/advances';
+import { calculateAdvanceLedger } from '@/lib/advancesLedger';
 import {
   ArrowLeft,
   Briefcase,
@@ -19,6 +21,7 @@ import {
   Calendar,
   Building2,
   FileText,
+  Coins,
 } from 'lucide-react';
 
 const SkeletonCard = () => (
@@ -34,6 +37,40 @@ const SkeletonCard = () => (
     <div className="h-9 bg-gray-100 rounded-lg w-36 shrink-0" />
   </div>
 );
+
+const getAdvanceEligibility = (job, requests = []) => {
+  if (!job) return { maxEligible: 0, totalConfirmed: 0, totalActive: 0, remaining: 0 };
+  const salary = Number(job.salary_numeric || 0);
+  let maxEligible = 0;
+  if (job.advance_payment_type === 'percentage') {
+    maxEligible = (salary * Number(job.advance_payment_value || 0)) / 100;
+  } else {
+    maxEligible = Number(job.advance_payment_value || 0);
+  }
+  if (job.advance_payment_max !== null) {
+    maxEligible = Math.min(maxEligible, Number(job.advance_payment_max));
+  }
+
+  let totalConfirmed = 0;
+  let totalActive = 0;
+
+  for (const r of requests) {
+    const isExpiredOrCancelled = ['rejected', 'cancelled', 'expired', 'review_closed'].includes(r.status);
+    if (r.status === 'confirmed') {
+      totalConfirmed += Number(r.approved_amount || r.requested_amount || 0);
+    } else if (!isExpiredOrCancelled) {
+      totalActive += Number(r.counter_amount !== null ? r.counter_amount : r.requested_amount);
+    }
+  }
+
+  const remaining = Math.max(0, maxEligible - totalConfirmed - totalActive);
+  return {
+    maxEligible,
+    totalConfirmed,
+    totalActive,
+    remaining
+  };
+};
 
 export default function ApplicantsPage() {
   const { id } = useParams();
@@ -70,6 +107,378 @@ export default function ApplicantsPage() {
   const [appToConfirmWork, setAppToConfirmWork] = useState(null);
   const [confirmWorkNote, setConfirmWorkNote] = useState('');
   const [isConfirmingWork, setIsConfirmingWork] = useState(false);
+
+  // Counter Offer states
+  const [isCounterModalOpen, setIsCounterModalOpen] = useState(false);
+  const [requestToCounter, setRequestToCounter] = useState(null);
+  const [counterAmountInput, setCounterAmountInput] = useState('');
+  const [counterNotesInput, setCounterNotesInput] = useState('');
+  const [isSubmittingCounter, setIsSubmittingCounter] = useState(false);
+  const [counterError, setCounterError] = useState('');
+
+  // Record Transfer states
+  const [isRecordTransferModalOpen, setIsRecordTransferModalOpen] = useState(false);
+  const [requestToRecordTransfer, setRequestToRecordTransfer] = useState(null);
+  const [paymentMethodInput, setPaymentMethodInput] = useState('bank_transfer');
+  const [amountTransferredInput, setAmountTransferredInput] = useState('');
+  const [transferDateInput, setTransferDateInput] = useState('');
+  const [referenceNumberInput, setReferenceNumberInput] = useState('');
+  const [recordTransferNotesInput, setRecordTransferNotesInput] = useState('');
+  const [proofFileInput, setProofFileInput] = useState(null);
+  const [isSubmittingRecordTransfer, setIsSubmittingRecordTransfer] = useState(false);
+  const [recordTransferError, setRecordTransferError] = useState('');
+
+  const handleOpenRecordTransferModal = (req) => {
+    setRequestToRecordTransfer(req);
+    setPaymentMethodInput('bank_transfer');
+    setAmountTransferredInput(Number(req.approved_amount || req.counter_amount || req.requested_amount).toString());
+    setTransferDateInput(new Date().toISOString().split('T')[0]);
+    setReferenceNumberInput('');
+    setRecordTransferNotesInput('');
+    setProofFileInput(null);
+    setRecordTransferError('');
+    setIsRecordTransferModalOpen(true);
+  };
+
+  const handleSubmitRecordTransfer = async () => {
+    if (!requestToRecordTransfer) return;
+    if (paymentMethodInput !== 'cash' && !referenceNumberInput.trim()) {
+      setRecordTransferError('Reference number is required.');
+      return;
+    }
+
+    setIsSubmittingRecordTransfer(true);
+    setRecordTransferError('');
+
+    try {
+      const supabase = createClient();
+      let proofUrl = null;
+
+      // Handle proof upload if selected
+      if (proofFileInput) {
+        const file = proofFileInput;
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${requestToRecordTransfer.id}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `advance_proofs/${fileName}`;
+        const { error: uploadError } = await supabase.storage.from('resumes').upload(filePath, file);
+        if (uploadError) throw uploadError;
+        const { data: pubData } = supabase.storage.from('resumes').getPublicUrl(filePath);
+        proofUrl = pubData?.publicUrl || null;
+      }
+
+      const res = await recordTransfer({
+        requestId: requestToRecordTransfer.id,
+        paymentMethod: paymentMethodInput,
+        amountTransferred: parseFloat(amountTransferredInput),
+        transferDate: transferDateInput,
+        referenceNumber: paymentMethodInput === 'cash' ? (referenceNumberInput || 'CASH') : referenceNumberInput,
+        companyNotes: recordTransferNotesInput,
+        proofUrl
+      });
+
+      if (!res.success) throw new Error(res.error || 'Failed to record offline transfer.');
+
+      setIsRecordTransferModalOpen(false);
+      setRequestToRecordTransfer(null);
+      if (showToast) showToast('Offline transfer recorded successfully!', 'success');
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+      setRecordTransferError(err.message || 'An error occurred.');
+    } finally {
+      setIsSubmittingRecordTransfer(false);
+    }
+  };
+
+  const handleApproveAdvance = async (requestId) => {
+    if (!confirm('Are you sure you want to approve this request?')) return;
+    try {
+      const res = await approveAdvance({ requestId });
+      if (!res.success) throw new Error(res.error || 'Failed to approve request');
+      if (showToast) showToast('Advance request approved successfully!', 'success');
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+      if (showToast) showToast(err.message || 'An error occurred', 'error');
+    }
+  };
+
+  const handleRejectAdvance = async (requestId) => {
+    const notes = prompt('Please enter optional rejection notes:');
+    if (notes === null) return; // User cancelled prompt
+    
+    try {
+      const res = await rejectAdvance({ requestId, companyNotes: notes });
+      if (!res.success) throw new Error(res.error || 'Failed to reject request');
+      if (showToast) showToast('Advance request rejected.', 'success');
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+      if (showToast) showToast(err.message || 'An error occurred', 'error');
+    }
+  };
+
+  const handleOpenCounterModal = (req) => {
+    setRequestToCounter(req);
+    setCounterAmountInput('');
+    setCounterNotesInput('');
+    setCounterError('');
+    setIsCounterModalOpen(true);
+  };
+
+  const handleSubmitCounterOffer = async () => {
+    if (!requestToCounter) return;
+    const amount = parseFloat(counterAmountInput);
+    if (isNaN(amount) || amount <= 0) {
+      setCounterError('Please enter a positive amount.');
+      return;
+    }
+
+    setIsSubmittingCounter(true);
+    setCounterError('');
+
+    try {
+      const res = await counterAdvance({
+        requestId: requestToCounter.id,
+        counterAmount: amount,
+        companyNotes: counterNotesInput
+      });
+      if (!res.success) throw new Error(res.error || 'Failed to submit counter offer.');
+      
+      setIsCounterModalOpen(false);
+      setRequestToCounter(null);
+      if (showToast) showToast('Counter offer submitted successfully!', 'success');
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+      setCounterError(err.message || 'An error occurred.');
+    } finally {
+      setIsSubmittingCounter(false);
+    }
+  };
+
+  const renderAdvancePaymentSectionForCompany = (app) => {
+    if (!job || !job.advance_payment_enabled) return null;
+    const reqs = app.advance_requests || [];
+    if (reqs.length === 0) return null;
+
+    const ledger = getAdvanceEligibility(job, reqs);
+    const currency = job.salary_range ? job.salary_range.split(' ')[0] : 'USD';
+
+    return (
+      <div className="mt-5 pt-4 border-t border-slate-200/70 text-left font-sans animate-fade-in" onClick={(e) => e.stopPropagation()}>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5 mb-2.5">
+          <Coins size={14} className="text-blue-900" />
+          Advance Payment Requests
+        </h4>
+        <div className="space-y-3">
+          {reqs.map((req) => {
+            let statusBg = "bg-gray-50 text-gray-600 border-gray-200";
+            let displayStatus = req.status.replace('_', ' ');
+            if (req.status === 'pending') statusBg = "bg-amber-50 text-amber-700 border-amber-200";
+            else if (req.status === 'countered') statusBg = "bg-blue-50 text-blue-700 border-blue-200";
+            else if (req.status === 'approved') statusBg = "bg-green-50 text-green-700 border-green-200";
+            else if (req.status === 'transfer_recorded') statusBg = "bg-purple-50 text-purple-700 border-purple-200";
+            else if (req.status === 'confirmed') statusBg = "bg-emerald-50 text-emerald-700 border-emerald-200";
+            else if (req.status === 'rejected') statusBg = "bg-rose-50 text-rose-700 border-rose-200";
+            else if (req.status === 'disputed') statusBg = "bg-red-50 text-red-800 border-red-200";
+            else if (req.status === 'review_closed') statusBg = "bg-slate-50 text-slate-700 border-slate-250";
+
+            const displayAmount = Number(req.counter_amount !== null ? req.counter_amount : req.requested_amount).toFixed(2);
+
+            return (
+              <div key={req.id} className="p-3 border border-slate-100 rounded-xl bg-slate-50/50 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-bold text-gray-800 text-sm">${displayAmount} {req.currency}</span>
+                    {req.status === 'countered' && (
+                      <span className="text-xs font-semibold text-blue-600 ml-1.5">(Counter Offer)</span>
+                    )}
+                    <span className="text-xs text-gray-400 block mt-0.5">
+                      Requested: {new Date(req.created_at).toLocaleDateString()}
+                      {req.expires_at && ` | Expires: ${new Date(req.expires_at).toLocaleDateString()}`}
+                    </span>
+                  </div>
+                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border rounded-full ${statusBg}`}>
+                    {displayStatus}
+                  </span>
+                </div>
+
+                {/* Justification Notes */}
+                {req.applicant_notes && (
+                  <div className="text-xs text-gray-600 bg-white p-2 rounded border border-slate-100">
+                    <span className="font-semibold text-gray-700">Justification: </span>
+                    {req.applicant_notes}
+                  </div>
+                )}
+
+                {/* Counter Notes */}
+                {req.company_notes && (
+                  <div className="text-xs text-gray-600 bg-blue-50/20 p-2 rounded border border-blue-100/50">
+                    <span className="font-semibold text-blue-700">Company Notes: </span>
+                    {req.company_notes}
+                  </div>
+                )}
+
+                {/* Eligibility display */}
+                {['pending', 'countered'].includes(req.status) && (
+                  <div className="text-[11px] text-slate-500 bg-slate-100/50 p-1.5 rounded border border-slate-150 leading-tight">
+                    Remaining Cap: <span className="font-bold">${ledger.remaining.toFixed(2)} {currency}</span> (of ${ledger.maxEligible.toFixed(2)})
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                {['pending', 'countered'].includes(req.status) && (
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => handleApproveAdvance(req.id)}
+                      className="px-3 py-1.5 bg-[#004173] hover:bg-blue-800 text-white font-semibold text-xs rounded-lg transition-colors shadow-sm cursor-pointer border-0"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRejectAdvance(req.id)}
+                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-semibold text-xs rounded-lg transition-colors cursor-pointer"
+                    >
+                      Reject
+                    </button>
+                    {req.status === 'pending' && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenCounterModal(req)}
+                        className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 font-semibold text-xs rounded-lg transition-colors cursor-pointer"
+                      >
+                        Counter Offer
+                      </button>
+                    )}
+                  </div>
+                )}
+                {req.status === 'approved' && (
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenRecordTransferModal(req)}
+                      className="px-3 py-1.5 bg-[#004173] hover:bg-[#003153] text-white font-semibold text-xs rounded-lg transition-colors shadow-sm cursor-pointer border-0"
+                    >
+                      Record Offline Transfer
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {renderAdvancePaymentLedgerAndTimeline(job, reqs)}
+      </div>
+    );
+  };
+
+  const renderAdvancePaymentLedgerAndTimeline = (job, requests = []) => {
+    const ledger = calculateAdvanceLedger(job, requests);
+    const currency = job?.salary_range ? job.salary_range.split(' ')[0] : 'USD';
+
+    // Active requests (for checking status/timeline)
+    const nonIgnoredRequests = requests.filter(r => !['rejected', 'cancelled', 'expired'].includes(r.status));
+    const activeRequest = nonIgnoredRequests[0] || null; // Render details/timeline for the latest active request
+
+    // Build the audit timeline events from the active request audit logs
+    let timelineEvents = [];
+    if (activeRequest && Array.isArray(activeRequest.job_advance_audit_logs)) {
+      timelineEvents = [...activeRequest.job_advance_audit_logs].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+    }
+
+    return (
+      <div className="mt-4 border border-slate-150 rounded-xl bg-white p-4 space-y-4 font-sans text-xs">
+        {/* Contract Summary & Advance Summary (Ledger) */}
+        <div>
+          <h4 className="text-[11px] font-bold text-[#0e2a4d] uppercase tracking-wider mb-3">Advance Payment Ledger</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              <span className="text-gray-400 font-bold block text-[9px] uppercase">Contract Value</span>
+              <span className="text-xs font-extrabold text-[#0e2a4d]">${ledger.contractValue.toFixed(2)} {currency}</span>
+            </div>
+            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              <span className="text-gray-400 font-bold block text-[9px] uppercase">Max Eligible Limit</span>
+              <span className="text-xs font-extrabold text-[#0e2a4d]">${ledger.maxEligible.toFixed(2)} {currency}</span>
+            </div>
+            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Requested</span>
+              <span className="text-xs font-bold text-gray-800">${ledger.totalRequested.toFixed(2)} {currency}</span>
+            </div>
+            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Approved</span>
+              <span className="text-xs font-bold text-green-700">${ledger.totalApproved.toFixed(2)} {currency}</span>
+            </div>
+            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Transferred</span>
+              <span className="text-xs font-bold text-purple-700">${ledger.totalTransferred.toFixed(2)} {currency}</span>
+            </div>
+            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Confirmed</span>
+              <span className="text-xs font-bold text-emerald-700">${ledger.totalConfirmed.toFixed(2)} {currency}</span>
+            </div>
+            <div className="bg-blue-50/50 p-2.5 rounded-lg border border-blue-100/50 col-span-2 sm:col-span-1">
+              <span className="text-[#0e2a4d]/70 font-extrabold block text-[9px] uppercase">Remaining Eligible Cap</span>
+              <span className="text-xs font-extrabold text-blue-900">${ledger.remainingEligibility.toFixed(2)} {currency}</span>
+            </div>
+            <div className="bg-amber-50/50 p-2.5 rounded-lg border border-amber-100/50 col-span-2 sm:col-span-1">
+              <span className="text-amber-800/70 font-extrabold block text-[9px] uppercase">Remaining Payout Salary</span>
+              <span className="text-xs font-extrabold text-amber-900">${ledger.remainingSalary.toFixed(2)} {currency}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Timeline Summary */}
+        {activeRequest && (
+          <div className="pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-[11px] font-bold text-[#0e2a4d] uppercase tracking-wider">Workflow Progress Timeline</h4>
+              <span className="text-[9px] bg-slate-100 text-[#0e2a4d] font-bold px-2 py-0.5 rounded-full uppercase border border-slate-200">
+                Status: {activeRequest.status.replace(/_/g, ' ')}
+              </span>
+            </div>
+
+            {timelineEvents.length > 0 ? (
+              <div className="relative pl-4 border-l border-slate-200 space-y-4">
+                {timelineEvents.map((evt, idx) => {
+                  const dateStr = new Date(evt.created_at).toLocaleString();
+                  const displayAction = evt.action.replace(/_/g, ' ');
+                  const actorRole = evt.actor_id === activeRequest.applicant_id ? 'Applicant' : 'Company';
+                  const note = evt.payload?.company_notes || evt.payload?.admin_notes || evt.payload?.dispute_reason || evt.payload?.counter_notes || evt.payload?.applicant_notes || '';
+
+                  return (
+                    <div key={evt.id || idx} className="relative text-left">
+                      {/* Timeline Dot */}
+                      <div className="absolute -left-[21.5px] top-1 w-2.5 h-2.5 bg-[#004173] rounded-full border border-white" />
+                      <div>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                          <span className="font-bold text-gray-800 capitalize text-[11px]">{displayAction} ({actorRole})</span>
+                          <span className="text-[9px] text-gray-400 font-mono">{dateStr}</span>
+                        </div>
+                        {note && (
+                          <p className="mt-1 text-gray-500 italic bg-slate-50 px-2.5 py-1 rounded border border-slate-100 leading-snug">
+                            {note}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-2 text-gray-400 italic">
+                No timeline records.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const getJobOrder = (app) => {
     if (!app) return null;
@@ -164,7 +573,16 @@ export default function ApplicantsPage() {
         return;
       }
 
-      // ── 4. Step Two: Fetch public profiles ───────────────────────────────
+      // ── 4. Fetch advance requests for this job ───────────────────────────
+      const { data: advanceRequests, error: advError } = await supabase
+        .from('job_advance_requests')
+        .select('*, job_advance_audit_logs(*)')
+        .eq('job_id', id)
+        .order('created_at', { ascending: false });
+
+      const fetchedAdvanceReqs = (!advError && advanceRequests) ? advanceRequests : [];
+
+      // ── 5. Step Two: Fetch public profiles ───────────────────────────────
       const applicantIds = apps.map((app) => app.applicant_id);
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
@@ -173,7 +591,7 @@ export default function ApplicantsPage() {
 
       if (profilesError) throw profilesError;
 
-      // ── 5. Step Three: Merge data ─────────────────────────────────────────
+      // ── 6. Step Three: Merge data ─────────────────────────────────────────
       const merged = apps.map((app) => {
         const profile = profilesData?.find((p) => p.id === app.applicant_id) || {};
         
@@ -181,10 +599,12 @@ export default function ApplicantsPage() {
         const order = getJobOrder(app);
         const effectiveStatus = (order && order.status === 'Completed') ? 'Completed' : app.status;
 
-        return { ...app, status: effectiveStatus, profile };
+        const appAdvanceRequests = fetchedAdvanceReqs.filter(r => r.application_id === app.id);
+
+        return { ...app, status: effectiveStatus, profile, advance_requests: appAdvanceRequests };
       });
 
-      // ── 6. Fetch platform settings for offer expiry ────────────────────────
+      // ── 7. Fetch platform settings for offer expiry ────────────────────────
       const { data: settingsData } = await supabase
         .from('platform_settings')
         .select('key, value')
@@ -202,7 +622,15 @@ export default function ApplicantsPage() {
       }
 
       setApplicants(merged);
-      if (merged.length > 0) setSelectedApplicant(merged[0]);
+      if (merged.length > 0) {
+        setSelectedApplicant(prev => {
+          if (prev) {
+            const updated = merged.find(a => a.id === prev.id);
+            return updated || merged[0];
+          }
+          return merged[0];
+        });
+      }
     } catch (err) {
       console.error('Error loading applicants page:', err.message || err);
       setError('Something went wrong while loading applicants. Please try again.');
@@ -663,6 +1091,9 @@ export default function ApplicantsPage() {
                       </div>
                     )}
                     
+                    {/* Advance Payment requests */}
+                    {renderAdvancePaymentSectionForCompany(app)}
+                    
                     {/* Action buttons */}
                     {app.status === 'Accepted' && (() => {
                       const order = getJobOrder(app);
@@ -847,6 +1278,9 @@ export default function ApplicantsPage() {
                       </div>
                     )}
 
+                    {/* Advance Payment requests */}
+                    {renderAdvancePaymentSectionForCompany(selectedApplicant)}
+
                     {/* Engagement Timeline */}
                     <div className="pl-[10px] mt-6 pt-6 border-t border-slate-100">
                       <h4 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2.5">Engagement Timeline</h4>
@@ -965,6 +1399,9 @@ export default function ApplicantsPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Advance Payment requests */}
+                  {renderAdvancePaymentSectionForCompany(selectedApplicant)}
 
                   {/* Engagement Timeline */}
                   <div className="mb-6 pt-6 border-t border-slate-100">
@@ -1230,6 +1667,199 @@ export default function ApplicantsPage() {
           </div>
         </div>
       )}
+      {/* Counter Offer Modal */}
+      {isCounterModalOpen && requestToCounter && (() => {
+        const currency = job?.salary_range ? job.salary_range.split(' ')[0] : 'USD';
+        
+        // Find the application object to get its requests
+        const app = applicants.find(a => a.id === requestToCounter.application_id);
+        const ledger = getAdvanceEligibility(job, app?.advance_requests || []);
+        
+        return (
+          <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl text-left font-sans">
+              <h3 className="text-lg font-bold text-blue-900 mb-2">Counter Advance Request</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Propose a counter offer to the applicant's advance payment request.
+              </p>
+
+              {/* Eligibility indicators */}
+              <div className="grid grid-cols-2 gap-4 p-3 bg-blue-50/50 border border-blue-100 rounded-lg text-xs mb-4">
+                <div>
+                  <p className="text-gray-500 font-medium">Original Requested</p>
+                  <p className="text-sm font-bold text-blue-900">${Number(requestToCounter.requested_amount).toFixed(2)} {currency}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 font-medium">Remaining Eligibility</p>
+                  <p className="text-sm font-bold text-blue-900">${ledger.remaining.toFixed(2)} {currency}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Counter Amount ({currency}) *</label>
+                  <input 
+                    type="number"
+                    value={counterAmountInput}
+                    onChange={(e) => setCounterAmountInput(e.target.value)}
+                    placeholder={`e.g. 200`}
+                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900"
+                    min="1"
+                    max={ledger.remaining}
+                    step="any"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Counter Offer Notes / Terms *</label>
+                  <textarea 
+                    value={counterNotesInput}
+                    onChange={(e) => setCounterNotesInput(e.target.value)}
+                    placeholder="Provide details about the terms of this counter proposal..."
+                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900 min-h-[90px]"
+                    required
+                  />
+                </div>
+              </div>
+
+              {counterError && (
+                <div className="p-3 bg-rose-50 border border-rose-250 rounded-lg text-xs text-rose-700 font-semibold mb-4 font-sans">
+                  {counterError}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                <button 
+                  onClick={() => { setIsCounterModalOpen(false); setRequestToCounter(null); }}
+                  className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer bg-transparent border-0"
+                  disabled={isSubmittingCounter}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleSubmitCounterOffer}
+                  className="bg-[#004173] hover:bg-blue-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 cursor-pointer border-0"
+                  disabled={isSubmittingCounter || !counterAmountInput || parseFloat(counterAmountInput) <= 0 || parseFloat(counterAmountInput) > ledger.remaining || !counterNotesInput}
+                >
+                  {isSubmittingCounter ? 'Submitting...' : 'Submit Counter Offer'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+      {/* Record Offline Transfer Modal */}
+      {isRecordTransferModalOpen && requestToRecordTransfer && (() => {
+        const currency = job?.salary_range ? job.salary_range.split(' ')[0] : 'USD';
+        
+        return (
+          <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl text-left font-sans">
+              <h3 className="text-lg font-bold text-blue-900 mb-2">Record Offline Transfer</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Record the details of the offline transaction sent directly to the applicant.
+              </p>
+
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Approved Amount ({currency})</label>
+                  <input 
+                    type="text"
+                    value={`$${Number(amountTransferredInput).toFixed(2)}`}
+                    readOnly
+                    disabled
+                    className="w-full border border-gray-250 bg-gray-50 rounded-lg p-2.5 text-sm text-gray-500 font-bold select-none cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 font-sans">Payment Method *</label>
+                  <select 
+                    value={paymentMethodInput}
+                    onChange={(e) => setPaymentMethodInput(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-900 bg-gray-50 cursor-pointer"
+                  >
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="wise">Wise</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="gcash">GCash</option>
+                    <option value="paynow">PayNow</option>
+                    <option value="cash">Cash</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Transfer Date *</label>
+                  <input 
+                    type="date"
+                    value={transferDateInput}
+                    onChange={(e) => setTransferDateInput(e.target.value)}
+                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                    Reference Number {paymentMethodInput !== 'cash' && '*'}
+                  </label>
+                  <input 
+                    type="text"
+                    value={referenceNumberInput}
+                    onChange={(e) => setReferenceNumberInput(e.target.value)}
+                    placeholder={paymentMethodInput === 'cash' ? 'Optional (e.g. Cash Receipt ID)' : 'e.g. Transaction hash or bank reference'}
+                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900"
+                    required={paymentMethodInput !== 'cash'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Company Notes / Offline Terms</label>
+                  <textarea 
+                    value={recordTransferNotesInput}
+                    onChange={(e) => setRecordTransferNotesInput(e.target.value)}
+                    placeholder="Provide any details about the payment instructions, timing, etc..."
+                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900 min-h-[70px]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Proof of Payment (Optional, PDF, JPG, PNG)</label>
+                  <input 
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    onChange={(e) => setProofFileInput(e.target.files?.[0] || null)}
+                    className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#004173] hover:file:bg-blue-100 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {recordTransferError && (
+                <div className="p-3 bg-rose-50 border border-rose-250 rounded-lg text-xs text-rose-700 font-semibold mb-4">
+                  {recordTransferError}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                <button 
+                  onClick={() => { setIsRecordTransferModalOpen(false); setRequestToRecordTransfer(null); }}
+                  className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer bg-transparent border-0"
+                  disabled={isSubmittingRecordTransfer}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleSubmitRecordTransfer}
+                  className="bg-[#004173] hover:bg-blue-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 cursor-pointer border-0"
+                  disabled={isSubmittingRecordTransfer || (paymentMethodInput !== 'cash' && !referenceNumberInput.trim())}
+                >
+                  {isSubmittingRecordTransfer ? 'Recording...' : 'Record Transfer'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+      {/* Shared calculation helper to display ledger details and audit timeline */}
+      {(() => {
+        // Embed the helper directly inside the component scope so it has access to states if needed
+      })()}
     </div>
   );
 }

@@ -6,7 +6,55 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
-import { X, Image as ImageIcon, Video as VideoIcon, Loader2, Globe } from 'lucide-react';
+import { X, Image as ImageIcon, Video as VideoIcon, Loader2, Globe, FileText } from 'lucide-react';
+
+const detectMediaType = (url, type) => {
+  if (!url) return null;
+
+  if (type) {
+    const lowerType = type.toLowerCase();
+    if (lowerType.startsWith('image/')) return 'image';
+    if (lowerType.startsWith('video/')) return 'video';
+    if (lowerType === 'application/pdf' || lowerType === 'pdf') return 'pdf';
+    if (
+      lowerType.startsWith('application/vnd.openxmlformats') ||
+      lowerType.startsWith('application/msword') ||
+      lowerType.startsWith('application/vnd.ms-') ||
+      ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'document'].includes(lowerType)
+    ) {
+      return 'document';
+    }
+    if (lowerType === 'image') return 'image';
+    if (lowerType === 'video') return 'video';
+  }
+
+  const cleanUrl = url.split('?')[0].split('#')[0];
+  const extension = cleanUrl.substring(cleanUrl.lastIndexOf('.') + 1).toLowerCase();
+
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'jfif'].includes(extension)) {
+    return 'image';
+  }
+  if (['mp4', 'mov', 'webm', 'ogg', 'avi', 'mkv'].includes(extension)) {
+    return 'video';
+  }
+  if (extension === 'pdf') {
+    return 'pdf';
+  }
+  if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(extension)) {
+    return 'document';
+  }
+
+  return 'image';
+};
+
+const getFileName = (url) => {
+  if (!url) return 'attachment';
+  const cleanUrl = url.split('?')[0].split('#')[0];
+  const parts = cleanUrl.split('/');
+  const name = parts[parts.length - 1];
+  const cleanName = name.replace(/^\d+_[0-9.]+_/, '');
+  return decodeURIComponent(cleanName);
+};
 
 export default function PostComposerModal({ isOpen, onClose, userProfile, onPostCreated, initialFile }) {
   const [content, setContent] = useState('');
@@ -23,8 +71,7 @@ export default function PostComposerModal({ isOpen, onClose, userProfile, onPost
     if (isOpen) {
       if (initialFile) {
         setSelectedFile(initialFile);
-        const isVideo = initialFile.type.startsWith('video/');
-        setMediaType(isVideo ? 'video' : 'image');
+        setMediaType(initialFile.type);
 
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -47,8 +94,7 @@ export default function PostComposerModal({ isOpen, onClose, userProfile, onPost
     const file = e.target.files[0];
     if (file) {
       setSelectedFile(file);
-      const isVideo = file.type.startsWith('video/');
-      setMediaType(isVideo ? 'video' : 'image');
+      setMediaType(file.type);
 
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -230,12 +276,33 @@ export default function PostComposerModal({ isOpen, onClose, userProfile, onPost
 
           {/* Media preview */}
           {mediaPreview && (
-            <div className="relative mx-4 mb-4 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 max-h-[220px] flex items-center justify-center">
-              {mediaType === 'video' ? (
-                <video src={mediaPreview} controls className="max-h-[220px] w-auto" />
-              ) : (
-                <img src={mediaPreview} alt="Selected attachment" className="max-h-[220px] w-auto object-contain" />
-              )}
+            <div className="relative mx-4 mb-4 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 max-h-[220px] flex items-center justify-center p-4">
+              {(() => {
+                const type = detectMediaType(mediaPreview, mediaType);
+                if (type === 'video') {
+                  return <video src={mediaPreview} controls className="max-h-[220px] w-auto rounded-lg" />;
+                } else if (type === 'pdf') {
+                  return (
+                    <div className="p-4 flex items-center gap-3 bg-white border border-gray-200 rounded-lg shadow-xs">
+                      <FileText className="text-red-600" size={24} />
+                      <span className="text-sm font-semibold text-slate-700 truncate max-w-[200px]" title={selectedFile ? selectedFile.name : 'PDF Document'}>
+                        {selectedFile ? selectedFile.name : 'PDF Document'}
+                      </span>
+                    </div>
+                  );
+                } else if (type === 'document') {
+                  return (
+                    <div className="p-4 flex items-center gap-3 bg-white border border-gray-200 rounded-lg shadow-xs">
+                      <FileText className="text-blue-600" size={24} />
+                      <span className="text-sm font-semibold text-slate-700 truncate max-w-[200px]" title={selectedFile ? selectedFile.name : 'Office Document'}>
+                        {selectedFile ? selectedFile.name : 'Office Document'}
+                      </span>
+                    </div>
+                  );
+                } else {
+                  return <img src={mediaPreview} alt="Selected attachment" className="max-h-[220px] w-auto object-contain rounded-lg" />;
+                }
+              })()}
               <button
                 type="button"
                 onClick={() => {
@@ -265,7 +332,7 @@ export default function PostComposerModal({ isOpen, onClose, userProfile, onPost
               type="button"
               onClick={() => {
                 if (fileInputRef.current) {
-                  fileInputRef.current.accept = 'image/*,video/mp4';
+                  fileInputRef.current.accept = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx';
                   fileInputRef.current.click();
                 }
               }}

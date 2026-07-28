@@ -40,6 +40,7 @@ import {
   rejectRefundRequest, 
   approveRefundRequest 
 } from '@/app/actions/mcreditRefunds';
+import { getAdminAdvanceRequests, closeDisputeAdmin } from '@/app/actions/advances';
 
 export default function AdminFinancePage() {
   const router = useRouter();
@@ -75,6 +76,13 @@ export default function AdminFinancePage() {
   const [adminNote, setAdminNote] = useState('');
   const [approvedAmount, setApprovedAmount] = useState('');
   const [submittingAction, setSubmittingAction] = useState(false);
+
+  // Advance Payment states
+  const [advanceRequests, setAdvanceRequests] = useState([]);
+  const [selectedAdvanceRequest, setSelectedAdvanceRequest] = useState(null);
+  const [isAdvanceReviewModalOpen, setIsAdvanceReviewModalOpen] = useState(false);
+  const [adminAdvanceNote, setAdminAdvanceNote] = useState('');
+  const [isClosingDispute, setIsClosingDispute] = useState(false);
 
   // Set default tab once profile loads
   useEffect(() => {
@@ -144,7 +152,10 @@ export default function AdminFinancePage() {
         promises.push(Promise.resolve({ success: true, requests: [], enableStripeRefunds: false }));
       }
 
-      const [summaryRes, txsRes, topupRes, receiptsData, refundRes] = await Promise.all(promises);
+      // Always fetch advance requests for admin review
+      promises.push(getAdminAdvanceRequests());
+
+      const [summaryRes, txsRes, topupRes, receiptsData, refundRes, advRes] = await Promise.all(promises);
 
       if (hasFinanceView) {
         if (summaryRes.success) setSummary(summaryRes.summary);
@@ -159,6 +170,14 @@ export default function AdminFinancePage() {
           setEnableStripeRefunds(refundRes.enableStripeRefunds || false);
         } else {
           showToast('Error loading refund requests: ' + refundRes.error, 'error');
+        }
+      }
+
+      if (advRes) {
+        if (advRes.success) {
+          setAdvanceRequests(advRes.requests || []);
+        } else {
+          showToast('Error loading advance requests: ' + advRes.error, 'error');
         }
       }
 
@@ -253,6 +272,28 @@ export default function AdminFinancePage() {
       showToast(err.message || 'Failed to reject refund request', 'error');
     } finally {
       setSubmittingAction(false);
+    }
+  };
+
+  const handleCloseDispute = async () => {
+    if (!selectedAdvanceRequest || isClosingDispute) return;
+    setIsClosingDispute(true);
+    try {
+      const res = await closeDisputeAdmin({
+        requestId: selectedAdvanceRequest.id,
+        adminNotes: adminAdvanceNote
+      });
+      if (!res.success) throw new Error(res.error || 'Failed to close dispute');
+      
+      showToast('Dispute investigation closed successfully.', 'success');
+      setIsAdvanceReviewModalOpen(false);
+      setSelectedAdvanceRequest(null);
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || 'An error occurred', 'error');
+    } finally {
+      setIsClosingDispute(false);
     }
   };
 
@@ -564,6 +605,18 @@ export default function AdminFinancePage() {
               }`}
             >
               Refund Requests
+            </button>
+          )}
+          {isAuthorized && (
+            <button
+              onClick={() => handleTabChange('advances')}
+              className={`min-h-[36px] px-4 text-sm md:text-[15px] font-semibold transition-all rounded-full outline-none focus:outline-none whitespace-nowrap cursor-pointer flex-shrink-0 md:flex-1 text-center ${
+                activeTab === 'advances'
+                  ? 'bg-[#0e2a4d] text-white shadow-md'
+                  : 'bg-transparent text-gray-600 hover:text-[#0e2a4d] hover:bg-white/60'
+              }`}
+            >
+              Advance Disputes
             </button>
           )}
         </div>
@@ -1452,6 +1505,167 @@ export default function AdminFinancePage() {
                 </div>
               )}
 
+              {/* TAB 7: ADVANCE DISPUTES */}
+              {activeTab === 'advances' && (
+                <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm overflow-hidden animate-fadeIn font-sans">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <Coins size={18} className="text-[#0e2a4d]" />
+                      <h2 className="text-base font-bold text-[#0e2a4d]">Advance Payment Disputes</h2>
+                    </div>
+                  </div>
+
+                  {advanceRequests.length > 0 ? (
+                    <>
+                      {renderPagination(advanceRequests.length, true)}
+                      
+                      {/* Desktop Table View */}
+                      <div className="hidden md:block overflow-x-auto pb-4 custom-scrollbar">
+                        <table className="w-full text-left text-xs border-collapse min-w-[900px]">
+                          <thead>
+                            <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider font-bold">
+                              <th className="pb-3 px-4 font-semibold">Date Requested</th>
+                              <th className="pb-3 px-4 font-semibold">Applicant</th>
+                              <th className="pb-3 px-4 font-semibold">Job Listing</th>
+                              <th className="pb-3 pr-4 pl-2 font-semibold text-right">Approved / Requested</th>
+                              <th className="pb-3 px-4 text-center font-semibold">Status</th>
+                              <th className="pb-3 px-4 text-center font-semibold">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 text-gray-600 font-medium">
+                            {sortArrayByDate(advanceRequests).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((req) => {
+                              const displayAmount = Number(req.approved_amount || req.counter_amount || req.requested_amount).toFixed(2);
+                              let statusBg = "bg-gray-50 text-gray-600 border-gray-200";
+                              if (req.status === 'pending') statusBg = "bg-amber-50 border-amber-100 text-amber-700";
+                              else if (req.status === 'countered') statusBg = "bg-blue-50 border-blue-100 text-blue-700";
+                              else if (req.status === 'approved') statusBg = "bg-green-50 border-green-100 text-green-700";
+                              else if (req.status === 'transfer_recorded') statusBg = "bg-purple-50 border-purple-100 text-purple-700";
+                              else if (req.status === 'confirmed') statusBg = "bg-emerald-50 border-emerald-100 text-emerald-700";
+                              else if (req.status === 'rejected') statusBg = "bg-rose-50 border-rose-100 text-rose-700";
+                              else if (req.status === 'disputed') statusBg = "bg-red-50 border-red-155 text-red-800 animate-pulse";
+                              else if (req.status === 'review_closed') statusBg = "bg-slate-50 border-slate-200 text-slate-700";
+
+                              return (
+                                <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
+                                  <td className="py-4 px-4 whitespace-nowrap text-gray-500 font-mono">
+                                    {new Date(req.created_at).toLocaleString()}
+                                  </td>
+                                  <td className="py-4 px-4">
+                                    <div className="flex items-center gap-2">
+                                      {req.profile?.avatar_url ? (
+                                        <img 
+                                          src={req.profile.avatar_url} 
+                                          alt="" 
+                                          className="w-6 h-6 rounded-full object-cover border border-gray-150"
+                                        />
+                                      ) : (
+                                        <div className="w-6 h-6 rounded-full bg-[#e0f2fe] text-[#0369a1] flex items-center justify-center text-[10px] font-bold">
+                                          {req.profile?.name?.charAt(0).toUpperCase() || 'U'}
+                                        </div>
+                                      )}
+                                      <span className="font-bold text-[#0e2a4d]">{req.profile?.name || 'Unknown'}</span>
+                                    </div>
+                                  </td>
+                                  <td className="py-4 px-4 text-gray-700 font-bold max-w-[200px] truncate">
+                                    {req.job?.title || 'Job Listing'}
+                                  </td>
+                                  <td className="py-4 pr-4 pl-2 text-right font-bold text-slate-800">
+                                    ${displayAmount} {req.currency}
+                                  </td>
+                                  <td className="py-4 px-4 text-center whitespace-nowrap">
+                                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusBg}`}>
+                                      {req.status.replace(/_/g, ' ')}
+                                    </span>
+                                  </td>
+                                  <td className="py-4 px-4 text-center">
+                                    <button
+                                      onClick={() => {
+                                        setSelectedAdvanceRequest(req);
+                                        setAdminAdvanceNote('');
+                                        setIsAdvanceReviewModalOpen(true);
+                                      }}
+                                      className="px-3.5 py-1.5 bg-[#0e2a4d] hover:bg-blue-900 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-sm border-0"
+                                    >
+                                      {req.status === 'disputed' ? 'Review Dispute' : 'View Audit'}
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile Cards View */}
+                      <div className="block md:hidden space-y-4">
+                        {sortArrayByDate(advanceRequests).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((req) => {
+                          const displayAmount = Number(req.approved_amount || req.counter_amount || req.requested_amount).toFixed(2);
+                          let statusBg = "bg-gray-50 text-gray-600 border-gray-200";
+                          if (req.status === 'pending') statusBg = "bg-amber-50 border-amber-100 text-amber-700";
+                          else if (req.status === 'countered') statusBg = "bg-blue-50 border-blue-100 text-blue-700";
+                          else if (req.status === 'approved') statusBg = "bg-green-50 border-green-100 text-green-700";
+                          else if (req.status === 'transfer_recorded') statusBg = "bg-purple-50 border-purple-100 text-purple-700";
+                          else if (req.status === 'confirmed') statusBg = "bg-emerald-50 border-emerald-100 text-emerald-700";
+                          else if (req.status === 'rejected') statusBg = "bg-rose-50 border-rose-100 text-rose-700";
+                          else if (req.status === 'disputed') statusBg = "bg-red-50 border-red-155 text-red-800";
+                          else if (req.status === 'review_closed') statusBg = "bg-slate-50 border-slate-200 text-slate-700";
+
+                          return (
+                            <div key={req.id} className="bg-slate-50/50 hover:bg-slate-50 rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4 transition-all">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] text-gray-400 font-mono font-semibold">{new Date(req.created_at).toLocaleDateString()}</span>
+                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusBg}`}>
+                                  {req.status.replace(/_/g, ' ')}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                {req.profile?.avatar_url ? (
+                                  <img 
+                                    src={req.profile.avatar_url} 
+                                    alt="" 
+                                    className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-[#e0f2fe] text-[#0369a1] flex items-center justify-center text-xs font-bold border border-gray-100">
+                                    {req.profile?.name?.charAt(0).toUpperCase() || 'U'}
+                                  </div>
+                                )}
+                                <div>
+                                  <div className="text-xs font-bold text-gray-800">{req.profile?.name || 'Unknown'}</div>
+                                  <div className="text-[10px] text-gray-400 font-semibold">{req.job?.title || 'Job Listing'}</div>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between pt-3 border-t border-gray-100/80 text-xs">
+                                <div>
+                                  <span className="block text-[10px] text-gray-400 uppercase font-bold mb-0.5">Amount</span>
+                                  <span className="font-extrabold text-blue-900">${displayAmount} {req.currency}</span>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    setSelectedAdvanceRequest(req);
+                                    setAdminAdvanceNote('');
+                                    setIsAdvanceReviewModalOpen(true);
+                                  }}
+                                  className="px-3.5 py-1.5 bg-[#0e2a4d] hover:bg-blue-900 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-sm border-0"
+                                >
+                                  {req.status === 'disputed' ? 'Review Dispute' : 'View Audit'}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {renderPagination(advanceRequests.length)}
+                    </>
+                  ) : (
+                    <div className="text-center py-12 text-sm text-gray-400 font-medium border border-dashed border-gray-150 rounded-xl bg-slate-50/20">
+                      <span>No advance requests or disputes found.</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
             </div>
           )}
         </div>
@@ -1690,6 +1904,174 @@ export default function AdminFinancePage() {
           </div>
         </div>
       )}
+      {/* Review Advance Payment Dispute Modal */}
+      {isAdvanceReviewModalOpen && selectedAdvanceRequest && (() => {
+        const req = selectedAdvanceRequest;
+        const displayAmount = Number(req.approved_amount || req.counter_amount || req.requested_amount).toFixed(2);
+        const currency = req.currency || 'USD';
+        const maskReference = (val) => {
+          if (!val) return '—';
+          if (val.length <= 4) return '****';
+          return '*'.repeat(val.length - 4) + val.slice(-4);
+        };
+        
+        return (
+          <div className="modal-overlay-glass font-sans" onClick={() => { setIsAdvanceReviewModalOpen(false); setSelectedAdvanceRequest(null); }}>
+            <div 
+              className="modal-content-standard max-w-lg text-left bg-white rounded-2xl shadow-2xl relative overflow-hidden" 
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: '512px', margin: 'auto' }}
+            >
+              {/* Modal Header */}
+              <div className="modal-header-navy bg-slate-900 text-white p-4 flex items-center justify-between rounded-t-2xl">
+                <h3 className="modal-title-white flex items-center gap-2 text-base font-bold text-white">
+                  <Coins size={20} />
+                  <span>Review Advance Request Audit</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAdvanceReviewModalOpen(false);
+                    setSelectedAdvanceRequest(null);
+                  }}
+                  className="modal-close-btn-white text-white hover:text-gray-200 bg-transparent border-0 cursor-pointer font-bold text-lg"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 space-y-6 overflow-y-auto max-h-[60vh] md:max-h-[70vh] text-sm text-gray-700 bg-white">
+                {/* Applicant Info */}
+                <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  {req.profile?.avatar_url ? (
+                    <img
+                      src={req.profile.avatar_url}
+                      alt=""
+                      className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-[#e0f2fe] text-[#0369a1] flex items-center justify-center font-bold border border-gray-150">
+                      {req.profile?.name?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                  )}
+                  <div>
+                    <div className="font-bold text-gray-800">{req.profile?.name || 'Unknown'}</div>
+                    <div className="text-[10px] text-gray-400 font-mono">Applicant ID: {req.applicant_id}</div>
+                    <div className="text-xs text-blue-900 font-semibold mt-0.5">{req.job?.title || 'Job Listing'}</div>
+                  </div>
+                </div>
+
+                {/* Dispute / Details */}
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                  <h4 className="text-[10px] font-extrabold text-[#0e2a4d] uppercase tracking-wider border-b border-gray-100 pb-1.5">Offline Transfer Details</h4>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="block text-[10px] text-gray-400 font-bold mb-0.5">Approved Amount</span>
+                      <span className="font-bold text-gray-800">${displayAmount} {currency}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] text-gray-400 font-bold mb-0.5">Payment Method</span>
+                      <span className="font-semibold text-gray-800 capitalize">{(req.payment_method || '—').replace('_', ' ')}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] text-gray-400 font-bold mb-0.5">Transfer Date</span>
+                      <span className="font-semibold text-gray-800">{req.transfer_date || '—'}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] text-gray-400 font-bold mb-0.5">Reference Number (Masked)</span>
+                      <span className="font-mono font-semibold text-slate-800 bg-white/80 px-1.5 py-0.5 border border-slate-200 rounded">{maskReference(req.reference_number)}</span>
+                    </div>
+                    {req.proof_url && (
+                      <div className="col-span-2 pt-1">
+                        <span className="block text-[10px] text-gray-400 font-bold mb-1">Payment Proof</span>
+                        <a 
+                          href={req.proof_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs text-blue-900 font-bold hover:underline"
+                        >
+                          View Uploaded Payment Proof
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Audit Logs Notes */}
+                <div className="space-y-3">
+                  {req.applicant_notes && (
+                    <div>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase block mb-1">Applicant's Justification Notes</span>
+                      <p className="p-3 bg-white border border-slate-150 rounded-lg text-xs leading-relaxed italic">{req.applicant_notes}</p>
+                    </div>
+                  )}
+
+                  {req.company_notes && (
+                    <div>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase block mb-1">Company Notes / Offline Terms</span>
+                      <p className="p-3 bg-white border border-slate-150 rounded-lg text-xs leading-relaxed italic">{req.company_notes}</p>
+                    </div>
+                  )}
+
+                  {req.status === 'disputed' && req.dispute_reason && (
+                    <div className="p-3.5 bg-rose-50 border border-rose-150 rounded-xl text-rose-900 leading-normal">
+                      <span className="text-[10px] text-rose-600 font-extrabold uppercase block mb-1">Disputed Reason reported by Candidate</span>
+                      <p className="text-xs font-semibold">{req.dispute_reason}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Form */}
+                {req.status === 'disputed' && (
+                  <div className="space-y-4 pt-2">
+                    <div className="p-3.5 bg-amber-50 border border-amber-150 rounded-xl text-[11px] leading-relaxed text-amber-900 font-semibold shadow-sm">
+                      <strong>Neutral Observer Boundary:</strong> Platform administrators do not act as financial participants. Resolving/closing the dispute will transition the request to <code>review_closed</code>. This state does NOT count as confirmed.
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-extrabold text-gray-500 uppercase mb-1">
+                        Internal Administrative Review Notes *
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={adminAdvanceNote}
+                        onChange={(e) => setAdminAdvanceNote(e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4.5 py-3 text-xs font-medium text-gray-700 outline-none focus:border-blue-900 transition-colors resize-none font-sans shadow-sm"
+                        placeholder="Provide details about admin investigation and closure notes..."
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="bg-slate-50 px-6 py-4.5 border-t border-gray-150/40 flex justify-end gap-3 rounded-b-2xl">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAdvanceReviewModalOpen(false);
+                    setSelectedAdvanceRequest(null);
+                  }}
+                  className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm border-0"
+                >
+                  Cancel
+                </button>
+                {req.status === 'disputed' && (
+                  <button
+                    type="button"
+                    disabled={isClosingDispute || !adminAdvanceNote.trim()}
+                    onClick={handleCloseDispute}
+                    className="px-6 py-2.5 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm disabled:opacity-40 border-0"
+                  >
+                    {isClosingDispute ? 'Closing Dispute...' : 'Close Dispute'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
