@@ -1695,28 +1695,28 @@ export default function ApplicantsPage() {
                 </div>
               </div>
 
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Counter Amount ({currency}) *</label>
+              <div className="mb-6">
+                <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Counter Amount ({currency}) *</label>
                   <input 
                     type="number"
                     value={counterAmountInput}
                     onChange={(e) => setCounterAmountInput(e.target.value)}
                     placeholder={`e.g. 200`}
-                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900"
+                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900 bg-white"
                     min="1"
                     max={ledger.remaining}
                     step="any"
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Counter Offer Notes / Terms *</label>
+                <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Counter Offer Notes / Terms *</label>
                   <textarea 
                     value={counterNotesInput}
                     onChange={(e) => setCounterNotesInput(e.target.value)}
                     placeholder="Provide details about the terms of this counter proposal..."
-                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900 min-h-[90px]"
+                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900 min-h-[90px] bg-white"
                     required
                   />
                 </div>
@@ -1760,9 +1760,9 @@ export default function ApplicantsPage() {
                 Record the details of the offline transaction sent directly to the applicant.
               </p>
 
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Approved Amount ({currency})</label>
+              <div className="mb-6">
+                <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Approved Amount ({currency})</label>
                   <input 
                     type="text"
                     value={`$${Number(amountTransferredInput).toFixed(2)}`}
@@ -1771,12 +1771,12 @@ export default function ApplicantsPage() {
                     className="w-full border border-gray-250 bg-gray-50 rounded-lg p-2.5 text-sm text-gray-500 font-bold select-none cursor-not-allowed"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 font-sans">Payment Method *</label>
+                <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 font-sans">Payment Method *</label>
                   <select 
                     value={paymentMethodInput}
                     onChange={(e) => setPaymentMethodInput(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-900 bg-gray-50 cursor-pointer"
+                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-900 bg-white cursor-pointer"
                   >
                     <option value="bank_transfer">Bank Transfer</option>
                     <option value="wise">Wise</option>
@@ -1787,18 +1787,18 @@ export default function ApplicantsPage() {
                     <option value="other">Other</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Transfer Date *</label>
+                <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Transfer Date *</label>
                   <input 
                     type="date"
                     value={transferDateInput}
                     onChange={(e) => setTransferDateInput(e.target.value)}
-                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900"
+                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900 bg-white"
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
                     Reference Number {paymentMethodInput !== 'cash' && '*'}
                   </label>
                   <input 
@@ -1806,21 +1806,21 @@ export default function ApplicantsPage() {
                     value={referenceNumberInput}
                     onChange={(e) => setReferenceNumberInput(e.target.value)}
                     placeholder={paymentMethodInput === 'cash' ? 'Optional (e.g. Cash Receipt ID)' : 'e.g. Transaction hash or bank reference'}
-                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900"
+                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900 bg-white"
                     required={paymentMethodInput !== 'cash'}
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Company Notes / Offline Terms</label>
+                <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Company Notes / Offline Terms</label>
                   <textarea 
                     value={recordTransferNotesInput}
                     onChange={(e) => setRecordTransferNotesInput(e.target.value)}
                     placeholder="Provide any details about the payment instructions, timing, etc..."
-                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900 min-h-[70px]"
+                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900 min-h-[70px] bg-white"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Proof of Payment (Optional, PDF, JPG, PNG)</label>
+                <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Proof of Payment (Optional, PDF, JPG, PNG)</label>
                   <input 
                     type="file"
                     accept=".pdf,.png,.jpg,.jpeg"
