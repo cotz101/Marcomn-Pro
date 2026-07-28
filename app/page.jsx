@@ -39,11 +39,6 @@ export default function LandingPage() {
         <div>
           © 2026 Marcomn. <span className="text-blue-500">The professional network.</span>
         </div>
-        <div className="flex gap-4 text-xs font-semibold text-gray-500">
-          <Link href="/credits" className="hover:text-blue-500 transition-colors">MCredits</Link>
-          <span>•</span>
-          <Link href="/legal/payments" className="hover:text-blue-500 transition-colors">Payment Policies</Link>
-        </div>
       </footer>
     </div>
   );
