@@ -984,6 +984,7 @@ export default function ApplicantsPage() {
               const appliedDate = getFormattedDate(app.applied_at);
               const initials = name.split(' ').map((n) => n[0]).slice(0, 2).join('');
               const isSelected = selectedApplicant?.id === app.id;
+              const activeAdvance = app.advance_requests?.find(r => ['pending', 'countered', 'approved', 'transfer_recorded', 'disputed'].includes(r.status));
               
               return (
                 <div 
@@ -1021,6 +1022,14 @@ export default function ApplicantsPage() {
                           )}
                           <span className="text-slate-300">•</span>
                           <span>{appliedDate}</span>
+                          {activeAdvance && (
+                            <>
+                              <span className="text-slate-300">•</span>
+                              <span className="inline-flex items-center gap-1 text-blue-700 font-bold bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100/50 normal-case">
+                                <Coins size={10} /> Advance {activeAdvance.status.replace('_', ' ')}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1090,9 +1099,6 @@ export default function ApplicantsPage() {
                         )}
                       </div>
                     )}
-                    
-                    {/* Advance Payment requests */}
-                    {renderAdvancePaymentSectionForCompany(app)}
                     
                     {/* Action buttons */}
                     {app.status === 'Accepted' && (() => {
