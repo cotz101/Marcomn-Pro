@@ -1,4 +1,4 @@
-import { X, MapPin, Clock, Briefcase, DollarSign, Award, Ship, Compass, Anchor } from 'lucide-react';
+import { X, MapPin, Clock, Briefcase, DollarSign, Award, Ship, Compass, Anchor, AlertTriangle } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -103,6 +103,16 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
 
         {/* Scrollable Body */}
         <div className="overflow-y-auto overscroll-contain p-5 sm:p-8 flex-1 space-y-6">
+          
+          {job.is_position_filled && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg p-4 flex gap-3 items-center">
+              <AlertTriangle className="text-amber-600 flex-shrink-0" size={20} />
+              <div>
+                <p className="text-sm font-bold">Position Filled</p>
+                <p className="text-xs text-amber-800">All available positions have been filled. No further applications can be accepted at this time.</p>
+              </div>
+            </div>
+          )}
           
           {/* Meta Grid */}
           <div className="bg-gray-50/50 rounded-lg p-4 sm:p-5 shadow-2xs">
@@ -249,12 +259,23 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
               Edit Job
             </button>
           ) : (
-            <button 
-              onClick={handleApplyClick}
-              className="btn-primary-pill px-4 sm:px-6 max-sm:flex-1"
-            >
-              Quick Apply
-            </button>
+            (job.status || '').toLowerCase() !== 'draft' && (
+              job.is_position_filled ? (
+                <button 
+                  disabled
+                  className="px-4 sm:px-6 py-2.5 bg-amber-50 text-amber-800 border border-amber-200 text-sm font-semibold rounded-lg opacity-60 cursor-not-allowed max-sm:flex-1 text-center"
+                >
+                  Position Filled
+                </button>
+              ) : (
+                <button 
+                  onClick={handleApplyClick}
+                  className="btn-primary-pill px-4 sm:px-6 max-sm:flex-1"
+                >
+                  Quick Apply
+                </button>
+              )
+            )
           )}
         </div>
 

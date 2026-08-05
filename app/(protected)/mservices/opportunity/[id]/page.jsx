@@ -15,6 +15,7 @@ import {
   Compass, 
   Anchor, 
   AlertCircle,
+  AlertTriangle,
   Trash2,
   Edit3
 } from 'lucide-react';
@@ -58,6 +59,23 @@ export default function OpportunityDetailsPage() {
       } else if (!job) {
         setError("This job opportunity is no longer available or you don't have permission to view it.");
       } else {
+        // Query active filled applications count
+        const { count: filled, error: countErr } = await supabase
+          .from('applications')
+          .select('id', { count: 'exact', head: true })
+          .eq('job_id', jobId)
+          .in('status', ['Accepted', 'Completed']);
+          
+        if (!countErr) {
+          const total = job.number_of_positions || 1;
+          job.filled_positions = filled || 0;
+          job.available_positions = Math.max(0, total - (filled || 0));
+          job.is_position_filled = (filled || 0) >= total;
+        } else {
+          job.filled_positions = 0;
+          job.available_positions = job.number_of_positions || 1;
+          job.is_position_filled = false;
+        }
         setJob(job);
       }
     } catch (err) {
@@ -404,6 +422,28 @@ export default function OpportunityDetailsPage() {
         {source === 'my-applications' ? 'Back to My Applications' : 'Back to Opportunity Feed'}
       </button>
 
+      {/* Draft Banner */}
+      {(job.status || '').toLowerCase() === 'draft' && isOwner && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl mb-6 shadow-sm flex items-center gap-3">
+          <AlertCircle size={20} className="text-amber-600 flex-shrink-0" />
+          <div>
+            <h3 className="font-bold text-sm">Private Draft</h3>
+            <p className="text-sm">Only you can see this job. Publish it from your dashboard to make it visible to applicants.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Position Filled Alert Banner */}
+      {job.is_position_filled && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg p-4 flex gap-3 items-center mb-6 shadow-sm">
+          <AlertTriangle className="text-amber-600 flex-shrink-0" size={20} />
+          <div>
+            <p className="text-sm font-bold">Position Filled</p>
+            <p className="text-xs text-amber-800">All available positions have been filled. No further applications can be accepted at this time.</p>
+          </div>
+        </div>
+      )}
+
       {/* Main Premium Card (Sharp modernist corners) */}
       <div className="bg-white !rounded-none shadow-sm border border-slate-200 sm:overflow-hidden flex flex-col" style={{ borderRadius: '0' }}>
         
@@ -419,6 +459,17 @@ export default function OpportunityDetailsPage() {
               <p className="text-sm font-semibold text-slate-500 mt-1.5">{companyName}</p>
             </div>
           </div>
+          
+          {/* Status Badge */}
+          <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+            job.status?.toLowerCase() === 'draft' 
+              ? 'bg-amber-50 text-amber-700 border border-amber-100'
+              : job.is_position_filled
+                ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                : 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+          }`}>
+            {job.status?.toLowerCase() === 'draft' ? 'Draft' : job.is_position_filled ? 'Position Filled' : 'Open'}
+          </span>
           
           {/* Posting Owner badge */}
           {isOwner && (
@@ -469,11 +520,13 @@ export default function OpportunityDetailsPage() {
 
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-900 flex-shrink-0">
-                  <Award size={20} />
+                  <Briefcase size={20} />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 font-semibold">Experience Level</p>
-                  <p className="text-sm font-bold text-gray-800">{experienceLevel}</p>
+                  <p className="text-sm text-gray-500 font-semibold">Number of Positions</p>
+                  <p className="text-sm font-bold text-gray-800">
+                    {job.filled_positions || 0} / {job.number_of_positions || 1} Filled ({job.available_positions ?? Math.max(0, (job.number_of_positions || 1) - (job.filled_positions || 0))} Available)
+                  </p>
                 </div>
               </div>
             </div>
@@ -543,7 +596,7 @@ export default function OpportunityDetailsPage() {
               </button>
             </>
           ) : (
-            !(currentUser && (currentUser.id === job?.user_id || currentUser.id === job?.poster_id)) && (() => {
+            !(currentUser && (currentUser.id === job?.user_id || currentUser.id === job?.poster_id)) && (job.status || '').toLowerCase() !== 'draft' && (() => {
               // Derive state
               const isPending   = myApplication?.status === 'Pending';
               const isWithdrawn = myApplication?.status === 'Withdrawn';
@@ -554,11 +607,11 @@ export default function OpportunityDetailsPage() {
               const isLocked     = isWithdrawn && withdrawCount >= withdrawLimit;
               const orderObj = Array.isArray(myApplication?.job_orders) ? myApplication.job_orders[0] : myApplication?.job_orders;
               const isActiveEngagement = myApplication?.status === 'Accepted' && orderObj?.status === 'Active';
-              const needsUpload  = (!myApplication || canReApply) && !isActiveEngagement && !isCompanyCancelled;
-
+              const needsUpload  = (!myApplication || canReApply) && !isActiveEngagement && !isCompanyCancelled && !job?.is_position_filled;
+ 
               return (
                 <div className="flex flex-col items-end gap-3 w-full sm:w-auto">
-
+ 
                   {/* Document upload — shown for fresh apply AND re-apply */}
                   {needsUpload && (
                     <div className="w-full">
@@ -601,22 +654,31 @@ export default function OpportunityDetailsPage() {
                       )}
                     </div>
                   )}
-
+ 
                   {/* State A — no application yet */}
                   {!myApplication && (
-                    <button
-                      onClick={handleApply}
-                      disabled={isApplying}
-                      className={
-                        isApplying
-                          ? 'h-10 px-8 bg-[#002b4e] opacity-70 text-white cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center'
-                          : 'h-10 px-8 bg-[#002b4e] hover:bg-[#001f38] text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all w-full sm:w-auto flex items-center justify-center'
-                      }
-                    >
-                      {isApplying ? (selectedFiles.length > 0 ? `Uploading ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...` : 'Applying...') : 'Quick Apply to Position'}
-                    </button>
+                    job?.is_position_filled ? (
+                      <button
+                        disabled
+                        className="h-10 px-8 bg-amber-50 text-amber-800 border border-amber-250 cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center opacity-75 animate-pulse"
+                      >
+                        Position Filled
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleApply}
+                        disabled={isApplying}
+                        className={
+                          isApplying
+                            ? 'h-10 px-8 bg-[#002b4e] opacity-70 text-white cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center'
+                            : 'h-10 px-8 bg-[#002b4e] hover:bg-[#001f38] text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all w-full sm:w-auto flex items-center justify-center'
+                        }
+                      >
+                        {isApplying ? (selectedFiles.length > 0 ? `Uploading ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...` : 'Applying...') : 'Quick Apply to Position'}
+                      </button>
+                    )
                   )}
-
+ 
                   {/* State B — Pending: Applied + Withdraw side-by-side */}
                   {isPending && (
                     <div className="flex flex-row items-center gap-3 w-full sm:w-auto">
@@ -635,7 +697,7 @@ export default function OpportunityDetailsPage() {
                       </button>
                     </div>
                   )}
-
+ 
                   {/* State C — Withdrawn & Locked */}
                   {isLocked && (
                     <button
@@ -645,20 +707,29 @@ export default function OpportunityDetailsPage() {
                       Withdrawal Limit Reached
                     </button>
                   )}
-
+ 
                   {/* State D — Withdrawn & Can Re-Apply */}
                   {canReApply && (
-                    <button
-                      onClick={handleReApply}
-                      disabled={isApplying}
-                      className={
-                        isApplying
-                          ? 'h-10 px-8 bg-[#002b4e] opacity-70 text-white cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center'
-                          : 'h-10 px-8 bg-[#002b4e] hover:bg-[#001f38] text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all w-full sm:w-auto flex items-center justify-center'
-                      }
-                    >
-                      {isApplying ? (selectedFiles.length > 0 ? `Uploading ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...` : 'Applying...') : 'Re-Apply to Position'}
-                    </button>
+                    job?.is_position_filled ? (
+                      <button
+                        disabled
+                        className="h-10 px-8 bg-amber-50 text-amber-800 border border-amber-250 cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center opacity-75"
+                      >
+                        Position Filled
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleReApply}
+                        disabled={isApplying}
+                        className={
+                          isApplying
+                            ? 'h-10 px-8 bg-[#002b4e] opacity-70 text-white cursor-not-allowed rounded-lg text-sm font-bold w-full sm:w-auto flex items-center justify-center'
+                            : 'h-10 px-8 bg-[#002b4e] hover:bg-[#001f38] text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all w-full sm:w-auto flex items-center justify-center'
+                        }
+                      >
+                        {isApplying ? (selectedFiles.length > 0 ? `Uploading ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...` : 'Applying...') : 'Re-Apply to Position'}
+                      </button>
+                    )
                   )}
 
                   {/* State E — Active Engagement */}

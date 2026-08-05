@@ -550,6 +550,24 @@ export default function ApplicantsPage() {
         return;
       }
 
+      // Query active filled applications count
+      const { count: filled, error: countErr } = await supabase
+        .from('applications')
+        .select('id', { count: 'exact', head: true })
+        .eq('job_id', id)
+        .in('status', ['Accepted', 'Completed']);
+        
+      if (!countErr) {
+        const total = jobData.number_of_positions || 1;
+        jobData.filled_positions = filled || 0;
+        jobData.available_positions = Math.max(0, total - (filled || 0));
+        jobData.is_position_filled = (filled || 0) >= total;
+      } else {
+        jobData.filled_positions = 0;
+        jobData.available_positions = jobData.number_of_positions || 1;
+        jobData.is_position_filled = false;
+      }
+
       // ── 2. Ownership guard ────────────────────────────────────────────────
       const posterId = jobData.poster_id || jobData.user_id;
       if (posterId !== userId) {
@@ -929,6 +947,21 @@ export default function ApplicantsPage() {
                       {job.company}
                     </span>
                   )}
+                  <span className={`inline-flex items-center px-3 py-1.5 lg:px-2.5 lg:py-1 rounded-full text-[11px] lg:text-[10px] font-bold uppercase tracking-wide ${
+                    job?.is_position_filled 
+                      ? 'bg-amber-100 text-amber-800 border border-amber-200' 
+                      : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                  }`}>
+                    Positions: {job?.filled_positions || 0} / {job?.number_of_positions || 1} Filled
+                  </span>
+                  <span className="inline-flex items-center px-3 py-1.5 lg:px-2.5 lg:py-1 rounded-full text-[11px] lg:text-[10px] font-bold bg-slate-100 text-slate-700 tracking-wide uppercase">
+                    {job?.available_positions ?? Math.max(0, (job?.number_of_positions || 1) - (job?.filled_positions || 0))} Available
+                  </span>
+                  {job?.is_position_filled && (
+                    <span className="inline-flex items-center px-3 py-1.5 lg:px-2.5 lg:py-1 rounded-full text-[11px] lg:text-[10px] font-extrabold bg-amber-500 text-white tracking-wide uppercase">
+                      Position Filled
+                    </span>
+                  )}
                   
                   {/* Tags / Skills compact display */}
                   {(job?.skills?.length > 0 || job?.tags?.length > 0) && (
@@ -1219,12 +1252,21 @@ export default function ApplicantsPage() {
 
                     {app.status === 'Shortlisted' && (
                       <div className="mt-5 flex flex-col sm:flex-row justify-end">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setAppToOffer(app); setIsOfferModalOpen(true); }}
-                          className="px-4 py-2 bg-[#004173] hover:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
-                        >
-                          Send Job Offer
-                        </button>
+                        {job?.is_position_filled ? (
+                          <button 
+                            disabled
+                            className="px-4 py-2 bg-slate-100 border border-slate-200 text-slate-400 text-sm font-semibold rounded-lg cursor-not-allowed w-full sm:w-auto text-center"
+                          >
+                            Send Job Offer (Positions Filled)
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setAppToOffer(app); setIsOfferModalOpen(true); }}
+                            className="px-4 py-2 bg-[#004173] hover:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm w-full sm:w-auto text-center"
+                          >
+                            Send Job Offer
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

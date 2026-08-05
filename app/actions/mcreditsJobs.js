@@ -7,6 +7,8 @@ import {
   getMCreditSetting,
   createWalletTransaction
 } from '@/lib/services/mcreditService';
+import { createPlatformNotification } from '@/app/actions/notifications';
+import { handleOccupancyChange } from '@/app/actions/cache';
 
 /**
  * Preview the job posting fee without deducting.
@@ -122,7 +124,7 @@ export async function deductCandidateAcceptanceFee(candidateId, applicationId, s
   // 1. Fetch the application to validate state
   const { data: application, error: appError } = await supabase
     .from('applications')
-    .select('id, status, applicant_id, offer_expires_at, job_id')
+    .select('id, status, applicant_id, offer_expires_at, job_id, jobs(number_of_positions, poster_id, title)')
     .eq('id', applicationId)
     .single();
 
@@ -158,6 +160,22 @@ export async function deductCandidateAcceptanceFee(candidateId, applicationId, s
     }
   }
 
+  // Pre-validate capacity dynamically
+  const { count: filledCount, error: countErr } = await supabase
+    .from('applications')
+    .select('id', { count: 'exact', head: true })
+    .eq('job_id', application.job_id)
+    .in('status', ['Accepted', 'Completed']);
+
+  if (countErr) {
+    throw new Error('Error verifying current filled positions.');
+  }
+
+  const number_of_positions = application.jobs?.number_of_positions || 1;
+  if (filledCount >= number_of_positions) {
+    throw new Error('All positions for this job are already filled.');
+  }
+
   // 2. Check for duplicate transaction (idempotency guard)
   const { data: existingTx } = await supabase
     .from('mcredit_transactions')
@@ -178,12 +196,30 @@ export async function deductCandidateAcceptanceFee(candidateId, applicationId, s
   const fee = Number((salary * feePercent / 100).toFixed(2));
 
   if (fee <= 0) {
-    // No fee required — just accept
-    await supabase
-      .from('applications')
-      .update({ status: 'Accepted' })
-      .eq('id', applicationId);
-    return { success: true, fee: 0, message: 'Offer accepted (no fee)' };
+    // No fee required — just accept using RPC
+    const { data: rpcRes, error: rpcErr } = await supabase
+      .rpc('accept_job_offer', { app_id: applicationId });
+
+    if (rpcErr || (rpcRes && !rpcRes.success)) {
+      throw new Error(rpcRes?.message || 'Failed to accept offer.');
+    }
+
+    if (rpcRes?.reached_cap) {
+      try {
+        await createPlatformNotification({
+          userId: application.jobs.poster_id,
+          title: 'Positions Filled',
+          message: `All available positions for this job "${application.jobs.title}" have now been filled.`,
+          type: 'job.filled',
+          linkUrl: `/jobs/my-postings`
+        });
+      } catch (notifErr) {
+        console.error('Failed to create positions filled notification:', notifErr);
+      }
+    }
+
+    await handleOccupancyChange(application.job_id);
+    return { success: true, fee: 0, message: rpcRes?.message || 'Offer accepted (no fee)' };
   }
 
   // 4. Check balance
@@ -206,17 +242,44 @@ export async function deductCandidateAcceptanceFee(candidateId, applicationId, s
     overrideBalanceCheck: false
   });
 
-  // 6. Update application status to Accepted
-  const { error: updateError } = await supabase
-    .from('applications')
-    .update({ status: 'Accepted' })
-    .eq('id', applicationId);
+  // 6. Update application status atomically via RPC
+  const { data: rpcRes, error: rpcErr } = await supabase
+    .rpc('accept_job_offer', { app_id: applicationId });
 
-  if (updateError) {
-    console.error('Failed to update application status after deduction:', updateError);
-    // The deduction already happened — log this for manual resolution
-    throw new Error('MCredits were deducted but status update failed. Please contact support.');
+  if (rpcErr || (rpcRes && !rpcRes.success)) {
+    // Compensating transaction: refund the candidate
+    try {
+      await createWalletTransaction({
+        walletId: wallet.id,
+        type: 'refund',
+        amount: fee,
+        direction: 'credit',
+        justification: `Refund for failed job offer acceptance (capacity reached) for application ${applicationId}`,
+        createdBy: candidateId,
+        referenceType: 'job_application',
+        referenceId: applicationId,
+        overrideBalanceCheck: true
+      });
+    } catch (refundErr) {
+      console.error('CRITICAL: Refund failed after capacity block:', refundErr);
+    }
+    throw new Error(rpcRes?.message || 'Failed to accept offer. Capacity may have been reached.');
   }
 
+  if (rpcRes?.reached_cap) {
+    try {
+      await createPlatformNotification({
+        userId: application.jobs.poster_id,
+        title: 'Positions Filled',
+        message: `All available positions for this job "${application.jobs.title}" have now been filled.`,
+        type: 'job.filled',
+        linkUrl: `/jobs/my-postings`
+      });
+    } catch (notifErr) {
+      console.error('Failed to create positions filled notification:', notifErr);
+    }
+  }
+
+  await handleOccupancyChange(application.job_id);
   return { success: true, fee, newBalance: Number(newBalance) };
 }

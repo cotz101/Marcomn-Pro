@@ -87,7 +87,7 @@ export default function EmployerDashboardPage() {
       const supabase = createClient();
       let query = supabase
         .from('jobs')
-        .select('*, applications(count)')
+        .select('*, applications(id, status)')
         .order('created_at', { ascending: false });
 
       if (currentIdentity.type === 'company') {
@@ -99,7 +99,23 @@ export default function EmployerDashboardPage() {
       const { data, error } = await query;
 
       if (error) throw error;
-      setJobs(data || []);
+      
+      if (data) {
+        const enriched = data.map(job => {
+          const apps = job.applications || [];
+          const filled = apps.filter(a => ['Accepted', 'Completed'].includes(a.status)).length;
+          const total = job.number_of_positions || 1;
+          return {
+            ...job,
+            filled_positions: filled,
+            available_positions: Math.max(0, total - filled),
+            is_position_filled: filled >= total
+          };
+        });
+        setJobs(enriched);
+      } else {
+        setJobs([]);
+      }
     } catch (err) {
       console.error('Error fetching employer postings:', err.message || err);
     } finally {
@@ -197,9 +213,24 @@ export default function EmployerDashboardPage() {
           <span className="text-xs text-gray-400 font-medium">
             Created {getFormattedDate(job.created_at)}
           </span>
-          <span className="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-            {job.applications?.[0]?.count || 0} {job.applications?.[0]?.count === 1 ? 'Applicant' : 'Applicants'}
-          </span>
+          {(job.status || '').toLowerCase() === 'draft' ? (
+            <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-700">
+              Private Draft — Only you can see this job.
+            </span>
+          ) : (
+            <>
+              <span className="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                {job.applications?.length || 0} {job.applications?.length === 1 ? 'Applicant' : 'Applicants'}
+              </span>
+              <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                job.is_position_filled 
+                  ? 'bg-amber-100 border border-amber-200 text-amber-800' 
+                  : 'bg-blue-50 border border-blue-100 text-blue-800'
+              }`}>
+                {job.is_position_filled ? 'Position Filled' : `${job.filled_positions || 0} / ${job.number_of_positions || 1} Filled (${job.available_positions ?? Math.max(0, (job.number_of_positions || 1) - (job.filled_positions || 0))} Available)`}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
@@ -218,16 +249,18 @@ export default function EmployerDashboardPage() {
           </button>
         )}
 
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            router.push(`/jobs/my-postings/${job.id}/applicants`);
-          }}
-          className="flex-1 md:flex-initial text-center px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 text-sm font-semibold rounded-lg border border-blue-100 transition-colors whitespace-nowrap"
-        >
-          <span className="block max-[440px]:hidden">View Applicants</span>
-          <span className="hidden max-[440px]:block">Applicants</span>
-        </button>
+        {(job.status || '').toLowerCase() !== 'draft' && (
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/jobs/my-postings/${job.id}/applicants`);
+            }}
+            className="flex-1 md:flex-initial text-center px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 text-sm font-semibold rounded-lg border border-blue-100 transition-colors whitespace-nowrap"
+          >
+            <span className="block max-[440px]:hidden">View Applicants</span>
+            <span className="hidden max-[440px]:block">Applicants</span>
+          </button>
+        )}
       </div>
     </div>
   );

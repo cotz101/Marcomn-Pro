@@ -1,7 +1,8 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
-import { createPlatformNotification } from './notifications';
+import { createPlatformNotification, checkAndNotifyVacancyReopened } from './notifications';
+import { handleOccupancyChange } from './cache';
 import {
   processCandidateCancellationFinancials,
   processCompanyCancellationFinancials,
@@ -200,6 +201,11 @@ export async function cancelJobOrderByCandidate({ jobOrderId, reason, remarks })
       console.error('Financial processing failed (candidate cancel) — cancellation stands:', finErr);
     }
 
+    if (order.job_id) {
+      await checkAndNotifyVacancyReopened(order.job_id);
+      await handleOccupancyChange(order.job_id);
+    }
+
     return { success: true };
 
   } catch (err) {
@@ -306,6 +312,11 @@ export async function cancelJobOrderByCompany({ jobOrderId, reason, remarks }) {
       }
     } catch (finErr) {
       console.error('Financial processing failed (company cancel) — cancellation stands:', finErr);
+    }
+
+    if (order.job_id) {
+      await checkAndNotifyVacancyReopened(order.job_id);
+      await handleOccupancyChange(order.job_id);
     }
 
     return { success: true };

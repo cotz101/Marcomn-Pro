@@ -47,7 +47,8 @@ export default function JobBoard() {
           company_id,
           poster_id,
           status,
-          description
+          description,
+          number_of_positions
         `)
         .in('status', ['Published', 'published', 'Open', 'open'])
         .order('created_at', { ascending: false });
@@ -105,13 +106,40 @@ export default function JobBoard() {
             console.error('Error fetching profiles', e);
           }
         }
+
+        // Query filled counts for loaded jobs dynamically
+        const jobIds = jobsData.map(j => j.id);
+        let filledCounts = {};
+        if (jobIds.length > 0) {
+          try {
+            const { data: filledData, error: filledErr } = await supabase
+              .from('applications')
+              .select('job_id')
+              .in('job_id', jobIds)
+              .in('status', ['Accepted', 'Completed']);
+            if (!filledErr && filledData) {
+              filledData.forEach(app => {
+                filledCounts[app.job_id] = (filledCounts[app.job_id] || 0) + 1;
+              });
+            }
+          } catch (e) {
+            console.error('Error fetching filled counts', e);
+          }
+        }
         
-        const jobsWithApps = jobsData.map(job => ({
-          ...job,
-          application: appsMap[job.id] || null,
-          company: companiesMap[job.company_id] || null,
-          poster: postersMap[job.poster_id] || null
-        }));
+        const jobsWithApps = jobsData.map(job => {
+          const filled = filledCounts[job.id] || 0;
+          const total = job.number_of_positions || 1;
+          return {
+            ...job,
+            application: appsMap[job.id] || null,
+            company: companiesMap[job.company_id] || null,
+            poster: postersMap[job.poster_id] || null,
+            filled_positions: filled,
+            available_positions: Math.max(0, total - filled),
+            is_position_filled: filled >= total
+          };
+        });
 
         setJobs(jobsWithApps);
       }

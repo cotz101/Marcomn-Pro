@@ -5,6 +5,7 @@ import BaseModal from '../layout/BaseModal';
 import RichTextEditor from '../common/RichTextEditor';
 import { Briefcase, AlertTriangle, Coins } from 'lucide-react';
 import { getJobPostingFeePreview, getCompanyWalletBalance, deductJobPostingFee, getUserWalletBalance, deductUserJobPostingFee } from '@/app/actions/mcreditsJobs';
+import { refreshPath } from '@/app/actions/cache';
 
 export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit }) {
   const { currentIdentity, userId, profile } = useProfile();
@@ -22,7 +23,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
     positionStatus: 'Active Position',
     postingStatus: 'Draft',
     description: '',
-    responsibilities: ''
+    responsibilities: '',
+    numberOfPositions: 1
   });
 
   const [skills, setSkills] = useState([]);
@@ -46,6 +48,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
   const [feePreview, setFeePreview] = useState(null); // { feePercent, fee }
   const [walletBalance, setWalletBalance] = useState(null);
   const [mcreditError, setMcreditError] = useState('');
+  
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
   const isCompany = currentIdentity?.type === 'company' || currentIdentity?.role === 'company';
   const identityName = isCompany ? currentIdentity?.data?.name : (profile?.fullName || 'Anonymous');
@@ -90,7 +94,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           positionStatus: 'Active Position',
           postingStatus: jobToEdit.status || 'Draft',
           description: jobToEdit.description || '',
-          responsibilities: jobToEdit.responsibilities || jobToEdit.description || ''
+          responsibilities: jobToEdit.responsibilities || jobToEdit.description || '',
+          numberOfPositions: jobToEdit.number_of_positions || 1
         });
 
         if (Array.isArray(jobToEdit.required_skills)) {
@@ -124,7 +129,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           positionStatus: 'Active Position',
           postingStatus: 'Draft',
           description: '',
-          responsibilities: ''
+          responsibilities: '',
+          numberOfPositions: 1
         });
         setSkills([]);
         setWithdrawalLimit(3);
@@ -206,7 +212,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
     setSkills(skills.filter(s => s !== skillToRemove));
   };
 
-  const handleSubmit = async (e) => {
+  const handlePreSubmit = (e) => {
     if (e) e.preventDefault();
 
     if (!formData.title || !formData.location || !formData.startDate || !formData.payAmount || !formData.description || !formData.responsibilities) {
@@ -237,6 +243,19 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
       }
     }
 
+    const isPublishingNewJob = !jobToEdit && (formData.postingStatus || '').toLowerCase() !== 'draft';
+    const isTransitionToPublish = jobToEdit && ((jobToEdit.status || 'draft').toLowerCase() === 'draft') && ['published', 'open'].includes((formData.postingStatus || '').toLowerCase());
+    
+    if (isPublishingNewJob || isTransitionToPublish) {
+      setShowPublishConfirm(true);
+      return;
+    }
+
+    executeSubmit();
+  };
+
+  const executeSubmit = async () => {
+    setShowPublishConfirm(false);
     setLoading(true);
     const supabase = createClient();
 
@@ -307,6 +326,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           required_skills: finalSkills,
           priority: formData.positionStatus === 'Active Position',
           withdrawal_limit: parseInt(withdrawalLimit, 10),
+          number_of_positions: parseInt(formData.numberOfPositions, 10),
           tags: formattedTags,
           advance_payment_enabled: advancePaymentEnabled,
           advance_payment_type: advancePaymentEnabled ? advancePaymentType : null,
@@ -354,33 +374,59 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         }
       }
 
-      // Update related Logbook post snapshot if it exists
-      const skillPills = finalSkills.length > 0
-        ? finalSkills.map(s => `<span style="display:inline-block;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;border-radius:9999px;padding:2px 10px;font-size:12px;font-weight:700;margin:2px;">${s}</span>`).join(' ')
-        : '';
-      const tagPills = formattedTags.length > 0
-        ? formattedTags.map(t => `<span style="display:inline-block;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:9999px;padding:2px 10px;font-size:12px;font-weight:700;margin:2px;">${t}</span>`).join(' ')
-        : '';
+      const isNowPublished = ['published', 'open'].includes((formData.postingStatus || '').toLowerCase());
+      if (isNowPublished) {
+        const skillPills = finalSkills.length > 0
+          ? finalSkills.map(s => `<span style="display:inline-block;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;border-radius:9999px;padding:2px 10px;font-size:12px;font-weight:700;margin:2px;">${s}</span>`).join(' ')
+          : '';
+        const tagPills = formattedTags.length > 0
+          ? formattedTags.map(t => `<span style="display:inline-block;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:9999px;padding:2px 10px;font-size:12px;font-weight:700;margin:2px;">${t}</span>`).join(' ')
+          : '';
 
-      const postContentSnapshot = [
-        `<p><strong>⚓ New Job Opportunity</strong></p>`,
-        `<p style="font-size:18px;font-weight:800;color:#000050;">${formData.title}</p>`,
-        isCompany ? `<p style="color:#475569;font-size:14px;"><strong>Company:</strong> ${identityName}</p>` : '',
-        formData.location ? `<p style="color:#475569;font-size:14px;"><strong>Location:</strong> ${formData.location}</p>` : '',
-        skillPills ? `<p style="margin-top:8px;"><strong style="font-size:13px;color:#475569;">Required Skills:</strong><br/>${skillPills}</p>` : '',
-        tagPills ? `<p style="margin-top:6px;"><strong style="font-size:13px;color:#475569;">Job Tags:</strong><br/>${tagPills}</p>` : '',
-        `<p style="margin-top:12px;"><a href="/mservices/opportunity/${jobToEdit.id}" style="color:#002b4e;font-weight:700;text-decoration:underline;">See More →</a></p>`,
-      ].filter(Boolean).join('\n');
+        const postContentSnapshot = [
+          `<p><strong>⚓ New Job Opportunity</strong></p>`,
+          `<p style="font-size:18px;font-weight:800;color:#000050;">${formData.title}</p>`,
+          isCompany ? `<p style="color:#475569;font-size:14px;"><strong>Company:</strong> ${identityName}</p>` : '',
+          formData.location ? `<p style="color:#475569;font-size:14px;"><strong>Location:</strong> ${formData.location}</p>` : '',
+          skillPills ? `<p style="margin-top:8px;"><strong style="font-size:13px;color:#475569;">Required Skills:</strong><br/>${skillPills}</p>` : '',
+          tagPills ? `<p style="margin-top:6px;"><strong style="font-size:13px;color:#475569;">Job Tags:</strong><br/>${tagPills}</p>` : '',
+          `<p style="margin-top:12px;"><a href="/mservices/opportunity/${jobToEdit.id}" style="color:#002b4e;font-weight:700;text-decoration:underline;">See More →</a></p>`,
+        ].filter(Boolean).join('\n');
 
-      const { error: updatePostError } = await supabase
-        .from('logbook_posts')
-        .update({ content: postContentSnapshot })
-        .ilike('content', `%href="/mservices/opportunity/${jobToEdit.id}"%`);
-      
-      if (updatePostError) {
-        console.error('Error updating logbook post snapshot:', updatePostError);
+        // Check if a feed post already exists for this job
+        const { data: existingPost, error: checkError } = await supabase
+          .from('logbook_posts')
+          .select('id')
+          .ilike('content', `%href="/mservices/opportunity/${jobToEdit.id}"%`)
+          .maybeSingle();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.error('Error checking existing feed post:', checkError);
+        }
+
+        if (!existingPost) {
+          // No post exists, create exactly one feed post
+          const { error: postError } = await supabase
+            .from('logbook_posts')
+            .insert({
+              user_id: userId,
+              content: postContentSnapshot,
+              posted_as_company_id: isCompany ? currentIdentity.id : null,
+              media_type: 'image'
+            });
+          if (postError) console.error('Error creating feed post on transition:', postError.message);
+        } else {
+          // Post exists, update it to reflect any changes
+          const { error: updatePostError } = await supabase
+            .from('logbook_posts')
+            .update({ content: postContentSnapshot })
+            .eq('id', existingPost.id);
+          if (updatePostError) console.error('Error updating logbook post snapshot:', updatePostError.message);
+        }
       }
 
+      await refreshPath('/jobs/my-postings', 'page');
+      await refreshPath('/mservices/opportunity', 'layout');
       setLoading(false);
       onComplete(jobData);
     } else {
@@ -403,6 +449,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           required_skills: finalSkills,
           priority: formData.positionStatus === 'Active Position',
           withdrawal_limit: parseInt(withdrawalLimit, 10),
+          number_of_positions: parseInt(formData.numberOfPositions, 10),
           tags: formattedTags,
           advance_payment_enabled: advancePaymentEnabled,
           advance_payment_type: advancePaymentEnabled ? advancePaymentType : null,
@@ -440,36 +487,40 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         }
       }
 
-      const skillPills = finalSkills.length > 0
-        ? finalSkills.map(s => `<span style="display:inline-block;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;border-radius:9999px;padding:2px 10px;font-size:12px;font-weight:700;margin:2px;">${s}</span>`).join(' ')
-        : '';
-      const tagPills = formattedTags.length > 0
-        ? formattedTags.map(t => `<span style="display:inline-block;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:9999px;padding:2px 10px;font-size:12px;font-weight:700;margin:2px;">${t}</span>`).join(' ')
-        : '';
+      if (isPublishingNewJob) {
+        const skillPills = finalSkills.length > 0
+          ? finalSkills.map(s => `<span style="display:inline-block;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;border-radius:9999px;padding:2px 10px;font-size:12px;font-weight:700;margin:2px;">${s}</span>`).join(' ')
+          : '';
+        const tagPills = formattedTags.length > 0
+          ? formattedTags.map(t => `<span style="display:inline-block;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:9999px;padding:2px 10px;font-size:12px;font-weight:700;margin:2px;">${t}</span>`).join(' ')
+          : '';
 
-      const postContent = [
-        `<p><strong>⚓ New Job Opportunity</strong></p>`,
-        `<p style="font-size:18px;font-weight:800;color:#000050;">${formData.title}</p>`,
-        isCompany ? `<p style="color:#475569;font-size:14px;"><strong>Company:</strong> ${identityName}</p>` : '',
-        formData.location ? `<p style="color:#475569;font-size:14px;"><strong>Location:</strong> ${formData.location}</p>` : '',
-        skillPills ? `<p style="margin-top:8px;"><strong style="font-size:13px;color:#475569;">Required Skills:</strong><br/>${skillPills}</p>` : '',
-        tagPills ? `<p style="margin-top:6px;"><strong style="font-size:13px;color:#475569;">Job Tags:</strong><br/>${tagPills}</p>` : '',
-        `<p style="margin-top:12px;"><a href="/mservices/opportunity/${jobData.id}" style="color:#002b4e;font-weight:700;text-decoration:underline;">See More →</a></p>`,
-      ].filter(Boolean).join('\n');
+        const postContent = [
+          `<p><strong>⚓ New Job Opportunity</strong></p>`,
+          `<p style="font-size:18px;font-weight:800;color:#000050;">${formData.title}</p>`,
+          isCompany ? `<p style="color:#475569;font-size:14px;"><strong>Company:</strong> ${identityName}</p>` : '',
+          formData.location ? `<p style="color:#475569;font-size:14px;"><strong>Location:</strong> ${formData.location}</p>` : '',
+          skillPills ? `<p style="margin-top:8px;"><strong style="font-size:13px;color:#475569;">Required Skills:</strong><br/>${skillPills}</p>` : '',
+          tagPills ? `<p style="margin-top:6px;"><strong style="font-size:13px;color:#475569;">Job Tags:</strong><br/>${tagPills}</p>` : '',
+          `<p style="margin-top:12px;"><a href="/mservices/opportunity/${jobData.id}" style="color:#002b4e;font-weight:700;text-decoration:underline;">See More →</a></p>`,
+        ].filter(Boolean).join('\n');
 
-      const { error: postError } = await supabase
-        .from('logbook_posts')
-        .insert({
-          user_id: userId,
-          content: postContent,
-          posted_as_company_id: isCompany ? currentIdentity.id : null,
-          media_type: 'image'
-        });
+        const { error: postError } = await supabase
+          .from('logbook_posts')
+          .insert({
+            user_id: userId,
+            content: postContent,
+            posted_as_company_id: isCompany ? currentIdentity.id : null,
+            media_type: 'image'
+          });
 
-      if (postError) {
-        console.error('Error creating feed post:', postError.message);
+        if (postError) {
+          console.error('Error creating feed post:', postError.message);
+        }
       }
 
+      await refreshPath('/jobs/my-postings', 'page');
+      await refreshPath('/mservices/opportunity', 'layout');
       setLoading(false);
       onComplete(jobData);
     }
@@ -486,7 +537,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
       maxWidth="800px"
       disableBackdropClick={true}
     >
-      <form id="post-job-form" onSubmit={handleSubmit} className="flex flex-col">
+      <form id="post-job-form" onSubmit={handlePreSubmit} className="flex flex-col relative">
         {/* Header Icon Section */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-900">
@@ -654,29 +705,48 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                 value={formData.postingStatus}
                 onChange={handleInputChange}
               >
-                <option value="Draft">Draft</option>
+                {!isPublishedJob && <option value="Draft">Draft</option>}
                 <option value="Published">Published</option>
                 <option value="Closed">Closed</option>
               </select>
             </div>
           </div>
 
-          {/* Row 5b: Max Withdrawals Allowed */}
-          <div>
-            <label className="text-sm font-semibold text-gray-700 block mb-1.5">
-              Max Withdrawals Allowed
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="10"
-              value={withdrawalLimit}
-              onChange={(e) => setWithdrawalLimit(e.target.value)}
-              className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 max-w-[120px]"
-            />
-            <p className="text-xs text-gray-400 mt-1.5">
-              Limits how many times an applicant can withdraw and re-apply to prevent spam.
-            </p>
+          {/* Row 5b: Number of Positions and Max Withdrawals Allowed */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+                Number of Positions *
+              </label>
+              <input
+                type="number"
+                name="numberOfPositions"
+                min="1"
+                required
+                value={formData.numberOfPositions}
+                onChange={handleInputChange}
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900"
+              />
+              <p className="text-xs text-gray-400 mt-1.5">
+                The total number of workers required for this job posting.
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+                Max Withdrawals Allowed
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                value={withdrawalLimit}
+                onChange={(e) => setWithdrawalLimit(e.target.value)}
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900"
+              />
+              <p className="text-xs text-gray-400 mt-1.5">
+                Limits how many times an applicant can withdraw and reapply to prevent spam.
+              </p>
+            </div>
           </div>
 
           {/* Row 5c: Job Tags (Optional) */}
@@ -726,7 +796,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                     name="advance_payment_enabled"
                     checked={advancePaymentEnabled}
                     onChange={(e) => setAdvancePaymentEnabled(e.target.checked)}
-                    className="h-4 w-4 text-blue-900 focus:ring-blue-900 border-gray-300 rounded cursor-pointer"
+                    disabled={isPublishedJob}
+                    className="h-4 w-4 text-blue-900 focus:ring-blue-900 border-gray-300 rounded cursor-pointer disabled:opacity-50"
                   />
                   <label htmlFor="advance_payment_enabled" className="text-sm font-semibold text-gray-700 cursor-pointer">
                     Enable Advance Payment
@@ -747,7 +818,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                             value="fixed"
                             checked={advancePaymentType === 'fixed'}
                             onChange={() => setAdvancePaymentType('fixed')}
-                            className="h-4 w-4 text-blue-900 focus:ring-blue-900 border-gray-300"
+                            disabled={isPublishedJob}
+                            className="h-4 w-4 text-blue-900 focus:ring-blue-900 border-gray-300 disabled:bg-gray-100"
                           />
                           Fixed Amount (USD)
                         </label>
@@ -758,7 +830,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                             value="percentage"
                             checked={advancePaymentType === 'percentage'}
                             onChange={() => setAdvancePaymentType('percentage')}
-                            className="h-4 w-4 text-blue-900 focus:ring-blue-900 border-gray-300"
+                            disabled={isPublishedJob}
+                            className="h-4 w-4 text-blue-900 focus:ring-blue-900 border-gray-300 disabled:bg-gray-100"
                           />
                           Percentage of Salary
                         </label>
@@ -777,10 +850,11 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                           value={advancePaymentValue}
                           onChange={(e) => setAdvancePaymentValue(e.target.value)}
                           placeholder={advancePaymentType === 'percentage' ? 'e.g. 10' : 'e.g. 500'}
-                          className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900"
+                          className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 disabled:bg-gray-100"
                           required={advancePaymentEnabled}
                           min="0"
                           step="any"
+                          disabled={isPublishedJob}
                         />
                       </div>
                       <div>
@@ -793,10 +867,11 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                           value={advancePaymentMax}
                           onChange={(e) => setAdvancePaymentMax(e.target.value)}
                           placeholder="e.g. 1000"
-                          className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900"
+                          className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 disabled:bg-gray-100"
                           required={advancePaymentEnabled}
                           min="0"
                           step="any"
+                          disabled={isPublishedJob}
                         />
                       </div>
                     </div>
@@ -808,7 +883,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                         id="advance_payment_allow_multiple"
                         checked={advancePaymentAllowMultiple}
                         onChange={(e) => setAdvancePaymentAllowMultiple(e.target.checked)}
-                        className="h-4 w-4 text-blue-900 focus:ring-blue-900 border-gray-300 rounded cursor-pointer"
+                        disabled={isPublishedJob}
+                        className="h-4 w-4 text-blue-900 focus:ring-blue-900 border-gray-300 rounded cursor-pointer disabled:opacity-50"
                       />
                       <label htmlFor="advance_payment_allow_multiple" className="text-sm font-medium text-gray-700 cursor-pointer">
                         Allow Multiple Requests
@@ -835,7 +911,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                               <select
                                 value={advancePaymentAvailability}
                                 onChange={(e) => setAdvancePaymentAvailability(e.target.value)}
-                                className="border border-gray-300 rounded-md p-1.5 text-xs w-full focus:ring-1 focus:ring-blue-900 bg-white"
+                                disabled={isPublishedJob}
+                                className="border border-gray-300 rounded-md p-1.5 text-xs w-full focus:ring-1 focus:ring-blue-900 bg-white disabled:bg-gray-100"
                               >
                                 <option value="shortlisted">Shortlisted</option>
                                 <option value="offered">Offered</option>
@@ -847,7 +924,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                               <select
                                 value={advancePaymentExpiryDays}
                                 onChange={(e) => setAdvancePaymentExpiryDays(e.target.value)}
-                                className="border border-gray-300 rounded-md p-1.5 text-xs w-full focus:ring-1 focus:ring-blue-900 bg-white"
+                                disabled={isPublishedJob}
+                                className="border border-gray-300 rounded-md p-1.5 text-xs w-full focus:ring-1 focus:ring-blue-900 bg-white disabled:bg-gray-100"
                               >
                                 <option value="never">Never</option>
                                 <option value="7">7 Days</option>
@@ -864,7 +942,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                               value={advancePaymentNotes}
                               onChange={(e) => setAdvancePaymentNotes(e.target.value)}
                               placeholder="Enter instructions regarding advance payments (e.g. proof required, transfer timeframes)..."
-                              className="border border-gray-300 rounded-md p-2 text-xs w-full h-20 focus:ring-1 focus:ring-blue-900"
+                              disabled={isPublishedJob}
+                              className="border border-gray-300 rounded-md p-2 text-xs w-full h-20 focus:ring-1 focus:ring-blue-900 disabled:bg-gray-100"
                             />
                           </div>
 
@@ -1001,6 +1080,49 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             {loading ? (jobToEdit ? 'Saving...' : 'Posting...') : (jobToEdit ? 'Save Changes' : 'Create Job')}
           </button>
         </div>
+        {/* Publish Confirmation Modal Overlay */}
+        {showPublishConfirm && (
+          <div className="absolute inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Publish Job?</h3>
+              <p className="text-gray-600 text-sm mb-4">
+                You are about to make this job public. It will be visible in search, the feed, and accept applications.
+              </p>
+              
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Position</span>
+                  <span className="font-semibold text-gray-900">{formData.title || 'Untitled'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Salary</span>
+                  <span className="font-semibold text-gray-900">{formData.currency} {formData.payAmount} / {formData.payRate}</span>
+                </div>
+                <div className="border-t border-slate-200 my-2 pt-2 flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">Posting Fee</span>
+                  <span className="font-bold text-blue-700">{feePreview ? feePreview.fee.toFixed(2) : '0.00'} MC</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPublishConfirm(false)}
+                  className="px-4 py-2 text-sm font-medium hover:bg-slate-100 rounded-lg text-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={executeSubmit}
+                  className="btn-primary-pill px-6 flex items-center gap-2 bg-blue-900 text-white rounded-full hover:bg-blue-800"
+                >
+                  Confirm & Publish
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </form>
     </BaseModal>
   );

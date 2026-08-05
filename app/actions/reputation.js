@@ -2,6 +2,8 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
+import { checkAndNotifyVacancyReopened } from './notifications';
+import { handleOccupancyChange } from './cache';
 
 /**
  * Recalculate and update the candidate's reputation summary.
@@ -155,6 +157,11 @@ export async function markJobOrderCompleted({ jobOrderId, feedbackData }) {
 
     revalidatePath(`/profile/${resolvedCandidateId}`);
     revalidatePath(`/jobs/my-postings/${order.job_id}/applicants`);
+
+    if (order.job_id) {
+      await checkAndNotifyVacancyReopened(order.job_id);
+      await handleOccupancyChange(order.job_id);
+    }
 
     return { success: true };
   } catch (err) {
