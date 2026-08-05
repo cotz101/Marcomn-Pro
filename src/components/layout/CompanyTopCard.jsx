@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { MapPin, Building2 } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 
 export default function CompanyTopCard({ company, isCompany }) {
   if (!isCompany) return null;
@@ -33,12 +32,6 @@ export default function CompanyTopCard({ company, isCompany }) {
         </div>
       )}
 
-      <Link 
-        href={companyId ? `/company/${companyId}` : '/mservices/partners'} 
-        className="block w-full py-2 mt-4 text-center text-[13px] font-medium text-blue-950 bg-transparent hover:text-blue-700 hover:underline transition-all font-sans"
-      >
-        View Profile
-      </Link>
     </div>
   );
 }

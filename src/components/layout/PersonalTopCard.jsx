@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { MapPin } from 'lucide-react';
 
 export default function PersonalTopCard({ profile, isCompany }) {
@@ -33,12 +32,6 @@ export default function PersonalTopCard({ profile, isCompany }) {
         </div>
       )}
 
-      <Link 
-        href={profileId ? `/profile/${profileId}` : '/profile'} 
-        className="block w-full py-2 mt-4 text-center text-[13px] font-medium text-blue-950 bg-transparent hover:text-blue-700 hover:underline transition-all font-sans"
-      >
-        View Profile
-      </Link>
     </div>
   );
 }
