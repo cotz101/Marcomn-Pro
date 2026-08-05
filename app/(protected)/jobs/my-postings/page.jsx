@@ -86,8 +86,8 @@ export default function EmployerDashboardPage() {
     try {
       const supabase = createClient();
       let query = supabase
-        .from('jobs')
-        .select('*, applications(id, status)')
+        .from('jobs_search_view')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (currentIdentity.type === 'company') {
@@ -102,8 +102,7 @@ export default function EmployerDashboardPage() {
       
       if (data) {
         const enriched = data.map(job => {
-          const apps = job.applications || [];
-          const filled = apps.filter(a => ['Accepted', 'Completed'].includes(a.status)).length;
+          const filled = job.filled_positions || 0;
           const total = job.number_of_positions || 1;
           return {
             ...job,

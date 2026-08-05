@@ -538,7 +538,7 @@ export default function ApplicantsPage() {
 
       // ── 1. Fetch the job row ──────────────────────────────────────────────
       const { data: jobData, error: jobError } = await supabase
-        .from('jobs')
+        .from('jobs_search_view')
         .select('*')
         .eq('id', id)
         .maybeSingle();
@@ -550,23 +550,10 @@ export default function ApplicantsPage() {
         return;
       }
 
-      // Query active filled applications count
-      const { count: filled, error: countErr } = await supabase
-        .from('applications')
-        .select('id', { count: 'exact', head: true })
-        .eq('job_id', id)
-        .in('status', ['Accepted', 'Completed']);
-        
-      if (!countErr) {
-        const total = jobData.number_of_positions || 1;
-        jobData.filled_positions = filled || 0;
-        jobData.available_positions = Math.max(0, total - (filled || 0));
-        jobData.is_position_filled = (filled || 0) >= total;
-      } else {
-        jobData.filled_positions = 0;
-        jobData.available_positions = jobData.number_of_positions || 1;
-        jobData.is_position_filled = false;
-      }
+      const filled = jobData.filled_positions || 0;
+      const total = jobData.number_of_positions || 1;
+      jobData.available_positions = Math.max(0, total - filled);
+      jobData.is_position_filled = filled >= total;
 
       // ── 2. Ownership guard ────────────────────────────────────────────────
       const posterId = jobData.poster_id || jobData.user_id;
