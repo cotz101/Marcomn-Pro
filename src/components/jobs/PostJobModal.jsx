@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 import BaseModal from '../layout/BaseModal';
 import RichTextEditor from '../common/RichTextEditor';
-import { Briefcase, AlertTriangle, Coins } from 'lucide-react';
+import { Briefcase, AlertTriangle, Coins, Globe, Lock } from 'lucide-react';
 import { getJobPostingFeePreview, getCompanyWalletBalance, deductJobPostingFee, getUserWalletBalance, deductUserJobPostingFee } from '@/app/actions/mcreditsJobs';
 import { refreshPath } from '@/app/actions/cache';
 
@@ -1089,7 +1089,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                 You are about to make this job public. It will be visible in search, the feed, and accept applications.
               </p>
               
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6 space-y-2">
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Position</span>
                   <span className="font-semibold text-gray-900">{formData.title || 'Untitled'}</span>
@@ -1102,6 +1102,35 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                   <span className="text-gray-500 font-medium">Posting Fee</span>
                   <span className="font-bold text-blue-700">{feePreview ? feePreview.fee.toFixed(2) : '0.00'} MC</span>
                 </div>
+              </div>
+
+              {/* Important Information Panel */}
+              <div className="bg-amber-50/60 border border-amber-200 rounded-lg p-4 mb-6 space-y-2.5">
+                <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <AlertTriangle size={14} className="text-amber-600" />
+                  Important Information
+                </h4>
+                <ul className="space-y-2 text-xs text-slate-700 font-semibold">
+                  <li className="flex gap-2 items-start">
+                    <Coins size={14} className="text-blue-900 mt-0.5 flex-shrink-0" />
+                    <span>Your wallet will be charged <span className="font-extrabold text-blue-900">{feePreview ? feePreview.fee.toFixed(2) : '0.00'} MCredits</span>.</span>
+                  </li>
+                  <li className="flex gap-2 items-start">
+                    <Globe size={14} className="text-blue-900 mt-0.5 flex-shrink-0" />
+                    <span>This job will become publicly visible immediately after publishing.</span>
+                  </li>
+                  <li className="flex gap-2 items-start">
+                    <Lock size={14} className="text-blue-900 mt-0.5 flex-shrink-0" />
+                    <span>Salary, currency, and compensation cannot be edited after publishing.</span>
+                  </li>
+                  <li className="flex gap-2 items-start">
+                    <AlertTriangle size={14} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                    <span>The job posting fee is non-refundable.</span>
+                  </li>
+                </ul>
+                <p className="text-[11px] text-slate-500 italic mt-1 pl-1">
+                  Please review your job details carefully before continuing.
+                </p>
               </div>
 
               <div className="flex items-center justify-end gap-3">
