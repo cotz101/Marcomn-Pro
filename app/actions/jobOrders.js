@@ -13,9 +13,9 @@ import { refreshCandidateReputation } from './reputation';
  * Creates an active job order after candidate accepts the offer.
  */
 export async function createJobOrderFromAcceptedApplication(applicationId) {
-  const supabase = await createClient();
-
   try {
+    const supabase = await createClient();
+
     // 1. Fetch application with related job
     const { data: application, error: appError } = await supabase
       .from('applications')

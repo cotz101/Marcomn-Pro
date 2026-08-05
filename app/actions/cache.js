@@ -12,7 +12,7 @@ export async function refreshTag(tag) {
 
 export async function handleOccupancyChange(jobId) {
   revalidatePath('/jobs/my-postings', 'page');
-  revalidatePath('/mservices/opportunity', 'layout');
+  revalidatePath('/mservices', 'page');
   if (jobId) {
     revalidatePath(`/mservices/opportunity/${jobId}`, 'page');
     revalidatePath(`/jobs/my-postings/${jobId}/applicants`, 'page');
