@@ -44,11 +44,11 @@ export default function OpportunityDetailsPage() {
       setLoading(true);
       const supabase = createClient();
       const { data: job, error } = await supabase
-        .from('jobs')
+        .from('jobs_search_view')
         .select('*, company:companies(*), poster:profiles(*)')
         .eq('id', jobId)
         .maybeSingle();
-
+ 
       if (error) {
         console.error('Job Detail Fetch Error:', JSON.stringify(error, null, 2));
         // Temporarily comment out notFound() during debugging so we can read the error on screen if it fails
@@ -57,23 +57,10 @@ export default function OpportunityDetailsPage() {
       } else if (!job) {
         setError("This job opportunity is no longer available or you don't have permission to view it.");
       } else {
-        // Query active filled applications count
-        const { count: filled, error: countErr } = await supabase
-          .from('applications')
-          .select('id', { count: 'exact', head: true })
-          .eq('job_id', jobId)
-          .in('status', ['Accepted', 'Completed']);
-          
-        if (!countErr) {
-          const total = job.number_of_positions || 1;
-          job.filled_positions = filled || 0;
-          job.available_positions = Math.max(0, total - (filled || 0));
-          job.is_position_filled = (filled || 0) >= total;
-        } else {
-          job.filled_positions = 0;
-          job.available_positions = job.number_of_positions || 1;
-          job.is_position_filled = false;
-        }
+        const filled = job.filled_positions || 0;
+        const total = job.number_of_positions || 1;
+        job.available_positions = Math.max(0, total - filled);
+        job.is_position_filled = filled >= total;
         setJob(job);
       }
     } catch (err) {
@@ -364,7 +351,7 @@ export default function OpportunityDetailsPage() {
           <AlertTriangle className="text-amber-600 flex-shrink-0" size={20} />
           <div>
             <p className="text-sm font-bold">Position Filled</p>
-            <p className="text-xs text-amber-800">All available positions have been filled. No further applications can be accepted at this time.</p>
+            <p className="text-xs text-amber-800">All available positions for this opportunity have been filled.</p>
           </div>
         </div>
       )}

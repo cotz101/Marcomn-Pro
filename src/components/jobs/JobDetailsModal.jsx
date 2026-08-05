@@ -109,7 +109,7 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
               <AlertTriangle className="text-amber-600 flex-shrink-0" size={20} />
               <div>
                 <p className="text-sm font-bold">Position Filled</p>
-                <p className="text-xs text-amber-800">All available positions have been filled. No further applications can be accepted at this time.</p>
+                <p className="text-xs text-amber-800">All available positions for this opportunity have been filled.</p>
               </div>
             </div>
           )}
@@ -155,6 +155,21 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
                 <div>
                   <p className="text-[13px] sm:text-sm text-gray-500 font-medium">Experience Level</p>
                   <p className="text-[16px] sm:text-base font-bold text-gray-800">{experienceLevel}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-900 flex-shrink-0">
+                  <Briefcase size={18} />
+                </div>
+                <div>
+                  <p className="text-[13px] sm:text-sm text-gray-500 font-medium">Number of Positions</p>
+                  <p className="text-[16px] sm:text-base font-bold text-gray-800">
+                    {job.number_of_positions || 1} Positions
+                  </p>
+                  <p className="text-[12px] font-semibold text-gray-600 mt-0.5">
+                    {job.filled_positions || 0} / {job.number_of_positions || 1} Filled &bull; {job.available_positions ?? Math.max(0, (job.number_of_positions || 1) - (job.filled_positions || 0))} Available
+                  </p>
                 </div>
               </div>
             </div>

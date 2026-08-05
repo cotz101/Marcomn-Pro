@@ -48,7 +48,8 @@ export default function JobBoard() {
           poster_id,
           status,
           description,
-          number_of_positions
+          number_of_positions,
+          filled_positions
         `)
         .in('status', ['Published', 'published', 'Open', 'open'])
         .order('created_at', { ascending: false });
@@ -106,29 +107,9 @@ export default function JobBoard() {
             console.error('Error fetching profiles', e);
           }
         }
-
-        // Query filled counts for loaded jobs dynamically
-        const jobIds = jobsData.map(j => j.id);
-        let filledCounts = {};
-        if (jobIds.length > 0) {
-          try {
-            const { data: filledData, error: filledErr } = await supabase
-              .from('applications')
-              .select('job_id')
-              .in('job_id', jobIds)
-              .in('status', ['Accepted', 'Completed']);
-            if (!filledErr && filledData) {
-              filledData.forEach(app => {
-                filledCounts[app.job_id] = (filledCounts[app.job_id] || 0) + 1;
-              });
-            }
-          } catch (e) {
-            console.error('Error fetching filled counts', e);
-          }
-        }
         
         const jobsWithApps = jobsData.map(job => {
-          const filled = filledCounts[job.id] || 0;
+          const filled = job.filled_positions || 0;
           const total = job.number_of_positions || 1;
           return {
             ...job,

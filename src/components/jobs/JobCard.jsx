@@ -93,11 +93,8 @@ export default function JobCard({ job, application, onClick }) {
             
             {/* Display Positions Counters */}
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              <span className="text-xs font-semibold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                Positions: {job.filled_positions || 0} / {job.number_of_positions || 1} Filled
-              </span>
-              <span className="text-xs font-semibold text-gray-600 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-                {job.available_positions ?? Math.max(0, (job.number_of_positions || 1) - (job.filled_positions || 0))} Available
+              <span className="text-xs font-semibold text-blue-900 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-100">
+                {job.filled_positions || 0} / {job.number_of_positions || 1} Filled &bull; {job.available_positions ?? Math.max(0, (job.number_of_positions || 1) - (job.filled_positions || 0))} Available
               </span>
               {job.is_position_filled && (
                 <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 uppercase tracking-wide">
