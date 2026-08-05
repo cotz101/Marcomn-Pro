@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 import BaseModal from '../layout/BaseModal';
 import RichTextEditor from '../common/RichTextEditor';
-import { Briefcase, AlertTriangle, Coins, Globe, Lock } from 'lucide-react';
+import { Briefcase, AlertTriangle, Coins, Globe, Lock, X } from 'lucide-react';
 import { getJobPostingFeePreview, getCompanyWalletBalance, deductJobPostingFee, getUserWalletBalance, deductUserJobPostingFee } from '@/app/actions/mcreditsJobs';
 import { refreshPath } from '@/app/actions/cache';
 
@@ -1082,73 +1082,100 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         </div>
         {/* Publish Confirmation Modal Overlay */}
         {showPublishConfirm && (
-          <div className="absolute inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Publish Job?</h3>
-              <p className="text-gray-600 text-sm mb-4">
-                You are about to make this job public. It will be visible in search, the feed, and accept applications.
-              </p>
+          <div className="absolute inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
               
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Position</span>
-                  <span className="font-semibold text-gray-900">{formData.title || 'Untitled'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Salary</span>
-                  <span className="font-semibold text-gray-900">{formData.currency} {formData.payAmount} / {formData.payRate}</span>
-                </div>
-                <div className="border-t border-slate-200 my-2 pt-2 flex justify-between text-sm">
-                  <span className="text-gray-500 font-medium">Posting Fee</span>
-                  <span className="font-bold text-blue-700">{feePreview ? feePreview.fee.toFixed(2) : '0.00'} MC</span>
-                </div>
-              </div>
-
-              {/* Important Information Panel */}
-              <div className="bg-amber-50/60 border border-amber-200 rounded-lg p-4 mb-6 space-y-2.5">
-                <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                  <AlertTriangle size={14} className="text-amber-600" />
-                  Important Information
-                </h4>
-                <ul className="space-y-2 text-xs text-slate-700 font-semibold">
-                  <li className="flex gap-2 items-start">
-                    <Coins size={14} className="text-blue-900 mt-0.5 flex-shrink-0" />
-                    <span>Your wallet will be charged <span className="font-extrabold text-blue-900">{feePreview ? feePreview.fee.toFixed(2) : '0.00'} MCredits</span>.</span>
-                  </li>
-                  <li className="flex gap-2 items-start">
-                    <Globe size={14} className="text-blue-900 mt-0.5 flex-shrink-0" />
-                    <span>This job will become publicly visible immediately after publishing.</span>
-                  </li>
-                  <li className="flex gap-2 items-start">
-                    <Lock size={14} className="text-blue-900 mt-0.5 flex-shrink-0" />
-                    <span>Salary, currency, and compensation cannot be edited after publishing.</span>
-                  </li>
-                  <li className="flex gap-2 items-start">
-                    <AlertTriangle size={14} className="text-amber-600 mt-0.5 flex-shrink-0" />
-                    <span>The job posting fee is non-refundable.</span>
-                  </li>
-                </ul>
-                <p className="text-[11px] text-slate-500 italic mt-1 pl-1">
-                  Please review your job details carefully before continuing.
-                </p>
-              </div>
-
-              <div className="flex items-center justify-end gap-3">
+              {/* 1. Modal Header (Dark navy blue) */}
+              <div className="bg-[#004173] px-6 py-4 flex items-center justify-between rounded-t-xl">
+                <h3 className="text-lg font-bold text-white">Publish Job?</h3>
                 <button
                   type="button"
                   onClick={() => setShowPublishConfirm(false)}
-                  className="px-4 py-2 text-sm font-medium hover:bg-slate-100 rounded-lg text-gray-700"
+                  className="text-white/85 hover:text-white transition-colors"
+                >
+                  <X size={20} strokeWidth={2.5} />
+                </button>
+              </div>
+
+              {/* Scrollable Content Container */}
+              <div className="p-6 overflow-y-auto max-h-[70vh] space-y-4">
+                {/* 2. Introductory Content */}
+                <p className="text-gray-600 text-sm">
+                  You are about to make this job public. It will be visible in search, the feed, and accept applications.
+                </p>
+                
+                {/* 3. Job Summary Section */}
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2.5">
+                  <div className="flex justify-between items-center text-sm gap-2">
+                    <span className="text-gray-500">Position</span>
+                    <span className="font-semibold text-gray-900 text-right">{formData.title || 'Untitled'}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm gap-2">
+                    <span className="text-gray-500">Salary</span>
+                    <span className="font-semibold text-gray-900 text-right">{formData.currency} {formData.payAmount} / {formData.payRate}</span>
+                  </div>
+                  <div className="border-t border-slate-200 my-1 pt-2.5 flex justify-between items-center text-sm gap-2">
+                    <span className="text-gray-500 font-medium">Posting Fee</span>
+                    <span className="font-bold text-blue-700 text-right">{feePreview ? feePreview.fee.toFixed(2) : '0.00'} MC</span>
+                  </div>
+                </div>
+
+                {/* 4. Refined Important Information Panel */}
+                <div className="bg-amber-50/60 border border-amber-200 rounded-lg p-4 space-y-3">
+                  <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    <AlertTriangle size={14} className="text-amber-600 flex-shrink-0" />
+                    Important Information
+                  </h4>
+                  <ul className="space-y-3.5 text-xs text-slate-700 font-semibold">
+                    <li className="flex gap-2.5 items-start">
+                      <div className="w-5 flex-shrink-0 flex items-center justify-start mt-0.5 text-blue-900 font-bold">
+                        <Coins size={14} />
+                      </div>
+                      <span className="leading-tight">Your wallet will be charged <span className="font-extrabold text-blue-900">{feePreview ? feePreview.fee.toFixed(2) : '0.00'} MCredits</span>.</span>
+                    </li>
+                    <li className="flex gap-2.5 items-start">
+                      <div className="w-5 flex-shrink-0 flex items-center justify-start mt-0.5 text-blue-900 font-bold">
+                        <Globe size={14} />
+                      </div>
+                      <span className="leading-tight">This job will become publicly visible immediately after publishing.</span>
+                    </li>
+                    <li className="flex gap-2.5 items-start">
+                      <div className="w-5 flex-shrink-0 flex items-center justify-start mt-0.5 text-blue-900 font-bold">
+                        <Lock size={14} />
+                      </div>
+                      <span className="leading-tight">Salary, currency, and compensation cannot be edited after publishing.</span>
+                    </li>
+                    <li className="flex gap-2.5 items-start">
+                      <div className="w-5 flex-shrink-0 flex items-center justify-start mt-0.5 text-amber-600 font-bold">
+                        <AlertTriangle size={14} />
+                      </div>
+                      <span className="leading-tight">The job posting fee is non-refundable.</span>
+                    </li>
+                  </ul>
+                  <p className="text-[11px] text-slate-500 italic mt-3 pl-1">
+                    Please review your job details carefully before continuing.
+                  </p>
+                </div>
+              </div>
+
+              {/* 5. Polished Footer */}
+              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3 rounded-b-xl">
+                <button
+                  type="button"
+                  onClick={() => setShowPublishConfirm(false)}
+                  className="px-4 py-2 text-sm font-semibold hover:bg-slate-100 rounded-lg text-gray-700 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={executeSubmit}
-                  className="btn-primary-pill px-6 flex items-center gap-2 bg-blue-900 text-white rounded-full hover:bg-blue-800"
+                  className="btn-primary-pill px-6 flex items-center gap-2 bg-blue-900 text-white rounded-full hover:bg-blue-800 transition-colors"
                 >
                   Confirm & Publish
                 </button>
               </div>
+
             </div>
           </div>
         )}
