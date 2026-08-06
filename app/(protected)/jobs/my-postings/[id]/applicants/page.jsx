@@ -22,6 +22,7 @@ import {
   Building2,
   FileText,
   Coins,
+  ChevronDown,
 } from 'lucide-react';
 
 const SkeletonCard = () => (
@@ -1086,12 +1087,23 @@ export default function ApplicantsPage() {
                           </span>
                         );
                       })() : (
-                        <select value={app.status || 'Pending'} onChange={(e) => handleStatusChange(app.id, e.target.value)} className={`appearance-none text-center rounded-bl-xl text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 border-b border-l focus:outline-none cursor-pointer shadow-sm ${getStatusStyles(app.status || 'Pending')}`}>
-                          <option value="Pending">Pending</option>
-                          <option value="Under Review">Under Review</option>
-                          <option value="Shortlisted">Shortlisted</option>
-                          <option value="Rejected">Job Unsuccessful</option>
-                        </select>
+                        <div className="relative inline-flex items-center">
+                          <select 
+                            value={app.status || 'Pending'} 
+                            onChange={(e) => handleStatusChange(app.id, e.target.value)} 
+                            className={`appearance-none text-center rounded-bl-xl text-[10px] font-bold uppercase tracking-widest pl-3 pr-7 py-1.5 border-b border-l focus:outline-none cursor-pointer shadow-sm ${getStatusStyles(app.status || 'Pending')}`}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Under Review">Under Review</option>
+                            <option value="Shortlisted">Shortlisted</option>
+                            <option value="Rejected">Job Unsuccessful</option>
+                          </select>
+                          <ChevronDown 
+                            className={`absolute right-2 pointer-events-none w-3.5 h-3.5 opacity-60 ${
+                              getStatusStyles(app.status || 'Pending').split(' ').find(cls => cls.startsWith('text-')) || ''
+                            }`} 
+                          />
+                        </div>
                       )}
                     </div>
 

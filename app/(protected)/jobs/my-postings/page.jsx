@@ -87,7 +87,7 @@ export default function EmployerDashboardPage() {
       const supabase = createClient();
       let query = supabase
         .from('jobs_search_view')
-        .select('*')
+        .select('*, applications(id)')
         .order('created_at', { ascending: false });
 
       if (currentIdentity.type === 'company') {
