@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useProfile } from '@/app/context/ProfileContext';
 import { createClient } from '@/lib/supabase';
+import { formatCompensation } from '@/lib/compensation';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -166,6 +167,7 @@ export default function OpportunityDetailsPage() {
     return <Briefcase size={32} className="text-blue-900" />;
   };
 
+  const comp = formatCompensation(job);
   const payAmount = job.payAmount || job.pay_rate_amount || '';
   const currency = job.currency || 'USD';
   const payRate = job.payRate || job.pay_rate_period || 'Hour';
@@ -481,7 +483,10 @@ export default function OpportunityDetailsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 font-semibold">Compensation</p>
-                  <p className="text-sm font-bold text-gray-800">{salaryRange}</p>
+                  <p className="text-sm font-bold text-gray-800">{comp.displayRate}</p>
+                  {comp.quantity && comp.quantity > 0 && (
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Contract Value: {comp.displayContract}</p>
+                  )}
                 </div>
               </div>
 

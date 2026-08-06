@@ -1,4 +1,5 @@
 import { MapPin, Clock, Bookmark, Ship, Compass, Anchor, Briefcase } from 'lucide-react';
+import { formatCompensation } from '@/lib/compensation';
 
 const statusColors = {
   'pending': 'bg-slate-100 text-slate-600 border-slate-200',      // Neutral
@@ -85,11 +86,14 @@ export default function JobCard({ job, application, onClick }) {
             <p className="text-sm font-semibold text-gray-800">
               {companyName}
             </p>
-            {(job.salary_range || job.salary || job.compensation) && (
-              <p className="text-sm font-semibold text-emerald-600 mt-0.5">
-                {job.salary_range || job.salary || job.compensation}
-              </p>
-            )}
+            {(job.salary_range || job.salary || job.compensation) && (() => {
+              const comp = formatCompensation(job);
+              return (
+                <p className="text-sm font-semibold text-emerald-600 mt-0.5">
+                  {comp.displayRate}
+                </p>
+              );
+            })()}
             
             {/* Display Positions Counters */}
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">

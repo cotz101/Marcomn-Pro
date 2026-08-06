@@ -18,6 +18,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
     payAmount: '',
     currency: 'USD',
     payRate: 'Hour',
+    payRateQuantity: '',
     jobType: 'Full-time',
     experienceLevel: 'Junior',
     positionStatus: 'Active Position',
@@ -82,6 +83,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           startDateStr = new Date().toISOString().split('T')[0];
         }
 
+        const payRateQuantity = jobToEdit.pay_rate_quantity !== null && jobToEdit.pay_rate_quantity !== undefined ? jobToEdit.pay_rate_quantity.toString() : '';
+
         setFormData({
           title: jobToEdit.title || '',
           location: jobToEdit.location || '',
@@ -89,6 +92,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           payAmount: payAmount,
           currency: currency,
           payRate: payRate,
+          payRateQuantity: payRateQuantity,
           jobType: jobToEdit.employment_type || 'Full-time',
           experienceLevel: jobToEdit.experience_level || 'Junior',
           positionStatus: 'Active Position',
@@ -124,6 +128,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           payAmount: '',
           currency: 'USD',
           payRate: 'Hour',
+          payRateQuantity: '',
           jobType: 'Full-time',
           experienceLevel: 'Junior',
           positionStatus: 'Active Position',
@@ -159,10 +164,13 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
     }
 
     const payAmount = parseFloat(formData.payAmount);
+    const qty = formData.payRate === 'Lump Sum' ? 1 : parseFloat(formData.payRateQuantity);
     const isNewPublish = !jobToEdit && (formData.postingStatus || '').toLowerCase() !== 'draft';
     const isEditPublish = jobToEdit && ((jobToEdit.status || 'draft').toLowerCase() === 'draft') && ['published', 'open'].includes((formData.postingStatus || '').toLowerCase());
 
-    if (!payAmount || payAmount <= 0 || (!isNewPublish && !isEditPublish)) {
+    const totalContractValue = payAmount * (isNaN(qty) ? 0 : qty);
+
+    if (isNaN(payAmount) || payAmount <= 0 || (formData.payRate !== 'Lump Sum' && (isNaN(qty) || qty <= 0)) || (!isNewPublish && !isEditPublish)) {
       setFeePreview(null);
       setWalletBalance(null);
       setMcreditError('');
@@ -173,7 +181,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
     (async () => {
       try {
         const [preview, wallet] = await Promise.all([
-          getJobPostingFeePreview(payAmount),
+          getJobPostingFeePreview(totalContractValue),
           isCompany ? getCompanyWalletBalance(currentIdentity.id) : getUserWalletBalance(userId)
         ]);
         if (cancelled) return;
@@ -188,7 +196,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
       }
     })();
     return () => { cancelled = true; };
-  }, [isOpen, formData.payAmount, isCompany, currentIdentity?.id, userId, jobToEdit, formData.postingStatus]);
+  }, [isOpen, formData.payAmount, formData.payRate, formData.payRateQuantity, isCompany, currentIdentity?.id, userId, jobToEdit, formData.postingStatus]);
 
   if (!isOpen) return null;
 
@@ -215,15 +223,55 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
   const handlePreSubmit = (e) => {
     if (e) e.preventDefault();
 
-    if (!formData.title || !formData.location || !formData.startDate || !formData.payAmount || !formData.description || !formData.responsibilities) {
+    if (!formData.title || !formData.location || !formData.startDate || !formData.description || !formData.responsibilities) {
       alert('Please fill in all required fields.');
       return;
+    }
+
+    const isPublishingNewJob = !jobToEdit && (formData.postingStatus || '').toLowerCase() !== 'draft';
+    const isTransitionToPublish = jobToEdit && ((jobToEdit.status || 'draft').toLowerCase() === 'draft') && ['published', 'open'].includes((formData.postingStatus || '').toLowerCase());
+    const isPublishAction = isPublishingNewJob || isTransitionToPublish;
+
+    // Compensation validation
+    if (isPublishAction) {
+      const payAmount = parseFloat(formData.payAmount);
+      if (isNaN(payAmount) || payAmount <= 0) {
+        alert('Please enter a valid positive Pay Rate Amount.');
+        return;
+      }
+
+      if (formData.payRate !== 'Lump Sum') {
+        const qty = parseFloat(formData.payRateQuantity);
+        if (isNaN(qty) || qty <= 0) {
+          alert(`Please enter a valid positive Number of ${formData.payRate}s.`);
+          return;
+        }
+      }
+    } else {
+      // Draft mode validations (optional, but if entered, must be valid)
+      if (formData.payAmount) {
+        const payAmount = parseFloat(formData.payAmount);
+        if (isNaN(payAmount) || payAmount <= 0) {
+          alert('Pay Rate Amount must be a positive number.');
+          return;
+        }
+      }
+
+      if (formData.payRate !== 'Lump Sum' && formData.payRateQuantity) {
+        const qty = parseFloat(formData.payRateQuantity);
+        if (isNaN(qty) || qty <= 0) {
+          alert(`Number of ${formData.payRate}s must be a positive number.`);
+          return;
+        }
+      }
     }
 
     if (advancePaymentEnabled) {
       const val = parseFloat(advancePaymentValue);
       const max = parseFloat(advancePaymentMax);
-      const salary = parseFloat(formData.payAmount);
+      const payAmt = parseFloat(formData.payAmount) || 0;
+      const qty = formData.payRate === 'Lump Sum' ? 1 : (parseFloat(formData.payRateQuantity) || 1);
+      const salary = payAmt * qty;
 
       if (isNaN(val) || val <= 0) {
         alert('Advance Value must be a positive number.');
@@ -238,14 +286,11 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         return;
       }
       if (!isNaN(salary) && max > salary) {
-        alert('Maximum Advance Cap cannot exceed the Job Salary.');
+        alert('Maximum Advance Cap cannot exceed the Job Contract Value.');
         return;
       }
     }
 
-    const isPublishingNewJob = !jobToEdit && (formData.postingStatus || '').toLowerCase() !== 'draft';
-    const isTransitionToPublish = jobToEdit && ((jobToEdit.status || 'draft').toLowerCase() === 'draft') && ['published', 'open'].includes((formData.postingStatus || '').toLowerCase());
-    
     if (isPublishingNewJob || isTransitionToPublish) {
       setShowPublishConfirm(true);
       return;
@@ -259,14 +304,17 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
     setLoading(true);
     const supabase = createClient();
 
-    const salaryNumericVal = parseFloat(formData.payAmount) || null;
+    const payAmt = parseFloat(formData.payAmount) || 0;
+    const qty = formData.payRate === 'Lump Sum' ? null : (parseFloat(formData.payRateQuantity) || null);
+    const contractValue = formData.payRate === 'Lump Sum' ? payAmt : (payAmt * (qty || 0));
+
     const isPublishingNewJob = !jobToEdit && (formData.postingStatus || '').toLowerCase() !== 'draft';
     const isTransitionToPublish = jobToEdit && ((jobToEdit.status || 'draft').toLowerCase() === 'draft') && ['published', 'open'].includes((formData.postingStatus || '').toLowerCase());
 
     // Perform wallet balance check prior to any DB operation if publishing
-    if ((isPublishingNewJob || isTransitionToPublish) && salaryNumericVal && salaryNumericVal > 0) {
+    if ((isPublishingNewJob || isTransitionToPublish) && contractValue && contractValue > 0) {
       try {
-        const preview = await getJobPostingFeePreview(salaryNumericVal);
+        const preview = await getJobPostingFeePreview(contractValue);
         const wallet = await (isCompany ? getCompanyWalletBalance(currentIdentity.id) : getUserWalletBalance(userId));
         if (wallet.balance < preview.fee) {
           alert(`Insufficient MCredits to publish this job. Required: ${preview.fee.toFixed(2)} MC, Available: ${wallet.balance.toFixed(2)} MC. You can keep it as draft or top up your wallet.`);
@@ -319,7 +367,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           responsibilities: formData.responsibilities,
           location: formData.location,
           salary_range: `${formData.currency} ${formData.payAmount}/${formData.payRate}`,
-          salary_numeric: parseFloat(formData.payAmount) || null,
+          salary_numeric: contractValue,
+          pay_rate_quantity: qty,
           employment_type: formData.jobType,
           experience_level: formData.experienceLevel,
           status: formData.postingStatus,
@@ -357,12 +406,12 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
 
       console.log('Update job success:', jobData);
 
-      if (isTransitionToPublish && salaryNumericVal && salaryNumericVal > 0) {
+      if (isTransitionToPublish && contractValue && contractValue > 0) {
         try {
           if (isCompany) {
-            await deductJobPostingFee(currentIdentity.id, jobToEdit.id, salaryNumericVal);
+            await deductJobPostingFee(currentIdentity.id, jobToEdit.id, contractValue);
           } else {
-            await deductUserJobPostingFee(userId, jobToEdit.id, salaryNumericVal);
+            await deductUserJobPostingFee(userId, jobToEdit.id, contractValue);
           }
         } catch (mcErr) {
           console.error('MCredit deduction failed during transition, rolling back job status:', mcErr);
@@ -440,7 +489,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           responsibilities: formData.responsibilities,
           location: formData.location,
           salary_range: `${formData.currency} ${formData.payAmount}/${formData.payRate}`,
-          salary_numeric: salaryNumericVal,
+          salary_numeric: contractValue,
+          pay_rate_quantity: qty,
           employment_type: formData.jobType,
           experience_level: formData.experienceLevel,
           company_id: isCompany ? currentIdentity.id : null,
@@ -470,12 +520,12 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
       }
 
       // MCredit deduction (only if not saving as Draft)
-      if (formData.postingStatus !== 'Draft' && salaryNumericVal && salaryNumericVal > 0) {
+      if (formData.postingStatus !== 'Draft' && contractValue && contractValue > 0) {
         try {
           if (isCompany) {
-            await deductJobPostingFee(currentIdentity.id, jobData.id, salaryNumericVal);
+            await deductJobPostingFee(currentIdentity.id, jobData.id, contractValue);
           } else {
-            await deductUserJobPostingFee(userId, jobData.id, salaryNumericVal);
+            await deductUserJobPostingFee(userId, jobData.id, contractValue);
           }
         } catch (mcErr) {
           console.error('MCredit deduction failed, rolling back job:', mcErr);
@@ -641,9 +691,56 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                 <option value="Day">Day</option>
                 <option value="Week">Week</option>
                 <option value="Month">Month</option>
+                <option value="Lump Sum">Lump Sum</option>
               </select>
             </div>
           </div>
+
+          {formData.payRate !== 'Lump Sum' && (
+            <div className="mt-4">
+              <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+                Number of {formData.payRate}s *
+              </label>
+              <input 
+                type="number" 
+                name="payRateQuantity" 
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" 
+                placeholder={`e.g. 8`}
+                value={formData.payRateQuantity}
+                onChange={handleInputChange}
+                required={formData.payRate !== 'Lump Sum'}
+                disabled={isPublishedJob}
+                min="1"
+                step="any"
+              />
+            </div>
+          )}
+
+          {/* Compensation Summary Banner */}
+          {(() => {
+            const amount = parseFloat(formData.payAmount) || 0;
+            const qty = formData.payRate === 'Lump Sum' ? 1 : (parseFloat(formData.payRateQuantity) || 0);
+            const total = amount * qty;
+            
+            if (amount <= 0 || (formData.payRate !== 'Lump Sum' && qty <= 0)) return null;
+
+            return (
+              <div className="mt-4 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-sans text-slate-700">
+                <p className="font-semibold text-slate-800 mb-0.5">Calculated Compensation Summary</p>
+                <div className="flex items-center justify-between text-slate-600">
+                  <span>
+                    {formData.payRate === 'Lump Sum' 
+                      ? `${formData.currency} ${amount.toLocaleString()} Lump Sum`
+                      : `${formData.currency} ${amount.toLocaleString()} / ${formData.payRate} × ${qty} ${formData.payRate}${qty === 1 ? '' : 's'}`
+                    }
+                  </span>
+                  <span className="font-extrabold text-sm text-[#004173]">
+                    Total Contract Value: {formData.currency} {total.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
 
           {isPublishedJob && (
             <p className="text-xs text-amber-600 font-semibold mt-1">
@@ -1032,7 +1129,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
               <div className="text-sm">
                 <p className="font-semibold text-gray-800">
                   Posting Fee: <span className="font-bold">{feePreview.fee.toFixed(2)} MC</span>
-                  <span className="text-gray-500 font-normal"> ({feePreview.feePercent}% of {parseFloat(formData.payAmount).toLocaleString()})</span>
+                  <span className="text-gray-500 font-normal"> ({feePreview.feePercent}% of {(parseFloat(formData.payAmount) * (formData.payRate === 'Lump Sum' ? 1 : (parseFloat(formData.payRateQuantity) || 0))).toLocaleString()} Contract Value)</span>
                 </p>
                 {walletBalance !== null && (
                   <p className="text-gray-600 mt-0.5">

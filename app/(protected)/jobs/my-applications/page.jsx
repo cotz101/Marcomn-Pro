@@ -10,6 +10,7 @@ import { createJobOrderFromAcceptedApplication, cancelJobOrderByCandidate } from
 import { markWorkCompletedByApplicant, confirmPaymentReceivedByApplicant } from '@/app/actions/engagementLifecycle';
 import { requestAdvancePayment, cancelAdvanceRequest, acceptCounterOffer, declineCounterOffer, confirmReceipt, disputeReceipt } from '@/app/actions/advances';
 import { calculateAdvanceLedger } from '@/lib/advancesLedger';
+import { formatCompensation } from '@/lib/compensation';
 import BaseModal from '@/src/components/layout/BaseModal';
 import ApplicationStatusTabs, { getApplicationCategory } from '@/src/components/jobs/ApplicationStatusTabs';
 import EngagementTimeline from '@/src/components/engagement/EngagementTimeline';
@@ -625,6 +626,7 @@ export default function MyApplicationsPage() {
   const renderAdvancePaymentLedgerAndTimeline = (job, requests = []) => {
     const ledger = calculateAdvanceLedger(job, requests);
     const currency = job?.salary_range ? job.salary_range.split(' ')[0] : 'USD';
+    const comp = formatCompensation(job);
 
     // Active requests (for checking status/timeline)
     const nonIgnoredRequests = requests.filter(r => !['rejected', 'cancelled', 'expired'].includes(r.status));
@@ -647,6 +649,7 @@ export default function MyApplicationsPage() {
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Contract Value</span>
               <span className="text-xs font-extrabold text-[#0e2a4d]">${ledger.contractValue.toFixed(2)} {currency}</span>
+              <span className="block text-[9px] text-gray-500 truncate mt-0.5" title={comp.displayRate}>{comp.displayRate}</span>
             </div>
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Max Eligible Limit</span>

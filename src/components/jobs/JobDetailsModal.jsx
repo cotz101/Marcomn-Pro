@@ -3,6 +3,7 @@ import { useProfile } from '@/app/context/ProfileContext';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
+import { formatCompensation } from '@/lib/compensation';
 
 export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
   const { userId, openPostJobModal } = useProfile();
@@ -35,6 +36,7 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
   };
 
   // Safe parsing of meta columns
+  const comp = formatCompensation(job);
   const payAmount = job.payAmount || job.pay_rate_amount || '';
   const currency = job.currency || 'USD';
   const payRate = job.payRate || job.pay_rate_period || 'Hour';
@@ -124,7 +126,10 @@ export default function JobDetailsModal({ job, onClose, onApply, onEdit }) {
                 </div>
                 <div>
                   <p className="text-[13px] sm:text-sm text-gray-500 font-medium">Compensation</p>
-                  <p className="text-[16px] sm:text-base font-bold text-gray-800">{salaryRange}</p>
+                  <p className="text-[16px] sm:text-base font-bold text-gray-800">{comp.displayRate}</p>
+                  {comp.quantity && comp.quantity > 0 && (
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Contract Value: {comp.displayContract}</p>
+                  )}
                 </div>
               </div>
 

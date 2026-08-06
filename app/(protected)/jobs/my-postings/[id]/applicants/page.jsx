@@ -9,8 +9,9 @@ import { cancelJobOrderByCompany } from '@/app/actions/jobOrders';
 import { markJobOrderCompleted } from '@/app/actions/reputation';
 import { confirmWorkCompletedByCompany, closeCompletedEngagementByCompany } from '@/app/actions/engagementLifecycle';
 import EngagementTimeline from '@/src/components/engagement/EngagementTimeline';
-import { approveAdvance, rejectAdvance, counterAdvance, recordTransfer } from '@/app/actions/advances';
+import { approveAdvance, rejectAdvance, recordTransfer } from '@/app/actions/advances';
 import { calculateAdvanceLedger } from '@/lib/advancesLedger';
+import { formatCompensation } from '@/lib/compensation';
 import {
   ArrowLeft,
   Briefcase,
@@ -109,13 +110,7 @@ export default function ApplicantsPage() {
   const [confirmWorkNote, setConfirmWorkNote] = useState('');
   const [isConfirmingWork, setIsConfirmingWork] = useState(false);
 
-  // Counter Offer states
-  const [isCounterModalOpen, setIsCounterModalOpen] = useState(false);
-  const [requestToCounter, setRequestToCounter] = useState(null);
-  const [counterAmountInput, setCounterAmountInput] = useState('');
-  const [counterNotesInput, setCounterNotesInput] = useState('');
-  const [isSubmittingCounter, setIsSubmittingCounter] = useState(false);
-  const [counterError, setCounterError] = useState('');
+
 
   // Record Transfer states
   const [isRecordTransferModalOpen, setIsRecordTransferModalOpen] = useState(false);
@@ -219,44 +214,7 @@ export default function ApplicantsPage() {
     }
   };
 
-  const handleOpenCounterModal = (req) => {
-    setRequestToCounter(req);
-    setCounterAmountInput('');
-    setCounterNotesInput('');
-    setCounterError('');
-    setIsCounterModalOpen(true);
-  };
 
-  const handleSubmitCounterOffer = async () => {
-    if (!requestToCounter) return;
-    const amount = parseFloat(counterAmountInput);
-    if (isNaN(amount) || amount <= 0) {
-      setCounterError('Please enter a positive amount.');
-      return;
-    }
-
-    setIsSubmittingCounter(true);
-    setCounterError('');
-
-    try {
-      const res = await counterAdvance({
-        requestId: requestToCounter.id,
-        counterAmount: amount,
-        companyNotes: counterNotesInput
-      });
-      if (!res.success) throw new Error(res.error || 'Failed to submit counter offer.');
-      
-      setIsCounterModalOpen(false);
-      setRequestToCounter(null);
-      if (showToast) showToast('Counter offer submitted successfully!', 'success');
-      await fetchData();
-    } catch (err) {
-      console.error(err);
-      setCounterError(err.message || 'An error occurred.');
-    } finally {
-      setIsSubmittingCounter(false);
-    }
-  };
 
   const renderAdvancePaymentSectionForCompany = (app) => {
     if (!job || !job.advance_payment_enabled) return null;
@@ -345,15 +303,7 @@ export default function ApplicantsPage() {
                     >
                       Reject
                     </button>
-                    {req.status === 'pending' && (
-                      <button
-                        type="button"
-                        onClick={() => handleOpenCounterModal(req)}
-                        className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 font-semibold text-xs rounded-lg transition-colors cursor-pointer"
-                      >
-                        Counter Offer
-                      </button>
-                    )}
+
                   </div>
                 )}
                 {req.status === 'approved' && (
@@ -379,6 +329,7 @@ export default function ApplicantsPage() {
   const renderAdvancePaymentLedgerAndTimeline = (job, requests = []) => {
     const ledger = calculateAdvanceLedger(job, requests);
     const currency = job?.salary_range ? job.salary_range.split(' ')[0] : 'USD';
+    const comp = formatCompensation(job);
 
     // Active requests (for checking status/timeline)
     const nonIgnoredRequests = requests.filter(r => !['rejected', 'cancelled', 'expired'].includes(r.status));
@@ -401,6 +352,7 @@ export default function ApplicantsPage() {
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Contract Value</span>
               <span className="text-xs font-extrabold text-[#0e2a4d]">${ledger.contractValue.toFixed(2)} {currency}</span>
+              <span className="block text-[9px] text-gray-500 truncate mt-0.5" title={comp.displayRate}>{comp.displayRate}</span>
             </div>
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Max Eligible Limit</span>
@@ -1087,22 +1039,25 @@ export default function ApplicantsPage() {
                           </span>
                         );
                       })() : (
-                        <div className="relative inline-flex items-center">
+                        <div className={`relative inline-flex items-center rounded-bl-xl border-b border-l shadow-sm overflow-hidden min-w-[135px] max-w-[165px] justify-between cursor-pointer ${getStatusStyles(app.status || 'Pending')}`}>
                           <select 
                             value={app.status || 'Pending'} 
                             onChange={(e) => handleStatusChange(app.id, e.target.value)} 
-                            className={`appearance-none text-center rounded-bl-xl text-[10px] font-bold uppercase tracking-widest pl-3 pr-7 py-1.5 border-b border-l focus:outline-none cursor-pointer shadow-sm ${getStatusStyles(app.status || 'Pending')}`}
+                            className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full"
                           >
                             <option value="Pending">Pending</option>
                             <option value="Under Review">Under Review</option>
                             <option value="Shortlisted">Shortlisted</option>
                             <option value="Rejected">Job Unsuccessful</option>
                           </select>
-                          <ChevronDown 
-                            className={`absolute right-2 pointer-events-none w-3.5 h-3.5 opacity-60 ${
-                              getStatusStyles(app.status || 'Pending').split(' ').find(cls => cls.startsWith('text-')) || ''
-                            }`} 
-                          />
+                          <div className="flex items-center justify-between w-full pl-3 pr-2 py-1.5 pointer-events-none">
+                            <span className="text-[10px] font-bold uppercase tracking-widest truncate mr-1.5">
+                              {app.status === 'Rejected' ? 'Job Unsuccessful' : (app.status || 'Pending')}
+                            </span>
+                            <ChevronDown 
+                              className="w-3 h-3 opacity-80 shrink-0" 
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1384,22 +1339,40 @@ export default function ApplicantsPage() {
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Applied Date</p>
                       <p className="text-[13px] font-semibold text-gray-700 flex items-center gap-1.5"><Calendar size={14} /> {getFormattedDate(selectedApplicant.applied_at)}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Status</p>
-                      {['Withdrawn', 'Accepted', 'Offered', 'Expired', 'Completed'].includes(selectedApplicant.status) ? (
+                    <div className="text-right flex flex-col items-end">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Application Status</p>
+                      {['Withdrawn', 'Accepted', 'Offered', 'Expired', 'Candidate Cancelled', 'Company Cancelled', 'Completed'].includes(selectedApplicant.status) ? (
                         <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide ${
                           selectedApplicant.status === 'Accepted' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                           selectedApplicant.status === 'Completed' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
                           selectedApplicant.status === 'Offered' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
                           selectedApplicant.status === 'Expired' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                          selectedApplicant.status === 'Candidate Cancelled' || selectedApplicant.status === 'Company Cancelled' ? 'bg-red-50 text-red-700 border border-red-200' :
                           'bg-slate-100 text-slate-500 border border-slate-200'
                         }`}>
                           {selectedApplicant.status}
                         </span>
                       ) : (
-                        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide ${getStatusStyles(selectedApplicant.status || 'Pending')}`}>
-                          {selectedApplicant.status === 'Rejected' ? 'Job Unsuccessful' : (selectedApplicant.status || 'Pending')}
-                        </span>
+                        <div className={`relative inline-flex items-center rounded-lg border shadow-2xs overflow-hidden min-w-[145px] max-w-[185px] justify-between cursor-pointer transition-all hover:bg-opacity-95 ${getStatusStyles(selectedApplicant.status || 'Pending')}`}>
+                          <select 
+                            value={selectedApplicant.status || 'Pending'} 
+                            onChange={(e) => handleStatusChange(selectedApplicant.id, e.target.value)} 
+                            className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full"
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Under Review">Under Review</option>
+                            <option value="Shortlisted">Shortlisted</option>
+                            <option value="Rejected">Job Unsuccessful</option>
+                          </select>
+                          <div className="flex items-center justify-between w-full pl-3 pr-2 py-1.5 pointer-events-none">
+                            <span className="text-xs font-bold uppercase tracking-wider truncate mr-1.5">
+                              {selectedApplicant.status === 'Rejected' ? 'Job Unsuccessful' : (selectedApplicant.status || 'Pending')}
+                            </span>
+                            <ChevronDown 
+                              className="w-3.5 h-3.5 opacity-80 shrink-0" 
+                            />
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1714,87 +1687,7 @@ export default function ApplicantsPage() {
           </div>
         </div>
       )}
-      {/* Counter Offer Modal */}
-      {isCounterModalOpen && requestToCounter && (() => {
-        const currency = job?.salary_range ? job.salary_range.split(' ')[0] : 'USD';
-        
-        // Find the application object to get its requests
-        const app = applicants.find(a => a.id === requestToCounter.application_id);
-        const ledger = getAdvanceEligibility(job, app?.advance_requests || []);
-        
-        return (
-          <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl text-left font-sans">
-              <h3 className="text-lg font-bold text-blue-900 mb-2">Counter Advance Request</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Propose a counter offer to the applicant's advance payment request.
-              </p>
 
-              {/* Eligibility indicators */}
-              <div className="grid grid-cols-2 gap-4 p-3 bg-blue-50/50 border border-blue-100 rounded-lg text-xs mb-4">
-                <div>
-                  <p className="text-gray-500 font-medium">Original Requested</p>
-                  <p className="text-sm font-bold text-blue-900">${Number(requestToCounter.requested_amount).toFixed(2)} {currency}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500 font-medium">Remaining Eligibility</p>
-                  <p className="text-sm font-bold text-blue-900">${ledger.remaining.toFixed(2)} {currency}</p>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <div className="mb-4">
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Counter Amount ({currency}) *</label>
-                  <input 
-                    type="number"
-                    value={counterAmountInput}
-                    onChange={(e) => setCounterAmountInput(e.target.value)}
-                    placeholder={`e.g. 200`}
-                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900 bg-white"
-                    min="1"
-                    max={ledger.remaining}
-                    step="any"
-                    required
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Counter Offer Notes / Terms *</label>
-                  <textarea 
-                    value={counterNotesInput}
-                    onChange={(e) => setCounterNotesInput(e.target.value)}
-                    placeholder="Provide details about the terms of this counter proposal..."
-                    className="w-full border border-gray-250 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-900 min-h-[90px] bg-white"
-                    required
-                  />
-                </div>
-              </div>
-
-              {counterError && (
-                <div className="p-3 bg-rose-50 border border-rose-250 rounded-lg text-xs text-rose-700 font-semibold mb-4 font-sans">
-                  {counterError}
-                </div>
-              )}
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
-                <button 
-                  onClick={() => { setIsCounterModalOpen(false); setRequestToCounter(null); }}
-                  className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer bg-transparent border-0"
-                  disabled={isSubmittingCounter}
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleSubmitCounterOffer}
-                  className="bg-[#004173] hover:bg-blue-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 cursor-pointer border-0"
-                  disabled={isSubmittingCounter || !counterAmountInput || parseFloat(counterAmountInput) <= 0 || parseFloat(counterAmountInput) > ledger.remaining || !counterNotesInput}
-                >
-                  {isSubmittingCounter ? 'Submitting...' : 'Submit Counter Offer'}
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
       {/* Record Offline Transfer Modal */}
       {isRecordTransferModalOpen && requestToRecordTransfer && (() => {
         const currency = job?.salary_range ? job.salary_range.split(' ')[0] : 'USD';
