@@ -995,6 +995,16 @@ export default function MyApplicationsPage() {
                                   </span>
                                 </div>
 
+                                {/* Rejection reason from the company */}
+                                {req.status === 'rejected' && req.company_notes?.trim() && (
+                                  <div className="min-w-0 rounded-lg border border-rose-200 bg-rose-50 p-3 font-sans text-xs text-rose-900">
+                                    <span className="block font-bold">Reason from company:</span>
+                                    <p className="mt-1 whitespace-pre-wrap break-words leading-relaxed">
+                                      {req.company_notes}
+                                    </p>
+                                  </div>
+                                )}
+
                                 {/* Rich Details for recorded transfers / confirmed / disputed */}
                                 {['transfer_recorded', 'confirmed', 'disputed', 'review_closed'].includes(req.status) && (
                                   <div className="text-xs text-gray-600 bg-white border border-slate-100 rounded-lg p-3 space-y-1.5 font-sans">
