@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
-import { sendNotification } from '@/app/actions/notifications';
+import { createApplicationMessageNotification } from '@/app/actions/notifications';
 import {
   Send,
   ArrowLeft,
@@ -198,34 +198,46 @@ export default function InboxPage() {
     if (activeTab !== 'applications' || !userId) return;
     let isActive = true;
     setAppThreads([]);
+    setActiveAppThread(null);
+    setMessages([]);
 
     async function loadAppThreads() {
       try {
         setLoadingApps(true);
 
-        // Auto-create thread if missing and activeAppId present
+        // Resolve the requested application to its one authoritative thread.
         if (activeAppId) {
-          const { data: existing } = await supabase
+          const { data: existing, error: existingError } = await supabase
             .from('application_threads')
             .select('id')
             .eq('application_id', activeAppId)
             .maybeSingle();
 
+          if (existingError) throw existingError;
+
           if (!existing) {
-            const { data: appData } = await supabase
+            const { data: appData, error: appError } = await supabase
               .from('applications')
-              .select('id, applicant_id, job:jobs!job_id(user_id, company_id)')
+              .select('id, job_id, applicant_id, job:jobs!job_id(id, poster_id, company_id)')
               .eq('id', activeAppId)
               .maybeSingle();
 
-            if (appData && appData.job) {
-              await supabase.from('application_threads').insert({
+            if (appError) throw appError;
+            if (!appData?.job) throw new Error('The requested application or job could not be loaded.');
+
+            const posterUserId = appData.job.poster_id;
+            if (!posterUserId) throw new Error('The job poster could not be determined.');
+
+            const { error: createError } = await supabase.from('application_threads').insert({
                 application_id: activeAppId,
+                job_id: appData.job_id,
                 applicant_id: appData.applicant_id,
-                poster_user_id: appData.job.user_id,
+                poster_user_id: posterUserId,
                 company_id: appData.job.company_id || null
               });
-            }
+
+            // A concurrent opener may have won the UNIQUE(application_id) race.
+            if (createError && createError.code !== '23505') throw createError;
           }
         }
 
@@ -238,7 +250,8 @@ export default function InboxPage() {
 
         if (!isActive) return;
 
-        if (!error && threads) {
+        if (error) throw error;
+        if (threads) {
           const isComp = currentIdentity?.isCompany || currentIdentity?.type === 'company';
           const filteredThreads = threads.filter(t => {
             if (isComp) {
@@ -250,11 +263,23 @@ export default function InboxPage() {
           setAppThreads(filteredThreads);
           if (activeAppId) {
             const active = filteredThreads.find(t => t.application_id === activeAppId);
-            setActiveAppThread(active || null);
+            if (!active) throw new Error('The requested application conversation could not be resolved.');
+            setActiveAppThread(active);
           }
         }
       } catch (err) {
-        console.error('Error app threads:', err);
+        const appThreadError = {
+          message: err?.message || String(err),
+          code: err?.code || null,
+          details: err?.details || null,
+          hint: err?.hint || null
+        };
+        console.error('Error app threads:', appThreadError);
+        if (isActive) {
+          setActiveAppThread(null);
+          setMessages([]);
+          showToast(appThreadError.message || 'Failed to open the requested application conversation', 'error');
+        }
       } finally {
         if (isActive) setLoadingApps(false);
       }
@@ -535,50 +560,17 @@ export default function InboxPage() {
         setNewMessage('');
         setMessages(prev => prev.some(m => m.id === data.id) ? prev : [...prev, data]);
 
-        // --- Application Message Notification Block ---
-        const recipientId = activeAppThread.applicant_id === currentUser.id 
-          ? activeAppThread.poster_user_id 
-          : activeAppThread.applicant_id;
-
-        const isSenderApplicant = activeAppThread.applicant_id === currentUser.id;
-        const senderDisplayType = (!isSenderApplicant && activeAppThread.company_id) ? 'company' : 'personal';
-        const senderDisplayName = senderDisplayType === 'company' ? activeAppThread.company?.name : currentUserProfile?.name;
-        const senderAvatarUrl = senderDisplayType === 'company' ? activeAppThread.company?.logo_url : currentUserProfile?.avatar_url;
-
+        // Derive and create the notification server-side from this exact thread.
         try {
-          // Gatekeeper checks
-          const [{ data: settings }, { data: profile }] = await Promise.all([
-            supabase.from('notification_settings').select('messaging_enabled').eq('user_id', recipientId).maybeSingle(),
-            supabase.from('profiles').select('inbox_privacy').eq('id', recipientId).maybeSingle()
-          ]);
-
-          const isMuted = settings && settings.messaging_enabled === false;
-          const isPrivate = profile && profile.inbox_privacy === 'private';
-
-          if (!isMuted && !isPrivate) {
-            await supabase.from('notifications').insert([{
-              recipient_id: recipientId,
-              sender_id: currentUser.id,
-              type: 'application_message',
-              title: 'New Application Message',
-              body: `${senderDisplayName || 'Someone'} sent you a message about ${activeAppThread.job?.title || 'an application'}.`,
-              link: `/messages?application=${activeAppThread.application_id}`,
-              is_read: false,
-              metadata: {
-                notification_type: 'application_message',
-                application_id: activeAppThread.application_id,
-                thread_id: activeAppThread.id,
-                company_id: activeAppThread.company_id || null,
-                sender_display_type: senderDisplayType,
-                sender_display_name: senderDisplayName,
-                sender_avatar_url: senderAvatarUrl
-              }
-            }]);
+          const notificationResult = await createApplicationMessageNotification(activeAppThread.id);
+          if (!notificationResult.success) {
+            console.error('Application notification failed:', notificationResult.error);
+            showToast('Message sent, but the notification could not be delivered.', 'error');
           }
         } catch (notifErr) {
-          console.error('DEBUG: Application notification gatekeeper exception:', notifErr);
+          console.error('Application notification exception:', notifErr);
+          showToast('Message sent, but the notification could not be delivered.', 'error');
         }
-        // --- End Application Message Notification Block ---
 
       } catch (err) {
         console.error(err);
