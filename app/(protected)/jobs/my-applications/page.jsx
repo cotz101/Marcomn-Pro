@@ -997,9 +997,9 @@ export default function MyApplicationsPage() {
 
                                 {/* Rejection reason from the company */}
                                 {req.status === 'rejected' && req.company_notes?.trim() && (
-                                  <div className="min-w-0 rounded-lg border border-rose-200 bg-rose-50 p-3 font-sans text-xs text-rose-900">
-                                    <span className="block font-bold">Reason from company:</span>
-                                    <p className="mt-1 whitespace-pre-wrap break-words leading-relaxed">
+                                  <div className="min-w-0 overflow-hidden rounded-lg border border-rose-200 bg-rose-50 p-3 font-sans text-xs text-rose-900">
+                                    <span className="block font-bold">Rejection Reason</span>
+                                    <p className="mt-1 whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed">
                                       {req.company_notes}
                                     </p>
                                   </div>
