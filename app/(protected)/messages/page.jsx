@@ -731,6 +731,7 @@ export default function InboxPage() {
 
   const activeConv = conversations.find(c => c.id === activeChatId);
   const activePartner = activeConv ? getOtherParticipantProfile(activeConv) : null;
+  const hasActiveConversation = Boolean(activeChatId || activeAppId);
 
 
   let activeAppPartner = null;
@@ -743,14 +744,11 @@ export default function InboxPage() {
 
   return (
     <div className="flex flex-col w-full h-full flex-1 bg-white overflow-hidden">
-      <div className="flex flex-row flex-1 min-h-0 w-full bg-white overflow-hidden">
+      <div className="messages-shell flex-1 min-h-0 w-full bg-white overflow-hidden">
 
 
       <div 
-        className={(activeChatId || activeAppId) 
-          ? "hidden md:flex flex-col w-1/3 lg:w-1/4 border-r border-gray-200 overflow-hidden bg-white h-full min-h-0" 
-          : "flex flex-col w-full md:w-1/3 lg:w-1/4 border-r border-gray-200 overflow-hidden bg-white h-full min-h-0"
-        }
+        className={`messages-sidebar ${hasActiveConversation ? 'messages-sidebar--conversation-open' : ''} flex-col border-r border-gray-200 overflow-hidden bg-white h-full min-h-0`}
       >
         {/* Search header */}
         <div className="flex-none border-b p-4">
@@ -827,11 +825,11 @@ export default function InboxPage() {
                       <Link
                         key={thread.id}
                         href={`?application=${thread.application_id}`}
-                        className={`w-full flex flex-col gap-1 p-4 text-left cursor-pointer transition-colors duration-200 border-l-4 ${
+                        className={`w-full min-w-0 flex flex-col gap-1 p-4 text-left cursor-pointer transition-colors duration-200 border-l-4 ${
                           isActive ? 'bg-gray-100 border-blue-900' : 'hover:bg-gray-50 border-transparent'
                         }`}
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex min-w-0 items-center justify-between gap-2">
                           <span className="text-xs font-black uppercase tracking-wider text-blue-600 truncate">{partner?.name || 'Unknown'}</span>
                           <span className="text-[10px] text-gray-400 font-medium shrink-0">
                             {new Date(thread.last_message_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
@@ -876,9 +874,9 @@ export default function InboxPage() {
                       <Link
                         key={thread.id}
                         href={`/groups/${thread.group_id}?thread=${thread.id}`}
-                        className="w-full flex flex-col gap-1 p-4 text-left cursor-pointer transition-colors duration-200 border-l-4 hover:bg-gray-50 border-transparent"
+                        className="w-full min-w-0 flex flex-col gap-1 p-4 text-left cursor-pointer transition-colors duration-200 border-l-4 hover:bg-gray-50 border-transparent"
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex min-w-0 items-center justify-between gap-2">
                           <span className="text-xs font-black uppercase tracking-wider text-blue-600 truncate">{thread.group?.name || 'Group'}</span>
                           <span className="text-[10px] text-gray-400 font-medium shrink-0">
                             {new Date(thread.last_message_at || thread.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
@@ -915,7 +913,7 @@ export default function InboxPage() {
                   <Link
                     key={conv.id}
                     href={`?chat=${conv.id}`}
-                    className={`w-full flex items-center gap-3 p-4 text-left cursor-pointer transition-colors duration-200 border-l-4 ${
+                    className={`w-full min-w-0 flex items-center gap-3 p-4 text-left cursor-pointer transition-colors duration-200 border-l-4 ${
                       isActive 
                         ? 'bg-gray-100 border-blue-900' 
                         : 'hover:bg-gray-50 border-transparent'
@@ -957,10 +955,7 @@ export default function InboxPage() {
       </div>
 
       <div 
-        className={(activeChatId || activeAppId) 
-          ? "flex-1 flex flex-col h-full bg-white w-full overflow-hidden min-h-0" 
-          : "hidden md:flex flex-1 flex-col h-full bg-white overflow-hidden min-h-0"
-        }
+        className={`messages-stage ${hasActiveConversation ? 'messages-stage--conversation-open' : ''} flex-col h-full bg-white overflow-hidden min-h-0`}
       >
         {(activeTab === 'applications' && activeAppThread) ? (
           <>
