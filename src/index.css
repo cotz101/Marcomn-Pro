@@ -2374,6 +2374,15 @@ html.dark .btn-primary {
 }
 
 /* 4. Grid & Sidebar Logic */
+@media (min-width: 768px) {
+  .sidebar-left, .sidebar-right {
+    max-height: calc(100dvh - 96px) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+  }
+}
+
 @media (min-width: 1024px) {
   .app-container {
     max-width: 1128px !important;
