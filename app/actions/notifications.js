@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient, createServiceClient } from '@/lib/supabase-server';
+import { createClient } from '@/lib/supabase-server';
 
 export async function createApplicationMessageNotification(threadId) {
   const supabase = await createClient();
@@ -26,8 +26,7 @@ export async function createApplicationMessageNotification(threadId) {
   }
 
   // After authorization, derive every notification field from canonical server-side data.
-  const serviceSupabase = createServiceClient();
-  const { data: thread, error: detailError } = await serviceSupabase
+  const { data: thread, error: detailError } = await supabase
     .from('application_threads')
     .select('id, application_id, applicant_id, poster_user_id, company_id, job:jobs!job_id(title), company:companies!company_id(name, logo_url), applicant:profiles!applicant_id(name, avatar_url), poster:profiles!poster_user_id(name, avatar_url)')
     .eq('id', threadId)
@@ -44,7 +43,7 @@ export async function createApplicationMessageNotification(threadId) {
   const senderDisplayName = senderDisplayType === 'company' ? thread.company?.name : personalSender?.name;
   const senderAvatarUrl = senderDisplayType === 'company' ? thread.company?.logo_url : personalSender?.avatar_url;
 
-  const { data: settings, error: settingsError } = await serviceSupabase
+  const { data: settings, error: settingsError } = await supabase
     .from('notification_settings')
     .select('messaging_enabled')
     .eq('user_id', recipientId)
@@ -59,7 +58,7 @@ export async function createApplicationMessageNotification(threadId) {
   }
 
   const jobTitle = thread.job?.title || 'an application';
-  const { error: insertError } = await serviceSupabase.from('notifications').insert({
+  const { error: insertError } = await supabase.from('notifications').insert({
     recipient_id: recipientId,
     sender_id: user.id,
     type: 'application_message',
