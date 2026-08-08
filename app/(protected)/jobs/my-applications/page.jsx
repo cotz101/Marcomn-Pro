@@ -641,43 +641,43 @@ export default function MyApplicationsPage() {
     }
 
     return (
-      <div className="mt-4 border border-slate-150 rounded-xl bg-white p-4 space-y-4 font-sans text-xs">
+      <div className="mt-4 min-w-0 border border-slate-150 rounded-xl bg-white p-3 min-[375px]:p-4 space-y-4 font-sans text-xs">
         {/* Contract Summary & Advance Summary (Ledger) */}
         <div>
           <h4 className="text-[11px] font-bold text-[#0e2a4d] uppercase tracking-wider mb-3">Advance Payment Ledger</h4>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 min-[375px]:grid-cols-2 sm:grid-cols-4 gap-2.5 min-[375px]:gap-3">
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Contract Value</span>
-              <span className="text-xs font-extrabold text-[#0e2a4d]">${ledger.contractValue.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-extrabold text-[#0e2a4d]">${ledger.contractValue.toFixed(2)} {currency}</span>
               <span className="block text-[9px] text-gray-500 truncate mt-0.5" title={comp.displayRate}>{comp.displayRate}</span>
             </div>
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Max Eligible Limit</span>
-              <span className="text-xs font-extrabold text-[#0e2a4d]">${ledger.maxEligible.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-extrabold text-[#0e2a4d]">${ledger.maxEligible.toFixed(2)} {currency}</span>
             </div>
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Requested</span>
-              <span className="text-xs font-bold text-gray-800">${ledger.totalRequested.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-bold text-gray-800">${ledger.totalRequested.toFixed(2)} {currency}</span>
             </div>
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Approved</span>
-              <span className="text-xs font-bold text-green-700">${ledger.totalApproved.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-bold text-green-700">${ledger.totalApproved.toFixed(2)} {currency}</span>
             </div>
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Transferred</span>
-              <span className="text-xs font-bold text-purple-700">${ledger.totalTransferred.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-bold text-purple-700">${ledger.totalTransferred.toFixed(2)} {currency}</span>
             </div>
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Confirmed</span>
-              <span className="text-xs font-bold text-emerald-700">${ledger.totalConfirmed.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-bold text-emerald-700">${ledger.totalConfirmed.toFixed(2)} {currency}</span>
             </div>
-            <div className="bg-blue-50/50 p-2.5 rounded-lg border border-blue-100/50 col-span-2 sm:col-span-1">
+            <div className="bg-blue-50/50 p-2.5 rounded-lg border border-blue-100/50 min-[375px]:col-span-2 sm:col-span-1">
               <span className="text-[#0e2a4d]/70 font-extrabold block text-[9px] uppercase">Remaining Eligible Cap</span>
-              <span className="text-xs font-extrabold text-blue-900">${ledger.remainingEligibility.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-extrabold text-blue-900">${ledger.remainingEligibility.toFixed(2)} {currency}</span>
             </div>
-            <div className="bg-amber-50/50 p-2.5 rounded-lg border border-amber-100/50 col-span-2 sm:col-span-1">
+            <div className="bg-amber-50/50 p-2.5 rounded-lg border border-amber-100/50 min-[375px]:col-span-2 sm:col-span-1">
               <span className="text-amber-800/70 font-extrabold block text-[9px] uppercase">Remaining Payout Salary</span>
-              <span className="text-xs font-extrabold text-amber-900">${ledger.remainingSalary.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-extrabold text-amber-900">${ledger.remainingSalary.toFixed(2)} {currency}</span>
             </div>
           </div>
         </div>
@@ -685,9 +685,9 @@ export default function MyApplicationsPage() {
         {/* Timeline Summary */}
         {activeRequest && (
           <div className="pt-3 border-t border-slate-100">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex min-w-0 flex-col items-start gap-2 min-[375px]:flex-row min-[375px]:items-center min-[375px]:justify-between mb-3">
               <h4 className="text-[11px] font-bold text-[#0e2a4d] uppercase tracking-wider">Workflow Progress Timeline</h4>
-              <span className="text-[9px] bg-slate-100 text-[#0e2a4d] font-bold px-2 py-0.5 rounded-full uppercase border border-slate-200">
+              <span className="max-w-full self-start break-words text-[9px] bg-slate-100 text-[#0e2a4d] font-bold px-2 py-0.5 rounded-full uppercase border border-slate-200">
                 Status: {activeRequest.status.replace(/_/g, ' ')}
               </span>
             </div>
@@ -710,7 +710,7 @@ export default function MyApplicationsPage() {
                           <span className="text-[9px] text-gray-400 font-mono">{dateStr}</span>
                         </div>
                         {note && (
-                          <p className="mt-1 text-gray-500 italic bg-slate-50 px-2.5 py-1 rounded border border-slate-100 leading-snug">
+                          <p className="mt-1 whitespace-pre-wrap break-words text-gray-500 italic bg-slate-50 px-2.5 py-1 rounded border border-slate-100 leading-snug">
                             {note}
                           </p>
                         )}
@@ -934,7 +934,7 @@ export default function MyApplicationsPage() {
                 {/* Advance Payment requests */}
                 {job.advance_payment_enabled && (
                   <div className="mt-6 pt-6 border-t border-slate-100 text-left">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex min-w-0 flex-col items-start gap-2 min-[375px]:flex-row min-[375px]:items-center min-[375px]:justify-between mb-3">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5 font-sans">
                         <Coins size={14} className="text-blue-900" />
                         Advance Payment Requests
@@ -977,10 +977,10 @@ export default function MyApplicationsPage() {
                             const displayAmount = Number(req.counter_amount !== null ? req.counter_amount : req.requested_amount).toFixed(2);
 
                             return (
-                              <div key={req.id} className="p-3.5 border border-slate-100 rounded-xl bg-slate-50/30 text-sm space-y-2.5">
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <span className="font-bold text-gray-800">${displayAmount} {req.currency}</span>
+                              <div key={req.id} className="min-w-0 p-3 min-[375px]:p-3.5 border border-slate-100 rounded-xl bg-slate-50/30 text-sm space-y-2.5">
+                                <div className="flex min-w-0 flex-col items-start gap-2 min-[375px]:flex-row min-[375px]:justify-between">
+                                  <div className="min-w-0">
+                                    <span className="block break-words font-bold text-gray-800">${displayAmount} {req.currency}</span>
                                     {req.counter_amount !== null && (
                                       <span className="text-xs text-amber-650 ml-1.5 font-semibold">(Counter Offer)</span>
                                     )}
@@ -990,7 +990,7 @@ export default function MyApplicationsPage() {
                                       </p>
                                     )}
                                   </div>
-                                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border rounded-full ${statusBg}`}>
+                                  <span className={`max-w-full self-start break-words text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border rounded-full ${statusBg}`}>
                                     {displayStatus}
                                   </span>
                                 </div>
@@ -1019,14 +1019,14 @@ export default function MyApplicationsPage() {
                                       </div>
                                       <div className="col-span-2">
                                         <span className="text-gray-400 font-bold block">Reference Number</span>
-                                        <span className="font-mono font-semibold text-gray-800">{req.reference_number || '—'}</span>
+                                        <span className="break-all font-mono font-semibold text-gray-800">{req.reference_number || '—'}</span>
                                       </div>
                                     </div>
                                     
                                     {req.company_notes && (
                                       <div className="pt-1.5 border-t border-slate-50 text-[11px]">
                                         <span className="text-gray-400 font-bold block">Company Note</span>
-                                        <p className="text-gray-600 italic mt-0.5 leading-snug">{req.company_notes}</p>
+                                        <p className="whitespace-pre-wrap break-words text-gray-600 italic mt-0.5 leading-snug">{req.company_notes}</p>
                                       </div>
                                     )}
                                     
@@ -1047,13 +1047,13 @@ export default function MyApplicationsPage() {
 
                                 {/* Dispute reason if disputed */}
                                 {req.status === 'disputed' && req.dispute_reason && (
-                                  <div className="text-xs text-rose-800 bg-rose-50 border border-rose-100 rounded-lg p-2.5 font-sans font-semibold">
+                                  <div className="whitespace-pre-wrap break-words text-xs text-rose-800 bg-rose-50 border border-rose-100 rounded-lg p-2.5 font-sans font-semibold">
                                     Disputed Reason: {req.dispute_reason}
                                   </div>
                                 )}
 
                                 {/* Action buttons */}
-                                <div className="flex items-center justify-end gap-2 pt-1">
+                                <div className="flex flex-col min-[375px]:flex-row min-[375px]:items-center min-[375px]:justify-end gap-2 pt-1 [&_button]:w-full min-[375px]:[&_button]:w-auto">
                                   {req.status === 'pending' && (
                                     <button
                                       type="button"
@@ -1065,7 +1065,7 @@ export default function MyApplicationsPage() {
                                   )}
                                   
                                   {req.status === 'countered' && (
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex w-full flex-col min-[375px]:w-auto min-[375px]:flex-row items-stretch min-[375px]:items-center gap-2">
                                       <button
                                         type="button"
                                         onClick={() => handleAcceptCounter(req.id)}
@@ -1084,7 +1084,7 @@ export default function MyApplicationsPage() {
                                   )}
 
                                   {req.status === 'transfer_recorded' && (
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex w-full flex-col min-[375px]:w-auto min-[375px]:flex-row items-stretch min-[375px]:items-center gap-2">
                                       <button
                                         type="button"
                                         onClick={() => handleConfirmReceipt(req.id)}
@@ -1523,14 +1523,14 @@ export default function MyApplicationsPage() {
               )}
 
               {/* Eligibility Stats */}
-              <div className="grid grid-cols-2 gap-4 p-3 bg-blue-50/50 border border-blue-100 rounded-lg text-xs font-sans">
+              <div className="grid grid-cols-1 min-[375px]:grid-cols-2 gap-3 min-[375px]:gap-4 p-3 bg-blue-50/50 border border-blue-100 rounded-lg text-xs font-sans">
                 <div>
                   <p className="text-gray-500 font-medium">Maximum Eligible Cap</p>
-                  <p className="text-sm font-bold text-blue-900">${ledger.maxEligible.toFixed(2)} {currency}</p>
+                  <p className="break-words text-sm font-bold text-blue-900">${ledger.maxEligible.toFixed(2)} {currency}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 font-medium">Remaining Eligibility Limit</p>
-                  <p className="text-sm font-bold text-blue-900">${ledger.remaining.toFixed(2)} {currency}</p>
+                  <p className="break-words text-sm font-bold text-blue-900">${ledger.remaining.toFixed(2)} {currency}</p>
                 </div>
               </div>
 
@@ -1592,8 +1592,8 @@ export default function MyApplicationsPage() {
       </BaseModal>
       {/* Dispute Advance Payment Transfer Modal */}
       {isDisputeModalOpen && requestToDispute && (
-        <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl text-left font-sans">
+        <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-end min-[375px]:items-center justify-center p-2 min-[375px]:p-4">
+          <div className="max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain bg-white rounded-2xl p-4 min-[375px]:p-6 max-w-md w-full shadow-xl text-left font-sans">
             <h3 className="text-lg font-bold text-red-650 mb-2">Report Issue / Dispute Transfer</h3>
             <p className="text-sm text-gray-600 mb-4">
               If you did not receive the funds, or the amount does not match, please report the issue. Platform administrators will be notified to review the offline audit trail.
@@ -1618,17 +1618,17 @@ export default function MyApplicationsPage() {
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+            <div className="flex flex-col-reverse min-[375px]:flex-row min-[375px]:justify-end gap-2 min-[375px]:gap-3 pt-3 border-t border-slate-100">
               <button 
                 onClick={() => { setIsDisputeModalOpen(false); setRequestToDispute(null); }}
-                className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer bg-transparent border-0"
+                className="w-full min-[375px]:w-auto px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer bg-transparent border-0"
                 disabled={isSubmittingDispute}
               >
                 Cancel
               </button>
               <button 
                 onClick={handleSubmitDispute}
-                className="bg-red-650 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 cursor-pointer border-0"
+                className="w-full min-[375px]:w-auto bg-red-650 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 cursor-pointer border-0"
                 disabled={isSubmittingDispute || !disputeReasonInput.trim()}
               >
                 {isSubmittingDispute ? 'Submitting...' : 'Report Issue'}

@@ -868,7 +868,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             <button
               type="button"
               onClick={() => setAdvanceSectionExpanded(!advanceSectionExpanded)}
-              className="flex items-center justify-between w-full p-4 font-semibold text-gray-800 hover:bg-slate-100/80 transition-colors text-sm focus:outline-none"
+              className="flex items-start justify-between gap-3 w-full p-3 min-[375px]:p-4 font-semibold text-left text-gray-800 hover:bg-slate-100/80 transition-colors text-sm focus:outline-none"
             >
               <span className="flex items-center gap-2">
                 <Coins size={16} className="text-blue-900" />
@@ -907,8 +907,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                     {/* Advance Type */}
                     <div>
                       <label className="text-sm font-semibold text-gray-700 block mb-1.5 font-medium">Advance Type</label>
-                      <div className="flex gap-4">
-                        <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                      <div className="flex flex-col min-[375px]:flex-row gap-2 min-[375px]:gap-4">
+                        <label className="flex items-start min-[375px]:items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
                           <input
                             type="radio"
                             name="advance_payment_type"
@@ -920,7 +920,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                           />
                           Fixed Amount (USD)
                         </label>
-                        <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                        <label className="flex items-start min-[375px]:items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
                           <input
                             type="radio"
                             name="advance_payment_type"
