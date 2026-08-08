@@ -246,10 +246,10 @@ export default function ApplicantsPage() {
             const displayAmount = Number(req.counter_amount !== null ? req.counter_amount : req.requested_amount).toFixed(2);
 
             return (
-              <div key={req.id} className="p-3 border border-slate-100 rounded-xl bg-slate-50/50 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-gray-800 text-sm">${displayAmount} {req.currency}</span>
+              <div key={req.id} className="min-w-0 p-3 border border-slate-100 rounded-xl bg-slate-50/50 space-y-2">
+                <div className="flex min-w-0 flex-col items-start gap-2 min-[375px]:flex-row min-[375px]:justify-between">
+                  <div className="min-w-0">
+                    <span className="block break-words font-bold text-gray-800 text-sm">${displayAmount} {req.currency}</span>
                     {req.status === 'countered' && (
                       <span className="text-xs font-semibold text-blue-600 ml-1.5">(Counter Offer)</span>
                     )}
@@ -258,14 +258,14 @@ export default function ApplicantsPage() {
                       {req.expires_at && ` | Expires: ${new Date(req.expires_at).toLocaleDateString()}`}
                     </span>
                   </div>
-                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border rounded-full ${statusBg}`}>
+                  <span className={`max-w-full self-start break-words text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border rounded-full ${statusBg}`}>
                     {displayStatus}
                   </span>
                 </div>
 
                 {/* Justification Notes */}
                 {req.applicant_notes && (
-                  <div className="text-xs text-gray-600 bg-white p-2 rounded border border-slate-100">
+                  <div className="min-w-0 whitespace-pre-wrap break-words text-xs text-gray-600 bg-white p-2 rounded border border-slate-100">
                     <span className="font-semibold text-gray-700">Justification: </span>
                     {req.applicant_notes}
                   </div>
@@ -273,7 +273,7 @@ export default function ApplicantsPage() {
 
                 {/* Counter Notes */}
                 {req.company_notes && (
-                  <div className="text-xs text-gray-600 bg-blue-50/20 p-2 rounded border border-blue-100/50">
+                  <div className="min-w-0 whitespace-pre-wrap break-words text-xs text-gray-600 bg-blue-50/20 p-2 rounded border border-blue-100/50">
                     <span className="font-semibold text-blue-700">Company Notes: </span>
                     {req.company_notes}
                   </div>
@@ -288,18 +288,18 @@ export default function ApplicantsPage() {
 
                 {/* Action Buttons */}
                 {['pending', 'countered'].includes(req.status) && (
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                  <div className="flex flex-col min-[375px]:flex-row min-[375px]:flex-wrap gap-2 pt-2 border-t border-slate-100">
                     <button
                       type="button"
                       onClick={() => handleApproveAdvance(req.id)}
-                      className="px-3 py-1.5 bg-[#004173] hover:bg-blue-800 text-white font-semibold text-xs rounded-lg transition-colors shadow-sm cursor-pointer border-0"
+                      className="w-full min-[375px]:w-auto px-3 py-1.5 bg-[#004173] hover:bg-blue-800 text-white font-semibold text-xs rounded-lg transition-colors shadow-sm cursor-pointer border-0"
                     >
                       Approve
                     </button>
                     <button
                       type="button"
                       onClick={() => handleRejectAdvance(req.id)}
-                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-semibold text-xs rounded-lg transition-colors cursor-pointer"
+                      className="w-full min-[375px]:w-auto px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-semibold text-xs rounded-lg transition-colors cursor-pointer"
                     >
                       Reject
                     </button>
@@ -307,11 +307,11 @@ export default function ApplicantsPage() {
                   </div>
                 )}
                 {req.status === 'approved' && (
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                  <div className="flex flex-col min-[375px]:flex-row min-[375px]:flex-wrap gap-2 pt-2 border-t border-slate-100">
                     <button
                       type="button"
                       onClick={() => handleOpenRecordTransferModal(req)}
-                      className="px-3 py-1.5 bg-[#004173] hover:bg-[#003153] text-white font-semibold text-xs rounded-lg transition-colors shadow-sm cursor-pointer border-0"
+                      className="w-full min-[375px]:w-auto px-3 py-1.5 bg-[#004173] hover:bg-[#003153] text-white font-semibold text-xs rounded-lg transition-colors shadow-sm cursor-pointer border-0"
                     >
                       Record Offline Transfer
                     </button>
@@ -344,43 +344,43 @@ export default function ApplicantsPage() {
     }
 
     return (
-      <div className="mt-4 border border-slate-150 rounded-xl bg-white p-4 space-y-4 font-sans text-xs">
+      <div className="mt-4 min-w-0 border border-slate-150 rounded-xl bg-white p-3 min-[375px]:p-4 space-y-4 font-sans text-xs">
         {/* Contract Summary & Advance Summary (Ledger) */}
         <div>
           <h4 className="text-[11px] font-bold text-[#0e2a4d] uppercase tracking-wider mb-3">Advance Payment Ledger</h4>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 min-[375px]:grid-cols-2 sm:grid-cols-4 gap-2.5 min-[375px]:gap-3">
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Contract Value</span>
-              <span className="text-xs font-extrabold text-[#0e2a4d]">${ledger.contractValue.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-extrabold text-[#0e2a4d]">${ledger.contractValue.toFixed(2)} {currency}</span>
               <span className="block text-[9px] text-gray-500 truncate mt-0.5" title={comp.displayRate}>{comp.displayRate}</span>
             </div>
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Max Eligible Limit</span>
-              <span className="text-xs font-extrabold text-[#0e2a4d]">${ledger.maxEligible.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-extrabold text-[#0e2a4d]">${ledger.maxEligible.toFixed(2)} {currency}</span>
             </div>
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Requested</span>
-              <span className="text-xs font-bold text-gray-800">${ledger.totalRequested.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-bold text-gray-800">${ledger.totalRequested.toFixed(2)} {currency}</span>
             </div>
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Approved</span>
-              <span className="text-xs font-bold text-green-700">${ledger.totalApproved.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-bold text-green-700">${ledger.totalApproved.toFixed(2)} {currency}</span>
             </div>
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Transferred</span>
-              <span className="text-xs font-bold text-purple-700">${ledger.totalTransferred.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-bold text-purple-700">${ledger.totalTransferred.toFixed(2)} {currency}</span>
             </div>
             <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-gray-400 font-bold block text-[9px] uppercase">Total Confirmed</span>
-              <span className="text-xs font-bold text-emerald-700">${ledger.totalConfirmed.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-bold text-emerald-700">${ledger.totalConfirmed.toFixed(2)} {currency}</span>
             </div>
-            <div className="bg-blue-50/50 p-2.5 rounded-lg border border-blue-100/50 col-span-2 sm:col-span-1">
+            <div className="bg-blue-50/50 p-2.5 rounded-lg border border-blue-100/50 min-[375px]:col-span-2 sm:col-span-1">
               <span className="text-[#0e2a4d]/70 font-extrabold block text-[9px] uppercase">Remaining Eligible Cap</span>
-              <span className="text-xs font-extrabold text-blue-900">${ledger.remainingEligibility.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-extrabold text-blue-900">${ledger.remainingEligibility.toFixed(2)} {currency}</span>
             </div>
-            <div className="bg-amber-50/50 p-2.5 rounded-lg border border-amber-100/50 col-span-2 sm:col-span-1">
+            <div className="bg-amber-50/50 p-2.5 rounded-lg border border-amber-100/50 min-[375px]:col-span-2 sm:col-span-1">
               <span className="text-amber-800/70 font-extrabold block text-[9px] uppercase">Remaining Payout Salary</span>
-              <span className="text-xs font-extrabold text-amber-900">${ledger.remainingSalary.toFixed(2)} {currency}</span>
+              <span className="break-words text-xs font-extrabold text-amber-900">${ledger.remainingSalary.toFixed(2)} {currency}</span>
             </div>
           </div>
         </div>
@@ -388,9 +388,9 @@ export default function ApplicantsPage() {
         {/* Timeline Summary */}
         {activeRequest && (
           <div className="pt-3 border-t border-slate-100">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex min-w-0 flex-col items-start gap-2 min-[375px]:flex-row min-[375px]:items-center min-[375px]:justify-between mb-3">
               <h4 className="text-[11px] font-bold text-[#0e2a4d] uppercase tracking-wider">Workflow Progress Timeline</h4>
-              <span className="text-[9px] bg-slate-100 text-[#0e2a4d] font-bold px-2 py-0.5 rounded-full uppercase border border-slate-200">
+              <span className="max-w-full self-start break-words text-[9px] bg-slate-100 text-[#0e2a4d] font-bold px-2 py-0.5 rounded-full uppercase border border-slate-200">
                 Status: {activeRequest.status.replace(/_/g, ' ')}
               </span>
             </div>
@@ -413,7 +413,7 @@ export default function ApplicantsPage() {
                           <span className="text-[9px] text-gray-400 font-mono">{dateStr}</span>
                         </div>
                         {note && (
-                          <p className="mt-1 text-gray-500 italic bg-slate-50 px-2.5 py-1 rounded border border-slate-100 leading-snug">
+                          <p className="mt-1 whitespace-pre-wrap break-words text-gray-500 italic bg-slate-50 px-2.5 py-1 rounded border border-slate-100 leading-snug">
                             {note}
                           </p>
                         )}
@@ -1693,8 +1693,8 @@ export default function ApplicantsPage() {
         const currency = job?.salary_range ? job.salary_range.split(' ')[0] : 'USD';
         
         return (
-          <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl text-left font-sans">
+          <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-end min-[375px]:items-center justify-center p-2 min-[375px]:p-4">
+            <div className="max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain bg-white rounded-2xl p-4 min-[375px]:p-6 max-w-md w-full shadow-xl text-left font-sans">
               <h3 className="text-lg font-bold text-blue-900 mb-2">Record Offline Transfer</h3>
               <p className="text-sm text-gray-600 mb-4">
                 Record the details of the offline transaction sent directly to the applicant.
@@ -1765,7 +1765,7 @@ export default function ApplicantsPage() {
                     type="file"
                     accept=".pdf,.png,.jpg,.jpeg"
                     onChange={(e) => setProofFileInput(e.target.files?.[0] || null)}
-                    className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#004173] hover:file:bg-blue-100 cursor-pointer"
+                    className="block w-full min-w-0 text-xs text-slate-500 file:mr-2 min-[375px]:file:mr-4 file:py-2 file:px-3 min-[375px]:file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#004173] hover:file:bg-blue-100 cursor-pointer"
                   />
                 </div>
               </div>
@@ -1776,17 +1776,17 @@ export default function ApplicantsPage() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+              <div className="flex flex-col-reverse min-[375px]:flex-row min-[375px]:justify-end gap-2 min-[375px]:gap-3 pt-3 border-t border-slate-100">
                 <button 
                   onClick={() => { setIsRecordTransferModalOpen(false); setRequestToRecordTransfer(null); }}
-                  className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer bg-transparent border-0"
+                  className="w-full min-[375px]:w-auto px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer bg-transparent border-0"
                   disabled={isSubmittingRecordTransfer}
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleSubmitRecordTransfer}
-                  className="bg-[#004173] hover:bg-blue-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 cursor-pointer border-0"
+                  className="w-full min-[375px]:w-auto bg-[#004173] hover:bg-blue-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 cursor-pointer border-0"
                   disabled={isSubmittingRecordTransfer || (paymentMethodInput !== 'cash' && !referenceNumberInput.trim())}
                 >
                   {isSubmittingRecordTransfer ? 'Recording...' : 'Record Transfer'}
