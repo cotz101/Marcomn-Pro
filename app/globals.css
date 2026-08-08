@@ -24,3 +24,46 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Messaging uses a list-first flow on mobile and a persistent split shell on desktop. */
+.messages-shell {
+  display: flex;
+  flex-direction: row;
+}
+
+.messages-sidebar {
+  display: flex;
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+}
+
+.messages-stage {
+  display: none;
+  width: 100%;
+  min-width: 0;
+}
+
+.messages-sidebar--conversation-open {
+  display: none;
+}
+
+.messages-stage--conversation-open {
+  display: flex;
+}
+
+@media (min-width: 768px) {
+  .messages-sidebar,
+  .messages-sidebar--conversation-open {
+    display: flex;
+    flex: 0 0 clamp(320px, 28vw, 384px);
+    width: clamp(320px, 28vw, 384px);
+  }
+
+  .messages-stage,
+  .messages-stage--conversation-open {
+    display: flex;
+    flex: 1 1 0%;
+    width: auto;
+  }
+}
