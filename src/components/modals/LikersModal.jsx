@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Search, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -15,12 +15,42 @@ export default function LikersModal({
   const [likers, setLikers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const supabase = createClient();
   const router = useRouter();
+
+  const fetchLikers = useCallback(async () => {
+    const supabase = createClient();
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from(tableName)
+        .select(`id, user_id, profiles(id, name, avatar_url)`)
+        .eq(foreignKey, postId);
+
+      if (error) throw error;
+      setLikers((data || []).map((reaction) => ({
+        reactionId: reaction.id,
+        userId: reaction.user_id,
+        identity: reaction.profiles
+          ? {
+              type: 'personal',
+              id: reaction.profiles.id,
+              name: reaction.profiles.name,
+              avatarUrl: reaction.profiles.avatar_url,
+            }
+          : null,
+      })));
+    } catch (err) {
+      console.error('Error fetching likers:', err);
+      setLikers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [foreignKey, postId, tableName]);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- opening the modal triggers its remote data load
       if (postId) fetchLikers();
     } else {
       document.body.style.overflow = 'unset';
@@ -28,31 +58,13 @@ export default function LikersModal({
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, postId]);
-
-  const fetchLikers = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from(tableName)
-        .select(`user_id, profiles(name, avatar_url)`)
-        .eq(foreignKey, postId);
-
-      if (error) throw error;
-      setLikers(data || []);
-    } catch (err) {
-      console.error('Error fetching likers:', err);
-      setLikers([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [fetchLikers, isOpen, postId]);
 
   if (!isOpen) return null;
 
   const displayedLikers = searchTerm.trim() !== ''
     ? likers.filter(like => {
-        const name = like.profiles?.name || '';
+        const name = like.identity?.name || '';
         return name.toLowerCase().includes(searchTerm.toLowerCase());
       })
     : likers;
@@ -112,9 +124,12 @@ export default function LikersModal({
             </div>
           ) : displayedLikers.length > 0 ? (
             displayedLikers.map((like, index) => {
-              const avatar = like.profiles?.avatar_url;
-              const name = like.profiles?.name || 'Anonymous';
-              const uniqueKey = like.user_id || index;
+              const avatar = like.identity?.avatarUrl;
+              const name = like.identity?.name || 'Profile unavailable';
+              const uniqueKey = like.reactionId || like.userId || index;
+              const profilePath = like.identity?.id
+                ? `/profile/${like.identity.id}`
+                : null;
 
               return (
                 <div 
@@ -139,13 +154,15 @@ export default function LikersModal({
                   </div>
                   
                   <button 
+                    disabled={!profilePath}
                     onClick={() => {
+                      if (!profilePath) return;
                       onClose();
-                      router.push(`/profile/${like.user_id}`);
+                      router.push(profilePath);
                     }}
-                    className="text-[10px] text-blue-600 font-bold uppercase tracking-wide hover:bg-blue-50 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap"
+                    className="text-[10px] text-blue-600 font-bold uppercase tracking-wide hover:bg-blue-50 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap disabled:text-gray-400 disabled:hover:bg-transparent disabled:cursor-not-allowed"
                   >
-                    View Profile
+                    {profilePath ? 'View Profile' : 'Unavailable'}
                   </button>
                 </div>
               );

@@ -8,11 +8,16 @@ import { getCandidateReputation } from '@/app/actions/reputation';
 import { Camera, Briefcase, MapPin, Edit3, X, Check, Plus, ArrowLeft, Ship, MessageSquare, Lock, Coins, UserCheck, Clock, UserPlus } from 'lucide-react';
 import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest } from '@/app/actions/friendships';
 
-export default function Profile({ profile: initialProfile, setProfile: setInitialProfile, userId: currentUserId }) {
+export default function Profile({
+  profile: initialProfile,
+  setProfile: setInitialProfile,
+  userId: currentUserId,
+  targetProfileId,
+}) {
   const router = useRouter();
   const params = useParams();
   const { userEmail, currentIdentity } = useProfile();
-  const viewUid = params?.id;
+  const viewUid = targetProfileId || params?.id;
   const isOwnProfile = !viewUid || viewUid === currentUserId;
 
   const [profile, setProfile] = useState(initialProfile || {});
@@ -30,7 +35,6 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
   const [editIsSailing, setEditIsSailing] = useState(profile.isSailing || false);
   const [editVesselName, setEditVesselName] = useState(profile.vesselName || '');
   const [messagePrivacy, setMessagePrivacy] = useState('connections');
-  const [isFollowedBack, setIsFollowedBack] = useState(false);
   const [reputation, setReputation] = useState(null);
   
   const [toastMessage, setToastMessage] = useState('');
@@ -84,15 +88,6 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
           
           setIsFollowing(!!followData);
 
-          // Check if they follow us back (mutual follow)
-          const { data: followBackData } = await supabase
-            .from('follows')
-            .select('*')
-            .eq('follower_id', viewUid)
-            .eq('following_id', currentUserId)
-            .maybeSingle();
-
-          setIsFollowedBack(!!followBackData);
         }
         setLoading(false);
         
@@ -103,6 +98,7 @@ export default function Profile({ profile: initialProfile, setProfile: setInitia
       };
       fetchViewedProfile();
     } else if (isOwnProfile && initialProfile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronize context-owned self profile
       setProfile(initialProfile);
     }
   }, [viewUid, isOwnProfile, initialProfile, currentUserId, isCompanyProfile]);
