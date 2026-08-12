@@ -8,6 +8,13 @@ import { getCandidateReputation } from '@/app/actions/reputation';
 import { Camera, Briefcase, MapPin, Edit3, X, Check, Plus, ArrowLeft, Ship, MessageSquare, Lock, Coins, UserCheck, Clock, UserPlus } from 'lucide-react';
 import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest } from '@/app/actions/friendships';
 
+const normalizeProfileRecord = (data) => ({
+  ...data,
+  name: data.name || '',
+  profilePic: data.avatar_url || data.profile_pic_url || '/avatar_placeholder.png',
+  coverPhoto: data.cover_photo_url || '',
+});
+
 export default function Profile({
   profile: initialProfile,
   setProfile: setInitialProfile,
@@ -21,7 +28,7 @@ export default function Profile({
   const isOwnProfile = !viewUid || viewUid === currentUserId;
 
   const [profile, setProfile] = useState(initialProfile || {});
-  const [loading, setLoading] = useState(!isOwnProfile);
+  const [loading, setLoading] = useState(Boolean(viewUid));
   const [isFollowing, setIsFollowing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editName, setEditName] = useState(profile.name || '');
@@ -57,51 +64,61 @@ export default function Profile({
     setTimeout(() => setToastMessage(''), 3500);
   };
 
-  // Fetch profile if viewing someone else
+  // An explicit route target is always the canonical displayed profile.
+  // Ownership only controls actions/private fields; it never changes the data source.
   useEffect(() => {
-    if (!isOwnProfile && viewUid) {
-      const fetchViewedProfile = async () => {
-        setLoading(true);
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', viewUid)
+    if (!viewUid) return;
+
+    let isActive = true;
+
+    const fetchViewedProfile = async () => {
+      setLoading(true);
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', viewUid)
+        .maybeSingle();
+
+      if (!isActive) return;
+
+      setProfile(!error && data ? normalizeProfileRecord(data) : {});
+
+      if (!isOwnProfile && currentUserId) {
+        const { data: followData } = await supabase
+          .from('follows')
+          .select('id')
+          .eq('follower_id', currentUserId)
+          .eq('following_id', viewUid)
           .maybeSingle();
 
-        if (!error && data) {
-          // Map DB keys to component keys
-          setProfile({
-            ...data,
-            name: data.name,
-            profilePic: data.avatar_url || data.profile_pic_url || '/avatar_placeholder.png',
-            coverPhoto: data.cover_photo_url,
-          });
-          
-          // Check if following (actual fetch)
-          const { data: followData } = await supabase
-            .from('follows')
-            .select('*')
-            .eq('follower_id', currentUserId)
-            .eq('following_id', viewUid)
-            .maybeSingle();
-          
-          setIsFollowing(!!followData);
+        if (isActive) setIsFollowing(!!followData);
+      } else {
+        setIsFollowing(false);
+      }
 
-        }
-        setLoading(false);
-        
-        // Fetch friend status if applicable
-        if (!isOwnProfile && currentUserId && !isCompanyProfile) {
-          getFriendshipStatus(viewUid).then(fs => setFriendStatus(fs));
-        }
-      };
-      fetchViewedProfile();
-    } else if (isOwnProfile && initialProfile) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronize context-owned self profile
-      setProfile(initialProfile);
-    }
-  }, [viewUid, isOwnProfile, initialProfile, currentUserId, isCompanyProfile]);
+      if (!isOwnProfile && currentUserId && !isCompanyProfile) {
+        const status = await getFriendshipStatus(viewUid);
+        if (isActive) setFriendStatus(status);
+      } else {
+        setFriendStatus(null);
+      }
+
+      if (isActive) setLoading(false);
+    };
+
+    fetchViewedProfile();
+
+    return () => {
+      isActive = false;
+    };
+  }, [viewUid, isOwnProfile, currentUserId, isCompanyProfile]);
+
+  useEffect(() => {
+    if (viewUid || !initialProfile) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronize context-owned /profile data
+    setProfile(initialProfile);
+  }, [viewUid, initialProfile]);
 
   useEffect(() => {
     const fetchReputation = async () => {
@@ -469,7 +486,9 @@ export default function Profile({
                 <ArrowLeft size={14} strokeWidth={2.5} /> <span>Back</span>
               </button>
             </div>
-            <h2 className="profile-headline">{profile.currentRole}</h2>
+            <h2 className="profile-headline">
+              {profile.currentRole || profile.headline || profile.previousRole || ''}
+            </h2>
             {isOwnProfile && userEmail && (
               <div className="text-xs text-slate-400 font-medium mt-0.5 mb-2">
                 Login Email: {userEmail}

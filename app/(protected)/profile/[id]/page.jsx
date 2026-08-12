@@ -14,7 +14,7 @@ export default function PublicProfilePage() {
 
   return (
     <>
-      <Profile profile={{}} userId={currentUserId} targetProfileId={id} />
+      <Profile key={id} userId={currentUserId} targetProfileId={id} />
       <ExperienceSection userId={id} isOwnProfile={isOwnProfile} />
     </>
   );
