@@ -161,7 +161,7 @@ export default function GroupThreadConversation({ thread, groupName, onBack, emb
               const mine = message.user_id === userId;
               const author = profiles[message.user_id] || { name: message.author_name || 'Member' };
               return (
-                <div key={message.id} className={`flex w-full ${mine ? 'justify-end' : 'justify-start'}`}>
+                <div key={message.id} className={`message-row flex w-full ${mine ? 'justify-end' : 'justify-start'}`}>
                   <div className={`flex w-full max-w-[90%] items-end gap-2 sm:max-w-[78%] ${mine ? 'flex-row-reverse' : ''}`}>
                     <div className="mb-1 h-8 w-8 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
                       {author.avatar_url ? <img src={author.avatar_url} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center bg-blue-50 text-xs font-black text-blue-800">{author.name?.charAt(0) || 'M'}</div>}
@@ -186,11 +186,11 @@ export default function GroupThreadConversation({ thread, groupName, onBack, emb
         )}
       </main>
 
-      <footer className="messages-composer shrink-0 border-t border-slate-200 bg-white px-3 pt-3 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
-        {replyTarget && <div className="mb-2 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-xs text-slate-700"><span className="truncate">Replying to <strong>{replyTarget.author}</strong>: {replyTarget.snippet}</span><button onClick={() => setReplyTarget(null)} className="ml-2 shrink-0 text-slate-500"><X size={16} /></button></div>}
-        <div className="mx-auto flex w-full max-w-4xl items-end gap-3">
-          <textarea ref={composerRef} value={draft} disabled={sending || !!error} placeholder="Type your message..." className="min-h-[44px] max-h-[120px] flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none focus:border-[#004173]" onChange={event => { setDraft(event.target.value); event.target.style.height = 'auto'; event.target.style.height = `${Math.min(event.target.scrollHeight, 120)}px`; }} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); } }} />
-          <button onClick={sendMessage} disabled={!draft.trim() || sending || !!error} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sky-600 text-white shadow-md disabled:opacity-40">{sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}</button>
+      <footer className="messages-composer shrink-0 min-w-0 border-t border-slate-200 bg-white shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
+        {replyTarget && <div className="messages-composer__reply"><span className="min-w-0 flex-1 truncate">Replying to <strong>{replyTarget.author}</strong>: {replyTarget.snippet}</span><button onClick={() => setReplyTarget(null)} className="ml-2 shrink-0 text-slate-500" aria-label="Cancel reply"><X size={16} /></button></div>}
+        <div className="messages-composer__row">
+          <textarea ref={composerRef} rows={1} value={draft} disabled={sending || !!error} placeholder="Type your message..." className="messages-composer__field" onChange={event => { setDraft(event.target.value); event.target.style.height = 'auto'; event.target.style.height = `${Math.min(event.target.scrollHeight, 120)}px`; }} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); } }} />
+          <button onClick={sendMessage} disabled={!draft.trim() || sending || !!error} className="messages-composer__send" aria-label={sending ? 'Sending message' : 'Send message'}>{sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}</button>
         </div>
       </footer>
     </section>

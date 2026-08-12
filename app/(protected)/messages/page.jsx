@@ -61,7 +61,20 @@ export default function InboxPage() {
   const [sending, setSending] = useState(false);
 
   const chatEndRef = useRef(null);
+  const messageComposerRef = useRef(null);
   const supabase = createClient();
+
+  const handleMessageDraftChange = (event) => {
+    setNewMessage(event.target.value);
+    event.target.style.height = 'auto';
+    event.target.style.height = `${Math.min(event.target.scrollHeight, 120)}px`;
+  };
+
+  useLayoutEffect(() => {
+    if (!newMessage && messageComposerRef.current) {
+      messageComposerRef.current.style.height = '44px';
+    }
+  }, [newMessage]);
 
   // Scroll to bottom helper
   const scrollToBottom = () => {
@@ -1060,7 +1073,7 @@ export default function InboxPage() {
                     return (
                       <div
                         key={message.id}
-                        className={`flex w-full px-2 ${isOwn ? 'justify-end' : 'justify-start'}`}
+                        className={`message-row flex w-full ${isOwn ? 'justify-end' : 'justify-start'}`}
                       >
                         {!isOwn && (
                           <div className="mr-2 flex-shrink-0 mt-auto mb-5">
@@ -1073,7 +1086,7 @@ export default function InboxPage() {
                             )}
                           </div>
                         )}
-                        <div className={`max-w-[85%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                        <div className={`min-w-0 max-w-[85%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
                           {/* Sender name for partner */}
                           {!isOwn && (
                             <span className="text-[10px] text-gray-400 font-medium ml-1 mb-0.5">
@@ -1104,27 +1117,28 @@ export default function InboxPage() {
 
             <form 
               onSubmit={handleSendMessage}
-              className="flex-none w-full bg-white border-t border-gray-200 z-20 flex items-center gap-3 pl-4 pr-5 md:pr-6 pt-4 pb-2 messages-composer"
+              className="messages-composer flex-none w-full min-w-0 bg-white border-t border-gray-200 z-20"
             >
-              <input
-                type="text"
-                placeholder="Type your message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                disabled={sending}
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-700 placeholder-gray-400 outline-none focus:border-[#002b4e] transition-colors"
-              />
-              <button
-                type="submit"
-                disabled={!newMessage.trim() || sending}
-                className="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center font-bold transition-all duration-150 shadow-sm disabled:opacity-40 cursor-pointer shrink-0"
-              >
-                {sending ? (
-                  <Loader2 className="animate-spin" size={18} />
-                ) : (
-                  <Send size={18} className="ml-0.5" />
-                )}
-              </button>
+              <div className="messages-composer__row">
+                <textarea
+                  ref={messageComposerRef}
+                  rows={1}
+                  placeholder="Type your message..."
+                  value={newMessage}
+                  onChange={handleMessageDraftChange}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault();
+                      handleSendMessage(event);
+                    }
+                  }}
+                  disabled={sending}
+                  className="messages-composer__field"
+                />
+                <button type="submit" disabled={!newMessage.trim() || sending} className="messages-composer__send" aria-label={sending ? 'Sending message' : 'Send message'}>
+                  {sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+                </button>
+              </div>
             </form>
           </>
         ) : activeConv && activePartner && activeTab === 'direct' ? (
@@ -1194,9 +1208,9 @@ export default function InboxPage() {
                     return (
                       <div
                         key={message.id}
-                        className={`flex w-full px-2 ${isOwn ? 'justify-end' : 'justify-start'}`}
+                        className={`message-row flex w-full ${isOwn ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div className={`max-w-[85%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                        <div className={`min-w-0 max-w-[85%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
                           {/* Message bubble */}
                           <div
                             className={`px-4 py-2 text-[1.1rem] leading-relaxed shadow-sm transition-all break-words whitespace-pre-wrap ${
@@ -1224,27 +1238,28 @@ export default function InboxPage() {
             {/* Composer Footer – must sit above the mobile bottom nav + iOS safe-area */}
             <form 
               onSubmit={handleSendMessage}
-              className="flex-none w-full bg-white border-t border-gray-200 z-20 flex items-center gap-3 pl-4 pr-5 md:pr-6 pt-4 pb-2 messages-composer"
+              className="messages-composer flex-none w-full min-w-0 bg-white border-t border-gray-200 z-20"
             >
-              <input
-                type="text"
-                placeholder="Type your message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                disabled={sending}
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-700 placeholder-gray-400 outline-none focus:border-[#002b4e] transition-colors"
-              />
-              <button
-                type="submit"
-                disabled={!newMessage.trim() || sending}
-                className="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center font-bold transition-all duration-150 shadow-sm disabled:opacity-40 cursor-pointer shrink-0"
-              >
-                {sending ? (
-                  <Loader2 className="animate-spin" size={18} />
-                ) : (
-                  <Send size={18} className="ml-0.5" />
-                )}
-              </button>
+              <div className="messages-composer__row">
+                <textarea
+                  ref={messageComposerRef}
+                  rows={1}
+                  placeholder="Type your message..."
+                  value={newMessage}
+                  onChange={handleMessageDraftChange}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault();
+                      handleSendMessage(event);
+                    }
+                  }}
+                  disabled={sending}
+                  className="messages-composer__field"
+                />
+                <button type="submit" disabled={!newMessage.trim() || sending} className="messages-composer__send" aria-label={sending ? 'Sending message' : 'Send message'}>
+                  {sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+                </button>
+              </div>
             </form>
           </>
         ) : (
