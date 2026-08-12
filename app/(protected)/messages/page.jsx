@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
 import { createApplicationMessageNotification } from '@/app/actions/notifications';
+import GroupThreadConversation from '@/src/components/groups/GroupThreadConversation';
 import {
   Send,
   ArrowLeft,
@@ -22,6 +23,7 @@ export default function InboxPage() {
   const searchParams = useSearchParams();
   const activeChatId = searchParams.get('chat');
   const activeAppId = searchParams.get('application');
+  const activeGroupThreadId = searchParams.get('groupThread');
 
   const { userId, profile: currentUserProfile, showToast, currentIdentity } = useProfile();
   const currentUser = { id: userId };
@@ -45,10 +47,11 @@ export default function InboxPage() {
     if (currentIdentity?.type === 'company') {
       setActiveTab('applications');
     } else {
-      if (activeAppId) setActiveTab('applications');
+      if (activeGroupThreadId) setActiveTab('groups');
+      else if (activeAppId) setActiveTab('applications');
       else if (activeChatId) setActiveTab('direct');
     }
-  }, [activeAppId, activeChatId, currentIdentity?.type]);
+  }, [activeAppId, activeChatId, activeGroupThreadId, currentIdentity?.type]);
   
   const [loading, setLoading] = useState(true);
   
@@ -71,7 +74,7 @@ export default function InboxPage() {
     
     const handleResize = () => {
       const isMobile = window.innerWidth < 768;
-      if (isMobile && activeChatId) {
+      if (isMobile && (activeChatId || activeAppId || activeGroupThreadId)) {
         document.body.style.overflow = 'hidden';
       } else {
         document.body.style.overflow = '';
@@ -85,7 +88,7 @@ export default function InboxPage() {
       document.body.style.overflow = '';
       window.removeEventListener('resize', handleResize);
     };
-  }, [activeChatId]);
+  }, [activeChatId, activeAppId, activeGroupThreadId]);
 
   // 1. Fetch all conversations and cache profiles
   useEffect(() => {
@@ -345,6 +348,8 @@ export default function InboxPage() {
           .from('group_threads')
           .select('*, group:groups(name)')
           .in('group_id', groupIds)
+          .eq('is_deleted', false)
+          .eq('is_archived', false)
           .order('last_message_at', { ascending: false, nullsFirst: false })
           .order('created_at', { ascending: false });
 
@@ -731,7 +736,8 @@ export default function InboxPage() {
 
   const activeConv = conversations.find(c => c.id === activeChatId);
   const activePartner = activeConv ? getOtherParticipantProfile(activeConv) : null;
-  const hasActiveConversation = Boolean(activeChatId || activeAppId);
+  const activeGroupThread = groupThreads.find(thread => thread.id === activeGroupThreadId) || null;
+  const hasActiveConversation = Boolean(activeChatId || activeAppId || activeGroupThreadId);
 
 
   let activeAppPartner = null;
@@ -867,14 +873,28 @@ export default function InboxPage() {
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-50">
-                  {groupThreads.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())).map((thread) => {
-                    const author = groupProfilesMap[thread.created_by] || { name: 'Member' };
-                    return (
+                <div>
+                  {Object.entries(groupThreads
+                    .filter(thread => `${thread.group?.name || ''} ${thread.title || ''}`.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .reduce((groups, thread) => {
+                      const name = thread.group?.name || 'Group';
+                      (groups[name] ||= []).push(thread);
+                      return groups;
+                    }, {}))
+                    .sort(([left], [right]) => left.localeCompare(right))
+                    .map(([name, threads]) => (
+                    <section key={name} className="border-b border-gray-100">
+                      <h2 className="sticky top-0 z-[1] bg-gray-50/95 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-slate-500 backdrop-blur-sm">{name}</h2>
+                      <div className="divide-y divide-gray-50">
+                      {threads.map(thread => {
+                        const author = groupProfilesMap[thread.created_by] || { name: 'Member' };
+                        const isActive = activeGroupThreadId === thread.id;
+                        return (
                       <Link
                         key={thread.id}
-                        href={`/groups/${thread.group_id}?thread=${thread.id}`}
-                        className="w-full min-w-0 flex flex-col gap-1 p-4 text-left cursor-pointer transition-colors duration-200 border-l-4 hover:bg-gray-50 border-transparent"
+                        href={`/messages?groupThread=${thread.id}`}
+                        scroll={false}
+                        className={`w-full min-w-0 flex flex-col gap-1 p-4 text-left cursor-pointer transition-colors duration-200 border-l-4 ${isActive ? 'bg-gray-100 border-blue-900' : 'hover:bg-gray-50 border-transparent'}`}
                       >
                         <div className="flex min-w-0 items-center justify-between gap-2">
                           <span className="text-xs font-black uppercase tracking-wider text-blue-600 truncate">{thread.group?.name || 'Group'}</span>
@@ -898,8 +918,11 @@ export default function InboxPage() {
                           </p>
                         </div>
                       </Link>
-                    );
-                  })}
+                        );
+                      })}
+                      </div>
+                    </section>
+                  ))}
                 </div>
               )}
             </>
@@ -957,7 +980,26 @@ export default function InboxPage() {
       <div 
         className={`messages-stage ${hasActiveConversation ? 'messages-stage--conversation-open' : ''} flex-col h-full bg-white overflow-hidden min-h-0`}
       >
-        {(activeTab === 'applications' && activeAppThread) ? (
+        {(activeTab === 'groups' && activeGroupThread) ? (
+          <GroupThreadConversation
+            key={activeGroupThread.id}
+            thread={activeGroupThread}
+            groupName={activeGroupThread.group?.name}
+            embedded
+            onBack={() => router.push('/messages')}
+          />
+        ) : activeTab === 'groups' && activeGroupThreadId && loadingGroups ? (
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
+            <Loader2 className="animate-spin text-[#002b4e]" size={28} />
+            <span className="text-base font-medium">Loading group thread...</span>
+          </div>
+        ) : activeTab === 'groups' && activeGroupThreadId ? (
+          <div className="flex h-full flex-col items-center justify-center p-8 text-center text-red-500">
+            <MessageSquare size={36} className="mb-3 text-red-300" />
+            <p className="font-semibold">This group thread is unavailable.</p>
+            <button onClick={() => router.push('/messages')} className="mt-4 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-[#002b4e]">Back to group threads</button>
+          </div>
+        ) : (activeTab === 'applications' && activeAppThread) ? (
           <>
             {/* Chat stage header for App Thread */}
             <header className="flex-none w-full bg-white border-b border-gray-200 z-10 flex items-center justify-between px-4 py-3 min-h-[64px]">
