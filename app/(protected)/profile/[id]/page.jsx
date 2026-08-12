@@ -1,5 +1,4 @@
 'use client';
-import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useProfile } from '@/app/context/ProfileContext';
 import Profile from '@/src/components/profile/Profile';
@@ -15,7 +14,7 @@ export default function PublicProfilePage() {
 
   return (
     <>
-      <Profile profile={{}} userId={currentUserId} />
+      <Profile key={id} userId={currentUserId} targetProfileId={id} />
       <ExperienceSection userId={id} isOwnProfile={isOwnProfile} />
     </>
   );
