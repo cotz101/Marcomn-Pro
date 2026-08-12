@@ -169,12 +169,32 @@ export default function GroupThreadConversation({ thread, groupName, onBack, emb
                     <div className="min-w-0">
                       {!mine && <p className="mb-0.5 ml-1 truncate text-[10px] font-semibold text-slate-500">{author.name}</p>}
                       <div className={`break-words whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed shadow-sm ${mine ? 'rounded-br-md bg-[#004173] text-white' : 'rounded-bl-md border border-slate-200 bg-white text-slate-800'}`}>
-                        {message.reply_preview && <div className={`mb-2 truncate rounded-lg border-l-4 p-2 text-xs ${mine ? 'border-white/50 bg-white/10' : 'border-[#004173] bg-slate-100 text-slate-600'}`}><strong>Replying to {message.reply_author_name || 'Member'}</strong><br />{message.reply_preview}</div>}
+                        {message.reply_preview && (
+                          <blockquote
+                            aria-label={`Quoted message from ${message.reply_author_name || 'Member'}`}
+                            className={`mb-2 min-w-0 overflow-hidden rounded-md border-l-[3px] px-2.5 py-2 text-xs leading-snug whitespace-normal ${mine ? 'border-white/55 bg-white/10 text-white/75' : 'border-[#004173]/70 bg-slate-100/90 text-slate-500'}`}
+                          >
+                            <span className={`block truncate text-[11px] font-semibold ${mine ? 'text-white/90' : 'text-slate-700'}`}>
+                              {message.reply_author_name || 'Member'}
+                            </span>
+                            <span className="mt-0.5 line-clamp-2 overflow-hidden break-words [overflow-wrap:anywhere]">
+                              {message.reply_preview}
+                            </span>
+                          </blockquote>
+                        )}
                         {message.content}
                       </div>
-                      <div className="mt-0.5 flex items-center gap-2 px-1">
-                        <button onClick={() => replyTo(message)} className="flex items-center gap-1 text-[10px] font-bold text-[#004173]"><Reply size={12} />Reply</button>
-                        <time className="text-[10px] text-slate-400">{message.created_at ? new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</time>
+                      <div className="mt-0.5 flex min-h-7 items-center gap-1.5 px-0.5 text-[10px]">
+                        <button
+                          onClick={() => replyTo(message)}
+                          className="-ml-1 flex min-h-7 items-center gap-1 rounded-md px-1.5 font-semibold text-[#004173] transition-colors hover:bg-[#004173]/5 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#004173]"
+                          aria-label={`Reply to message from ${author.name || 'Member'}`}
+                        >
+                          <Reply size={12} aria-hidden="true" />
+                          Reply
+                        </button>
+                        <span className="text-slate-300" aria-hidden="true">•</span>
+                        <time className="whitespace-nowrap text-slate-400">{message.created_at ? new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</time>
                       </div>
                     </div>
                   </div>
