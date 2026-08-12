@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { 
   ChevronLeft, 
+  ChevronRight,
   MessageSquare, 
   Trash2, 
   Reply, 
@@ -22,6 +23,7 @@ import DOMPurify from 'dompurify';
 import { useProfile } from '@/app/context/ProfileContext';
 
 export default function GroupPage({ groupId: propGroupId }) {
+  const router = useRouter();
   const supabase = createClient();
   const searchParams = useSearchParams();
   const threadIdParam = searchParams.get('thread');
@@ -577,6 +579,10 @@ export default function GroupPage({ groupId: propGroupId }) {
     loadMessages(thread.id);
   };
 
+  const openThreadInMessages = (threadId) => {
+    router.push(`/messages?groupThread=${encodeURIComponent(threadId)}&from=group`);
+  };
+
   const closeThread = () => {
     setView('list');
     setActiveThread(null);
@@ -812,10 +818,20 @@ export default function GroupPage({ groupId: propGroupId }) {
               const isOwner = thread.created_by === userId;
               
               return (
-                <div 
+                <div
                   key={thread.id} 
-                  onClick={() => openThread(thread)}
-                  className="bg-white border border-slate-200 hover:border-blue-400 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-start gap-4 group relative"
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`Open group conversation: ${getThreadTitlePreview(thread.title)}`}
+                  onClick={() => openThreadInMessages(thread.id)}
+                  onKeyDown={(event) => {
+                    if (event.target !== event.currentTarget) return;
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      openThreadInMessages(thread.id);
+                    }
+                  }}
+                  className="bg-white border border-slate-200 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-start gap-4 group relative"
                 >
                   <div className="w-9 h-9 rounded-full bg-slate-100 shrink-0 overflow-hidden mt-0.5 border border-slate-150">
                     {author.avatar_url ? (
@@ -851,6 +867,11 @@ export default function GroupPage({ groupId: propGroupId }) {
                       <Trash2 size={14} />
                     </button>
                   )}
+                  <ChevronRight
+                    size={17}
+                    aria-hidden="true"
+                    className={`absolute bottom-4 right-3 text-slate-300 transition-colors group-hover:text-blue-500 ${(isOwner || isAdmin) ? '' : 'top-1/2 -translate-y-1/2 bottom-auto'}`}
+                  />
                 </div>
               );
             })
