@@ -24,6 +24,8 @@ export default function InboxPage() {
   const activeChatId = searchParams.get('chat');
   const activeAppId = searchParams.get('application');
   const activeGroupThreadId = searchParams.get('groupThread');
+  const requestedTab = searchParams.get('tab');
+  const openedFromGroup = searchParams.get('from') === 'group';
 
   const { userId, profile: currentUserProfile, showToast, currentIdentity } = useProfile();
   const currentUser = { id: userId };
@@ -47,11 +49,11 @@ export default function InboxPage() {
     if (currentIdentity?.type === 'company') {
       setActiveTab('applications');
     } else {
-      if (activeGroupThreadId) setActiveTab('groups');
+      if (activeGroupThreadId || requestedTab === 'groups') setActiveTab('groups');
       else if (activeAppId) setActiveTab('applications');
       else if (activeChatId) setActiveTab('direct');
     }
-  }, [activeAppId, activeChatId, activeGroupThreadId, currentIdentity?.type]);
+  }, [activeAppId, activeChatId, activeGroupThreadId, currentIdentity?.type, requestedTab]);
   
   const [loading, setLoading] = useState(true);
   
@@ -751,6 +753,10 @@ export default function InboxPage() {
   const activePartner = activeConv ? getOtherParticipantProfile(activeConv) : null;
   const activeGroupThread = groupThreads.find(thread => thread.id === activeGroupThreadId) || null;
   const hasActiveConversation = Boolean(activeChatId || activeAppId || activeGroupThreadId);
+  const groupConversationListHref = '/messages?tab=groups';
+  const groupBackHref = openedFromGroup && activeGroupThread?.group_id
+    ? `/groups/${encodeURIComponent(activeGroupThread.group_id)}`
+    : groupConversationListHref;
 
 
   let activeAppPartner = null;
@@ -791,7 +797,7 @@ export default function InboxPage() {
             </button>
             {currentIdentity?.type !== 'company' && (
               <button
-                onClick={() => { setActiveTab('groups'); router.push('/messages'); }}
+                onClick={() => { setActiveTab('groups'); router.push(groupConversationListHref); }}
                 className={`flex-1 py-1.5 text-sm font-bold rounded-md transition-colors ${activeTab === 'groups' ? 'bg-white text-[#002b4e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Groups
@@ -999,7 +1005,7 @@ export default function InboxPage() {
             thread={activeGroupThread}
             groupName={activeGroupThread.group?.name}
             embedded
-            onBack={() => router.push('/messages')}
+            onBack={() => router.push(groupBackHref)}
           />
         ) : activeTab === 'groups' && activeGroupThreadId && loadingGroups ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
@@ -1010,7 +1016,7 @@ export default function InboxPage() {
           <div className="flex h-full flex-col items-center justify-center p-8 text-center text-red-500">
             <MessageSquare size={36} className="mb-3 text-red-300" />
             <p className="font-semibold">This group thread is unavailable.</p>
-            <button onClick={() => router.push('/messages')} className="mt-4 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-[#002b4e]">Back to group threads</button>
+            <button onClick={() => router.push(groupConversationListHref)} className="mt-4 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-[#002b4e]">Back to group threads</button>
           </div>
         ) : (activeTab === 'applications' && activeAppThread) ? (
           <>
