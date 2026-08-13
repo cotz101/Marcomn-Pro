@@ -2,11 +2,13 @@
 
 Status: planning draft. Preparing this runbook applied nothing.
 
-Schema release: Phase 1.3C Migration 7 Draft PR (number assigned after publication)
+Schema release PR: `#12`
 
-Approved branch: `codex/group-attachments-phase-1-3c-schema-release`
+Reviewed feature branch: `codex/group-attachments-phase-1-3c-schema-release`
 
-Execution source: the future merged-main commit, recorded after schema-PR merge
+Reviewed feature commit: `9c364115d14e7dd6823521ec5a5f738e906a3e5c`
+
+Production execution source: the future merged-main commit, to be recorded after PR #12 is merged
 
 ## Scope and exclusions
 
