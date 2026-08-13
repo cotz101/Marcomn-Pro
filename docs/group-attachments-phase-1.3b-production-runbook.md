@@ -1,23 +1,26 @@
-# Phase 1.3B Group Attachment Production Migration Runbook
+# Phase 1.3B/1.3C Group Attachment Production Migration Runbook
 
 Status: planning draft. Preparing this runbook applied nothing.
 
-PR: `#10` (draft)
+Schema release PR: `#12`
 
-Approved branch: `codex/group-attachments-phase-1-3b-foundation`
+Reviewed feature branch: `codex/group-attachments-phase-1-3c-schema-release`
 
-Approved commit: `912c1af30d4c523ef8d3d49706ba10231eac11ec`
+Reviewed feature commit: `9c364115d14e7dd6823521ec5a5f738e906a3e5c`
+
+Production execution source: the future merged-main commit, to be recorded after PR #12 is merged
 
 ## Scope and exclusions
 
 This runbook governs a future, separately authorized production execution of the six Phase 1.3B
-database migrations. It covers preflight, backups, ordered execution, read-only verification,
-rollback decisions and existing-messaging smoke tests.
+foundation migrations followed by the additive Phase 1.3C validation-contract migration. It covers
+preflight, backups, ordered execution, read-only verification, rollback decisions and an
+existing-application smoke test before any Phase 1.3C application update.
 
 It does **not** authorize a migration, Supabase login/link, Storage object mutation, test-data write,
 cleanup scheduler, physical deletion, application deployment, attachment UI, PR merge or production
-smoke test. Phase 1.3B adds foundation only. Signed-client Realtime validation and attachment sending
-remain Phase 1.3C work.
+smoke test. The schema release prepares the database first; Draft PR #11 remains a separate,
+subsequent application release.
 
 Never put a database password, access token, service-role key or backup encryption key in a command
 line, connection URL, shell history, environment variable, log, ticket, PR or this document. Use the
@@ -25,9 +28,9 @@ approved interactive secret-delivery mechanism below. Do not record an authentic
 
 ## Approved artifacts and hashes
 
-The current feature commit is the reviewed source commit. It is not a production execution source.
-After PR #10 is approved and merged, the fast-forwarded merged-main commit becomes the production
-execution source. Verify these same hashes from merged main; any difference after merge is NO-GO.
+The schema-release feature commit is reviewed provenance, not a production execution source. After
+the schema PR is approved and merged, the fast-forwarded merged-main commit becomes the only
+production execution source. Verify these hashes from merged main; any difference is NO-GO.
 
 | Order | File | SHA-256 |
 |---:|---|---|
@@ -37,6 +40,7 @@ execution source. Verify these same hashes from merged main; any difference afte
 | 4 | `20260813043246_group_message_transactional_send.sql` | `A0ECD7E0B999EAB2C8769670BBEC0C32E10F4A33135D23B2B917BE5AAC647054` |
 | 5 | `20260813043253_group_message_moderation.sql` | `BDFBB957321D2B763888DA19555D807FDE4BB91158D889D12D839AB1E56883A6` |
 | 6 | `20260813043307_group_message_cleanup_outbox.sql` | `8200E49E9784DE64DA6182002DB7D6A2017F3DB836898F7898CF0C10A46EDDA8` |
+| 7 | `20260813100518_group_attachment_validation_candidate.sql` | `0DECB5583310E6DA361476A26976BF88E575F58F90A416FB20BA1D79014F57BC` |
 
 Any mismatch is an immediate stop. Do not normalize line endings or edit comments after hashing.
 
@@ -128,7 +132,7 @@ npx supabase db push --project-ref "<INDEPENDENTLY_VERIFIED_PRODUCTION_PROJECT_R
 ```
 
 Do not add `--password`, set `SUPABASE_DB_PASSWORD`, or embed credentials in any URL. The dry run must
-list exactly the six files above, once, in order. The later execution command is the same without
+list exactly the seven files above, once, in order. The later execution command is the same without
 `--dry-run` and must again use masked interactive password entry. Commands shown here are procedure
 templates, not actions performed while preparing this document. If migration-history reconciliation
 is needed, stop; do not use migration repair during the window without a separately reviewed plan.
@@ -165,6 +169,12 @@ through the platform API and cannot target a fully disposable local project. Pro
 interactive password behavior inherently requires CLI authentication and a real hosted project.
 Therefore the CLI production mechanism remains **BLOCKED** pending a separately controlled rehearsal
 against a non-production Supabase cloud project. Do not simulate or infer that result from localhost.
+
+That historical rehearsal covered the six Phase 1.3B files. Migration 7 was subsequently validated
+with the same disposable compatibility baseline: all seven migrations applied in canonical order,
+seven migration-history rows were present, a second local preview reported zero pending migrations,
+and the first six hashes remained unchanged. The required hosted non-production rehearsal must now
+repeat the complete seven-file selection/history assertions before any production GO decision.
 
 ## Pre-deployment backup checklist
 
@@ -239,9 +249,9 @@ Stop conditions:
 ## Go/no-go checklist
 
 - [ ] Final runbook approval is recorded.
-- [ ] PR #10 was marked ready, approved and merged to `main`.
+- [ ] The Phase 1.3C schema-release PR was approved and merged to `main` while application PR #11 remained Draft.
 - [ ] Local `main` was synchronized by fast-forward only; merged-main SHA is recorded.
-- [ ] All six hashes match when computed from merged main. Any difference is NO-GO.
+- [ ] All seven hashes match when computed from merged main. Any difference is NO-GO.
 - [ ] Vercel production build for merged main succeeded.
 - [ ] Vercel install/build settings and logs were rechecked and contain no Supabase or migration
   command. Any changed behavior is NO-GO.
@@ -252,11 +262,11 @@ Stop conditions:
 - [ ] A separately controlled non-production hosted Supabase rehearsal using CLI 2.114.0 passed and
   proves: explicit `--project-ref`; no linked project or `--linked`; a masked interactive password
   prompt; no credential in flags, URL, environment, shell history, normal process listings or retained
-  output; exactly six canonical migrations selected in order; exactly six migration-history entries
+  output; exactly seven canonical migrations selected in order; exactly seven migration-history entries
   recorded; and a second dry run reporting zero pending migrations.
 - [ ] Shell/session recording, debug tracing, diagnostics and screen capture are disabled for secret
   entry; no password is present in flags, URLs, environment variables or clipboard.
-- [ ] CLI is exactly 2.114.0; dry run lists exactly six migrations in order.
+- [ ] CLI is exactly 2.114.0; dry run lists exactly seven migrations in order.
 - [ ] Maintenance notice sent; Group sends disabled or maintenance impact accepted.
 - [ ] Dashboard, database metrics, API errors and lock monitoring are open.
 - [ ] Rollback/application rollback artifacts are ready.
@@ -316,11 +326,11 @@ must be zero and the bucket query must return no row.
 The mandatory release sequence is:
 
 1. Obtain final runbook approval.
-2. Mark PR #10 ready for review.
-3. Obtain approval and merge PR #10 to `main`.
+2. Mark the Phase 1.3C schema-release PR ready for review while keeping application PR #11 Draft.
+3. Obtain approval and merge the schema-release PR to `main`.
 4. Synchronize local `main` by fast-forward only.
 5. Record the merged-main commit SHA.
-6. Verify all six migration hashes from merged main; any difference is NO-GO.
+6. Verify all seven migration hashes from merged main; any difference is NO-GO.
 7. Verify the Vercel production build from merged main completed successfully.
 8. Reconfirm Vercel build logs contain no Supabase or migration command; changed install/build
    behavior is NO-GO.
@@ -328,9 +338,9 @@ The mandatory release sequence is:
 10. During that window, run the fresh drift check, verify backup/PITR evidence, perform the approved
     dry run, obtain GO approval and only then execute.
 
-Merging PR #10 neither authorizes nor executes SQL. Production SQL must never be executed from the
-feature branch. The reviewed feature SHA remains provenance; the recorded merged-main SHA is the only
-future production source.
+Merging the schema-release PR neither authorizes nor executes SQL. Vercel never applies these
+migrations. Production SQL must never be executed from a feature branch. The reviewed schema-release
+SHA remains provenance; the recorded merged-main SHA is the only future production source.
 
 Within the separately authorized database window:
 
@@ -341,14 +351,17 @@ Within the separately authorized database window:
 5. Run the CLI dry-run with explicit non-secret `--project-ref --skip-vault`, no password flag or
    password environment variable, and masked interactive password entry; save only reviewed redacted
    output produced after authentication.
-6. Confirm exactly migrations 1–6 below. If not, stop.
+6. Confirm exactly migrations 1–7 below. If not, stop.
 7. Run the separately authorized CLI push with the same explicit project reference, secret controls
    and `--skip-vault`.
 8. Observe each migration transaction and record start/end/result. Do not reorder or retry blindly.
 9. On error, stop. Follow the rollback decision tree; do not proceed to later files.
-10. Run post-migration catalog verification and existing-messaging smoke tests.
-11. Restore Group sending only after the independent verifier signs off.
-12. Observe metrics for 30 minutes and close or escalate the window.
+10. Run post-migration catalog verification and smoke-test the existing application before any
+    application update.
+11. Only after schema verification passes, update and test Draft PR #11 in a separately approved
+    application release flow.
+12. Restore Group sending only after the independent verifier signs off.
+13. Observe metrics for 30 minutes and close or escalate the window.
 
 ## Migration-by-migration control sheet
 
@@ -493,15 +506,102 @@ order by t.tgname;
 Failure symptoms: queue/type collision or trigger dependency failure. Safe action: stop after automatic
 rollback. If committed, leave queues/data intact and use a forward correction.
 
+### 7 — `20260813100518_group_attachment_validation_candidate.sql`
+
+Purpose: add the server-only trusted-validation candidate contract required before application PR
+#11. It expands the final allowlist to JPG/JPEG, PNG and WebP images (10 MiB limit inherited from the
+foundation); PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX and TXT documents (25 MiB bucket/document limit); and
+HTTPS YouTube/Vimeo link records. Arbitrary external links, macro-enabled Office formats, uploaded
+audio/video, active content, archives, executables/scripts and unknown or mismatched types remain
+excluded by the combined schema and trusted validator.
+
+Preconditions: Migrations 1–6 committed; the reviewed reservation RPC definition is unchanged; the
+private `group-message-attachments` bucket exists; and no candidate RPC/index/constraint collision is
+present. Expected changes are additive to the existing application: an expanded attachment MIME and
+extension constraint, Storage bucket `allowed_mime_types`, immutable legacy Office extension mapping
+(`doc`, `xls`, `ppt`), the partial `group_message_attachments_shared_files_idx` for a future
+authorized Group Shared Files view, and one `SECURITY DEFINER` candidate RPC. No application code is
+required for existing text messaging to continue.
+
+The RPC is
+`public.get_group_attachment_validation_candidate(uuid, uuid)`. It has fixed
+`search_path = pg_catalog, public`; `PUBLIC`, `anon` and `authenticated` execution are revoked; only
+`service_role` receives `EXECUTE`. It returns only the minimum canonical validation fields and adds no
+table `SELECT` grant. Trusted validation still must verify actual bytes/signatures and content; this
+RPC does not make browser declarations authoritative.
+
+Verify:
+
+```sql
+select conname,pg_get_constraintdef(oid,true)
+from pg_constraint
+where conrelid='public.group_message_attachments'::regclass
+  and conname in ('group_message_attachments_mime',
+                  'group_message_attachments_phase_13c_allowlist_check')
+order by conname;
+
+select id,public,file_size_limit,allowed_mime_types
+from storage.buckets where id='group-message-attachments';
+
+select indexname,indexdef from pg_indexes
+where schemaname='public'
+  and indexname='group_message_attachments_shared_files_idx';
+
+select p.oid::regprocedure,pg_get_userbyid(p.proowner) owner,p.prosecdef,p.proconfig,
+       pg_get_function_result(p.oid) result
+from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+where n.nspname='public'
+  and p.oid='public.get_group_attachment_validation_candidate(uuid,uuid)'::regprocedure;
+
+select r.rolname,has_function_privilege(
+  r.oid,
+  'public.get_group_attachment_validation_candidate(uuid,uuid)'::regprocedure,
+  'EXECUTE'
+) can_execute
+from pg_roles r
+where r.rolname in ('anon','authenticated','service_role')
+order by r.rolname;
+
+select exists (
+  select 1
+  from pg_proc p,
+       lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) acl
+  where p.oid='public.get_group_attachment_validation_candidate(uuid,uuid)'::regprocedure
+    and acl.grantee=0 and acl.privilege_type='EXECUTE'
+) as public_can_execute;
+
+select grantee,privilege_type
+from information_schema.table_privileges
+where table_schema='public' and table_name='group_message_attachments'
+  and grantee in ('PUBLIC','anon','authenticated','service_role')
+order by grantee,privilege_type;
+```
+
+Expected privilege results: `anon = false`, `authenticated = false`, `PUBLIC = false`, and
+`service_role = true`. Compare the table-privilege query with the pre-deployment export and confirm
+Migration 7 added no broad table `SELECT` or other table privilege.
+
+Failure symptoms: predecessor-definition mismatch, constraint violation, bucket drift, object-name
+collision or privilege mismatch. The outer transaction rolls back the entire migration. If it already
+committed but must be reversed before PR #11 is deployed, use a separately reviewed rollback
+migration that: revokes/drops only the candidate RPC; drops only
+`group_message_attachments_shared_files_idx`; restores the exact pre-Migration-7 bucket MIME array;
+drops `group_message_attachments_phase_13c_allowlist_check`; restores the exact Migration-1 MIME
+constraint; and restores the exact Migration-4 reservation RPC definition. First prove that no
+Migration-7-only attachment metadata or objects exist. Never delete attachment rows or Storage
+objects, and never hand-edit migration history. After PR #11 is deployed, prefer a forward correction
+or application rollback while leaving compatible additive schema in place.
+
 ## Post-deployment read-only verification
 
 Do not create messages or upload objects during catalog verification.
 
 ```sql
--- Migration history: confirm the six canonical versions once and in order.
+-- Migration history: confirm the seven canonical versions once and in order.
 select * from supabase_migrations.schema_migrations
 where version in ('20260813043220','20260813043230','20260813043239',
-                  '20260813043246','20260813043253','20260813043307')
+                  '20260813043246','20260813043253','20260813043307',
+                  '20260813100518')
 order by version;
 
 -- Exactly the five Phase 1.3B enums and their labels.
@@ -543,7 +643,8 @@ from pg_proc p cross join pg_roles r
 where r.rolname in ('anon','authenticated','service_role')
   and p.proname in ('reserve_group_thread_message','mark_group_message_attachment_ready',
    'publish_group_thread_message','enqueue_due_group_attachment_cleanup',
-   'claim_group_attachment_cleanup','claim_group_message_reservation_cleanup')
+   'claim_group_attachment_cleanup','claim_group_message_reservation_cleanup',
+   'get_group_attachment_validation_candidate')
 order by p.proname,r.rolname;
 
 -- Trigger order is lexical for same timing/event.
@@ -598,11 +699,13 @@ uses the foundation, application rollback is usually unnecessary. Destructive re
 schema/bucket requires explicit approval and proof the bucket is empty. Never delete the bucket based
 only on expected emptiness.
 
-### C. Failure after Migrations 4–6
+### C. Failure after Migrations 4–7
 
 Stop and retain canonical drafts, attachments, outbox and cleanup queues. Prefer a forward corrective
 migration. Do not drop queues/outbox or delete their rows. Revoke a newly exposed callable RPC only via
-an exact reviewed emergency privilege change. Application remains on pre-attachment behavior.
+an exact reviewed emergency privilege change. If Migration 7 is implicated, follow its narrow rollback
+procedure above and keep Draft PR #11 undeployed. The existing application remains on pre-attachment
+behavior.
 
 ### D. Application regression while database foundation is healthy
 
@@ -676,6 +779,6 @@ do not issue cleanup SQL as part of this runbook.
 
 ## Preparation attestation
 
-This document was prepared using local repository inspection and read-only production catalog
-queries. Its preparation did not apply migrations, write database rows, change Supabase or Storage,
-change Vercel, update PR #10, merge code, stage, commit or push anything.
+This document was prepared using local repository inspection and previously approved read-only
+catalog evidence. Its preparation did not apply migrations, write database rows, change Supabase or
+Storage, change Vercel, update Draft PR #11, merge code or execute production SQL.
