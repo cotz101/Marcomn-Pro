@@ -2,6 +2,7 @@
 .branches
 .temp
 config.toml
+templates/
 
 # dotenvx
 .env.keys
