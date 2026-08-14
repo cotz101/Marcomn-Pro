@@ -53,11 +53,18 @@
 }
 
 @media (min-width: 768px) {
+  .messages-shell {
+    width: calc(100% - clamp(32px, 5vw, 80px)) !important;
+    max-width: 1440px;
+    margin-inline: auto;
+    border-inline: 1px solid #e5e7eb;
+  }
+
   .messages-sidebar,
   .messages-sidebar--conversation-open {
     display: flex;
-    flex: 0 0 clamp(320px, 28vw, 384px);
-    width: clamp(320px, 28vw, 384px);
+    flex: 0 0 360px;
+    width: 360px;
   }
 
   .messages-stage,
@@ -65,5 +72,17 @@
     display: flex;
     flex: 1 1 0%;
     width: auto;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 960px) {
+  .messages-shell {
+    width: calc(100% - 24px) !important;
+  }
+
+  .messages-sidebar,
+  .messages-sidebar--conversation-open {
+    flex-basis: 320px;
+    width: 320px;
   }
 }
