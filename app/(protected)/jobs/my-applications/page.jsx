@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useProfile } from '@/app/context/ProfileContext';
 import { createClient } from '@/lib/supabase';
-import { Briefcase, MapPin, Calendar, Building2, Loader2, ExternalLink, Building, AlertTriangle, Coins } from 'lucide-react';
+import { Briefcase, MapPin, Calendar, Building2, Loader2, ExternalLink, Building, AlertTriangle, Coins, ChevronDown, ChevronUp } from 'lucide-react';
 import { getCandidateAcceptanceFeePreview, getUserWalletBalance, deductCandidateAcceptanceFee } from '@/app/actions/mcreditsJobs';
 import { createJobOrderFromAcceptedApplication, cancelJobOrderByCandidate } from '@/app/actions/jobOrders';
 import { markWorkCompletedByApplicant, confirmPaymentReceivedByApplicant } from '@/app/actions/engagementLifecycle';
@@ -86,6 +86,7 @@ export default function MyApplicationsPage() {
 
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedTimelineIds, setExpandedTimelineIds] = useState(() => new Set());
 
   const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
   const [appToAccept, setAppToAccept] = useState(null);
@@ -623,6 +624,18 @@ export default function MyApplicationsPage() {
     return true;
   });
 
+  const toggleTimeline = (applicationId) => {
+    setExpandedTimelineIds((currentIds) => {
+      const nextIds = new Set(currentIds);
+      if (nextIds.has(applicationId)) {
+        nextIds.delete(applicationId);
+      } else {
+        nextIds.add(applicationId);
+      }
+      return nextIds;
+    });
+  };
+
   const renderAdvancePaymentLedgerAndTimeline = (job, requests = []) => {
     const ledger = calculateAdvanceLedger(job, requests);
     const currency = job?.salary_range ? job.salary_range.split(' ')[0] : 'USD';
@@ -731,7 +744,7 @@ export default function MyApplicationsPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6">
+    <div className="max-w-5xl mx-auto px-4 py-8 pb-[calc(var(--mobile-nav-height,72px)+env(safe-area-inset-bottom)+96px)] sm:px-6 md:pb-8">
       {/* Header bar */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-blue-900">My Job Applications</h1>
@@ -805,6 +818,8 @@ export default function MyApplicationsPage() {
         <div className="space-y-4">
           {filteredApplications.map((app) => {
             const job = app.job || {};
+            const isTimelineExpanded = expandedTimelineIds.has(app.id);
+            const timelineId = `engagement-timeline-${app.id}`;
             return (
               <div
                 key={app.id}
@@ -1144,11 +1159,28 @@ export default function MyApplicationsPage() {
 
                 {/* Engagement Timeline */}
                 <div className="mt-6 pt-6 border-t border-slate-100 text-left">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Engagement Timeline</h4>
-                  <EngagementTimeline 
-                    jobOrder={Array.isArray(app.job_orders) ? app.job_orders[0] : app.job_orders} 
-                    application={app} 
-                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleTimeline(app.id)}
+                    aria-expanded={isTimelineExpanded}
+                    aria-controls={timelineId}
+                    className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left text-xs font-bold uppercase tracking-wider text-gray-500 transition-colors hover:bg-slate-50 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+                  >
+                    <span>Engagement Timeline</span>
+                    {isTimelineExpanded ? (
+                      <ChevronUp size={18} className="shrink-0" aria-hidden="true" />
+                    ) : (
+                      <ChevronDown size={18} className="shrink-0" aria-hidden="true" />
+                    )}
+                  </button>
+                  {isTimelineExpanded && (
+                    <div id={timelineId}>
+                      <EngagementTimeline
+                        jobOrder={Array.isArray(app.job_orders) ? app.job_orders[0] : app.job_orders}
+                        application={app}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Dynamic Status Badges / Cancellation Infos / Action Buttons */}
