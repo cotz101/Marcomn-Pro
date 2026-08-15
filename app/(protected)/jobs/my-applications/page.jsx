@@ -744,7 +744,7 @@ export default function MyApplicationsPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6">
+    <div className="max-w-5xl mx-auto px-4 py-8 pb-[calc(var(--mobile-nav-height,72px)+env(safe-area-inset-bottom)+96px)] sm:px-6 md:pb-8">
       {/* Header bar */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-blue-900">My Job Applications</h1>
