@@ -8,6 +8,7 @@ import { useProfile } from '@/app/context/ProfileContext';
 import LogbookActionBar from './LogbookActionBar';
 import RichTextEditor from '@/src/components/common/RichTextEditor';
 import LikersModal from '@/src/components/modals/LikersModal';
+import { getWordAwareTruncationLength } from '@/src/lib/truncateText';
 
 const detectMediaType = (url, type) => {
   if (!url) return null;
@@ -564,6 +565,8 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
     const plainText = tempDiv.textContent || tempDiv.innerText || '';
     if (plainText.length <= limit) return html;
 
+    const truncationLength = getWordAwareTruncationLength(plainText, limit);
+
     let currentLength = 0;
     let resultHtml = '';
     let isTruncated = false;
@@ -572,10 +575,10 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
       if (isTruncated) return;
 
       if (node.nodeType === 3) { // TEXT_NODE
-        const remaining = limit - currentLength;
+        const remaining = truncationLength - currentLength;
         if (node.textContent.length > remaining) {
-          resultHtml += node.textContent.substring(0, remaining).trim();
-          currentLength = limit;
+          resultHtml += node.textContent.substring(0, Math.max(remaining, 0));
+          currentLength = truncationLength;
           isTruncated = true;
         } else {
           resultHtml += node.textContent;
@@ -1173,7 +1176,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                      {isHtml(displayContent) || /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})[^\s<]*)/g.test(displayContent) ? (
                        <div
                          dangerouslySetInnerHTML={{ __html: renderContentWithEmbeds(displayContent) }}
-                         className="prose prose-sm max-w-none text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2 rich-text-content"
+                         className="prose prose-sm max-w-none text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2 rich-text-content [overflow-wrap:anywhere]"
                        />
                      ) : (
                        <div className="text-[16px] sm:text-base leading-[1.6] sm:leading-relaxed text-gray-700 mt-2 whitespace-pre-wrap break-words">
