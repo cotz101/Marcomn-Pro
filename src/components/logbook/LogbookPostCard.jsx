@@ -8,7 +8,7 @@ import { useProfile } from '@/app/context/ProfileContext';
 import LogbookActionBar from './LogbookActionBar';
 import RichTextEditor from '@/src/components/common/RichTextEditor';
 import LikersModal from '@/src/components/modals/LikersModal';
-import { getWordAwareTruncationLength } from '@/src/lib/truncateText';
+import { getNaturalTruncationLength } from '@/src/lib/truncateText';
 
 const detectMediaType = (url, type) => {
   if (!url) return null;
@@ -565,7 +565,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
     const plainText = tempDiv.textContent || tempDiv.innerText || '';
     if (plainText.length <= limit) return html;
 
-    const truncationLength = getWordAwareTruncationLength(plainText, limit);
+    const truncationLength = getNaturalTruncationLength(plainText, limit);
 
     let currentLength = 0;
     let resultHtml = '';
