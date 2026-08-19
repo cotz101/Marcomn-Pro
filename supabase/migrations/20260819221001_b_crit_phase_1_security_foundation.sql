@@ -1,4 +1,7 @@
--- B-CRIT: close critical email, platform-role, and company-membership escalation paths.
+-- B-CRIT Phase 1: backward-compatible email, profile-role, and Company-creation foundation.
+--
+-- This phase intentionally preserves the legacy direct companies/company_members
+-- INSERT path until the RPC-based application has been deployed.
 
 create or replace function public.get_user_email(p_user_id uuid)
 returns text
@@ -31,11 +34,13 @@ grant execute on function public.get_user_email(uuid) to authenticated;
 grant execute on function public.get_user_email(uuid) to service_role;
 
 -- RLS limits which profile row may be updated; column privileges protect the
--- immutable identity key and legacy platform authorization field on that row.
+-- legacy platform authorization field while preserving all existing profile
+-- edit, avatar, onboarding, and upsert payloads.
 revoke update on table public.profiles from anon;
 revoke update on table public.profiles from authenticated;
 grant update (
   id,
+  updated_at,
   username,
   name,
   avatar_url,
@@ -66,8 +71,8 @@ alter policy "Users can update their own profiles." on public.profiles
   using ((select auth.uid()) = id)
   with check ((select auth.uid()) = id);
 
--- Company creation and initial Owner assignment must be one authenticated,
--- atomic database operation. Generic browser inserts are no longer trusted.
+-- Add the canonical Company creation path without disabling the legacy client
+-- path. Phase 2 closes the legacy path after the RPC client is deployed.
 create or replace function public.create_company_with_owner(
   p_name text,
   p_industry text default null,
@@ -115,11 +120,3 @@ revoke all on function public.create_company_with_owner(text, text, text, text, 
 revoke all on function public.create_company_with_owner(text, text, text, text, text) from anon;
 grant execute on function public.create_company_with_owner(text, text, text, text, text) to authenticated;
 grant execute on function public.create_company_with_owner(text, text, text, text, text) to service_role;
-
-drop policy if exists "Users can create their own membership on creation"
-  on public.company_members;
-
-revoke insert on table public.companies from anon;
-revoke insert on table public.companies from authenticated;
-revoke insert, update on table public.company_members from anon;
-revoke insert, update on table public.company_members from authenticated;
