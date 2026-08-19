@@ -4,12 +4,13 @@ import { useProfile } from '@/app/context/ProfileContext';
 import BaseModal from '../layout/BaseModal';
 import RichTextEditor from '../common/RichTextEditor';
 import { Briefcase, AlertTriangle, Coins, Globe, Lock, X } from 'lucide-react';
-import { getJobPostingFeePreview, getCompanyWalletBalance, deductJobPostingFee, getUserWalletBalance, deductUserJobPostingFee } from '@/app/actions/mcreditsJobs';
+import { getJobPostingFeePreview, getCompanyWalletBalance, getUserWalletBalance, publishJobWithMCredit } from '@/app/actions/mcreditsJobs';
 import { refreshPath } from '@/app/actions/cache';
 
 export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit }) {
   const { currentIdentity, userId, profile } = useProfile();
   const [loading, setLoading] = useState(false);
+  const [newJobId, setNewJobId] = useState(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -121,6 +122,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         setAdvanceSectionExpanded(jobToEdit.advance_payment_enabled || false);
         setAdvancedSettingsExpanded(false);
       } else {
+        setNewJobId(crypto.randomUUID());
         setFormData({
           title: '',
           location: '',
@@ -310,24 +312,31 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
 
     const isPublishingNewJob = !jobToEdit && (formData.postingStatus || '').toLowerCase() !== 'draft';
     const isTransitionToPublish = jobToEdit && ((jobToEdit.status || 'draft').toLowerCase() === 'draft') && ['published', 'open'].includes((formData.postingStatus || '').toLowerCase());
+    const expectedFee = Number(feePreview?.fee);
 
-    // Perform wallet balance check prior to any DB operation if publishing
-    if ((isPublishingNewJob || isTransitionToPublish) && contractValue && contractValue > 0) {
-      try {
-        const preview = await getJobPostingFeePreview(contractValue);
-        const wallet = await (isCompany ? getCompanyWalletBalance(currentIdentity.id) : getUserWalletBalance(userId));
-        if (wallet.balance < preview.fee) {
-          alert(`Insufficient MCredits to publish this job. Required: ${preview.fee.toFixed(2)} MC, Available: ${wallet.balance.toFixed(2)} MC. You can keep it as draft or top up your wallet.`);
-          setLoading(false);
-          return;
-        }
-      } catch (err) {
-        console.error('Wallet validation error:', err);
-        alert('Failed to validate MCredits balance: ' + err.message);
-        setLoading(false);
-        return;
-      }
+    if ((isPublishingNewJob || isTransitionToPublish) && !Number.isFinite(expectedFee)) {
+      alert('The posting fee preview is not ready. Please review the refreshed fee and confirm again.');
+      setLoading(false);
+      return;
     }
+
+    const handlePublishResult = (result) => {
+      if (result?.success) return true;
+      if (result?.code === 'fee_changed') {
+        setFeePreview({
+          fee: Number(result.authoritative_fee),
+          feePercent: Number(result.fee_percent)
+        });
+        alert(`The posting fee changed to ${Number(result.authoritative_fee).toFixed(2)} MC. Nothing was charged. Please review and confirm again.`);
+        return false;
+      }
+      if (result?.code === 'insufficient_balance') {
+        alert(`Insufficient MCredits. Required: ${Number(result.required).toFixed(2)} MC, Available: ${Number(result.available).toFixed(2)} MC. The job remains Draft.`);
+        return false;
+      }
+      alert(`Job publishing failed (${result?.code || 'unknown_error'}). Nothing was charged.`);
+      return false;
+    };
 
     // Auto-commit any lingering skill input if the user forgot to press Enter
     let finalSkills = [...skills];
@@ -371,7 +380,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           pay_rate_quantity: qty,
           employment_type: formData.jobType,
           experience_level: formData.experienceLevel,
-          status: formData.postingStatus,
+          status: isTransitionToPublish ? 'Draft' : formData.postingStatus,
           required_skills: finalSkills,
           priority: formData.positionStatus === 'Active Position',
           withdrawal_limit: parseInt(withdrawalLimit, 10),
@@ -406,18 +415,17 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
 
       console.log('Update job success:', jobData);
 
-      if (isTransitionToPublish && contractValue && contractValue > 0) {
+      if (isTransitionToPublish) {
         try {
-          if (isCompany) {
-            await deductJobPostingFee(currentIdentity.id, jobToEdit.id, contractValue);
-          } else {
-            await deductUserJobPostingFee(userId, jobToEdit.id, contractValue);
+          const publishResult = await publishJobWithMCredit(jobToEdit.id, expectedFee);
+          if (!handlePublishResult(publishResult)) {
+            setLoading(false);
+            return;
           }
+          jobData.status = publishResult.status;
         } catch (mcErr) {
-          console.error('MCredit deduction failed during transition, rolling back job status:', mcErr);
-          // Rollback: set status back to Draft in database
-          await supabase.from('jobs').update({ status: 'Draft' }).eq('id', jobToEdit.id);
-          alert('Job publishing failed: ' + (mcErr.message || 'Insufficient MCredits'));
+          console.error('Atomic job publication failed:', mcErr);
+          alert('Job publishing failed: ' + mcErr.message + '. The job remains Draft and no charge was committed.');
           setLoading(false);
           return;
         }
@@ -479,11 +487,12 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
       setLoading(false);
       onComplete(jobData);
     } else {
-      const salaryNumericVal = parseFloat(formData.payAmount) || null;
-
-      const { data: jobData, error: jobError } = await supabase
+      const draftJobId = newJobId || crypto.randomUUID();
+      if (!newJobId) setNewJobId(draftJobId);
+      let { data: jobData, error: jobError } = await supabase
         .from('jobs')
         .insert({
+          id: draftJobId,
           title: formData.title,
           description: formData.description,
           responsibilities: formData.responsibilities,
@@ -495,7 +504,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           experience_level: formData.experienceLevel,
           company_id: isCompany ? currentIdentity.id : null,
           poster_id: userId,
-          status: formData.postingStatus,
+          status: isPublishingNewJob ? 'Draft' : formData.postingStatus,
           required_skills: finalSkills,
           priority: formData.positionStatus === 'Active Position',
           withdrawal_limit: parseInt(withdrawalLimit, 10),
@@ -513,25 +522,29 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         .select()
         .maybeSingle();
 
-      if (jobError) {
-        alert('Error creating job: ' + jobError.message);
+      if (jobError?.code === '23505' && isPublishingNewJob) {
+        const existingResult = await supabase.from('jobs').select().eq('id', draftJobId).maybeSingle();
+        jobData = existingResult.data;
+        jobError = existingResult.error;
+      }
+
+      if (jobError || !jobData) {
+        alert('Error creating job: ' + (jobError?.message || 'The Draft could not be loaded.'));
         setLoading(false);
         return;
       }
 
-      // MCredit deduction (only if not saving as Draft)
-      if (formData.postingStatus !== 'Draft' && contractValue && contractValue > 0) {
+      if (isPublishingNewJob) {
         try {
-          if (isCompany) {
-            await deductJobPostingFee(currentIdentity.id, jobData.id, contractValue);
-          } else {
-            await deductUserJobPostingFee(userId, jobData.id, contractValue);
+          const publishResult = await publishJobWithMCredit(jobData.id, expectedFee);
+          if (!handlePublishResult(publishResult)) {
+            setLoading(false);
+            return;
           }
+          jobData.status = publishResult.status;
         } catch (mcErr) {
-          console.error('MCredit deduction failed, rolling back job:', mcErr);
-          // Rollback: delete the inserted job
-          await supabase.from('jobs').delete().eq('id', jobData.id);
-          alert('Job posting failed: ' + (mcErr.message || 'Insufficient MCredits'));
+          console.error('Atomic job publication failed:', mcErr);
+          alert('Job publishing failed: ' + mcErr.message + '. The job remains Draft and no charge was committed.');
           setLoading(false);
           return;
         }
@@ -1267,6 +1280,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                 <button
                   type="button"
                   onClick={executeSubmit}
+                  disabled={loading}
                   className="btn-primary-pill px-6 flex items-center gap-2 bg-blue-900 text-white rounded-full hover:bg-blue-800 transition-colors"
                 >
                   Confirm & Publish
