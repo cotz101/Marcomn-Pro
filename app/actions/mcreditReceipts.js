@@ -91,7 +91,7 @@ export async function createReceiptForTopup({ topupRequestId, transactionId }) {
     }
     
     if (requesterId) {
-       const { data: emailData } = await supabase.rpc('get_user_email', { user_id: requesterId });
+       const { data: emailData } = await supabase.rpc('get_user_email', { p_user_id: requesterId });
        if (emailData) issuedToEmail = emailData;
        
        const { data: profile } = await supabase.from('profiles').select('name').eq('id', requesterId).single();
