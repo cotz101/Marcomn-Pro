@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase';
 import { X, Building2, Globe, MapPin, Briefcase, Check, Loader } from 'lucide-react';
 import BaseModal from '../layout/BaseModal';
 
-export default function CreateCompanyModal({ userId, onComplete, onClose }) {
+export default function CreateCompanyModal({ onComplete, onClose }) {
   const [form, setForm] = useState({
     name: '',
     industry: '',
@@ -28,31 +28,16 @@ export default function CreateCompanyModal({ userId, onComplete, onClose }) {
     const supabase = createClient();
 
     try {
-      // 1. Create the company
       const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .insert({
-          name: form.name.trim(),
-          industry: form.industry.trim(),
-          website: form.website.trim(),
-          location: form.location.trim(),
-          bio: form.bio.trim(),
-        })
-        .select()
-        .maybeSingle();
-
-      if (companyError) throw companyError;
-
-      // 2. Link the user as Owner
-      const { error: memberError } = await supabase
-        .from('company_members')
-        .insert({
-          company_id: company.id,
-          profile_id: userId,
-          role: 'Owner',
+        .rpc('create_company_with_owner', {
+          p_name: form.name.trim(),
+          p_industry: form.industry.trim(),
+          p_website: form.website.trim(),
+          p_location: form.location.trim(),
+          p_bio: form.bio.trim(),
         });
 
-      if (memberError) throw memberError;
+      if (companyError) throw companyError;
 
       onComplete(company);
     } catch (err) {
