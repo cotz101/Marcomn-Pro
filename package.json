@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --webpack",
+    "dev:ag": "next dev --webpack --port 5000",
+    "dev:codex": "next dev --webpack --port 5005",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
