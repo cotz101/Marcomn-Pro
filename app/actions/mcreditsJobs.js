@@ -47,71 +47,21 @@ export async function getUserWalletBalance(userId) {
 }
 
 /**
- * Deduct company MCredits for posting a job.
- * Called AFTER the job row is inserted (so we have a job ID for the reference).
+ * Atomically charge the canonical wallet and publish the canonical Draft job.
+ * The RPC derives the actor, company, wallet, salary, and fee from database state.
  */
-export async function deductJobPostingFee(companyId, jobId, salaryNumeric) {
-  const feePercent = await getMCreditSetting('company_job_posting_fee_percent');
-  const salary = Number(salaryNumeric || 0);
-  const fee = Number((salary * feePercent / 100).toFixed(2));
-
-  if (fee <= 0) {
-    return { success: true, fee: 0, message: 'No fee required' };
-  }
-
-  const wallet = await getOrCreateCompanyWallet(companyId);
-  
-  if (Number(wallet.balance) < fee) {
-    throw new Error(`Insufficient MCredits. Required: ${fee.toFixed(2)} MC, Available: ${Number(wallet.balance).toFixed(2)} MC. Please top up or contact platform admin.`);
-  }
-
-  const newBalance = await createWalletTransaction({
-    walletId: wallet.id,
-    type: 'spend',
-    amount: fee,
-    direction: 'debit',
-    justification: `Company job posting fee (${feePercent}% of ${salary}) for job ${jobId}`,
-    createdBy: null,
-    referenceType: 'job_posting',
-    referenceId: jobId,
-    overrideBalanceCheck: false
+export async function publishJobWithMCredit(jobId, expectedFee) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('publish_job_with_mcredit', {
+    p_job_id: jobId,
+    p_expected_fee: expectedFee
   });
 
-  return { success: true, fee, newBalance: Number(newBalance) };
-}
-
-/**
- * Deduct user MCredits for posting a job.
- * Called AFTER the job row is inserted (so we have a job ID for the reference).
- */
-export async function deductUserJobPostingFee(userId, jobId, salaryNumeric) {
-  const feePercent = await getMCreditSetting('company_job_posting_fee_percent');
-  const salary = Number(salaryNumeric || 0);
-  const fee = Number((salary * feePercent / 100).toFixed(2));
-
-  if (fee <= 0) {
-    return { success: true, fee: 0, message: 'No fee required' };
+  if (error) {
+    throw new Error(`Atomic job publication failed: ${error.message}`);
   }
 
-  const wallet = await getOrCreateUserWallet(userId);
-  
-  if (Number(wallet.balance) < fee) {
-    throw new Error(`Insufficient MCredits. Required: ${fee.toFixed(2)} MC, Available: ${Number(wallet.balance).toFixed(2)} MC. Please top up or contact platform admin.`);
-  }
-
-  const newBalance = await createWalletTransaction({
-    walletId: wallet.id,
-    type: 'spend',
-    amount: fee,
-    direction: 'debit',
-    justification: `Personal job posting fee (${feePercent}% of ${salary}) for job ${jobId}`,
-    createdBy: null,
-    referenceType: 'job_posting',
-    referenceId: jobId,
-    overrideBalanceCheck: false
-  });
-
-  return { success: true, fee, newBalance: Number(newBalance) };
+  return data;
 }
 
 /**
