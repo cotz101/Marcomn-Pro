@@ -182,11 +182,11 @@ export default async function CreditsPage() {
         <PolicyHero eyebrow="MarComn MCredits" title={page.title || 'About MCredits'} description={page.meta_description} />
       </div>
 
-      <div className="w-full max-w-6xl mx-auto px-4 py-8 sm:px-6 md:px-8 md:py-12 space-y-6 md:space-y-8 flex flex-col items-center">
-        {/* Page Title & Meta Description */}
+      <div className="mx-auto w-full max-w-[960px] px-4 py-8 sm:px-6 md:px-8 md:py-12">
+        <div className="legal-document-surface w-full rounded-2xl border border-slate-200 bg-white shadow-[0_12px_40px_rgba(14,42,77,0.045)]">
         {/* User Balance / Available Funds Card */}
         {user ? (
-          <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(14,42,77,0.025)] p-6 md:p-8 flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+          <div className="mb-2 flex w-full flex-col items-center justify-between gap-4 rounded-xl border border-[#dceaf3] bg-[#f4f9fc] p-5 sm:flex-row sm:p-6">
             <div className="flex items-center gap-4 text-left">
               <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
                 <Coins size={24} />
@@ -207,7 +207,7 @@ export default async function CreditsPage() {
             </Link>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(14,42,77,0.025)] p-6 md:p-8 flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+          <div className="mb-2 flex w-full flex-col items-center justify-between gap-4 rounded-xl border border-[#dceaf3] bg-[#f4f9fc] p-5 sm:flex-row sm:p-6">
             <div className="flex items-center gap-3 text-left">
               <div className="p-2 bg-blue-50 text-[#00B4D8] rounded-lg shrink-0">
                 <Coins size={20} />
@@ -228,19 +228,19 @@ export default async function CreditsPage() {
 
         {/* Fallback 2: No Sections */}
         {sections.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 text-center shadow-[0_8px_30px_rgba(14,42,77,0.025)] w-full">
+          <div className="py-10 text-center w-full">
             <p className="text-sm text-gray-500 font-medium font-sans">No content sections available yet.</p>
           </div>
         ) : (
-          <div className="space-y-6 md:space-y-8 w-full">
-            {sections.map((section) => {
+          <div className="w-full">
+            {sections.map((section, sectionIndex) => {
               const paragraphs = section.content.split('\n').filter(p => p.trim() !== '');
               return (
                 <section 
                   key={section.id} 
-                  className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 md:p-8 shadow-[0_10px_32px_rgba(14,42,77,0.035)] space-y-4 w-full text-left"
+                  className={`w-full space-y-4 py-7 text-left sm:py-9 ${sectionIndex > 0 ? 'border-t border-slate-200' : ''}`}
                 >
-                  <h2 className="text-lg md:text-xl font-bold text-[#0e2a4d] border-b border-slate-50 pb-2">
+                  <h2 className="text-xl font-bold leading-snug text-[#0e2a4d] sm:text-[1.35rem]">
                     {section.title}
                   </h2>
                   <div className="space-y-4">
@@ -259,7 +259,7 @@ export default async function CreditsPage() {
 
                   {/* Pricing grid injection under available-packages section */}
                   {section.section_key === 'available-packages' && (
-                    <div className="mt-8 pt-6 border-t border-slate-100/60">
+                    <div className="mt-7 rounded-xl border border-[#dceaf3] bg-[#f8fbfd] p-4 sm:p-6">
                       {packages.length === 0 ? (
                         <p className="text-xs text-red-500 font-bold">No active top-up packages currently available.</p>
                       ) : (
@@ -273,8 +273,8 @@ export default async function CreditsPage() {
                                   key={pkg.id || pkg.usdPrice}
                                   className={`relative p-5 rounded-2xl flex flex-col justify-between transition-all duration-200 ${
                                     isPromo 
-                                      ? 'bg-white shadow-[0_8px_24px_rgba(14,42,77,0.06)] ring-2 ring-[#00B4D8]/30 scale-[1.02] md:scale-105 z-10 border-0' 
-                                      : 'bg-slate-50/60 hover:bg-slate-50/80 shadow-none border-0'
+                                      ? 'bg-white shadow-[0_8px_24px_rgba(14,42,77,0.06)] ring-2 ring-[#00B4D8]/30 z-10 border-0'
+                                      : 'border border-slate-200 bg-white hover:border-[#00B4D8]/40 shadow-none'
                                   }`}
                                 >
                                   {isPromo && (
@@ -321,13 +321,13 @@ export default async function CreditsPage() {
 
         {/* FAQs Section */}
         {faqs.length > 0 && (
-          <section className="space-y-6 w-full">
-            <h2 className="text-xl font-bold text-[#0e2a4d] tracking-tight text-left">Frequently Asked Questions</h2>
-            <div className="space-y-4">
+          <section className="w-full border-t border-slate-200 py-7 text-left sm:py-9">
+            <h2 className="text-xl font-bold leading-snug text-[#0e2a4d] sm:text-[1.35rem]">Frequently Asked Questions</h2>
+            <div className="mt-5 divide-y divide-slate-200">
               {faqs.map((faq) => (
                 <div 
                   key={faq.id} 
-                  className="bg-white rounded-2xl p-6 md:p-8 shadow-[0_8px_30px_rgba(14,42,77,0.025)]"
+                  className="py-5 first:pt-0 last:pb-0"
                 >
                   <h3 className="font-bold text-[#0e2a4d] text-sm md:text-base mb-2 text-left">
                     {faq.question}
@@ -340,6 +340,7 @@ export default async function CreditsPage() {
             </div>
           </section>
         )}
+        </div>
       </div>
     </div>
   );
