@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useProfile } from '@/app/context/ProfileContext';
 import { createClient } from '@/lib/supabase';
+import { uploadApplicationDocuments } from '@/lib/applicationDocuments';
 import { formatCompensation } from '@/lib/compensation';
 import { 
   ArrowLeft, 
@@ -190,22 +191,9 @@ export default function OpportunityDetailsPage() {
     setIsApplying(true);
     try {
       const supabase = createClient();
-      const uploadedDocs = [];
-
-      if (selectedFiles.length > 0) {
-        for (const file of selectedFiles) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${currentUser.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-          const { error: uploadError } = await supabase.storage.from('resumes').upload(fileName, file);
-          if (uploadError) {
-            if (showToast) showToast(`Upload failed for "${file.name}": ` + uploadError.message, 'error');
-            setIsApplying(false);
-            return;
-          }
-          const { data: pubData } = supabase.storage.from('resumes').getPublicUrl(fileName);
-          uploadedDocs.push({ name: file.name, url: pubData?.publicUrl || '' });
-        }
-      }
+      const uploadedDocs = selectedFiles.length > 0
+        ? await uploadApplicationDocuments(supabase, currentUser.id, selectedFiles)
+        : [];
 
       const { data: appData, error: applyError } = await supabase
         .from('applications')
@@ -272,22 +260,9 @@ export default function OpportunityDetailsPage() {
     setIsApplying(true);
     try {
       const supabase = createClient();
-      const uploadedDocs = [];
-
-      if (selectedFiles.length > 0) {
-        for (const file of selectedFiles) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${currentUser.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-          const { error: uploadError } = await supabase.storage.from('resumes').upload(fileName, file);
-          if (uploadError) {
-            if (showToast) showToast(`Upload failed for "${file.name}": ` + uploadError.message, 'error');
-            setIsApplying(false);
-            return;
-          }
-          const { data: pubData } = supabase.storage.from('resumes').getPublicUrl(fileName);
-          uploadedDocs.push({ name: file.name, url: pubData?.publicUrl || '' });
-        }
-      }
+      const uploadedDocs = selectedFiles.length > 0
+        ? await uploadApplicationDocuments(supabase, currentUser.id, selectedFiles)
+        : [];
 
       const { data: updated, error } = await supabase
         .from('applications')

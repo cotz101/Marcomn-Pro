@@ -1986,7 +1986,7 @@ export default function AdminFinancePage() {
                       <div className="col-span-2 pt-1">
                         <span className="block text-[10px] text-gray-400 font-bold mb-1">Payment Proof</span>
                         <a 
-                          href={req.proof_url} 
+                          href={`/api/advance-proofs/signed-url?requestId=${encodeURIComponent(req.id)}`}
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 text-xs text-blue-900 font-bold hover:underline"
