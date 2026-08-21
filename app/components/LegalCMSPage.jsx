@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import LandingLogo from '@/app/components/LandingLogo';
-import LegalLinks from '@/app/components/LegalLinks';
+import InformationNav from '@/app/components/InformationNav';
 import PolicyHero from '@/app/components/PolicyHero';
+import PublicSiteFooter from '@/app/components/PublicSiteFooter';
+import PublicSiteHeader from '@/app/components/PublicSiteHeader';
 import { LEGAL_EFFECTIVE_DATE } from '@/lib/legalContent';
 
 function InlineText({ text }) {
@@ -16,12 +17,8 @@ export default function LegalCMSPage({ data }) {
   const { page, sections, faqs } = data;
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-700">
-      <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-8">
-          <Link href="/" aria-label="MarComn home"><LandingLogo /></Link>
-          <Link href="/login" className="rounded-xl bg-[#00B4D8] px-4 py-2 text-xs font-bold text-[#0e2a4d] hover:opacity-90">Sign In</Link>
-        </div>
-      </header>
+      <PublicSiteHeader />
+      <InformationNav currentPath={`/${page.slug}`} />
       <main>
         <div className="border-b border-[#dceaf3] bg-gradient-to-b from-[#e8f4fb] to-[#f4f7fb] px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
           <PolicyHero eyebrow="MarComn Legal" title={page.title} description={page.meta_description} effectiveDate={LEGAL_EFFECTIVE_DATE} />
@@ -82,10 +79,7 @@ export default function LegalCMSPage({ data }) {
           </div>
         </div>
       </main>
-      <footer className="border-t border-slate-100 bg-white px-5 py-8 text-center text-xs text-slate-500">
-        <LegalLinks />
-        <p className="mt-5">© 2026 MarComn. All rights reserved.</p>
-      </footer>
+      <PublicSiteFooter />
     </div>
   );
 }

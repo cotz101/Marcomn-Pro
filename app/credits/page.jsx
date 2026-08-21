@@ -1,10 +1,11 @@
 import Link from 'next/link';
-import LandingLogo from '@/app/components/LandingLogo';
 import { createClient } from '@/lib/supabase-server';
 import { getCMSPageData } from '@/lib/cmsPublicPage';
-import LegalLinks from '@/app/components/LegalLinks';
+import InformationNav from '@/app/components/InformationNav';
 import PolicyHero from '@/app/components/PolicyHero';
-import { Coins, Ship, LayoutGrid, Newspaper, MessageSquare, Bell, Briefcase } from 'lucide-react';
+import PublicSiteFooter from '@/app/components/PublicSiteFooter';
+import PublicSiteHeader from '@/app/components/PublicSiteHeader';
+import { Coins } from 'lucide-react';
 import { ProfileProvider } from '@/app/context/ProfileContext';
 import AppShell from '@/app/components/AppShell';
 
@@ -47,73 +48,29 @@ export default async function CreditsPage() {
       return (
         <ProfileProvider userId={user.id} userEmail={user.email}>
           <AppShell userEmail={user.email} userId={user.id}>
-            <div className="min-h-screen w-full bg-gradient-to-b from-[#e8f1fb] via-[#f3f7fb] to-[#f3f7fb] pb-20 flex flex-col items-center justify-center text-center px-6 py-20">
-              <h1 className="text-4xl font-extrabold text-[#0e2a4d] mb-4">Page Not Found</h1>
-              <p className="text-gray-500 mb-8 max-w-md">
-                The requested page is either not configured or has not been published by administrators.
-              </p>
-              <Link 
-                href="/" 
-                className="text-sm font-bold px-6 py-3 rounded-xl transition-all hover:opacity-90"
-                style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
-              >
-                Back to Home
-              </Link>
-            </div>
+            <>
+              <div className="min-h-screen w-full bg-gradient-to-b from-[#e8f1fb] via-[#f3f7fb] to-[#f3f7fb] pb-20 flex flex-col items-center justify-center text-center px-6 py-20">
+                <h1 className="text-4xl font-extrabold text-[#0e2a4d] mb-4">Page Not Found</h1>
+                <p className="text-gray-500 mb-8 max-w-md">
+                  The requested page is either not configured or has not been published by administrators.
+                </p>
+                <Link
+                  href="/"
+                  className="text-sm font-bold px-6 py-3 rounded-xl transition-all hover:opacity-90"
+                  style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
+                >
+                  Back to Home
+                </Link>
+              </div>
+              <PublicSiteFooter />
+            </>
           </AppShell>
         </ProfileProvider>
       );
     } else {
       return (
         <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#e8f1fb] via-[#f3f7fb] to-[#f3f7fb]">
-          <header className="header app-header">
-            <div className="app-container">
-              <div className="w-full flex items-center justify-between py-2 px-4 h-[calc(76px+env(safe-area-inset-top))] md:h-auto md:min-h-[64px] pt-[calc(env(safe-area-inset-top)+20px)] md:pt-1">
-                <div className="flex items-center gap-3 flex-1 md:flex-none">
-                  <Link href="/" className="logo font-semibold text-[#002b4e] flex items-center">
-                    <span>Mar<span>Comn</span></span>
-                  </Link>
-                </div>
-                <div className="hidden md:flex items-center justify-center !mt-[10px] flex-1">
-                  <Link href="/logbook" className="nav-link">
-                    <Ship size={24} />
-                    <span>MNetwork</span>
-                  </Link>
-                  <Link href="/mservices" className="nav-link">
-                    <LayoutGrid size={24} />
-                    <span>MServices</span>
-                  </Link>
-                  <Link href="/mblog" className="nav-link">
-                    <Newspaper size={24} />
-                    <span>MBlogs</span>
-                  </Link>
-                </div>
-                <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
-                  <Link href="/login" className="header-icon-btn scale-110 md:scale-100 flex-shrink-0">
-                    <MessageSquare size={26} />
-                  </Link>
-                  <Link href="/login" className="header-icon-btn relative hidden md:block">
-                    <Bell size={22} />
-                  </Link>
-                  <Link 
-                    href="/login"
-                    className="btn-primary-pill px-2.5 py-1.5 md:px-5 ml-1.5 md:ml-3 flex items-center justify-center mr-1 md:mr-3 flex-shrink-0 text-sm font-bold"
-                    style={{ backgroundColor: 'var(--primary-container)', color: '#002b4e' }}
-                  >
-                    <Briefcase size={16} className="md:mr-2" />
-                    <span className="hidden md:inline whitespace-nowrap">Post a Job</span>
-                  </Link>
-                  <Link 
-                    href="/login" 
-                    className="text-xs font-bold px-4 py-2 rounded-xl transition-all hover:opacity-90"
-                    style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
-                  >
-                    Sign In
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </header>
+          <PublicSiteHeader />
           <main className="flex-1 flex flex-col items-center justify-center text-center px-6 py-20">
             <h1 className="text-4xl font-extrabold text-[#0e2a4d] mb-4">Page Not Found</h1>
             <p className="text-gray-500 mb-8 max-w-md">
@@ -127,6 +84,7 @@ export default async function CreditsPage() {
               Back to Home
             </Link>
           </main>
+          <PublicSiteFooter />
         </div>
       );
     }
@@ -177,6 +135,8 @@ export default async function CreditsPage() {
           padding: 0 !important;
         }
       `}} />
+
+      <InformationNav currentPath="/credits" />
 
       <div className="w-full border-b border-[#dceaf3] bg-gradient-to-b from-[#e8f4fb] to-[#f4f7fb] px-5 py-12 sm:px-8 sm:py-16">
         <PolicyHero eyebrow="MarComn MCredits" title={page.title || 'About MCredits'} description={page.meta_description} />
@@ -349,124 +309,25 @@ export default async function CreditsPage() {
     return (
       <ProfileProvider userId={user.id} userEmail={user.email}>
         <AppShell userEmail={user.email} userId={user.id}>
-          {renderContent()}
+          <>
+            {renderContent()}
+            <PublicSiteFooter />
+          </>
         </AppShell>
       </ProfileProvider>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#e8f1fb] via-[#f3f7fb] to-[#f3f7fb]">
-      {/* Mimic AppShell Header for logged-out users */}
-      <header className="header app-header">
-        <div className="app-container">
-          <div className="w-full flex items-center justify-between py-2 px-4 h-[calc(76px+env(safe-area-inset-top))] md:h-auto md:min-h-[64px] pt-[calc(env(safe-area-inset-top)+20px)] md:pt-1">
-            {/* LEFT: Logo */}
-            <div className="flex items-center gap-3 flex-1 md:flex-none">
-              <Link href="/" className="logo font-semibold text-[#002b4e] flex items-center">
-                <span>Mar<span>Comn</span></span>
-              </Link>
-            </div>
-
-            {/* CENTER: Main Navigation (Desktop Only) */}
-            <div className="hidden md:flex items-center justify-center !mt-[10px] flex-1">
-              <Link href="/logbook" className="nav-link">
-                <Ship size={24} />
-                <span>MNetwork</span>
-              </Link>
-              <Link href="/mservices" className="nav-link">
-                <LayoutGrid size={24} />
-                <span>MServices</span>
-              </Link>
-              <Link href="/mblog" className="nav-link">
-                <Newspaper size={24} />
-                <span>MBlogs</span>
-              </Link>
-            </div>
-
-            {/* RIGHT: Actions */}
-            <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
-              {/* Message Icon */}
-              <Link href="/login" className="header-icon-btn scale-110 md:scale-100 flex-shrink-0 relative">
-                <MessageSquare size={26} />
-              </Link>
-
-              {/* Bell Icon */}
-              <Link href="/login" className="header-icon-btn relative hidden md:block">
-                <Bell size={22} />
-              </Link>
-
-              {/* Post a Job Button */}
-              <Link 
-                href="/login"
-                className="btn-primary-pill px-2.5 py-1.5 md:px-5 ml-1.5 md:ml-3 flex items-center justify-center mr-1 md:mr-3 flex-shrink-0 text-sm font-bold"
-                style={{ backgroundColor: 'var(--primary-container)', color: '#002b4e' }}
-              >
-                <Briefcase size={16} className="md:mr-2" />
-                <span className="hidden md:inline whitespace-nowrap">Post a Job</span>
-              </Link>
-
-              {/* Sign In Button */}
-              <Link 
-                href="/login" 
-                className="text-xs font-bold px-4 py-2 rounded-xl transition-all hover:opacity-90"
-                style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
-              >
-                Sign In
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col bg-[#f4f7fb]">
+      <PublicSiteHeader />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center w-full">
         {renderContent()}
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="mobile-bottom-nav md:hidden" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}>
-        <Link 
-          href="/login" 
-          className="mobile-nav-item"
-          style={{ '--active-color': '#002b4e' }}
-        >
-          <Ship size={24} className="mobile-nav-icon" />
-          <span className="mobile-nav-label">MNetwork</span>
-        </Link>
-        <Link 
-          href="/login" 
-          className="mobile-nav-item"
-          style={{ '--active-color': '#002b4e' }}
-        >
-          <LayoutGrid size={24} className="mobile-nav-icon" />
-          <span className="mobile-nav-label">MServices</span>
-        </Link>
-        <Link 
-          href="/login" 
-          className="mobile-nav-item"
-          style={{ '--active-color': '#002b4e' }}
-        >
-          <Newspaper size={24} className="mobile-nav-icon" />
-          <span className="mobile-nav-label">MBlogs</span>
-        </Link>
-        <Link 
-          href="/login"
-          className="mobile-nav-item"
-          style={{ '--active-color': '#002b4e' }}
-        >
-          <Bell size={24} className="mobile-nav-icon" />
-          <span className="mobile-nav-label">Alerts</span>
-        </Link>
-      </nav>
-
-      {/* Footer */}
-      <footer className="text-center py-8 text-xs text-gray-400 border-t border-gray-100 bg-white">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span>© 2026 MarComn. All rights reserved.</span>
-          <LegalLinks />
-        </div>
-      </footer>
+      <PublicSiteFooter />
     </div>
   );
 }

@@ -1,16 +1,11 @@
 import Link from 'next/link';
-import LandingLogo from '@/app/components/LandingLogo';
-import LegalLinks from '@/app/components/LegalLinks';
+import PublicSiteFooter from '@/app/components/PublicSiteFooter';
+import PublicSiteHeader from '@/app/components/PublicSiteHeader';
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f0f4fa' }}>
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 py-3 flex items-center w-full">
-          <LandingLogo />
-        </div>
-      </header>
+      <PublicSiteHeader />
 
       {/* Hero */}
       <main className="flex-1 flex flex-col items-center justify-center text-center px-4 py-20">
@@ -36,12 +31,7 @@ export default function LandingPage() {
         </Link>
       </main>
 
-      <footer className="text-center py-6 text-sm text-gray-400 flex flex-col items-center gap-2">
-        <div>
-          © 2026 Marcomn. <span className="text-blue-500">The professional network.</span>
-        </div>
-        <LegalLinks className="text-xs" />
-      </footer>
+      <PublicSiteFooter />
     </div>
   );
 }
