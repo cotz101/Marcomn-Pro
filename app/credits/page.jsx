@@ -3,11 +3,16 @@ import LandingLogo from '@/app/components/LandingLogo';
 import { createClient } from '@/lib/supabase-server';
 import { getCMSPageData } from '@/lib/cmsPublicPage';
 import LegalLinks from '@/app/components/LegalLinks';
+import PolicyHero from '@/app/components/PolicyHero';
 import { Coins, Ship, LayoutGrid, Newspaper, MessageSquare, Bell, Briefcase } from 'lucide-react';
 import { ProfileProvider } from '@/app/context/ProfileContext';
 import AppShell from '@/app/components/AppShell';
 
 export const dynamic = 'force-dynamic';
+export const metadata = {
+  title: 'About MCredits | MarComn',
+  description: 'A practical guide to MarComn platform credits, packages, wallets, fees, and refunds.',
+};
 
 const getTierName = (price) => {
   const p = Number(price);
@@ -156,7 +161,7 @@ export default async function CreditsPage() {
   })();
 
   const renderContent = () => (
-    <div className="w-full bg-gradient-to-b from-[#e8f1fb] via-[#f3f7fb] to-[#f3f7fb] min-h-screen pb-20 flex flex-col items-center">
+    <div className="w-full bg-[#f4f7fb] min-h-screen pb-20 flex flex-col items-center">
       {/* CSS Override to hide sidebars and center the feed in AppShell */}
       <style dangerouslySetInnerHTML={{ __html: `
         aside.sidebar-left, aside.sidebar-right {
@@ -173,19 +178,12 @@ export default async function CreditsPage() {
         }
       `}} />
 
-      <div className="w-full max-w-4xl mx-auto px-4 py-8 md:py-12 space-y-6 md:space-y-8 flex flex-col items-center">
-        {/* Page Title & Meta Description */}
-        <div className="text-center max-w-2xl mx-auto space-y-2.5 mb-2 w-full">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-[#0e2a4d] tracking-tight">
-            {page.title || "MCredits Guide & Pricing"}
-          </h1>
-          {page.meta_description && (
-            <p className="text-sm md:text-base text-gray-500 font-medium leading-relaxed">
-              {page.meta_description}
-            </p>
-          )}
-        </div>
+      <div className="w-full border-b border-[#dceaf3] bg-gradient-to-b from-[#e8f4fb] to-[#f4f7fb] px-5 py-12 sm:px-8 sm:py-16">
+        <PolicyHero eyebrow="MarComn MCredits" title={page.title || 'About MCredits'} description={page.meta_description} />
+      </div>
 
+      <div className="w-full max-w-6xl mx-auto px-4 py-8 sm:px-6 md:px-8 md:py-12 space-y-6 md:space-y-8 flex flex-col items-center">
+        {/* Page Title & Meta Description */}
         {/* User Balance / Available Funds Card */}
         {user ? (
           <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(14,42,77,0.025)] p-6 md:p-8 flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
@@ -240,14 +238,14 @@ export default async function CreditsPage() {
               return (
                 <section 
                   key={section.id} 
-                  className="bg-white rounded-2xl p-6 md:p-8 shadow-[0_8px_30px_rgba(14,42,77,0.025)] space-y-4 w-full text-left"
+                  className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 md:p-8 shadow-[0_10px_32px_rgba(14,42,77,0.035)] space-y-4 w-full text-left"
                 >
                   <h2 className="text-lg md:text-xl font-bold text-[#0e2a4d] border-b border-slate-50 pb-2">
                     {section.title}
                   </h2>
                   <div className="space-y-4">
                     {paragraphs.map((para, i) => (
-                      <p key={i} className="text-sm text-gray-600 leading-relaxed font-medium">
+                      <p key={i} className="text-[15px] text-gray-600 leading-7 font-normal sm:text-base">
                         {para}
                       </p>
                     ))}

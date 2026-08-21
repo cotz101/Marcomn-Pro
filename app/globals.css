@@ -25,6 +25,22 @@
   scrollbar-width: none;
 }
 
+.legal-document-surface {
+  padding: 16px 48px;
+}
+
+@media (max-width: 1023px) {
+  .legal-document-surface {
+    padding: 12px 32px;
+  }
+}
+
+@media (max-width: 767px) {
+  .legal-document-surface {
+    padding: 8px 20px;
+  }
+}
+
 /* Messaging uses a list-first flow on mobile and a persistent split shell on desktop. */
 .messages-shell {
   display: flex;
