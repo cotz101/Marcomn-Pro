@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useProfile } from '@/app/context/ProfileContext';
 import { createClient } from '@/lib/supabase';
+import { openApplicationDocument } from '@/lib/applicationDocuments';
 import { cancelJobOrderByCompany } from '@/app/actions/jobOrders';
 import { markJobOrderCompleted } from '@/app/actions/reputation';
 import { confirmWorkCompletedByCompany, closeCompletedEngagementByCompany } from '@/app/actions/engagementLifecycle';
@@ -153,13 +154,16 @@ export default function ApplicantsPage() {
       // Handle proof upload if selected
       if (proofFileInput) {
         const file = proofFileInput;
+        const proofTypes = new Set(['application/pdf', 'image/jpeg', 'image/png']);
+        if (!proofTypes.has(file.type) || file.size > 10 * 1024 * 1024) {
+          throw new Error('Payment proofs must be a PDF, JPEG, or PNG no larger than 10 MiB.');
+        }
         const fileExt = file.name.split('.').pop();
-        const fileName = `${requestToRecordTransfer.id}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `advance_proofs/${fileName}`;
-        const { error: uploadError } = await supabase.storage.from('resumes').upload(filePath, file);
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const filePath = `${userId}/${fileName}`;
+        const { error: uploadError } = await supabase.storage.from('advance-proofs').upload(filePath, file, { upsert: false });
         if (uploadError) throw uploadError;
-        const { data: pubData } = supabase.storage.from('resumes').getPublicUrl(filePath);
-        proofUrl = pubData?.publicUrl || null;
+        proofUrl = `private://advance-proofs/${filePath}`;
       }
 
       const res = await recordTransfer({
@@ -1271,10 +1275,10 @@ export default function ApplicantsPage() {
                         <h4 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2.5">Documents</h4>
                         <div className="flex flex-col gap-2.5">
                           {selectedApplicant.documents.map((doc, i) => (
-                            <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-100 text-sm font-medium rounded-xl transition-colors group" title={doc.name}>
+                            <button key={i} type="button" onClick={() => openApplicationDocument(selectedApplicant.id, i).catch((error) => showToast?.(error.message, 'error'))} className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-100 text-sm font-medium rounded-xl transition-colors group" title={doc.name}>
                               <FileText size={20} className="text-gray-400 group-hover:text-blue-500 shrink-0" />
                               <span className="truncate">{doc.name}</span>
-                            </a>
+                            </button>
                           ))}
                         </div>
                       </div>
@@ -1411,10 +1415,10 @@ export default function ApplicantsPage() {
                       <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 text-left">Documents</h4>
                       <div className="flex flex-wrap justify-center gap-3">
                         {selectedApplicant.documents.map((doc, i) => (
-                          <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2.5 px-6 py-3 bg-[#EAF3FA] text-[#004173] active:bg-blue-100 text-[14px] font-semibold rounded-xl transition-colors" title={doc.name}>
+                          <button key={i} type="button" onClick={() => openApplicationDocument(selectedApplicant.id, i).catch((error) => showToast?.(error.message, 'error'))} className="inline-flex items-center justify-center gap-2.5 px-6 py-3 bg-[#EAF3FA] text-[#004173] active:bg-blue-100 text-[14px] font-semibold rounded-xl transition-colors" title={doc.name}>
                             <FileText size={20} className="shrink-0" />
                             <span className="truncate max-w-[160px]">{doc.name}</span>
-                          </a>
+                          </button>
                         ))}
                       </div>
                     </div>

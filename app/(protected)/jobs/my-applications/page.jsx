@@ -1048,7 +1048,7 @@ export default function MyApplicationsPage() {
                                     {req.proof_url && (
                                       <div className="pt-1 text-[11px]">
                                         <a 
-                                          href={req.proof_url} 
+                                          href={`/api/advance-proofs/signed-url?requestId=${encodeURIComponent(req.id)}`}
                                           target="_blank" 
                                           rel="noopener noreferrer" 
                                           className="inline-flex items-center gap-1 text-[#004173] font-bold hover:underline"
