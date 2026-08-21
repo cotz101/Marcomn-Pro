@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import LandingLogo from '@/app/components/LandingLogo';
+import LegalLinks from '@/app/components/LegalLinks';
 
 export default function LandingPage() {
   return (
@@ -39,6 +40,7 @@ export default function LandingPage() {
         <div>
           © 2026 Marcomn. <span className="text-blue-500">The professional network.</span>
         </div>
+        <LegalLinks className="text-xs" />
       </footer>
     </div>
   );

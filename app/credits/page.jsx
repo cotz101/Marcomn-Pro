@@ -1,92 +1,13 @@
 import Link from 'next/link';
 import LandingLogo from '@/app/components/LandingLogo';
 import { createClient } from '@/lib/supabase-server';
+import { getCMSPageData } from '@/lib/cmsPublicPage';
+import LegalLinks from '@/app/components/LegalLinks';
 import { Coins, Ship, LayoutGrid, Newspaper, MessageSquare, Bell, Briefcase } from 'lucide-react';
 import { ProfileProvider } from '@/app/context/ProfileContext';
 import AppShell from '@/app/components/AppShell';
 
 export const dynamic = 'force-dynamic';
-
-async function getCMSPageData(slug) {
-  try {
-    const supabase = await createClient();
-
-    // 1. Fetch page
-    const { data: page, error: pageError } = await supabase
-      .from('cms_pages')
-      .select('*')
-      .eq('slug', slug)
-      .eq('is_published', true)
-      .single();
-
-    if (pageError || !page) {
-      return null;
-    }
-
-    // 2. Fetch sections
-    const { data: sections } = await supabase
-      .from('cms_page_sections')
-      .select('*')
-      .eq('page_id', page.id)
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
-
-    // 3. Fetch FAQs
-    const { data: faqs } = await supabase
-      .from('cms_faqs')
-      .select('*')
-      .eq('page_id', page.id)
-      .eq('is_published', true)
-      .order('sort_order', { ascending: true });
-
-    // 4. Fetch content variables
-    const variables = {};
-
-    const { data: cmsVars } = await supabase
-      .from('cms_content_variables')
-      .select('variable_key, value')
-      .eq('is_public', true);
-    
-    cmsVars?.forEach(v => {
-      variables[v.variable_key] = v.value;
-    });
-
-    // Merge platform settings
-    const { data: platformSettings } = await supabase
-      .from('platform_settings')
-      .select('key, value');
-    
-    platformSettings?.forEach(s => {
-      variables[s.key] = s.value;
-    });
-
-    const formatText = (text) => {
-      if (!text) return '';
-      return text.replace(/\{\{([^}]+)\}\}/g, (match, key) => {
-        const trimmedKey = key.trim();
-        return variables[trimmedKey] !== undefined ? variables[trimmedKey] : match;
-      });
-    };
-
-    return {
-      page,
-      sections: (sections || []).map(s => ({
-        ...s,
-        title: formatText(s.title),
-        content: formatText(s.content)
-      })),
-      faqs: (faqs || []).map(f => ({
-        ...f,
-        question: formatText(f.question),
-        answer: formatText(f.answer)
-      })),
-      variables
-    };
-  } catch (error) {
-    console.error(`Error fetching CMS page data for slug: ${slug}`, error);
-    return null;
-  }
-}
 
 const getTierName = (price) => {
   const p = Number(price);
@@ -332,6 +253,12 @@ export default async function CreditsPage() {
                     ))}
                   </div>
 
+                  {section.section_key === 'refunds' && (
+                    <Link href="/legal/payments" className="inline-flex text-sm font-bold text-[#007f9b] underline hover:text-[#005f74]">
+                      Read the MCredits, Payments & Refund Policy
+                    </Link>
+                  )}
+
                   {/* Pricing grid injection under available-packages section */}
                   {section.section_key === 'available-packages' && (
                     <div className="mt-8 pt-6 border-t border-slate-100/60">
@@ -538,10 +465,7 @@ export default async function CreditsPage() {
       <footer className="text-center py-8 text-xs text-gray-400 border-t border-gray-100 bg-white">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <span>© 2026 MarComn. All rights reserved.</span>
-          <div className="flex gap-4">
-            <Link href="/credits" className="hover:text-gray-600 font-medium">Credits</Link>
-            <Link href="/legal/payments" className="hover:text-gray-600 font-medium">Payment Policies</Link>
-          </div>
+          <LegalLinks />
         </div>
       </footer>
     </div>
