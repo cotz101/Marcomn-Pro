@@ -24,14 +24,13 @@ export default function LandingPage() {
 
         <Link
           href="/login"
-          className="text-xl font-bold px-12 py-5 rounded-xl shadow-sm transition-all hover:opacity-90"
-          style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
+          className="rounded-xl border border-[#9dd8e7] bg-[#dff3f8] px-12 py-5 text-xl font-bold text-[#0e2a4d] transition-colors hover:bg-[#cfeaf2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#007f9b]"
         >
           Join the community
         </Link>
       </main>
 
-      <PublicSiteFooter />
+      <PublicSiteFooter centered />
     </div>
   );
 }
