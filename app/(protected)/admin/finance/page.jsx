@@ -1860,7 +1860,7 @@ export default function AdminFinancePage() {
                     <AlertTriangle size={18} className="shrink-0 text-red-600 mt-0.5 animate-pulse" />
                     <div>
                       <span className="font-bold block text-red-900 mb-0.5">Automated Stripe Refund Processing Unavailable</span>
-                      <span>Automated Stripe refund processing is currently unavailable. This does not determine legal refund eligibility. Approved refunds must be handled through the available payment-provider workflow or another authorized administrative process, with the outcome recorded in MarComn.</span>
+                          <span>Automated Stripe refund processing is currently unavailable. This does not determine legal refund eligibility. Approved refunds must be handled through the available payment-provider workflow or another authorized administrative process, with the outcome recorded in Marcomn.</span>
                     </div>
                   </div>
                 )}

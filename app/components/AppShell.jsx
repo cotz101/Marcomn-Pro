@@ -324,7 +324,7 @@ export default function AppShell({ children, userEmail, userId }) {
                   {brandLogoDesktop ? (
                     <img 
                       src={brandLogoDesktop} 
-                      alt="MarComn Desktop Logo" 
+                      alt="Marcomn Desktop Logo"
                       className="hidden md:block h-8 w-auto object-contain max-h-[32px] max-w-[150px]" 
                     />
                   ) : (
@@ -333,7 +333,7 @@ export default function AppShell({ children, userEmail, userId }) {
                   {brandLogoMobile ? (
                     <img 
                       src={brandLogoMobile} 
-                      alt="MarComn Mobile Logo" 
+                      alt="Marcomn Mobile Logo"
                       className="block md:hidden h-8 w-auto object-contain max-h-[32px] max-w-[100px]" 
                     />
                   ) : (

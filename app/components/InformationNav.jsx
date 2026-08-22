@@ -55,12 +55,12 @@ function SectionLinks({ sections }) {
 export default function InformationNav({ currentPath, sections = [] }) {
   return (
     <div className="min-w-0">
-      <aside className="sticky top-6 hidden rounded-lg border border-slate-200 bg-white p-5 lg:block" aria-label="MarComn Legal and Information Center">
+      <aside className="sticky top-6 hidden rounded-lg border border-slate-200 bg-white p-5 lg:block" aria-label="Marcomn Legal and Information Center">
         <div className="border-b border-slate-200 pb-4">
-          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#007f9b]">MarComn</p>
+          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#007f9b]">Marcomn</p>
           <h2 className="mt-1 text-xl font-bold tracking-tight text-[#0e2a4d]">Legal &amp; Information</h2>
         </div>
-        <nav aria-label="MarComn information and legal pages" className="mt-4">
+        <nav aria-label="Marcomn information and legal pages" className="mt-4">
           <PageLinks currentPath={currentPath} />
         </nav>
         <SectionLinks sections={sections} />
@@ -68,7 +68,7 @@ export default function InformationNav({ currentPath, sections = [] }) {
 
       <div className="rounded-lg border border-slate-200 bg-white p-4 lg:hidden">
         <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.14em] text-[#007f9b]">Legal &amp; Information</p>
-        <nav aria-label="MarComn information and legal pages">
+        <nav aria-label="Marcomn information and legal pages">
           <PageLinks currentPath={currentPath} />
         </nav>
         {sections.length > 0 && (

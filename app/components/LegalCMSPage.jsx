@@ -5,8 +5,10 @@ import PublicSiteFooter from '@/app/components/PublicSiteFooter';
 import PublicSiteHeader from '@/app/components/PublicSiteHeader';
 import { LEGAL_EFFECTIVE_DATE } from '@/lib/legalContent';
 
+const normalizeBrand = (text) => text.replaceAll('MarComn', 'Marcomn');
+
 function InlineText({ text }) {
-  const pieces = text.split(/(\[\[[^\]]+\|[^\]]+\]\])/g);
+  const pieces = normalizeBrand(text).split(/(\[\[[^\]]+\|[^\]]+\]\])/g);
   return pieces.map((piece, index) => {
     const match = piece.match(/^\[\[([^|]+)\|([^\]]+)\]\]$/);
     return match ? <Link key={index} href={match[2]} className="text-[#007f9b] underline decoration-[#00B4D8]/40 underline-offset-2 hover:text-[#005f74]">{match[1]}</Link> : piece;
@@ -18,14 +20,17 @@ export default function LegalCMSPage({ data }) {
   return (
     <div className="min-h-screen bg-[#f4f6f8] text-slate-700">
       <PublicSiteHeader />
-      <main className="mx-auto grid w-full max-w-[1280px] gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-10">
+      <main
+        className="grid w-full max-w-[1200px] gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-10"
+        style={{ marginInline: 'auto' }}
+      >
         <InformationNav currentPath={`/${page.slug}`} sections={sections} />
 
         <article className="legal-center-document min-w-0 rounded-lg border border-slate-200 bg-white">
           <header className="border-b border-slate-200 pb-7">
-            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#007f9b]">MarComn Legal</p>
-            <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-[#0e2a4d] sm:text-4xl lg:text-[2.5rem] lg:leading-tight">MarComn {page.title}</h1>
-            {page.meta_description && <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-[17px] sm:leading-8">{page.meta_description}</p>}
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#007f9b]">Marcomn Legal</p>
+            <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-[#0e2a4d] sm:text-4xl lg:text-[2.5rem] lg:leading-tight">Marcomn {normalizeBrand(page.title)}</h1>
+            {page.meta_description && <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-[17px] sm:leading-8">{normalizeBrand(page.meta_description)}</p>}
           </header>
 
           <div className="mt-6 inline-flex items-start gap-2.5 rounded border border-[#b9e2ed] bg-[#eef9fc] px-3.5 py-2.5 text-sm font-semibold text-[#0e2a4d]">

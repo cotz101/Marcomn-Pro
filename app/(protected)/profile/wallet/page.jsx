@@ -555,7 +555,7 @@ export default function PersonalWalletPage() {
               
               <div className="space-y-3 text-xs text-blue-100/90 leading-relaxed font-medium">
                 <p>
-                  MCredits are used to accept job offers and access selected MarComn services.
+                        MCredits are used to accept job offers and access selected Marcomn services.
                 </p>
                 <p>
                   Top up your wallet securely online via card through Stripe for instant credit.
@@ -942,7 +942,7 @@ export default function PersonalWalletPage() {
 
               {/* Terms disclaimer */}
               <div className="text-[11px] text-gray-400 text-center leading-normal mt-2 px-1 select-none font-medium">
-                By purchasing MCredits, you agree to MarComn’s{' '}
+                      By purchasing MCredits, you agree to Marcomn’s{' '}
                 <Link href="/credits" className="text-blue-500 hover:underline font-semibold">How MCredits Work</Link>
                 {' '}and{' '}
                 <Link href="/legal/payments" className="text-blue-500 hover:underline font-semibold">MCredits, Payments & Refund Policy</Link>.
@@ -1148,7 +1148,7 @@ export default function PersonalWalletPage() {
               <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-3.5 text-[10px] text-amber-800 leading-relaxed font-medium">
                 <p className="font-bold mb-1">MCredit Refund Policy:</p>
                 <p className="mb-1">
-                  MCredit purchases are generally final once the MCredits have been used. Unused MCredits purchased through an eligible online top-up may qualify for a refund after review. Eligibility is limited to the remaining eligible unused balance and is subject to payment-provider capability, applicable law, and MarComn’s transaction records.
+                  MCredit purchases are generally final once the MCredits have been used. Unused MCredits purchased through an eligible online top-up may qualify for a refund after review. Eligibility is limited to the remaining eligible unused balance and is subject to payment-provider capability, applicable law, and Marcomn’s transaction records.
                 </p>
                 <p className="mb-1">Submitting a refund request does not guarantee approval.</p>
                 <p>

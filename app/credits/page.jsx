@@ -10,9 +10,11 @@ import AppShell from '@/app/components/AppShell';
 
 export const dynamic = 'force-dynamic';
 export const metadata = {
-  title: 'About MCredits | MarComn',
-  description: 'A practical guide to MarComn platform credits, packages, wallets, fees, and refunds.',
+  title: 'About MCredits | Marcomn',
+  description: 'A practical guide to Marcomn platform credits, packages, wallets, fees, and refunds.',
 };
+
+const normalizeBrand = (text) => text.replaceAll('MarComn', 'Marcomn');
 
 const getTierName = (price) => {
   const p = Number(price);
@@ -135,14 +137,17 @@ export default async function CreditsPage() {
         }
       `}} />
 
-      <div className="mx-auto grid w-full max-w-[1280px] gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-10">
+      <div
+        className="grid w-full max-w-[1200px] gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-10"
+        style={{ marginInline: 'auto' }}
+      >
         <InformationNav currentPath="/credits" sections={sections} />
 
         <article className="legal-center-document min-w-0 rounded-lg border border-slate-200 bg-white">
           <header className="border-b border-slate-200 pb-7">
-            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#007f9b]">MarComn MCredits</p>
-            <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-[#0e2a4d] sm:text-4xl lg:text-[2.5rem] lg:leading-tight">{page.title || 'About MCredits'}</h1>
-            {page.meta_description && <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-[17px] sm:leading-8">{page.meta_description}</p>}
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#007f9b]">Marcomn MCredits</p>
+            <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-[#0e2a4d] sm:text-4xl lg:text-[2.5rem] lg:leading-tight">{normalizeBrand(page.title || 'About MCredits')}</h1>
+            {page.meta_description && <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-[17px] sm:leading-8">{normalizeBrand(page.meta_description)}</p>}
           </header>
 
         {/* User Balance / Available Funds Card */}
@@ -167,25 +172,7 @@ export default async function CreditsPage() {
               Go to Wallet
             </Link>
           </div>
-        ) : (
-          <div className="mt-6 flex w-full flex-col items-center justify-between gap-4 rounded-md border border-[#a8ddec] bg-[#eef9fc] p-5 sm:flex-row sm:p-6">
-            <div className="flex items-center gap-3 text-left">
-              <div className="p-2 bg-blue-50 text-[#00B4D8] rounded-lg shrink-0">
-                <Coins size={20} />
-              </div>
-              <p className="text-sm text-gray-500 font-medium">
-                Track your live balance, transaction history, and buy preset packages by signing in.
-              </p>
-            </div>
-            <Link 
-              href="/login" 
-              className="text-xs font-bold px-5 py-3 rounded-xl transition-all hover:opacity-90 shadow-sm shrink-0"
-              style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
-            >
-              Sign In
-            </Link>
-          </div>
-        )}
+        ) : null}
 
         {/* Fallback 2: No Sections */}
         {sections.length === 0 ? (
@@ -207,7 +194,7 @@ export default async function CreditsPage() {
                   <div className="space-y-4">
                     {paragraphs.map((para, i) => (
                       <p key={i} className="text-base font-normal leading-8 text-slate-600 sm:text-[17px]">
-                        {para}
+                        {normalizeBrand(para)}
                       </p>
                     ))}
                   </div>
@@ -220,7 +207,7 @@ export default async function CreditsPage() {
 
                   {/* Pricing grid injection under available-packages section */}
                   {section.section_key === 'available-packages' && (
-                    <div className="mt-7 rounded-xl border border-[#dceaf3] bg-[#f8fbfd] p-4 sm:p-6">
+                    <div className="mt-7 rounded-lg border border-[#dceaf3] bg-[#f8fbfd] p-4 sm:p-6">
                       {packages.length === 0 ? (
                         <p className="text-xs text-red-500 font-bold">No active top-up packages currently available.</p>
                       ) : (
@@ -232,14 +219,14 @@ export default async function CreditsPage() {
                               return (
                                 <div
                                   key={pkg.id || pkg.usdPrice}
-                                  className={`relative p-5 rounded-2xl flex flex-col justify-between transition-all duration-200 ${
+                                  className={`relative flex flex-col justify-between rounded-lg border p-5 transition-colors duration-200 ${
                                     isPromo 
-                                      ? 'bg-white shadow-[0_8px_24px_rgba(14,42,77,0.06)] ring-2 ring-[#00B4D8]/30 z-10 border-0'
-                                      : 'border border-slate-200 bg-white hover:border-[#00B4D8]/40 shadow-none'
+                                      ? 'border-[#8fd3e5] bg-[#f4fbfd]'
+                                      : 'border-slate-200 bg-white hover:border-[#9dd8e7]'
                                   }`}
                                 >
                                   {isPromo && (
-                                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#00B4D8] text-[#0e2a4d] text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded border border-[#9dd8e7] bg-[#dff3f8] px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#005f74]">
                                       Most Popular
                                     </span>
                                   )}
@@ -261,8 +248,7 @@ export default async function CreditsPage() {
 
                                   <Link
                                     href="/profile/wallet"
-                                    className="mt-4 w-full text-center py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-sm hover:opacity-95 hover:shadow-md active:scale-[0.98]"
-                                    style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
+                                    className="mt-4 w-full rounded-md border border-[#b9e2ed] bg-[#dff3f8] px-4 py-2.5 text-center text-xs font-bold text-[#004173] transition-colors hover:bg-[#cfeaf2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#007f9b]"
                                   >
                                     Purchase
                                   </Link>
@@ -294,7 +280,7 @@ export default async function CreditsPage() {
                     {faq.question}
                   </h3>
                   <p className="text-left text-base font-normal leading-8 text-slate-600">
-                    {faq.answer}
+                    {normalizeBrand(faq.answer)}
                   </p>
                 </div>
               ))}

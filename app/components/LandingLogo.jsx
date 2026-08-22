@@ -44,7 +44,7 @@ export default function LandingLogo() {
     return (
       <div className="flex items-center gap-2 font-bold text-xl" style={{ color: '#0e2a4d' }}>
         <AnchorIcon />
-        MarComn
+        Marcomn
       </div>
     );
   }
@@ -55,25 +55,25 @@ export default function LandingLogo() {
         {brandLogoDesktop ? (
           <img 
             src={brandLogoDesktop} 
-            alt="MarComn" 
+            alt="Marcomn"
             className="hidden md:block h-7 w-auto object-contain max-w-[140px]" 
           />
         ) : (
           <div className="hidden md:flex items-center gap-2 font-bold text-xl" style={{ color: '#0e2a4d' }}>
             <AnchorIcon />
-            MarComn
+            Marcomn
           </div>
         )}
         {brandLogoMobile ? (
           <img 
             src={brandLogoMobile} 
-            alt="MarComn" 
+            alt="Marcomn"
             className="block md:hidden h-7 w-auto object-contain max-w-[90px]" 
           />
         ) : (
           <div className="block md:hidden flex items-center gap-2 font-bold text-xl" style={{ color: '#0e2a4d' }}>
             <AnchorIcon />
-            MarComn
+            Marcomn
           </div>
         )}
       </div>
@@ -84,7 +84,7 @@ export default function LandingLogo() {
   return (
     <div className="flex items-center gap-2 font-bold text-xl" style={{ color: '#0e2a4d' }}>
       <AnchorIcon />
-      MarComn
+      Marcomn
     </div>
   );
 }
