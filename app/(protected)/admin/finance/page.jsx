@@ -440,7 +440,7 @@ export default function AdminFinancePage() {
               </p>
               <div className="mt-2 ml-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100">
                 <AlertTriangle size={10} />
-                <span>MCredits reporting only. Real payment gateway settlement is not connected yet.</span>
+                <span>MCredits reporting includes Stripe top-ups, wallet movements, platform fees, refunds, and related transaction records. Payment-provider settlement remains subject to Stripe records and availability.</span>
               </div>
             </div>
             <div className="shrink-0 flex gap-2">
@@ -1859,8 +1859,8 @@ export default function AdminFinancePage() {
                   <div className="p-4 bg-red-50 text-red-950 rounded-2xl border border-red-100 text-[11px] leading-relaxed font-semibold flex items-start gap-3 select-text shadow-sm">
                     <AlertTriangle size={18} className="shrink-0 text-red-600 mt-0.5 animate-pulse" />
                     <div>
-                      <span className="font-bold block text-red-900 mb-0.5">Stripe Refund Execution Disabled</span>
-                      <span>Stripe refund execution is currently disabled. Enable <code>ENABLE_MCREDIT_STRIPE_REFUNDS=true</code> after final testing.</span>
+                      <span className="font-bold block text-red-900 mb-0.5">Automated Stripe Refund Processing Unavailable</span>
+                          <span>Automated Stripe refund processing is currently unavailable. This does not determine legal refund eligibility. Approved refunds must be handled through the available payment-provider workflow or another authorized administrative process, with the outcome recorded in Marcomn.</span>
                     </div>
                   </div>
                 )}

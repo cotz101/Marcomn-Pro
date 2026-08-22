@@ -1,92 +1,20 @@
 import Link from 'next/link';
-import LandingLogo from '@/app/components/LandingLogo';
 import { createClient } from '@/lib/supabase-server';
-import { Coins, Ship, LayoutGrid, Newspaper, MessageSquare, Bell, Briefcase } from 'lucide-react';
+import { getCMSPageData } from '@/lib/cmsPublicPage';
+import InformationNav from '@/app/components/InformationNav';
+import PublicSiteFooter from '@/app/components/PublicSiteFooter';
+import PublicSiteHeader from '@/app/components/PublicSiteHeader';
+import { Coins } from 'lucide-react';
 import { ProfileProvider } from '@/app/context/ProfileContext';
 import AppShell from '@/app/components/AppShell';
 
 export const dynamic = 'force-dynamic';
+export const metadata = {
+  title: 'About MCredits | Marcomn',
+  description: 'A practical guide to Marcomn platform credits, packages, wallets, fees, and refunds.',
+};
 
-async function getCMSPageData(slug) {
-  try {
-    const supabase = await createClient();
-
-    // 1. Fetch page
-    const { data: page, error: pageError } = await supabase
-      .from('cms_pages')
-      .select('*')
-      .eq('slug', slug)
-      .eq('is_published', true)
-      .single();
-
-    if (pageError || !page) {
-      return null;
-    }
-
-    // 2. Fetch sections
-    const { data: sections } = await supabase
-      .from('cms_page_sections')
-      .select('*')
-      .eq('page_id', page.id)
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
-
-    // 3. Fetch FAQs
-    const { data: faqs } = await supabase
-      .from('cms_faqs')
-      .select('*')
-      .eq('page_id', page.id)
-      .eq('is_published', true)
-      .order('sort_order', { ascending: true });
-
-    // 4. Fetch content variables
-    const variables = {};
-
-    const { data: cmsVars } = await supabase
-      .from('cms_content_variables')
-      .select('variable_key, value')
-      .eq('is_public', true);
-    
-    cmsVars?.forEach(v => {
-      variables[v.variable_key] = v.value;
-    });
-
-    // Merge platform settings
-    const { data: platformSettings } = await supabase
-      .from('platform_settings')
-      .select('key, value');
-    
-    platformSettings?.forEach(s => {
-      variables[s.key] = s.value;
-    });
-
-    const formatText = (text) => {
-      if (!text) return '';
-      return text.replace(/\{\{([^}]+)\}\}/g, (match, key) => {
-        const trimmedKey = key.trim();
-        return variables[trimmedKey] !== undefined ? variables[trimmedKey] : match;
-      });
-    };
-
-    return {
-      page,
-      sections: (sections || []).map(s => ({
-        ...s,
-        title: formatText(s.title),
-        content: formatText(s.content)
-      })),
-      faqs: (faqs || []).map(f => ({
-        ...f,
-        question: formatText(f.question),
-        answer: formatText(f.answer)
-      })),
-      variables
-    };
-  } catch (error) {
-    console.error(`Error fetching CMS page data for slug: ${slug}`, error);
-    return null;
-  }
-}
+const normalizeBrand = (text) => text.replaceAll('MarComn', 'Marcomn');
 
 const getTierName = (price) => {
   const p = Number(price);
@@ -121,73 +49,29 @@ export default async function CreditsPage() {
       return (
         <ProfileProvider userId={user.id} userEmail={user.email}>
           <AppShell userEmail={user.email} userId={user.id}>
-            <div className="min-h-screen w-full bg-gradient-to-b from-[#e8f1fb] via-[#f3f7fb] to-[#f3f7fb] pb-20 flex flex-col items-center justify-center text-center px-6 py-20">
-              <h1 className="text-4xl font-extrabold text-[#0e2a4d] mb-4">Page Not Found</h1>
-              <p className="text-gray-500 mb-8 max-w-md">
-                The requested page is either not configured or has not been published by administrators.
-              </p>
-              <Link 
-                href="/" 
-                className="text-sm font-bold px-6 py-3 rounded-xl transition-all hover:opacity-90"
-                style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
-              >
-                Back to Home
-              </Link>
-            </div>
+            <>
+              <div className="min-h-screen w-full bg-gradient-to-b from-[#e8f1fb] via-[#f3f7fb] to-[#f3f7fb] pb-20 flex flex-col items-center justify-center text-center px-6 py-20">
+                <h1 className="text-4xl font-extrabold text-[#0e2a4d] mb-4">Page Not Found</h1>
+                <p className="text-gray-500 mb-8 max-w-md">
+                  The requested page is either not configured or has not been published by administrators.
+                </p>
+                <Link
+                  href="/"
+                  className="text-sm font-bold px-6 py-3 rounded-xl transition-all hover:opacity-90"
+                  style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
+                >
+                  Back to Home
+                </Link>
+              </div>
+              <PublicSiteFooter />
+            </>
           </AppShell>
         </ProfileProvider>
       );
     } else {
       return (
         <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#e8f1fb] via-[#f3f7fb] to-[#f3f7fb]">
-          <header className="header app-header">
-            <div className="app-container">
-              <div className="w-full flex items-center justify-between py-2 px-4 h-[calc(76px+env(safe-area-inset-top))] md:h-auto md:min-h-[64px] pt-[calc(env(safe-area-inset-top)+20px)] md:pt-1">
-                <div className="flex items-center gap-3 flex-1 md:flex-none">
-                  <Link href="/" className="logo font-semibold text-[#002b4e] flex items-center">
-                    <span>Mar<span>Comn</span></span>
-                  </Link>
-                </div>
-                <div className="hidden md:flex items-center justify-center !mt-[10px] flex-1">
-                  <Link href="/logbook" className="nav-link">
-                    <Ship size={24} />
-                    <span>MNetwork</span>
-                  </Link>
-                  <Link href="/mservices" className="nav-link">
-                    <LayoutGrid size={24} />
-                    <span>MServices</span>
-                  </Link>
-                  <Link href="/mblog" className="nav-link">
-                    <Newspaper size={24} />
-                    <span>MBlogs</span>
-                  </Link>
-                </div>
-                <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
-                  <Link href="/login" className="header-icon-btn scale-110 md:scale-100 flex-shrink-0">
-                    <MessageSquare size={26} />
-                  </Link>
-                  <Link href="/login" className="header-icon-btn relative hidden md:block">
-                    <Bell size={22} />
-                  </Link>
-                  <Link 
-                    href="/login"
-                    className="btn-primary-pill px-2.5 py-1.5 md:px-5 ml-1.5 md:ml-3 flex items-center justify-center mr-1 md:mr-3 flex-shrink-0 text-sm font-bold"
-                    style={{ backgroundColor: 'var(--primary-container)', color: '#002b4e' }}
-                  >
-                    <Briefcase size={16} className="md:mr-2" />
-                    <span className="hidden md:inline whitespace-nowrap">Post a Job</span>
-                  </Link>
-                  <Link 
-                    href="/login" 
-                    className="text-xs font-bold px-4 py-2 rounded-xl transition-all hover:opacity-90"
-                    style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
-                  >
-                    Sign In
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </header>
+          <PublicSiteHeader />
           <main className="flex-1 flex flex-col items-center justify-center text-center px-6 py-20">
             <h1 className="text-4xl font-extrabold text-[#0e2a4d] mb-4">Page Not Found</h1>
             <p className="text-gray-500 mb-8 max-w-md">
@@ -201,6 +85,7 @@ export default async function CreditsPage() {
               Back to Home
             </Link>
           </main>
+          <PublicSiteFooter />
         </div>
       );
     }
@@ -235,7 +120,7 @@ export default async function CreditsPage() {
   })();
 
   const renderContent = () => (
-    <div className="w-full bg-gradient-to-b from-[#e8f1fb] via-[#f3f7fb] to-[#f3f7fb] min-h-screen pb-20 flex flex-col items-center">
+    <div className="min-h-screen w-full bg-[#f4f6f8]">
       {/* CSS Override to hide sidebars and center the feed in AppShell */}
       <style dangerouslySetInnerHTML={{ __html: `
         aside.sidebar-left, aside.sidebar-right {
@@ -252,22 +137,22 @@ export default async function CreditsPage() {
         }
       `}} />
 
-      <div className="w-full max-w-4xl mx-auto px-4 py-8 md:py-12 space-y-6 md:space-y-8 flex flex-col items-center">
-        {/* Page Title & Meta Description */}
-        <div className="text-center max-w-2xl mx-auto space-y-2.5 mb-2 w-full">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-[#0e2a4d] tracking-tight">
-            {page.title || "MCredits Guide & Pricing"}
-          </h1>
-          {page.meta_description && (
-            <p className="text-sm md:text-base text-gray-500 font-medium leading-relaxed">
-              {page.meta_description}
-            </p>
-          )}
-        </div>
+      <div
+        className="grid w-full max-w-[1200px] gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-10"
+        style={{ marginInline: 'auto' }}
+      >
+        <InformationNav currentPath="/credits" sections={sections} />
+
+        <article className="legal-center-document min-w-0 rounded-lg border border-slate-200 bg-white">
+          <header className="border-b border-slate-200 pb-7">
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#007f9b]">Marcomn MCredits</p>
+            <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-[#0e2a4d] sm:text-4xl lg:text-[2.5rem] lg:leading-tight">{normalizeBrand(page.title || 'About MCredits')}</h1>
+            {page.meta_description && <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-[17px] sm:leading-8">{normalizeBrand(page.meta_description)}</p>}
+          </header>
 
         {/* User Balance / Available Funds Card */}
         {user ? (
-          <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(14,42,77,0.025)] p-6 md:p-8 flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+          <div className="mt-6 flex w-full flex-col items-center justify-between gap-4 rounded-md border border-[#a8ddec] bg-[#eef9fc] p-5 sm:flex-row sm:p-6">
             <div className="flex items-center gap-4 text-left">
               <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
                 <Coins size={24} />
@@ -287,54 +172,42 @@ export default async function CreditsPage() {
               Go to Wallet
             </Link>
           </div>
-        ) : (
-          <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(14,42,77,0.025)] p-6 md:p-8 flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
-            <div className="flex items-center gap-3 text-left">
-              <div className="p-2 bg-blue-50 text-[#00B4D8] rounded-lg shrink-0">
-                <Coins size={20} />
-              </div>
-              <p className="text-sm text-gray-500 font-medium">
-                Track your live balance, transaction history, and buy preset packages by signing in.
-              </p>
-            </div>
-            <Link 
-              href="/login" 
-              className="text-xs font-bold px-5 py-3 rounded-xl transition-all hover:opacity-90 shadow-sm shrink-0"
-              style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
-            >
-              Sign In
-            </Link>
-          </div>
-        )}
+        ) : null}
 
         {/* Fallback 2: No Sections */}
         {sections.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 text-center shadow-[0_8px_30px_rgba(14,42,77,0.025)] w-full">
+          <div className="py-10 text-center w-full">
             <p className="text-sm text-gray-500 font-medium font-sans">No content sections available yet.</p>
           </div>
         ) : (
-          <div className="space-y-6 md:space-y-8 w-full">
-            {sections.map((section) => {
+          <div className="w-full">
+            {sections.map((section, sectionIndex) => {
               const paragraphs = section.content.split('\n').filter(p => p.trim() !== '');
               return (
                 <section 
                   key={section.id} 
-                  className="bg-white rounded-2xl p-6 md:p-8 shadow-[0_8px_30px_rgba(14,42,77,0.025)] space-y-4 w-full text-left"
+                  className={`w-full space-y-5 py-8 text-left sm:py-10 ${sectionIndex > 0 ? 'border-t border-slate-200' : ''}`}
                 >
-                  <h2 className="text-lg md:text-xl font-bold text-[#0e2a4d] border-b border-slate-50 pb-2">
+                  <h2 className="border-b border-slate-200 pb-3 text-xl font-bold leading-snug tracking-tight text-[#0e2a4d] sm:text-[1.4rem]">
                     {section.title}
                   </h2>
                   <div className="space-y-4">
                     {paragraphs.map((para, i) => (
-                      <p key={i} className="text-sm text-gray-600 leading-relaxed font-medium">
-                        {para}
+                      <p key={i} className="text-base font-normal leading-8 text-slate-600 sm:text-[17px]">
+                        {normalizeBrand(para)}
                       </p>
                     ))}
                   </div>
 
+                  {section.section_key === 'refunds' && (
+                    <Link href="/legal/payments" className="inline-flex text-sm font-bold text-[#007f9b] underline hover:text-[#005f74]">
+                      Read the MCredits, Payments & Refund Policy
+                    </Link>
+                  )}
+
                   {/* Pricing grid injection under available-packages section */}
                   {section.section_key === 'available-packages' && (
-                    <div className="mt-8 pt-6 border-t border-slate-100/60">
+                    <div className="mt-7 rounded-lg border border-[#dceaf3] bg-[#f8fbfd] p-4 sm:p-6">
                       {packages.length === 0 ? (
                         <p className="text-xs text-red-500 font-bold">No active top-up packages currently available.</p>
                       ) : (
@@ -346,14 +219,14 @@ export default async function CreditsPage() {
                               return (
                                 <div
                                   key={pkg.id || pkg.usdPrice}
-                                  className={`relative p-5 rounded-2xl flex flex-col justify-between transition-all duration-200 ${
+                                  className={`relative flex flex-col justify-between rounded-lg border p-5 transition-colors duration-200 ${
                                     isPromo 
-                                      ? 'bg-white shadow-[0_8px_24px_rgba(14,42,77,0.06)] ring-2 ring-[#00B4D8]/30 scale-[1.02] md:scale-105 z-10 border-0' 
-                                      : 'bg-slate-50/60 hover:bg-slate-50/80 shadow-none border-0'
+                                      ? 'border-[#8fd3e5] bg-[#f4fbfd]'
+                                      : 'border-slate-200 bg-white hover:border-[#9dd8e7]'
                                   }`}
                                 >
                                   {isPromo && (
-                                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#00B4D8] text-[#0e2a4d] text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded border border-[#9dd8e7] bg-[#dff3f8] px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#005f74]">
                                       Most Popular
                                     </span>
                                   )}
@@ -375,8 +248,7 @@ export default async function CreditsPage() {
 
                                   <Link
                                     href="/profile/wallet"
-                                    className="mt-4 w-full text-center py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-sm hover:opacity-95 hover:shadow-md active:scale-[0.98]"
-                                    style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
+                                    className="mt-4 w-full rounded-md border border-[#b9e2ed] bg-[#dff3f8] px-4 py-2.5 text-center text-xs font-bold text-[#004173] transition-colors hover:bg-[#cfeaf2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#007f9b]"
                                   >
                                     Purchase
                                   </Link>
@@ -396,25 +268,26 @@ export default async function CreditsPage() {
 
         {/* FAQs Section */}
         {faqs.length > 0 && (
-          <section className="space-y-6 w-full">
-            <h2 className="text-xl font-bold text-[#0e2a4d] tracking-tight text-left">Frequently Asked Questions</h2>
-            <div className="space-y-4">
+          <section className="w-full border-t border-slate-200 py-7 text-left sm:py-9">
+            <h2 className="text-2xl font-bold leading-snug tracking-tight text-[#0e2a4d] sm:text-[1.65rem]">Frequently Asked Questions</h2>
+            <div className="mt-5 divide-y divide-slate-200">
               {faqs.map((faq) => (
                 <div 
                   key={faq.id} 
-                  className="bg-white rounded-2xl p-6 md:p-8 shadow-[0_8px_30px_rgba(14,42,77,0.025)]"
+                  className="py-5 first:pt-0 last:pb-0"
                 >
-                  <h3 className="font-bold text-[#0e2a4d] text-sm md:text-base mb-2 text-left">
+                  <h3 className="mb-2 text-left text-base font-bold text-[#0e2a4d] md:text-lg">
                     {faq.question}
                   </h3>
-                  <p className="text-gray-600 text-xs sm:text-sm leading-relaxed font-medium text-left">
-                    {faq.answer}
+                  <p className="text-left text-base font-normal leading-8 text-slate-600">
+                    {normalizeBrand(faq.answer)}
                   </p>
                 </div>
               ))}
             </div>
           </section>
         )}
+        </article>
       </div>
     </div>
   );
@@ -423,127 +296,25 @@ export default async function CreditsPage() {
     return (
       <ProfileProvider userId={user.id} userEmail={user.email}>
         <AppShell userEmail={user.email} userId={user.id}>
-          {renderContent()}
+          <>
+            {renderContent()}
+            <PublicSiteFooter />
+          </>
         </AppShell>
       </ProfileProvider>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#e8f1fb] via-[#f3f7fb] to-[#f3f7fb]">
-      {/* Mimic AppShell Header for logged-out users */}
-      <header className="header app-header">
-        <div className="app-container">
-          <div className="w-full flex items-center justify-between py-2 px-4 h-[calc(76px+env(safe-area-inset-top))] md:h-auto md:min-h-[64px] pt-[calc(env(safe-area-inset-top)+20px)] md:pt-1">
-            {/* LEFT: Logo */}
-            <div className="flex items-center gap-3 flex-1 md:flex-none">
-              <Link href="/" className="logo font-semibold text-[#002b4e] flex items-center">
-                <span>Mar<span>Comn</span></span>
-              </Link>
-            </div>
-
-            {/* CENTER: Main Navigation (Desktop Only) */}
-            <div className="hidden md:flex items-center justify-center !mt-[10px] flex-1">
-              <Link href="/logbook" className="nav-link">
-                <Ship size={24} />
-                <span>MNetwork</span>
-              </Link>
-              <Link href="/mservices" className="nav-link">
-                <LayoutGrid size={24} />
-                <span>MServices</span>
-              </Link>
-              <Link href="/mblog" className="nav-link">
-                <Newspaper size={24} />
-                <span>MBlogs</span>
-              </Link>
-            </div>
-
-            {/* RIGHT: Actions */}
-            <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
-              {/* Message Icon */}
-              <Link href="/login" className="header-icon-btn scale-110 md:scale-100 flex-shrink-0 relative">
-                <MessageSquare size={26} />
-              </Link>
-
-              {/* Bell Icon */}
-              <Link href="/login" className="header-icon-btn relative hidden md:block">
-                <Bell size={22} />
-              </Link>
-
-              {/* Post a Job Button */}
-              <Link 
-                href="/login"
-                className="btn-primary-pill px-2.5 py-1.5 md:px-5 ml-1.5 md:ml-3 flex items-center justify-center mr-1 md:mr-3 flex-shrink-0 text-sm font-bold"
-                style={{ backgroundColor: 'var(--primary-container)', color: '#002b4e' }}
-              >
-                <Briefcase size={16} className="md:mr-2" />
-                <span className="hidden md:inline whitespace-nowrap">Post a Job</span>
-              </Link>
-
-              {/* Sign In Button */}
-              <Link 
-                href="/login" 
-                className="text-xs font-bold px-4 py-2 rounded-xl transition-all hover:opacity-90"
-                style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
-              >
-                Sign In
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col bg-[#f4f7fb]">
+      <PublicSiteHeader />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center w-full">
         {renderContent()}
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="mobile-bottom-nav md:hidden" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}>
-        <Link 
-          href="/login" 
-          className="mobile-nav-item"
-          style={{ '--active-color': '#002b4e' }}
-        >
-          <Ship size={24} className="mobile-nav-icon" />
-          <span className="mobile-nav-label">MNetwork</span>
-        </Link>
-        <Link 
-          href="/login" 
-          className="mobile-nav-item"
-          style={{ '--active-color': '#002b4e' }}
-        >
-          <LayoutGrid size={24} className="mobile-nav-icon" />
-          <span className="mobile-nav-label">MServices</span>
-        </Link>
-        <Link 
-          href="/login" 
-          className="mobile-nav-item"
-          style={{ '--active-color': '#002b4e' }}
-        >
-          <Newspaper size={24} className="mobile-nav-icon" />
-          <span className="mobile-nav-label">MBlogs</span>
-        </Link>
-        <Link 
-          href="/login"
-          className="mobile-nav-item"
-          style={{ '--active-color': '#002b4e' }}
-        >
-          <Bell size={24} className="mobile-nav-icon" />
-          <span className="mobile-nav-label">Alerts</span>
-        </Link>
-      </nav>
-
-      {/* Footer */}
-      <footer className="text-center py-8 text-xs text-gray-400 border-t border-gray-100 bg-white">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span>© 2026 MarComn. All rights reserved.</span>
-          <div className="flex gap-4">
-            <Link href="/credits" className="hover:text-gray-600 font-medium">Credits</Link>
-            <Link href="/legal/payments" className="hover:text-gray-600 font-medium">Payment Policies</Link>
-          </div>
-        </div>
-      </footer>
+      <PublicSiteFooter />
     </div>
   );
 }

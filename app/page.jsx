@@ -1,15 +1,11 @@
 import Link from 'next/link';
-import LandingLogo from '@/app/components/LandingLogo';
+import PublicSiteFooter from '@/app/components/PublicSiteFooter';
+import PublicSiteHeader from '@/app/components/PublicSiteHeader';
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f0f4fa' }}>
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 py-3 flex items-center w-full">
-          <LandingLogo />
-        </div>
-      </header>
+      <PublicSiteHeader />
 
       {/* Hero */}
       <main className="flex-1 flex flex-col items-center justify-center text-center px-4 py-20">
@@ -18,7 +14,7 @@ export default function LandingPage() {
           The living professional community
         </div>
 
-        <h1 className="text-6xl font-bold leading-tight mb-6" style={{ color: '#0e2a4d', maxWidth: '700px' }}>
+        <h1 className="mb-6 text-5xl font-bold leading-tight max-[320px]:text-[2.125rem] max-[320px]:leading-[1.1] sm:text-6xl" style={{ color: '#0e2a4d', maxWidth: '700px' }}>
           Where professionals<br />connect &amp; build.
         </h1>
 
@@ -28,18 +24,13 @@ export default function LandingPage() {
 
         <Link
           href="/login"
-          className="text-xl font-bold px-12 py-5 rounded-xl shadow-sm transition-all hover:opacity-90"
-          style={{ backgroundColor: '#00B4D8', color: '#0e2a4d' }}
+          className="rounded-xl border border-[#9dd8e7] bg-[#dff3f8] px-12 py-5 text-xl font-bold text-[#0e2a4d] transition-colors hover:bg-[#cfeaf2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#007f9b]"
         >
           Join the community
         </Link>
       </main>
 
-      <footer className="text-center py-6 text-sm text-gray-400 flex flex-col items-center gap-2">
-        <div>
-          © 2026 Marcomn. <span className="text-blue-500">The professional network.</span>
-        </div>
-      </footer>
+      <PublicSiteFooter centered />
     </div>
   );
 }

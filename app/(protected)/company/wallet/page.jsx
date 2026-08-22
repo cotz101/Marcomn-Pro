@@ -1064,10 +1064,10 @@ export default function CompanyWalletPage() {
 
               {/* Terms disclaimer */}
               <div className="text-[11px] text-gray-400 text-center leading-normal mt-2 px-1 select-none font-medium">
-                By purchasing MCredits, you agree to MarComn’s{' '}
+                      By purchasing MCredits, you agree to Marcomn’s{' '}
                 <Link href="/credits" className="text-blue-500 hover:underline font-semibold">How MCredits Work</Link>
                 {' '}and{' '}
-                <Link href="/legal/payments" className="text-blue-500 hover:underline font-semibold">Terms & Refund Policy</Link>.
+                <Link href="/legal/payments" className="text-blue-500 hover:underline font-semibold">MCredits, Payments & Refund Policy</Link>.
               </div>
 
               {/* Footer */}
@@ -1207,8 +1207,8 @@ export default function CompanyWalletPage() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Refund Method:</span>
-                  <span className="font-bold text-gray-800">Original Stripe payment method</span>
+                  <span>Refund Handling:</span>
+                  <span className="font-bold text-gray-800">Available approved process</span>
                 </div>
               </div>
 
@@ -1270,10 +1270,11 @@ export default function CompanyWalletPage() {
               <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-3.5 text-[10px] text-amber-800 leading-relaxed font-medium">
                 <p className="font-bold mb-1">MCredit Refund Policy:</p>
                 <p className="mb-1">
-                  MCredit purchases may be eligible for refund only for unused MCredit balance. Once MCredits have been used for job posting, job acceptance, platform services, fees, or completed transactions, those used credits are considered consumed and are non-refundable.
+                  MCredit purchases are generally final once the MCredits have been used. Unused MCredits purchased through an eligible online top-up may qualify for a refund after review. Eligibility is limited to the remaining eligible unused balance and is subject to payment-provider capability, applicable law, and Marcomn’s transaction records.
                 </p>
+                <p className="mb-1">Submitting a refund request does not guarantee approval.</p>
                 <p>
-                  Approved refunds are processed back to the original Stripe payment method whenever possible. MarComn does not collect bank details for normal Stripe refunds. The refundable amount must not exceed the user’s current available unused MCredit balance.
+                  An approved refund may be processed through the available payment-provider workflow or another appropriate administrative process. Timing and method depend on verification, provider capability, applicable law, and transaction records.
                 </p>
               </div>
 
