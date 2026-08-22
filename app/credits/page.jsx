@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase-server';
 import { getCMSPageData } from '@/lib/cmsPublicPage';
 import InformationNav from '@/app/components/InformationNav';
-import PolicyHero from '@/app/components/PolicyHero';
 import PublicSiteFooter from '@/app/components/PublicSiteFooter';
 import PublicSiteHeader from '@/app/components/PublicSiteHeader';
 import { Coins } from 'lucide-react';
@@ -119,7 +118,7 @@ export default async function CreditsPage() {
   })();
 
   const renderContent = () => (
-    <div className="w-full bg-[#f4f7fb] min-h-screen pb-20 flex flex-col items-center">
+    <div className="min-h-screen w-full bg-[#f4f6f8]">
       {/* CSS Override to hide sidebars and center the feed in AppShell */}
       <style dangerouslySetInnerHTML={{ __html: `
         aside.sidebar-left, aside.sidebar-right {
@@ -136,17 +135,19 @@ export default async function CreditsPage() {
         }
       `}} />
 
-      <InformationNav currentPath="/credits" />
+      <div className="mx-auto grid w-full max-w-[1280px] gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-10">
+        <InformationNav currentPath="/credits" sections={sections} />
 
-      <div className="w-full border-b border-[#dceaf3] bg-gradient-to-b from-[#e8f4fb] to-[#f4f7fb] px-5 py-12 sm:px-8 sm:py-16">
-        <PolicyHero eyebrow="MarComn MCredits" title={page.title || 'About MCredits'} description={page.meta_description} />
-      </div>
+        <article className="min-w-0 rounded-lg border border-slate-200 bg-white px-5 py-7 sm:px-8 sm:py-9 lg:px-12 lg:py-11">
+          <header className="border-b border-slate-200 pb-7">
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#007f9b]">MarComn MCredits</p>
+            <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-[#0e2a4d] sm:text-4xl lg:text-[2.65rem] lg:leading-tight">{page.title || 'About MCredits'}</h1>
+            {page.meta_description && <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">{page.meta_description}</p>}
+          </header>
 
-      <div className="mx-auto w-full max-w-[1120px] self-center px-4 py-10 sm:px-6 md:px-8 md:py-14">
-        <div className="w-full rounded-3xl border border-slate-200 bg-white px-5 py-3 shadow-[0_18px_55px_rgba(14,42,77,0.06)] sm:px-8 lg:px-12">
         {/* User Balance / Available Funds Card */}
         {user ? (
-          <div className="mb-2 flex w-full flex-col items-center justify-between gap-4 rounded-xl border border-[#dceaf3] bg-[#f4f9fc] p-5 sm:flex-row sm:p-6">
+          <div className="mt-6 flex w-full flex-col items-center justify-between gap-4 rounded-md border border-[#a8ddec] bg-[#eef9fc] p-5 sm:flex-row sm:p-6">
             <div className="flex items-center gap-4 text-left">
               <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
                 <Coins size={24} />
@@ -167,7 +168,7 @@ export default async function CreditsPage() {
             </Link>
           </div>
         ) : (
-          <div className="mb-2 flex w-full flex-col items-center justify-between gap-4 rounded-xl border border-[#dceaf3] bg-[#f4f9fc] p-5 sm:flex-row sm:p-6">
+          <div className="mt-6 flex w-full flex-col items-center justify-between gap-4 rounded-md border border-[#a8ddec] bg-[#eef9fc] p-5 sm:flex-row sm:p-6">
             <div className="flex items-center gap-3 text-left">
               <div className="p-2 bg-blue-50 text-[#00B4D8] rounded-lg shrink-0">
                 <Coins size={20} />
@@ -300,7 +301,7 @@ export default async function CreditsPage() {
             </div>
           </section>
         )}
-        </div>
+        </article>
       </div>
     </div>
   );
