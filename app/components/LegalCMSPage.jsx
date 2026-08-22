@@ -24,14 +24,14 @@ export default function LegalCMSPage({ data }) {
           <PolicyHero eyebrow="MarComn Legal" title={page.title} description={page.meta_description} effectiveDate={LEGAL_EFFECTIVE_DATE} />
         </div>
 
-        <div className="mx-auto grid w-full max-w-[1280px] gap-8 px-4 py-8 sm:px-6 sm:py-10 md:px-8 lg:grid-cols-[240px_minmax(0,880px)] lg:justify-center lg:gap-10 lg:px-12 lg:py-14">
+        <div className="mx-auto grid w-full max-w-[1200px] gap-8 px-4 py-10 sm:px-6 sm:py-12 md:px-8 lg:grid-cols-[280px_minmax(0,800px)] lg:justify-center lg:gap-12 lg:px-10 lg:py-16">
           <aside className="hidden lg:block" aria-label="On this page">
-            <nav className="sticky top-24 rounded-2xl border border-slate-200 bg-white/80 p-5">
-              <h2 className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#0e2a4d]">On this page</h2>
-              <ol className="mt-4 space-y-1 border-l border-slate-200">
+            <nav className="sticky top-8 border-l-2 border-slate-200 py-2 pl-6">
+              <h2 className="text-sm font-extrabold uppercase tracking-[0.14em] text-[#0e2a4d]">On this page</h2>
+              <ol className="mt-5 space-y-1.5">
                 {sections.map((item) => (
                   <li key={item.id}>
-                    <a href={`#${item.section_key}`} className="block border-l-2 border-transparent py-1.5 pl-4 text-xs font-semibold leading-5 text-slate-500 transition-colors hover:border-[#00B4D8] hover:text-[#007f9b] focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4D8]">
+                    <a href={`#${item.section_key}`} className="block py-1.5 text-[15px] font-medium leading-6 text-slate-600 transition-colors hover:text-[#007f9b] focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4D8]">
                       {item.title}
                     </a>
                   </li>
@@ -50,20 +50,20 @@ export default function LegalCMSPage({ data }) {
               </ol>
             </details>
 
-            <div className="legal-document-surface rounded-2xl border border-slate-200 bg-white shadow-[0_12px_40px_rgba(14,42,77,0.045)]">
+            <article className="legal-document-surface bg-white">
               {sections.map((item, itemIndex) => (
                 <section id={item.section_key} key={item.id} className={`scroll-mt-28 py-7 sm:py-9 ${itemIndex > 0 ? 'border-t border-slate-200' : ''}`}>
-                  <h2 className="mb-4 text-xl font-bold leading-snug text-[#0e2a4d] sm:text-[1.35rem]">{item.title}</h2>
-                  <div className="space-y-4">
+                  <h2 className="mb-5 text-2xl font-bold leading-snug tracking-tight text-[#0e2a4d] sm:text-[1.65rem]">{item.title}</h2>
+                  <div className="space-y-5">
                 {item.content.split('\n').filter(Boolean).map((paragraph, index) => (
-                  <p key={index} className="whitespace-pre-line text-[15px] font-normal leading-7 text-slate-600 sm:text-base sm:leading-7">
+                  <p key={index} className="whitespace-pre-line text-base font-normal leading-8 text-slate-600 sm:text-[17px]">
                     <InlineText text={paragraph} />
                   </p>
                 ))}
                   </div>
                 </section>
               ))}
-            </div>
+            </article>
 
             {faqs.length > 0 && (
               <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 sm:p-8" aria-labelledby="legal-faq-heading">

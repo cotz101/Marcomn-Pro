@@ -2,15 +2,15 @@ import { CalendarDays } from 'lucide-react';
 
 export default function PolicyHero({ eyebrow, title, description, effectiveDate }) {
   return (
-    <div className="mx-auto max-w-3xl text-center">
+    <div className="mx-auto w-full max-w-3xl text-center">
       <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[#007f9b]">
         {eyebrow}
       </p>
-      <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-[#0e2a4d] sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
+      <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-[#0e2a4d] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.08]">
         {title}
       </h1>
       {description && (
-        <p className="mx-auto mt-4 max-w-2xl text-sm font-medium leading-7 text-slate-600 sm:text-base">
+        <p className="mx-auto mt-5 max-w-2xl text-base font-normal leading-7 text-slate-600 sm:text-lg sm:leading-8">
           {description}
         </p>
       )}

@@ -142,8 +142,8 @@ export default async function CreditsPage() {
         <PolicyHero eyebrow="MarComn MCredits" title={page.title || 'About MCredits'} description={page.meta_description} />
       </div>
 
-      <div className="mx-auto w-full max-w-[960px] px-4 py-8 sm:px-6 md:px-8 md:py-12">
-        <div className="legal-document-surface w-full rounded-2xl border border-slate-200 bg-white shadow-[0_12px_40px_rgba(14,42,77,0.045)]">
+      <div className="mx-auto w-full max-w-[1120px] self-center px-4 py-10 sm:px-6 md:px-8 md:py-14">
+        <div className="w-full rounded-3xl border border-slate-200 bg-white px-5 py-3 shadow-[0_18px_55px_rgba(14,42,77,0.06)] sm:px-8 lg:px-12">
         {/* User Balance / Available Funds Card */}
         {user ? (
           <div className="mb-2 flex w-full flex-col items-center justify-between gap-4 rounded-xl border border-[#dceaf3] bg-[#f4f9fc] p-5 sm:flex-row sm:p-6">
@@ -198,14 +198,14 @@ export default async function CreditsPage() {
               return (
                 <section 
                   key={section.id} 
-                  className={`w-full space-y-4 py-7 text-left sm:py-9 ${sectionIndex > 0 ? 'border-t border-slate-200' : ''}`}
+                  className={`w-full space-y-5 py-8 text-left sm:py-10 ${sectionIndex > 0 ? 'border-t border-slate-200' : ''}`}
                 >
-                  <h2 className="text-xl font-bold leading-snug text-[#0e2a4d] sm:text-[1.35rem]">
+                  <h2 className="text-2xl font-bold leading-snug tracking-tight text-[#0e2a4d] sm:text-[1.65rem]">
                     {section.title}
                   </h2>
                   <div className="space-y-4">
                     {paragraphs.map((para, i) => (
-                      <p key={i} className="text-[15px] text-gray-600 leading-7 font-normal sm:text-base">
+                      <p key={i} className="text-base font-normal leading-8 text-slate-600 sm:text-[17px]">
                         {para}
                       </p>
                     ))}
@@ -282,17 +282,17 @@ export default async function CreditsPage() {
         {/* FAQs Section */}
         {faqs.length > 0 && (
           <section className="w-full border-t border-slate-200 py-7 text-left sm:py-9">
-            <h2 className="text-xl font-bold leading-snug text-[#0e2a4d] sm:text-[1.35rem]">Frequently Asked Questions</h2>
+            <h2 className="text-2xl font-bold leading-snug tracking-tight text-[#0e2a4d] sm:text-[1.65rem]">Frequently Asked Questions</h2>
             <div className="mt-5 divide-y divide-slate-200">
               {faqs.map((faq) => (
                 <div 
                   key={faq.id} 
                   className="py-5 first:pt-0 last:pb-0"
                 >
-                  <h3 className="font-bold text-[#0e2a4d] text-sm md:text-base mb-2 text-left">
+                  <h3 className="mb-2 text-left text-base font-bold text-[#0e2a4d] md:text-lg">
                     {faq.question}
                   </h3>
-                  <p className="text-gray-600 text-xs sm:text-sm leading-relaxed font-medium text-left">
+                  <p className="text-left text-base font-normal leading-8 text-slate-600">
                     {faq.answer}
                   </p>
                 </div>
