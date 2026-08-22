@@ -138,11 +138,11 @@ export default async function CreditsPage() {
       <div className="mx-auto grid w-full max-w-[1280px] gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-10">
         <InformationNav currentPath="/credits" sections={sections} />
 
-        <article className="min-w-0 rounded-lg border border-slate-200 bg-white px-5 py-7 sm:px-8 sm:py-9 lg:px-12 lg:py-11">
+        <article className="legal-center-document min-w-0 rounded-lg border border-slate-200 bg-white">
           <header className="border-b border-slate-200 pb-7">
             <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#007f9b]">MarComn MCredits</p>
-            <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-[#0e2a4d] sm:text-4xl lg:text-[2.65rem] lg:leading-tight">{page.title || 'About MCredits'}</h1>
-            {page.meta_description && <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">{page.meta_description}</p>}
+            <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-[#0e2a4d] sm:text-4xl lg:text-[2.5rem] lg:leading-tight">{page.title || 'About MCredits'}</h1>
+            {page.meta_description && <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-[17px] sm:leading-8">{page.meta_description}</p>}
           </header>
 
         {/* User Balance / Available Funds Card */}
@@ -201,7 +201,7 @@ export default async function CreditsPage() {
                   key={section.id} 
                   className={`w-full space-y-5 py-8 text-left sm:py-10 ${sectionIndex > 0 ? 'border-t border-slate-200' : ''}`}
                 >
-                  <h2 className="text-2xl font-bold leading-snug tracking-tight text-[#0e2a4d] sm:text-[1.65rem]">
+                  <h2 className="border-b border-slate-200 pb-3 text-xl font-bold leading-snug tracking-tight text-[#0e2a4d] sm:text-[1.4rem]">
                     {section.title}
                   </h2>
                   <div className="space-y-4">

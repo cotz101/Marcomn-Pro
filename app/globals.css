@@ -29,15 +29,27 @@
   padding: 16px 48px;
 }
 
+.legal-center-document {
+  padding: 42px 48px;
+}
+
 @media (max-width: 1023px) {
   .legal-document-surface {
     padding: 12px 32px;
+  }
+
+  .legal-center-document {
+    padding: 30px 32px;
   }
 }
 
 @media (max-width: 767px) {
   .legal-document-surface {
     padding: 8px 20px;
+  }
+
+  .legal-center-document {
+    padding: 24px 20px;
   }
 }
 
