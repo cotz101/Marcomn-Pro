@@ -14,7 +14,7 @@ export default function LandingPage() {
           The living professional community
         </div>
 
-        <h1 className="mb-6 text-5xl font-bold leading-tight sm:text-6xl" style={{ color: '#0e2a4d', maxWidth: '700px' }}>
+        <h1 className="mb-6 text-5xl font-bold leading-tight max-[320px]:text-[2.125rem] max-[320px]:leading-[1.1] sm:text-6xl" style={{ color: '#0e2a4d', maxWidth: '700px' }}>
           Where professionals<br />connect &amp; build.
         </h1>
 
