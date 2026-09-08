@@ -4,34 +4,43 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
-import { 
-  ArrowLeft, 
-  Loader2, 
-  ShieldAlert, 
-  ShieldCheck, 
-  Coins, 
-  Plus, 
-  Minus, 
-  FileText, 
-  History, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  ArrowLeft,
+  Loader2,
+  ShieldAlert,
+  ShieldCheck,
+  Coins,
+  Plus,
+  Minus,
+  FileText,
+  History,
+  TrendingUp,
+  TrendingDown,
   Settings,
   CreditCard,
   CheckCircle,
-  XCircle
+  XCircle,
+  ToggleLeft,
+  ToggleRight,
+  AlertTriangle,
+  Info
 } from 'lucide-react';
-import { 
-  getPendingTopupRequests, 
-  approveTopupRequest, 
-  rejectTopupRequest 
+import {
+  getPendingTopupRequests,
+  approveTopupRequest,
+  rejectTopupRequest
 } from '@/app/actions/mcreditTopups';
-import { 
-  getUserWallet, 
-  getCompanyWallet, 
-  grantCredits, 
+import {
+  getUserWallet,
+  getCompanyWallet,
+  grantCredits,
   deductCredits
 } from '@/app/actions/mcredits';
+import {
+  getMonetizationSettings,
+  updateMonetizationSettingAction,
+  getMonetizationAuditLogs
+} from '@/app/actions/adminMonetizationActions';
 
 export default function AdminMCreditsPage() {
   const router = useRouter();
@@ -39,14 +48,14 @@ export default function AdminMCreditsPage() {
   const supabase = createClient();
 
   const isAuthorized = profile && (profile.is_platform_admin || ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role));
-  
+
   const isLegacyAdmin = profile && ['super_admin', 'admin', 'brand_manager'].includes(profile.global_role);
   const canGrant = profile && (profile.admin_permissions?.includes('can_grant_mcredits') || isLegacyAdmin);
   const canDeduct = profile && (profile.admin_permissions?.includes('can_deduct_mcredits') || isLegacyAdmin);
   const canApprove = profile && (profile.admin_permissions?.includes('can_approve_topups') || isLegacyAdmin);
   const canReject = profile && (profile.admin_permissions?.includes('can_reject_topups') || isLegacyAdmin);
   const canViewWalletControl = profile && (profile.admin_permissions?.includes('can_view_wallet_control') || isLegacyAdmin);
-  
+
   const canViewFees = profile && (profile.admin_permissions?.includes('can_manage_global_settings') || isLegacyAdmin);
   const canViewLedger = profile && (canViewWalletControl || canGrant || canDeduct);
   const canViewTopups = profile && (canViewWalletControl || canApprove || canReject);
@@ -55,14 +64,14 @@ export default function AdminMCreditsPage() {
   // Lists
   const [profilesList, setProfilesList] = useState([]);
   const [companiesList, setCompaniesList] = useState([]);
-  
+
   // Selection
   const [ownerType, setOwnerType] = useState('user'); // user, company, platform
   const [selectedOwnerId, setSelectedOwnerId] = useState('');
   const [selectedWallet, setSelectedWallet] = useState(null);
   const [loadingWallet, setLoadingWallet] = useState(false);
   const [transactions, setTransactions] = useState([]);
-  
+
   // Form fields
   const [adjustType, setAdjustType] = useState('credit'); // credit, debit
   const [amount, setAmount] = useState('');
@@ -85,6 +94,23 @@ export default function AdminMCreditsPage() {
     { id: 'pkg_500', usdPrice: 500, mcreditAmount: 500, isActive: true, displayOrder: 6 }
   ]);
 
+  // Monetization Controls State
+  const [monetizationSettings, setMonetizationSettings] = useState({
+    jobPostingEnabled: true,
+    candidateAcceptanceEnabled: true
+  });
+  const [loadingMonetization, setLoadingMonetization] = useState(false);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [loadingAuditLogs, setLoadingAuditLogs] = useState(false);
+
+  // Monetization Change Confirmation Modal State
+  const [monetizationModalOpen, setMonetizationModalOpen] = useState(false);
+  const [pendingChange, setPendingChange] = useState(null); // { key, targetValue, label }
+  const [changeReasonCode, setChangeReasonCode] = useState('UAT / Internal Testing');
+  const [changeAdditionalNotes, setChangeAdditionalNotes] = useState('');
+  const [monetizationError, setMonetizationError] = useState('');
+  const [submittingMonetization, setSubmittingMonetization] = useState(false);
+
   // Calculations test fields
   const [testSalary, setTestSalary] = useState('100000');
   const [companyFeePreview, setCompanyFeePreview] = useState(0);
@@ -102,7 +128,7 @@ export default function AdminMCreditsPage() {
   // Set default active tab based on permissions once profile is loaded
   useEffect(() => {
     if (!profile) return;
-    
+
     if (activeTab === 'fees' && !canViewFees) {
       if (canViewLedger) {
         setActiveTab('ledger');
@@ -162,7 +188,7 @@ export default function AdminMCreditsPage() {
         const { data: settings } = await supabase
           .from('platform_settings')
           .select('key, value');
-        
+
         if (settings) {
           const postFee = settings.find(s => s.key === 'company_job_posting_fee_percent');
           const accFee = settings.find(s => s.key === 'candidate_acceptance_fee_percent');
@@ -191,6 +217,22 @@ export default function AdminMCreditsPage() {
         // Fetch pending topups
         const topups = await getPendingTopupRequests();
         setPendingTopups(topups || []);
+
+        // Fetch monetization controls
+        setLoadingMonetization(true);
+        const monRes = await getMonetizationSettings();
+        if (monRes?.success) {
+          setMonetizationSettings(monRes.settings);
+        }
+        setLoadingMonetization(false);
+
+        // Fetch monetization audit logs
+        setLoadingAuditLogs(true);
+        const logsRes = await getMonetizationAuditLogs(50);
+        if (logsRes?.success) {
+          setAuditLogs(logsRes.logs || []);
+        }
+        setLoadingAuditLogs(false);
       } catch (err) {
         console.error('Error loading admin lists:', err);
       }
@@ -248,14 +290,14 @@ export default function AdminMCreditsPage() {
 
         const jobIds = txs.filter(t => t.reference_type === 'job_posting' && t.reference_id).map(t => t.reference_id);
         const uniqueJobIds = [...new Set(jobIds)];
-        
+
         const jobMap = {};
         if (uniqueJobIds.length > 0) {
           const { data: jobsData } = await supabase
             .from('jobs')
             .select('id, title, salary_numeric')
             .in('id', uniqueJobIds);
-          
+
           if (jobsData) {
             jobsData.forEach(job => {
               jobMap[job.id] = job;
@@ -376,8 +418,8 @@ export default function AdminMCreditsPage() {
   }, [loadWallet]);
 
   const handleAddPackage = () => {
-    const nextOrder = stripePackages.length > 0 
-      ? Math.max(...stripePackages.map(p => Number(p.displayOrder) || 0)) + 1 
+    const nextOrder = stripePackages.length > 0
+      ? Math.max(...stripePackages.map(p => Number(p.displayOrder) || 0)) + 1
       : 1;
     setStripePackages([
       ...stripePackages,
@@ -516,6 +558,81 @@ export default function AdminMCreditsPage() {
     }
   };
 
+  // Open Monetization Confirmation Modal
+  const handleToggleMonetization = (key, currentVal, label) => {
+    setPendingChange({
+      key,
+      targetValue: !currentVal,
+      label
+    });
+    setChangeReasonCode('uat_internal_testing');
+    setChangeAdditionalNotes('');
+    setMonetizationError('');
+    setMonetizationModalOpen(true);
+  };
+
+  // Confirm Monetization Setting Change
+  const handleConfirmMonetizationChange = async (e) => {
+    if (e) e.preventDefault();
+    if (!pendingChange) return;
+
+    if (changeReasonCode === 'other' && !changeAdditionalNotes.trim()) {
+      setMonetizationError('Detailed notes are mandatory when reason is "Other".');
+      return;
+    }
+
+    setSubmittingMonetization(true);
+    setMonetizationError('');
+
+    try {
+      const res = await updateMonetizationSettingAction({
+        key: pendingChange.key,
+        value: pendingChange.targetValue,
+        reasonCode: changeReasonCode,
+        additionalDetails: changeAdditionalNotes.trim() || null
+      });
+
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to update setting');
+      }
+
+      if (res.result?.code === 'no_change') {
+        showToast('Setting is already at the requested value; no change made.', 'info');
+        setMonetizationModalOpen(false);
+        setPendingChange(null);
+        return;
+      }
+
+      // Update local state
+      if (pendingChange.key === 'mcredit_job_posting_enabled') {
+        setMonetizationSettings(prev => ({
+          ...prev,
+          jobPostingEnabled: pendingChange.targetValue
+        }));
+      } else if (pendingChange.key === 'mcredit_candidate_acceptance_enabled') {
+        setMonetizationSettings(prev => ({
+          ...prev,
+          candidateAcceptanceEnabled: pendingChange.targetValue
+        }));
+      }
+
+      showToast(`${pendingChange.label} has been updated.`, 'success');
+      setMonetizationModalOpen(false);
+      setPendingChange(null);
+
+      // Refresh audit logs
+      const logsRes = await getMonetizationAuditLogs(50);
+      if (logsRes?.success) {
+        setAuditLogs(logsRes.logs || []);
+      }
+    } catch (err) {
+      console.error('Error updating monetization setting:', err);
+      setMonetizationError(err.message || 'Failed to update setting');
+    } finally {
+      setSubmittingMonetization(false);
+    }
+  };
+
   // Perform Grant/Deduct
   const handleAdjustmentSubmit = async (e) => {
     e.preventDefault();
@@ -538,11 +655,11 @@ export default function AdminMCreditsPage() {
         await deductCredits(selectedWallet.id, Number(amount), justification, userId);
         showToast(`Deducted ${amount} MCredits successfully!`, 'success');
       }
-      
+
       // Reset form
       setAmount('');
       setJustification('');
-      
+
       // Reload wallet details and transactions
       await loadWallet();
     } catch (err) {
@@ -642,7 +759,7 @@ export default function AdminMCreditsPage() {
 
       {/* Main Layout */}
       <div className="flex flex-col gap-6 lg:gap-7 items-start mb-8 w-full">
-        
+
         {/* Header Info */}
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
           <div className="flex items-start gap-4">
@@ -755,7 +872,7 @@ export default function AdminMCreditsPage() {
                 <Settings size={18} className="text-[#0e2a4d]" />
                 <h2 className="text-base font-bold text-[#0e2a4d]">Platform Fee Configuration</h2>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1.5">Company Posting Fee (%)</label>
@@ -971,21 +1088,228 @@ export default function AdminMCreditsPage() {
                   <span>Save Settings Configuration</span>
                 </button>
               </div>
+
+              {/* Monetization Controls Section */}
+              <div className="border-t border-gray-150 pt-6 mt-8">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <div>
+                    <h3 className="text-base font-bold text-[#0e2a4d] flex items-center gap-2">
+                      <Coins size={18} className="text-amber-600" />
+                      <span>MCredits Monetization Controls</span>
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Independent authoritative platform switches. Disabling a control bypasses wallet checks and deductions for that specific action (fee becomes 0 MC).
+                    </p>
+                  </div>
+                  {loadingMonetization && (
+                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                      <Loader2 size={12} className="animate-spin" /> Loading...
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Toggle 1: Job Posting */}
+                  <div className="bg-slate-50/60 border border-gray-200 rounded-xl p-4 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">Job Posting Monetization</span>
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                          monetizationSettings.jobPostingEnabled
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-amber-100 text-amber-800 border border-amber-200'
+                        }`}>
+                          {monetizationSettings.jobPostingEnabled ? 'Active (Monetized)' : 'Bypassed (Free)'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        When enabled, employers must have sufficient MCredits to pay the posting fee upon publishing. When disabled, jobs publish with 0 MC fee and no wallet deduction.
+                      </p>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-gray-200 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-gray-500">
+                        Setting: <code className="text-gray-700 bg-white px-1.5 py-0.5 rounded border border-gray-200">mcredit_job_posting_enabled</code>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleMonetization(
+                          'mcredit_job_posting_enabled',
+                          monetizationSettings.jobPostingEnabled,
+                          'Job Posting Monetization'
+                        )}
+                        disabled={!canViewFees || loadingMonetization}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
+                          monetizationSettings.jobPostingEnabled
+                            ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300'
+                            : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300'
+                        }`}
+                      >
+                        {monetizationSettings.jobPostingEnabled ? (
+                          <>
+                            <ToggleLeft size={16} />
+                            <span>Bypass Fee</span>
+                          </>
+                        ) : (
+                          <>
+                            <ToggleRight size={16} />
+                            <span>Enable Fee</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Toggle 2: Candidate Acceptance */}
+                  <div className="bg-slate-50/60 border border-gray-200 rounded-xl p-4 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">Candidate Acceptance Monetization</span>
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                          monetizationSettings.candidateAcceptanceEnabled
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-amber-100 text-amber-800 border border-amber-200'
+                        }`}>
+                          {monetizationSettings.candidateAcceptanceEnabled ? 'Active (Monetized)' : 'Bypassed (Free)'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        When enabled, candidates must have sufficient MCredits to pay the acceptance fee upon offer acceptance. When disabled, offers are accepted with 0 MC fee and no wallet deduction.
+                      </p>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-gray-200 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-gray-500">
+                        Setting: <code className="text-gray-700 bg-white px-1.5 py-0.5 rounded border border-gray-200">mcredit_candidate_acceptance_enabled</code>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleMonetization(
+                          'mcredit_candidate_acceptance_enabled',
+                          monetizationSettings.candidateAcceptanceEnabled,
+                          'Candidate Acceptance Monetization'
+                        )}
+                        disabled={!canViewFees || loadingMonetization}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
+                          monetizationSettings.candidateAcceptanceEnabled
+                            ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300'
+                            : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300'
+                        }`}
+                      >
+                        {monetizationSettings.candidateAcceptanceEnabled ? (
+                          <>
+                            <ToggleLeft size={16} />
+                            <span>Bypass Fee</span>
+                          </>
+                        ) : (
+                          <>
+                            <ToggleRight size={16} />
+                            <span>Enable Fee</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Monetization Change History Audit Table */}
+              <div className="border-t border-gray-150 pt-6 mt-8">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-[#0e2a4d] flex items-center gap-2">
+                      <History size={16} />
+                      <span>Monetization Change History (Audit Trail)</span>
+                    </h3>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      Immutable, append-only log of changes to monetization controls with operator snapshot and structured reasons.
+                    </p>
+                  </div>
+                  {loadingAuditLogs && (
+                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                      <Loader2 size={12} className="animate-spin" /> Refreshing...
+                    </span>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto border border-gray-200 rounded-xl">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-gray-200 text-gray-500 uppercase tracking-wider font-bold">
+                        <th className="py-2.5 px-3">Date & Time</th>
+                        <th className="py-2.5 px-3">Setting</th>
+                        <th className="py-2.5 px-3">Transition</th>
+                        <th className="py-2.5 px-3">Reason</th>
+                        <th className="py-2.5 px-3">Additional Details</th>
+                        <th className="py-2.5 px-3">Changed By</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 text-gray-700 font-medium">
+                      {auditLogs.map((log) => {
+                        const isPosting = log.setting_key === 'mcredit_job_posting_enabled';
+                        const prevBool = log.previous_value === 'true';
+                        const newBool = log.new_value === 'true';
+
+                        return (
+                          <tr key={log.id} className="hover:bg-slate-50/50">
+                            <td className="py-2 px-3 text-gray-500 whitespace-nowrap">
+                              {new Date(log.created_at).toLocaleString()}
+                            </td>
+                            <td className="py-2 px-3 font-semibold text-gray-800 whitespace-nowrap">
+                              {isPosting ? 'Job Posting Fee' : 'Candidate Acceptance Fee'}
+                            </td>
+                            <td className="py-2 px-3 whitespace-nowrap">
+                              <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                                <span className={prevBool ? 'text-emerald-700' : 'text-amber-700'}>
+                                  {prevBool ? 'Enabled' : 'Bypassed'}
+                                </span>
+                                <span className="text-gray-400 font-normal">→</span>
+                                <span className={newBool ? 'text-emerald-700' : 'text-amber-700'}>
+                                  {newBool ? 'Enabled' : 'Bypassed'}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-2 px-3">
+                              <span className="inline-block bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-[11px] font-semibold">
+                                {log.reason_label || log.reason_code}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-gray-600 max-w-xs truncate" title={log.additional_details || ''}>
+                              {log.additional_details || <span className="text-gray-400 italic">None</span>}
+                            </td>
+                            <td className="py-2 px-3 whitespace-nowrap">
+                              <div className="text-[11px] leading-tight">
+                                <span className="font-bold text-gray-800 block">{log.actor_name || 'Admin'}</span>
+                                <span className="text-gray-400 font-mono text-[10px]">{log.actor_email || log.actor_role}</span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {auditLogs.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="py-6 text-center text-gray-400 font-medium">
+                            No monetization configuration changes recorded yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
 
           {/* TAB 2: Wallet & Ledger Adjustment */}
           {activeTab === 'ledger' && canViewLedger && (
             <div className="space-y-6 animate-fadeIn">
-              
+
               {/* Stack Selector and Action Side-by-side */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
+
                 {/* Select Wallet block */}
                 <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm flex flex-col justify-between">
                   <div>
                     <h2 className="text-base font-bold text-[#0e2a4d] mb-4">Select Wallet</h2>
-                    
+
                     <div className="space-y-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Owner Type</label>
@@ -1016,7 +1340,7 @@ export default function AdminMCreditsPage() {
                             className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-blue-900 transition-colors"
                           >
                             <option value="">-- Choose Option --</option>
-                            {ownerType === 'user' 
+                            {ownerType === 'user'
                               ? profilesList.map(p => (
                                   <option key={p.id} value={p.id}>{p.name} (@{p.username || 'unknown'})</option>
                                 ))
@@ -1169,8 +1493,8 @@ export default function AdminMCreditsPage() {
                               </td>
                               <td className="py-3 whitespace-nowrap">
                                 <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                  isCredit 
-                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+                                  isCredit
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                                     : 'bg-red-50 text-red-700 border border-red-100'
                                 }`}>
                                   {isCredit ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
@@ -1183,7 +1507,7 @@ export default function AdminMCreditsPage() {
                               <td className="py-3 text-right font-mono text-gray-500">{Number(tx.balance_before).toFixed(2)} MC</td>
                               <td className="py-3 text-right font-bold font-mono text-slate-800">{Number(tx.balance_after).toFixed(2)} MC</td>
                               <td className="py-3 pl-4 max-w-xs text-gray-500 font-medium" title={
-                                tx.cancellationDetails 
+                                tx.cancellationDetails
                                   ? `${tx.justification_note || tx.description || ''} (Job: ${tx.cancellationDetails.jobTitle || ''}, Candidate: ${tx.cancellationDetails.candidateName || ''})`
                                   : tx.jobDetails
                                   ? `${tx.justification_note || tx.description || ''} (Job: ${tx.jobDetails.title})`
@@ -1193,17 +1517,17 @@ export default function AdminMCreditsPage() {
                                   <div className="flex flex-col">
                                     <span className="truncate block">
                                       {tx.reference_type === 'candidate_cancellation' && (
-                                        tx.cancellationDetails.candidateName 
+                                        tx.cancellationDetails.candidateName
                                           ? `Candidate Cancellation Compensation — ${tx.cancellationDetails.candidateName}`
                                           : 'Candidate Cancellation Compensation'
                                       )}
                                       {tx.reference_type === 'company_cancellation_refund' && (
-                                        tx.cancellationDetails.candidateName 
+                                        tx.cancellationDetails.candidateName
                                           ? `Company Cancellation Refund — ${tx.cancellationDetails.candidateName}`
                                           : 'Company Cancellation Refund'
                                       )}
                                       {tx.reference_type === 'candidate_cancellation_platform' && (
-                                        tx.cancellationDetails.candidateName 
+                                        tx.cancellationDetails.candidateName
                                           ? `Platform Share (Candidate Cancel) — ${tx.cancellationDetails.candidateName}`
                                           : 'Platform Share (Candidate Cancel)'
                                       )}
@@ -1261,15 +1585,15 @@ export default function AdminMCreditsPage() {
           {/* TAB 4: Wallet Summary (Read-Only) */}
           {activeTab === 'summary' && canViewSummary && (
             <div className="space-y-6 animate-fadeIn animate-duration-300">
-              
+
               {/* Stack Selector and Details Side-by-side */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
+
                 {/* Select Wallet block */}
                 <div className="bg-white border border-gray-100 rounded-2xl px-4 py-4 md:px-6 md:py-5 shadow-sm flex flex-col justify-between">
                   <div>
                     <h2 className="text-base font-bold text-[#0e2a4d] mb-4">Select Wallet</h2>
-                    
+
                     <div className="space-y-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Owner Type</label>
@@ -1300,7 +1624,7 @@ export default function AdminMCreditsPage() {
                             className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-blue-900 transition-colors"
                           >
                             <option value="">-- Choose Option --</option>
-                            {ownerType === 'user' 
+                            {ownerType === 'user'
                               ? profilesList.map(p => (
                                   <option key={p.id} value={p.id}>{p.name} (@{p.username || 'unknown'})</option>
                                 ))
@@ -1399,8 +1723,8 @@ export default function AdminMCreditsPage() {
                               </td>
                               <td className="py-3 whitespace-nowrap">
                                 <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                  isCredit 
-                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+                                  isCredit
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                                     : 'bg-red-50 text-red-700 border border-red-100'
                                 }`}>
                                   {isCredit ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
@@ -1413,7 +1737,7 @@ export default function AdminMCreditsPage() {
                               <td className="py-3 text-right font-mono text-gray-500">{Number(tx.balance_before).toFixed(2)} MC</td>
                               <td className="py-3 text-right font-bold font-mono text-slate-800">{Number(tx.balance_after).toFixed(2)} MC</td>
                               <td className="py-3 pl-4 max-w-xs text-gray-500 font-medium" title={
-                                tx.cancellationDetails 
+                                tx.cancellationDetails
                                   ? `${tx.justification_note || tx.description || ''} (Job: ${tx.cancellationDetails.jobTitle || ''}, Candidate: ${tx.cancellationDetails.candidateName || ''})`
                                   : tx.jobDetails
                                   ? `${tx.justification_note || tx.description || ''} (Job: ${tx.jobDetails.title})`
@@ -1423,17 +1747,17 @@ export default function AdminMCreditsPage() {
                                   <div className="flex flex-col">
                                     <span className="truncate block">
                                       {tx.reference_type === 'candidate_cancellation' && (
-                                        tx.cancellationDetails.candidateName 
+                                        tx.cancellationDetails.candidateName
                                           ? `Candidate Cancellation Compensation — ${tx.cancellationDetails.candidateName}`
                                           : 'Candidate Cancellation Compensation'
                                       )}
                                       {tx.reference_type === 'company_cancellation_refund' && (
-                                        tx.cancellationDetails.candidateName 
+                                        tx.cancellationDetails.candidateName
                                           ? `Company Cancellation Refund — ${tx.cancellationDetails.candidateName}`
                                           : 'Company Cancellation Refund'
                                       )}
                                       {tx.reference_type === 'candidate_cancellation_platform' && (
-                                        tx.cancellationDetails.candidateName 
+                                        tx.cancellationDetails.candidateName
                                           ? `Platform Share (Candidate Cancel) — ${tx.cancellationDetails.candidateName}`
                                           : 'Platform Share (Candidate Cancel)'
                                       )}
@@ -1569,8 +1893,8 @@ export default function AdminMCreditsPage() {
                                 }}
                                 disabled={!canApprove}
                                 className={`p-1 rounded transition-colors ${
-                                  canApprove 
-                                    ? 'text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 cursor-pointer' 
+                                  canApprove
+                                    ? 'text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 cursor-pointer'
                                     : 'text-gray-350 bg-gray-100 cursor-not-allowed'
                                 }`}
                                 title={canApprove ? "Approve Request" : "Unauthorized to approve top-ups"}
@@ -1585,8 +1909,8 @@ export default function AdminMCreditsPage() {
                                 }}
                                 disabled={!canReject}
                                 className={`p-1 rounded transition-colors ${
-                                  canReject 
-                                    ? 'text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 cursor-pointer' 
+                                  canReject
+                                    ? 'text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 cursor-pointer'
                                     : 'text-gray-350 bg-gray-100 cursor-not-allowed'
                                 }`}
                                 title={canReject ? "Reject Request" : "Unauthorized to reject top-ups"}
@@ -1695,6 +2019,116 @@ export default function AdminMCreditsPage() {
                 >
                   {actionSubmitting && <Loader2 size={14} className="animate-spin" />}
                   Confirm Rejection
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Monetization Change Confirmation Modal */}
+      {monetizationModalOpen && pendingChange && (
+        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-150">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="text-amber-600 shrink-0" size={20} />
+              <h2 className="text-lg font-bold text-[#0e2a4d]">
+                Confirm Monetization Change
+              </h2>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              You are about to modify a core platform monetization control. This action is permanently audited.
+            </p>
+
+            <form onSubmit={handleConfirmMonetizationChange} className="space-y-4">
+              {/* Transition Summary Box */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500 font-medium">Setting:</span>
+                  <span className="font-bold text-gray-800">{pendingChange.label}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500 font-medium">Transition:</span>
+                  <div className="flex items-center gap-2 font-bold">
+                    <span className={pendingChange.targetValue ? 'text-amber-700' : 'text-emerald-700'}>
+                      {pendingChange.targetValue ? 'Bypassed (Free)' : 'Active (Monetized)'}
+                    </span>
+                    <span className="text-gray-400 font-normal">→</span>
+                    <span className={pendingChange.targetValue ? 'text-emerald-700' : 'text-amber-700'}>
+                      {pendingChange.targetValue ? 'Active (Monetized)' : 'Bypassed (Free)'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reason Dropdown */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                  Reason for Change <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={changeReasonCode}
+                  onChange={(e) => {
+                    setChangeReasonCode(e.target.value);
+                    setMonetizationError('');
+                  }}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-700 outline-none focus:border-blue-900 transition-colors"
+                >
+                  <option value="uat_internal_testing">UAT / Internal Testing</option>
+                  <option value="promotional_period">Promotional Period</option>
+                  <option value="temporary_fee_waiver">Temporary Fee Waiver</option>
+                  <option value="management_decision">Management Decision</option>
+                  <option value="maintenance_technical_issue">Maintenance / Technical Issue</option>
+                  <option value="commercial_pricing_transition">Commercial / Pricing Transition</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              {/* Additional Details Textarea */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                  Additional Details / Justification {changeReasonCode === 'other' && <span className="text-red-500">(Required)</span>}
+                </label>
+                <textarea
+                  value={changeAdditionalNotes}
+                  onChange={(e) => {
+                    setChangeAdditionalNotes(e.target.value);
+                    if (monetizationError) setMonetizationError('');
+                  }}
+                  placeholder={changeReasonCode === 'other' ? 'Mandatory explanation for this change...' : 'Optional context or reference notes...'}
+                  rows={3}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-700 outline-none focus:border-blue-900 transition-colors resize-none"
+                />
+              </div>
+
+              {monetizationError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-2.5 text-xs text-red-700 font-semibold flex items-center gap-1.5">
+                  <AlertTriangle size={14} className="shrink-0" />
+                  <span>{monetizationError}</span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMonetizationModalOpen(false);
+                    setPendingChange(null);
+                    setMonetizationError('');
+                  }}
+                  disabled={submittingMonetization}
+                  className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingMonetization}
+                  className="bg-[#002b4e] hover:bg-[#001c33] text-white px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {submittingMonetization && <Loader2 size={14} className="animate-spin" />}
+                  <span>Confirm & Apply</span>
                 </button>
               </div>
             </form>

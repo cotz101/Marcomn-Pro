@@ -14,20 +14,28 @@ import { handleOccupancyChange } from '@/app/actions/cache';
  * Preview the job posting fee without deducting.
  */
 export async function getJobPostingFeePreview(salaryNumeric) {
+  const isEnabled = await getMCreditSetting('mcredit_job_posting_enabled');
+  if (!isEnabled) {
+    return { feePercent: 0, fee: 0, enabled: false };
+  }
   const feePercent = await getMCreditSetting('company_job_posting_fee_percent');
   const salary = Number(salaryNumeric || 0);
   const fee = Number((salary * feePercent / 100).toFixed(2));
-  return { feePercent, fee };
+  return { feePercent, fee, enabled: true };
 }
 
 /**
  * Preview the candidate acceptance fee without deducting.
  */
 export async function getCandidateAcceptanceFeePreview(salaryNumeric) {
+  const isEnabled = await getMCreditSetting('mcredit_candidate_acceptance_enabled');
+  if (!isEnabled) {
+    return { feePercent: 0, fee: 0, enabled: false };
+  }
   const feePercent = await getMCreditSetting('candidate_acceptance_fee_percent');
   const salary = Number(salaryNumeric || 0);
   const fee = Number((salary * feePercent / 100).toFixed(2));
-  return { feePercent, fee };
+  return { feePercent, fee, enabled: true };
 }
 
 /**
@@ -153,9 +161,15 @@ export async function deductCandidateAcceptanceFee(candidateId, applicationId, s
     }
 
     // 3. Calculate fee
-    const feePercent = await getMCreditSetting('candidate_acceptance_fee_percent');
-    const salary = Number(salaryNumeric || 0);
-    const fee = Number((salary * feePercent / 100).toFixed(2));
+    const isAcceptanceEnabled = await getMCreditSetting('mcredit_candidate_acceptance_enabled');
+    let feePercent = 0;
+    let fee = 0;
+
+    if (isAcceptanceEnabled) {
+      feePercent = await getMCreditSetting('candidate_acceptance_fee_percent');
+      const salary = Number(salaryNumeric || 0);
+      fee = Number((salary * feePercent / 100).toFixed(2));
+    }
 
     if (fee <= 0) {
       // No fee required — just accept using RPC

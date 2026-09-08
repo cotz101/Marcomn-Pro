@@ -11,7 +11,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
   const { currentIdentity, userId, profile } = useProfile();
   const [loading, setLoading] = useState(false);
   const [newJobId, setNewJobId] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     title: '',
     location: '',
@@ -50,7 +50,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
   const [feePreview, setFeePreview] = useState(null); // { feePercent, fee }
   const [walletBalance, setWalletBalance] = useState(null);
   const [mcreditError, setMcreditError] = useState('');
-  
+
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
   const isCompany = currentIdentity?.type === 'company' || currentIdentity?.role === 'company';
@@ -189,7 +189,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         if (cancelled) return;
         setFeePreview(preview);
         setWalletBalance(wallet.balance);
-        setMcreditError(wallet.balance < preview.fee ? `Insufficient MCredits. Required: ${preview.fee.toFixed(2)} MC, Available: ${wallet.balance.toFixed(2)} MC.` : '');
+        const isBypassed = preview.enabled === false || preview.fee === 0;
+        setMcreditError(!isBypassed && wallet.balance < preview.fee ? `Insufficient MCredits. Required: ${preview.fee.toFixed(2)} MC, Available: ${wallet.balance.toFixed(2)} MC.` : '');
       } catch (err) {
         if (!cancelled) {
           console.error('MCredit preview error:', err);
@@ -593,9 +594,9 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
   const isPublishAction = isPublishingNewJob || isTransitionToPublish;
 
   return (
-    <BaseModal 
-      isOpen={isOpen} 
-      onClose={onClose} 
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
       title={jobToEdit ? "Edit Job Posting" : "Create Job Posting"}
       maxWidth="800px"
       disableBackdropClick={true}
@@ -614,14 +615,14 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
 
         {/* Form Fields Stack (Scrollable Container) - overflow-x-hidden prevents horizontal scrollbar on mobile */}
         <div className="max-h-[60vh] overflow-y-auto overflow-x-hidden pr-2 space-y-4 w-full">
-          
+
           {/* Row 1: Job Title */}
           <div>
             <label className="text-sm font-semibold text-gray-700 block mb-1.5">Job Title</label>
-            <input 
-              type="text" 
-              name="title" 
-              className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900" 
+            <input
+              type="text"
+              name="title"
+              className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900"
               placeholder="e.g. Master Mariner, Chief Engineer"
               value={formData.title}
               onChange={handleInputChange}
@@ -633,10 +634,10 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Job Location</label>
-              <input 
-                type="text" 
-                name="location" 
-                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900" 
+              <input
+                type="text"
+                name="location"
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900"
                 placeholder="e.g. London, Singapore, Remote"
                 value={formData.location}
                 onChange={handleInputChange}
@@ -645,10 +646,10 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             </div>
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Start Date</label>
-              <input 
-                type="date" 
-                name="startDate" 
-                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900" 
+              <input
+                type="date"
+                name="startDate"
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900"
                 value={formData.startDate}
                 onChange={handleInputChange}
                 required
@@ -660,10 +661,10 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Pay Rate Amount</label>
-              <input 
-                type="number" 
-                name="payAmount" 
-                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" 
+              <input
+                type="number"
+                name="payAmount"
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                 placeholder="e.g. 50"
                 value={formData.payAmount}
                 onChange={handleInputChange}
@@ -673,9 +674,9 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             </div>
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Currency</label>
-              <select 
-                name="currency" 
-                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" 
+              <select
+                name="currency"
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                 value={formData.currency}
                 onChange={handleInputChange}
                 disabled={isPublishedJob}
@@ -693,9 +694,9 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             </div>
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Pay Rate</label>
-              <select 
-                name="payRate" 
-                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" 
+              <select
+                name="payRate"
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                 value={formData.payRate}
                 onChange={handleInputChange}
                 disabled={isPublishedJob}
@@ -714,10 +715,10 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">
                 Number of {formData.payRate}s *
               </label>
-              <input 
-                type="number" 
-                name="payRateQuantity" 
-                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" 
+              <input
+                type="number"
+                name="payRateQuantity"
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                 placeholder={`e.g. 8`}
                 value={formData.payRateQuantity}
                 onChange={handleInputChange}
@@ -734,7 +735,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             const amount = parseFloat(formData.payAmount) || 0;
             const qty = formData.payRate === 'Lump Sum' ? 1 : (parseFloat(formData.payRateQuantity) || 0);
             const total = amount * qty;
-            
+
             if (amount <= 0 || (formData.payRate !== 'Lump Sum' && qty <= 0)) return null;
 
             return (
@@ -742,7 +743,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                 <p className="font-semibold text-slate-800 mb-0.5">Calculated Compensation Summary</p>
                 <div className="flex items-center justify-between text-slate-600">
                   <span>
-                    {formData.payRate === 'Lump Sum' 
+                    {formData.payRate === 'Lump Sum'
                       ? `${formData.currency} ${amount.toLocaleString()} Lump Sum`
                       : `${formData.currency} ${amount.toLocaleString()} / ${formData.payRate} × ${qty} ${formData.payRate}${qty === 1 ? '' : 's'}`
                     }
@@ -765,9 +766,9 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Job Type</label>
-              <select 
-                name="jobType" 
-                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white" 
+              <select
+                name="jobType"
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white"
                 value={formData.jobType}
                 onChange={handleInputChange}
               >
@@ -779,9 +780,9 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             </div>
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Experience Level</label>
-              <select 
-                name="experienceLevel" 
-                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white" 
+              <select
+                name="experienceLevel"
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white"
                 value={formData.experienceLevel}
                 onChange={handleInputChange}
               >
@@ -797,9 +798,9 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Position Status</label>
-              <select 
-                name="positionStatus" 
-                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white" 
+              <select
+                name="positionStatus"
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white"
                 value={formData.positionStatus}
                 onChange={handleInputChange}
               >
@@ -809,9 +810,9 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             </div>
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-1.5">Posting Status</label>
-              <select 
-                name="postingStatus" 
-                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white" 
+              <select
+                name="postingStatus"
+                className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900 bg-white"
                 value={formData.postingStatus}
                 onChange={handleInputChange}
               >
@@ -864,9 +865,9 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             <label className="text-sm font-semibold text-gray-700 block mb-1.5">
               Job Tags (Optional)
             </label>
-            <input 
-              type="text" 
-              className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900" 
+            <input
+              type="text"
+              className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900"
               placeholder="e.g., Engineer, Offshore, Contract"
               value={tagsString}
               onChange={(e) => setTagsString(e.target.value)}
@@ -916,7 +917,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
 
                 {advancePaymentEnabled && (
                   <div className="space-y-4 pt-2 border-t border-slate-100">
-                    
+
                     {/* Advance Type */}
                     <div>
                       <label className="text-sm font-semibold text-gray-700 block mb-1.5 font-medium">Advance Type</label>
@@ -1013,7 +1014,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
 
                       {advancedSettingsExpanded && (
                         <div className="mt-3 p-3 border border-slate-100 rounded-md bg-slate-50 space-y-4">
-                          
+
                           {/* Availability Threshold & Expiry */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
@@ -1070,9 +1071,9 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
           {/* Row 6: Required Skills */}
           <div>
             <label className="text-sm font-semibold text-gray-700 block mb-1.5">Required Skills</label>
-            <input 
-              type="text" 
-              className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900" 
+            <input
+              type="text"
+              className="border border-gray-300 rounded-md p-2 text-sm w-full focus:ring-2 focus:ring-blue-900"
               placeholder={skills.length >= 5 ? 'Maximum skills reached' : 'Type and press enter (Max 5)'}
               value={skillInput}
               onChange={(e) => setSkillInput(e.target.value)}
@@ -1082,13 +1083,13 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
             {skills.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {skills.map((skill, index) => (
-                  <span 
-                    key={index} 
+                  <span
+                    key={index}
                     className="flex items-center gap-1 bg-teal-50 border border-teal-200 text-teal-800 text-xs px-2.5 py-1 rounded-full font-medium"
                   >
                     {skill}
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => handleRemoveSkill(skill)}
                       className="hover:text-teal-950 font-bold focus:outline-none ml-0.5"
                     >
@@ -1129,20 +1130,31 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         {/* MCredit Fee Preview Banner */}
         {feePreview && (
           <div className={`rounded-xl p-4 mt-4 mb-2 border ${
-            mcreditError 
-              ? 'bg-red-50 border-red-200' 
-              : 'bg-emerald-50 border-emerald-200'
+            mcreditError
+              ? 'bg-red-50 border-red-200'
+              : feePreview.enabled === false || feePreview.fee === 0
+                ? 'bg-blue-50 border-blue-200'
+                : 'bg-emerald-50 border-emerald-200'
           }`}>
             <div className="flex items-start gap-3">
               {mcreditError ? (
                 <AlertTriangle size={18} className="text-red-600 shrink-0 mt-0.5" />
+              ) : feePreview.enabled === false || feePreview.fee === 0 ? (
+                <Coins size={18} className="text-blue-700 shrink-0 mt-0.5" />
               ) : (
                 <Coins size={18} className="text-emerald-700 shrink-0 mt-0.5" />
               )}
               <div className="text-sm">
                 <p className="font-semibold text-gray-800">
-                  Posting Fee: <span className="font-bold">{feePreview.fee.toFixed(2)} MC</span>
-                  <span className="text-gray-500 font-normal"> ({feePreview.feePercent}% of {(parseFloat(formData.payAmount) * (formData.payRate === 'Lump Sum' ? 1 : (parseFloat(formData.payRateQuantity) || 0))).toLocaleString()} Contract Value)</span>
+                  Posting Fee:{' '}
+                  {feePreview.enabled === false || feePreview.fee === 0 ? (
+                    <span className="font-bold text-blue-800">0.00 MC (Waived / Free)</span>
+                  ) : (
+                    <>
+                      <span className="font-bold">{feePreview.fee.toFixed(2)} MC</span>
+                      <span className="text-gray-500 font-normal"> ({feePreview.feePercent}% of {(parseFloat(formData.payAmount) * (formData.payRate === 'Lump Sum' ? 1 : (parseFloat(formData.payRateQuantity) || 0))).toLocaleString()} Contract Value)</span>
+                    </>
+                  )}
                 </p>
                 {walletBalance !== null && (
                   <p className="text-gray-600 mt-0.5">
@@ -1153,8 +1165,8 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                   <div className="text-red-700 font-semibold mt-1">
                     <p>{mcreditError}</p>
                     <div className="mt-1.5 text-xs">
-                      <a 
-                        href={isCompany ? "/company/wallet" : "/profile/wallet"} 
+                      <a
+                        href={isCompany ? "/company/wallet" : "/profile/wallet"}
                         className="text-red-600 hover:text-red-800 underline inline-flex items-center gap-1"
                       >
                         Top up your wallet now →
@@ -1175,16 +1187,16 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
 
         {/* Footer Buttons Section */}
         <div className="flex flex-wrap items-center justify-end gap-3 mt-8 pt-4 border-t border-slate-200 w-full">
-          <button 
+          <button
             type="button"
-            className="px-4 py-2 text-sm font-medium hover:bg-slate-100 rounded-lg text-gray-700" 
+            className="px-4 py-2 text-sm font-medium hover:bg-slate-100 rounded-lg text-gray-700"
             onClick={onClose}
           >
             Cancel
           </button>
-          <button 
-            type="submit" 
-            className="btn-primary-pill px-6" 
+          <button
+            type="submit"
+            className="btn-primary-pill px-6"
             disabled={loading || (isPublishAction && !!mcreditError)}
           >
             {loading ? (jobToEdit ? 'Saving...' : 'Posting...') : (jobToEdit ? 'Save Changes' : 'Create Job')}
@@ -1194,7 +1206,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
         {showPublishConfirm && (
           <div className="absolute inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-              
+
               {/* 1. Modal Header (Dark navy blue) */}
               <div className="bg-[#004173] px-6 py-4 flex items-center justify-between rounded-t-xl">
                 <h3 className="text-lg font-bold text-white">Publish Job?</h3>
@@ -1213,7 +1225,7 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                 <p className="text-gray-600 text-sm">
                   You are about to make this job public. It will be visible in search, the feed, and accept applications.
                 </p>
-                
+
                 {/* 3. Job Summary Section */}
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2.5">
                   <div className="flex justify-between items-center text-sm gap-2">
@@ -1226,7 +1238,11 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                   </div>
                   <div className="border-t border-slate-200 my-1 pt-2.5 flex justify-between items-center text-sm gap-2">
                     <span className="text-gray-500 font-medium">Posting Fee</span>
-                    <span className="font-bold text-blue-700 text-right">{feePreview ? feePreview.fee.toFixed(2) : '0.00'} MC</span>
+                    <span className="font-bold text-blue-700 text-right">
+                      {feePreview && (feePreview.enabled === false || feePreview.fee === 0)
+                        ? '0.00 MC (Waived)'
+                        : `${feePreview ? feePreview.fee.toFixed(2) : '0.00'} MC`}
+                    </span>
                   </div>
                 </div>
 
@@ -1241,7 +1257,13 @@ export default function PostJobModal({ isOpen, onClose, onComplete, jobToEdit })
                       <div className="w-5 flex-shrink-0 flex items-center justify-start mt-0.5 text-blue-900 font-bold">
                         <Coins size={14} />
                       </div>
-                      <span className="leading-tight">Your wallet will be charged <span className="font-extrabold text-blue-900">{feePreview ? feePreview.fee.toFixed(2) : '0.00'} MCredits</span>.</span>
+                      <span className="leading-tight">
+                        {feePreview && (feePreview.enabled === false || feePreview.fee === 0) ? (
+                          <span>Posting fee is <span className="font-extrabold text-blue-900">waived (0.00 MC)</span>. Your wallet will not be charged.</span>
+                        ) : (
+                          <span>Your wallet will be charged <span className="font-extrabold text-blue-900">{feePreview ? feePreview.fee.toFixed(2) : '0.00'} MCredits</span>.</span>
+                        )}
+                      </span>
                     </li>
                     <li className="flex gap-2.5 items-start">
                       <div className="w-5 flex-shrink-0 flex items-center justify-start mt-0.5 text-blue-900 font-bold">

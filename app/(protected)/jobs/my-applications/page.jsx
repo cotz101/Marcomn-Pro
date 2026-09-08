@@ -138,10 +138,10 @@ export default function MyApplicationsPage() {
       setAdvanceRequestError('Please enter a positive amount.');
       return;
     }
-    
+
     setIsSubmittingAdvance(true);
     setAdvanceRequestError('');
-    
+
     try {
       const res = await requestAdvancePayment({
         applicationId: selectedAppForAdvance.id,
@@ -236,10 +236,10 @@ export default function MyApplicationsPage() {
       setDisputeError('Dispute reason is required.');
       return;
     }
-    
+
     setIsSubmittingDispute(true);
     setDisputeError('');
-    
+
     try {
       const res = await disputeReceipt({
         requestId: requestToDispute.id,
@@ -327,21 +327,21 @@ export default function MyApplicationsPage() {
         .order('applied_at', { ascending: false });
 
       if (error) throw error;
-      
+
       let applications = appsData || [];
-      
+
       if (applications.length > 0) {
         const appIds = applications.map(a => a.id);
-        
+
         // 2. Fetch job_orders for application IDs
         const { data: jobOrders, error: ordersError } = await supabase
           .from('job_orders')
           .select('*')
           .in('application_id', appIds);
-          
+
         let fetchedOrders = (!ordersError && jobOrders) ? jobOrders : [];
         let orderIds = fetchedOrders.map(o => o.id);
-        
+
         // 3. Fetch job_advance_requests for application IDs
         const { data: advanceRequests, error: advanceError } = await supabase
           .from('job_advance_requests')
@@ -362,15 +362,15 @@ export default function MyApplicationsPage() {
             fetchedCancellations = jobCancellations;
           }
         }
-        
+
         // 5. Manually attach the latest cancellation record and advance requests to each application object
         applications = applications.map(app => {
           // Find orders for this app
           const appOrders = fetchedOrders.filter(o => o.application_id === app.id);
-          
+
           // Get the latest order (or only order)
           const latestOrder = appOrders.length > 0 ? appOrders[0] : null;
-          
+
           // Find cancellations for this order
           let appCancellation = null;
           if (latestOrder) {
@@ -384,7 +384,7 @@ export default function MyApplicationsPage() {
 
           // Filter advance requests for this app
           const appAdvanceRequests = fetchedAdvanceReqs.filter(r => r.application_id === app.id);
-          
+
           return {
             ...app,
             job_orders: appOrders,
@@ -423,7 +423,8 @@ export default function MyApplicationsPage() {
       ]);
       setFeePreview(preview);
       setWalletBalance(wallet.balance);
-      if (wallet.balance < preview.fee) {
+      const isBypassed = preview.enabled === false || preview.fee === 0;
+      if (!isBypassed && wallet.balance < preview.fee) {
         setAcceptingError(`Insufficient MCredits. Required: ${preview.fee.toFixed(2)} MC, Available: ${wallet.balance.toFixed(2)} MC.`);
       }
     } catch (err) {
@@ -440,7 +441,7 @@ export default function MyApplicationsPage() {
     try {
       const salaryNumeric = appToAccept.job?.salary_numeric || 0;
       await deductCandidateAcceptanceFee(userId, appToAccept.id, salaryNumeric);
-      
+
       const orderRes = await createJobOrderFromAcceptedApplication(appToAccept.id);
       let newOrders = [];
       if (orderRes.success && orderRes.order) {
@@ -456,7 +457,7 @@ export default function MyApplicationsPage() {
     } catch (err) {
       console.error('Acceptance error:', err);
       setAcceptingError(err.message || 'Failed to accept offer. Check your balance or try again.');
-      
+
       if (err.message && err.message.toLowerCase().includes('expired')) {
          setApplications(prev => prev.map(a => a.id === appToAccept.id ? { ...a, status: 'Expired' } : a));
       }
@@ -492,13 +493,13 @@ export default function MyApplicationsPage() {
         throw new Error(res.error || 'Failed to cancel engagement.');
       }
 
-      setApplications(prev => prev.map(a => 
-        a.id === appToCancel.id 
-          ? { 
-              ...a, 
-              status: 'Candidate Cancelled', 
-              job_orders: Array.isArray(a.job_orders) ? [{ ...order, status: 'Candidate Cancelled' }] : { ...order, status: 'Candidate Cancelled' } 
-            } 
+      setApplications(prev => prev.map(a =>
+        a.id === appToCancel.id
+          ? {
+              ...a,
+              status: 'Candidate Cancelled',
+              job_orders: Array.isArray(a.job_orders) ? [{ ...order, status: 'Candidate Cancelled' }] : { ...order, status: 'Candidate Cancelled' }
+            }
           : a
       ));
       setIsCancelModalOpen(false);
@@ -514,11 +515,11 @@ export default function MyApplicationsPage() {
 
   const renderStepper = (appStatus, orderStatus = null) => {
     const steps = ['Applied', 'Review', 'Shortlist', 'Accepted', 'Active', 'Done'];
-    
+
     let currentIndex = 0;
     let isFailed = false;
     let failedLabel = appStatus;
-    
+
     if (appStatus === 'Pending') currentIndex = 0;
     else if (appStatus === 'Under Review') currentIndex = 1;
     else if (appStatus === 'Shortlisted' || appStatus === 'Offered') currentIndex = 2;
@@ -545,7 +546,7 @@ export default function MyApplicationsPage() {
           const isActive = idx === currentIndex && !isFailed;
           const isPast = idx < currentIndex;
           const isFailedStep = idx === currentIndex && isFailed;
-          
+
           let bgClass = "bg-gray-100 text-gray-400";
           if (isActive) {
              bgClass = "bg-blue-600 text-white font-semibold";
@@ -559,14 +560,14 @@ export default function MyApplicationsPage() {
           } else if (isPast && isFailed) {
              bgClass = "bg-gray-50 text-gray-400 font-medium";
           }
-          
+
           let clipPath = 'polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%, 10px 50%)';
           if (idx === 0) clipPath = 'polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%)';
           if (idx === steps.length - 1) clipPath = 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 10px 50%)';
 
           return (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               className={`flex-1 flex items-center justify-center relative ${bgClass} transition-colors -ml-[10px] first:ml-0`}
               style={{ clipPath, paddingLeft: idx === 0 ? '0' : '10px', zIndex: steps.length - idx }}
             >
@@ -832,17 +833,17 @@ export default function MyApplicationsPage() {
                     <div className="shrink-0">
                       {(() => {
                         const posterCompany = typeof job.company === 'object' ? job.company : null;
-                        
+
                         // Detect if poster is a company based on joined data or legacy strings
                         const isCompanyPoster = !!posterCompany || (typeof job.company === 'string') || !!job.company_name;
-                        
+
                         // Only use logo if it's a company post. Personal avatars are explicitly ignored.
                         const displayLogoUrl = isCompanyPoster ? (posterCompany?.logo_url || job.company_logo) : null;
                         const shouldUseGenericIcon = !displayLogoUrl;
-                        
+
                         if (!shouldUseGenericIcon) {
-                          const displayName = typeof job.company === 'string' 
-                            ? job.company 
+                          const displayName = typeof job.company === 'string'
+                            ? job.company
                             : posterCompany?.name || job.company_name || 'Company';
                           return (
                             <img
@@ -866,13 +867,13 @@ export default function MyApplicationsPage() {
                       <h3 className="text-base sm:text-lg font-bold text-blue-900 truncate">
                         {job.title || 'Position Unspecified'}
                       </h3>
-                      
+
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5 text-xs sm:text-sm font-medium text-gray-600">
                         {(() => {
-                          const displayName = typeof job.company === 'string' 
-                            ? job.company 
+                          const displayName = typeof job.company === 'string'
+                            ? job.company
                             : job.company?.name || job.poster?.name || job.company_name || 'Unknown Company';
-                          
+
                           return (
                             <span className="flex items-center gap-1">
                               <Building2 size={12} className="text-gray-400 shrink-0 sm:w-3.5 sm:h-3.5" />
@@ -1037,20 +1038,20 @@ export default function MyApplicationsPage() {
                                         <span className="break-all font-mono font-semibold text-gray-800">{req.reference_number || '—'}</span>
                                       </div>
                                     </div>
-                                    
+
                                     {req.company_notes && (
                                       <div className="pt-1.5 border-t border-slate-50 text-[11px]">
                                         <span className="text-gray-400 font-bold block">Company Note</span>
                                         <p className="whitespace-pre-wrap break-words text-gray-600 italic mt-0.5 leading-snug">{req.company_notes}</p>
                                       </div>
                                     )}
-                                    
+
                                     {req.proof_url && (
                                       <div className="pt-1 text-[11px]">
-                                        <a 
+                                        <a
                                           href={`/api/advance-proofs/signed-url?requestId=${encodeURIComponent(req.id)}`}
-                                          target="_blank" 
-                                          rel="noopener noreferrer" 
+                                          target="_blank"
+                                          rel="noopener noreferrer"
                                           className="inline-flex items-center gap-1 text-[#004173] font-bold hover:underline"
                                         >
                                           Download Payment Proof
@@ -1078,7 +1079,7 @@ export default function MyApplicationsPage() {
                                       Cancel Request
                                     </button>
                                   )}
-                                  
+
                                   {req.status === 'countered' && (
                                     <div className="flex w-full flex-col min-[375px]:w-auto min-[375px]:flex-row items-stretch min-[375px]:items-center gap-2">
                                       <button
@@ -1212,7 +1213,7 @@ export default function MyApplicationsPage() {
                         <div className="p-4 bg-red-50 border border-red-100 rounded-lg text-sm text-red-800 text-left w-full">
                           <p className="font-bold text-red-900 mb-1">{prefix} Cancellation Reason:</p>
                           <p className="mb-3">{cancellation.cancellation_reason}</p>
-                          
+
                           {cancellation.cancellation_remarks && (
                             <>
                               <p className="font-bold text-red-900 mb-1">Remarks:</p>
@@ -1329,18 +1330,27 @@ export default function MyApplicationsPage() {
           ) : (
             <div className={`rounded-xl px-4 py-4 border ${
               acceptingError && acceptingError.includes('Insufficient')
-                ? 'bg-red-50 border-red-200' 
-                : 'bg-emerald-50 border-emerald-200'
+                ? 'bg-red-50 border-red-200'
+                : feePreview.enabled === false || feePreview.fee === 0
+                  ? 'bg-blue-50 border-blue-200'
+                  : 'bg-emerald-50 border-emerald-200'
             }`}>
               <div className="flex items-start gap-3">
                 {acceptingError && acceptingError.includes('Insufficient') ? (
                   <AlertTriangle size={18} className="text-red-600 shrink-0 mt-0.5" />
+                ) : feePreview.enabled === false || feePreview.fee === 0 ? (
+                  <Coins size={18} className="text-blue-700 shrink-0 mt-0.5" />
                 ) : (
                   <Coins size={18} className="text-emerald-700 shrink-0 mt-0.5" />
                 )}
                 <div className="text-sm w-full">
                   <p className="font-semibold text-gray-800">
-                    Acceptance Fee: <span className="font-bold">{feePreview.fee.toFixed(2)} MC</span>
+                    Acceptance Fee:{' '}
+                    {feePreview.enabled === false || feePreview.fee === 0 ? (
+                      <span className="font-bold text-blue-800">0.00 MC (Waived / Free)</span>
+                    ) : (
+                      <span className="font-bold">{feePreview.fee.toFixed(2)} MC</span>
+                    )}
                   </p>
                   {walletBalance !== null && (
                     <p className="text-gray-600 mt-0.5">
@@ -1368,17 +1378,22 @@ export default function MyApplicationsPage() {
           )}
 
           <div className="pt-4 flex flex-col-reverse sm:flex-row justify-end gap-3">
-            <button 
+            <button
               onClick={() => { setIsAcceptModalOpen(false); setAppToAccept(null); }}
               className="w-full sm:w-auto px-5 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors text-center shrink-0"
               disabled={isAccepting}
             >
               Cancel
             </button>
-            <button 
+            <button
               onClick={handleConfirmAcceptance}
               className="w-full sm:w-auto bg-[#004173] hover:bg-blue-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 text-center shrink-0"
-              disabled={isAccepting || feePreview === null || walletBalance === null || walletBalance < feePreview.fee}
+              disabled={
+                isAccepting ||
+                feePreview === null ||
+                walletBalance === null ||
+                ((feePreview.enabled !== false && feePreview.fee > 0) && walletBalance < feePreview.fee)
+              }
             >
               {isAccepting ? 'Confirming...' : 'Confirm Acceptance'}
             </button>
@@ -1398,7 +1413,7 @@ export default function MyApplicationsPage() {
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Reason (Required)</label>
-                <select 
+                <select
                   className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500"
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
@@ -1417,7 +1432,7 @@ export default function MyApplicationsPage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Remarks (Optional)</label>
-                <textarea 
+                <textarea
                   className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 min-h-[80px]"
                   placeholder="Provide additional details..."
                   value={cancelRemarks}
@@ -1427,14 +1442,14 @@ export default function MyApplicationsPage() {
             </div>
 
             <div className="flex justify-end gap-3">
-              <button 
+              <button
                 onClick={() => setIsCancelModalOpen(false)}
                 className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
                 disabled={isCancelling}
               >
                 Close
               </button>
-              <button 
+              <button
                 onClick={handleConfirmCancellation}
                 className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
                 disabled={isCancelling || !cancelReason}
@@ -1457,7 +1472,7 @@ export default function MyApplicationsPage() {
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Completion Note (Optional)</label>
-                <textarea 
+                <textarea
                   className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 min-h-[80px]"
                   placeholder="Describe completed work or add details..."
                   value={workCompletedNote}
@@ -1467,14 +1482,14 @@ export default function MyApplicationsPage() {
             </div>
 
             <div className="flex justify-end gap-3">
-              <button 
+              <button
                 onClick={() => { setIsWorkCompletedModalOpen(false); setSelectedOrderId(null); }}
                 className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
                 disabled={submittingLifecycle}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleConfirmWorkCompleted}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
                 disabled={submittingLifecycle}
@@ -1498,7 +1513,7 @@ export default function MyApplicationsPage() {
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Confirmation Note (Optional)</label>
-                <textarea 
+                <textarea
                   className="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 min-h-[80px]"
                   placeholder="Payment receipt details or remarks..."
                   value={paymentConfirmationNote}
@@ -1508,14 +1523,14 @@ export default function MyApplicationsPage() {
             </div>
 
             <div className="flex justify-end gap-3">
-              <button 
+              <button
                 onClick={() => { setIsConfirmPaymentModalOpen(false); setSelectedOrderId(null); }}
                 className="px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
                 disabled={submittingLifecycle}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleConfirmPaymentReceived}
                 className="bg-[#004173] hover:bg-blue-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
                 disabled={submittingLifecycle}
@@ -1539,7 +1554,7 @@ export default function MyApplicationsPage() {
           const job = selectedAppForAdvance.job || {};
           const ledger = getAdvanceEligibility(job, selectedAppForAdvance.advance_requests || []);
           const currency = job.salary_range ? job.salary_range.split(' ')[0] : 'USD';
-          
+
           return (
             <div className="flex flex-col space-y-4 text-left">
               <p className="text-sm text-gray-600 font-sans">
@@ -1634,7 +1649,7 @@ export default function MyApplicationsPage() {
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Specify Issue / Reason *</label>
-                <textarea 
+                <textarea
                   value={disputeReasonInput}
                   onChange={(e) => setDisputeReasonInput(e.target.value)}
                   placeholder="Explain the issue in detail (e.g. money not received after 3 days, incorrect amount received)..."
@@ -1651,14 +1666,14 @@ export default function MyApplicationsPage() {
             )}
 
             <div className="flex flex-col-reverse min-[375px]:flex-row min-[375px]:justify-end gap-2 min-[375px]:gap-3 pt-3 border-t border-slate-100">
-              <button 
+              <button
                 onClick={() => { setIsDisputeModalOpen(false); setRequestToDispute(null); }}
                 className="w-full min-[375px]:w-auto px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer bg-transparent border-0"
                 disabled={isSubmittingDispute}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSubmitDispute}
                 className="w-full min-[375px]:w-auto bg-red-650 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 cursor-pointer border-0"
                 disabled={isSubmittingDispute || !disputeReasonInput.trim()}
