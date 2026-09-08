@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server';
 
-export async function createApplicationMessageNotification(threadId) {
+export async function createApplicationMessageNotification(threadId, companyIdentityId = null) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -13,7 +13,7 @@ export async function createApplicationMessageNotification(threadId) {
   // Use the caller's RLS-scoped client to prove they participate in this thread.
   const { data: authorizedThread, error: threadError } = await supabase
     .from('application_threads')
-    .select('id, applicant_id, poster_user_id')
+    .select('id, applicant_id, poster_user_id, company_id')
     .eq('id', threadId)
     .maybeSingle();
 
@@ -21,7 +21,28 @@ export async function createApplicationMessageNotification(threadId) {
     return { success: false, error: threadError?.message || 'Application thread not found.' };
   }
 
-  if (user.id !== authorizedThread.applicant_id && user.id !== authorizedThread.poster_user_id) {
+  const isApplicant = user.id === authorizedThread.applicant_id;
+  if (isApplicant && companyIdentityId) {
+    return { success: false, error: 'Switch to your personal profile to use this application conversation.' };
+  }
+
+  if (!isApplicant && authorizedThread.company_id) {
+    if (companyIdentityId !== authorizedThread.company_id) {
+      return { success: false, error: 'Switch to the authorized company profile to use this application conversation.' };
+    }
+
+    const { data: membership, error: membershipError } = await supabase
+      .from('company_members')
+      .select('id')
+      .eq('company_id', authorizedThread.company_id)
+      .eq('profile_id', user.id)
+      .in('role', ['Owner', 'Admin', 'Member'])
+      .maybeSingle();
+
+    if (membershipError || !membership) {
+      return { success: false, error: membershipError?.message || 'You are not authorized for this company conversation.' };
+    }
+  } else if (!isApplicant && (companyIdentityId || user.id !== authorizedThread.poster_user_id)) {
     return { success: false, error: 'You are not a participant in this application thread.' };
   }
 

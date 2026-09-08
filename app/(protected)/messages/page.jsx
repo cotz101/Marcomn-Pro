@@ -41,6 +41,7 @@ export default function InboxPage() {
   const [appThreads, setAppThreads] = useState([]);
   const [loadingApps, setLoadingApps] = useState(false);
   const [activeAppThread, setActiveAppThread] = useState(null);
+  const [appMessagingUnavailable, setAppMessagingUnavailable] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -217,61 +218,53 @@ export default function InboxPage() {
     let isActive = true;
     setAppThreads([]);
     setActiveAppThread(null);
+    setAppMessagingUnavailable(false);
     setMessages([]);
 
     async function loadAppThreads() {
       try {
         setLoadingApps(true);
 
-        // Resolve the requested application to its one authoritative thread.
+        const companyIdentityId = currentIdentity?.type === 'company' ? currentIdentity.id : null;
+
+        // The database derives and validates the complete application relationship.
         if (activeAppId) {
-          const { data: existing, error: existingError } = await supabase
-            .from('application_threads')
-            .select('id')
-            .eq('application_id', activeAppId)
-            .maybeSingle();
+          const { error: resolveError } = await supabase.rpc('get_or_create_application_thread', {
+            p_application_id: activeAppId,
+            p_company_identity_id: companyIdentityId
+          });
 
-          if (existingError) throw existingError;
-
-          if (!existing) {
-            const { data: appData, error: appError } = await supabase
-              .from('applications')
-              .select('id, job_id, applicant_id, job:jobs!job_id(id, poster_id, company_id)')
-              .eq('id', activeAppId)
-              .maybeSingle();
-
-            if (appError) throw appError;
-            if (!appData?.job) throw new Error('The requested application or job could not be loaded.');
-
-            const posterUserId = appData.job.poster_id;
-            if (!posterUserId) throw new Error('The job poster could not be determined.');
-
-            const { error: createError } = await supabase.from('application_threads').insert({
-                application_id: activeAppId,
-                job_id: appData.job_id,
-                applicant_id: appData.applicant_id,
-                poster_user_id: posterUserId,
-                company_id: appData.job.company_id || null
-              });
-
-            // A concurrent opener may have won the UNIQUE(application_id) race.
-            if (createError && createError.code !== '23505') throw createError;
-          }
+          if (resolveError) throw resolveError;
         }
 
         // Fetch threads
         const { data: threads, error } = await supabase
           .from('application_threads')
-          .select('*, application:applications(status), job:jobs(title), applicant:profiles!applicant_id(name, avatar_url, currentRole), poster:profiles!poster_user_id(name, avatar_url, currentRole), company:companies!company_id(name, logo_url, industry)')
-          .or(`applicant_id.eq.${userId},poster_user_id.eq.${userId}`)
+          .select('*, job:jobs(title), applicant:profiles!applicant_id(name, avatar_url, currentRole), poster:profiles!poster_user_id(name, avatar_url, currentRole), company:companies!company_id(name, logo_url, industry)')
           .order('last_message_at', { ascending: false });
 
         if (!isActive) return;
 
         if (error) throw error;
         if (threads) {
+          const { data: stateRows, error: stateError } = await supabase.rpc('get_application_thread_states', {
+            p_thread_ids: threads.map(thread => thread.id),
+            p_company_identity_id: companyIdentityId
+          });
+          if (stateError) throw stateError;
+          const stateByThread = new Map((stateRows || []).map(row => [row.thread_id, row]));
+          const statefulThreads = threads.map(thread => {
+            const state = stateByThread.get(thread.id);
+            return {
+              ...thread,
+              application: state ? {
+                status: state.application_status,
+                job_orders: [{ status: state.job_order_status }]
+              } : null
+            };
+          });
           const isComp = currentIdentity?.isCompany || currentIdentity?.type === 'company';
-          const filteredThreads = threads.filter(t => {
+          const filteredThreads = statefulThreads.filter(t => {
             if (isComp) {
               return t.company_id === currentIdentity.id;
             } else {
@@ -295,8 +288,9 @@ export default function InboxPage() {
         console.error('Error app threads:', appThreadError);
         if (isActive) {
           setActiveAppThread(null);
+          setAppMessagingUnavailable(Boolean(activeAppId));
           setMessages([]);
-          showToast(appThreadError.message || 'Failed to open the requested application conversation', 'error');
+          showToast('Application messaging is unavailable.', 'error');
         }
       } finally {
         if (isActive) setLoadingApps(false);
@@ -570,11 +564,12 @@ export default function InboxPage() {
 
       try {
         setSending(true);
-        const { data, error } = await supabase.from('application_messages').insert({
-          thread_id: activeAppThread.id,
-          sender_id: currentUser.id,
-          body: newMessage.trim()
-        }).select().maybeSingle();
+        const companyIdentityId = isCompanyIdentity ? currentIdentity.id : null;
+        const { data, error } = await supabase.rpc('send_application_message', {
+          p_thread_id: activeAppThread.id,
+          p_message_body: newMessage.trim(),
+          p_company_identity_id: companyIdentityId
+        });
 
         if (error) throw error;
         setNewMessage('');
@@ -582,7 +577,7 @@ export default function InboxPage() {
 
         // Derive and create the notification server-side from this exact thread.
         try {
-          const notificationResult = await createApplicationMessageNotification(activeAppThread.id);
+          const notificationResult = await createApplicationMessageNotification(activeAppThread.id, companyIdentityId);
           if (!notificationResult.success) {
             console.error('Application notification failed:', notificationResult.error);
             showToast('Message sent, but the notification could not be delivered.', 'error');
@@ -766,6 +761,10 @@ export default function InboxPage() {
       ? (activeAppThread.company ? { name: activeAppThread.company.name, avatar_url: activeAppThread.company.logo_url, currentRole: activeAppThread.company.industry || 'Company' } : activeAppThread.poster) 
       : activeAppThread.applicant;
   }
+  const activeApplicationStatus = activeAppThread?.application?.status;
+  const activeJobOrderStatus = activeAppThread?.application?.job_orders?.[0]?.status;
+  const applicationMessagingCancelled = ['Candidate Cancelled', 'Company Cancelled'].includes(activeApplicationStatus)
+    || ['Candidate Cancelled', 'Company Cancelled'].includes(activeJobOrderStatus);
 
   return (
     <div className="flex flex-col w-full h-full flex-1 bg-white overflow-hidden">
@@ -1049,13 +1048,6 @@ export default function InboxPage() {
                   </div>
                 </div>
               </div>
-              <button 
-                onClick={handleDeleteAppThread}
-                className="mr-[10px] p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
-                title="Delete Conversation"
-              >
-                <Trash2 size={20} />
-              </button>
             </header>
 
             {/* Message Feed */}
@@ -1121,32 +1113,45 @@ export default function InboxPage() {
               )}
             </main>
 
-            <form 
-              onSubmit={handleSendMessage}
-              className="messages-composer flex-none w-full min-w-0 bg-white border-t border-gray-200 z-20"
-            >
-              <div className="messages-composer__row">
-                <textarea
-                  ref={messageComposerRef}
-                  rows={1}
-                  placeholder="Type your message..."
-                  value={newMessage}
-                  onChange={handleMessageDraftChange}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' && !event.shiftKey) {
-                      event.preventDefault();
-                      handleSendMessage(event);
-                    }
-                  }}
-                  disabled={sending}
-                  className="messages-composer__field"
-                />
-                <button type="submit" disabled={!newMessage.trim() || sending} className="messages-composer__send" aria-label={sending ? 'Sending message' : 'Send message'}>
-                  {sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
-                </button>
+            {applicationMessagingCancelled ? (
+              <div className="flex-none border-t border-gray-200 bg-slate-50 px-4 py-3 text-center text-sm font-medium text-slate-500">
+                This engagement was cancelled. Message history remains available, but new messages are disabled.
               </div>
-            </form>
+            ) : (
+              <form
+                onSubmit={handleSendMessage}
+                className="messages-composer flex-none w-full min-w-0 bg-white border-t border-gray-200 z-20"
+              >
+                <div className="messages-composer__row">
+                  <textarea
+                    ref={messageComposerRef}
+                    rows={1}
+                    placeholder="Type your message..."
+                    value={newMessage}
+                    onChange={handleMessageDraftChange}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        handleSendMessage(event);
+                      }
+                    }}
+                    disabled={sending}
+                    className="messages-composer__field"
+                  />
+                  <button type="submit" disabled={!newMessage.trim() || sending} className="messages-composer__send" aria-label={sending ? 'Sending message' : 'Send message'}>
+                    {sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+                  </button>
+                </div>
+              </form>
+            )}
           </>
+        ) : activeTab === 'applications' && activeAppId && appMessagingUnavailable ? (
+          <div className="flex h-full flex-col items-center justify-center p-8 text-center text-slate-500">
+            <MessageSquare size={36} className="mb-3 text-slate-300" />
+            <p className="font-semibold text-slate-700">Application messaging is unavailable.</p>
+            <p className="mt-1 max-w-sm text-sm">Messaging is available only for accepted engagements and their permitted history.</p>
+            <button onClick={() => router.push('/messages?tab=applications')} className="mt-4 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-[#002b4e]">Back to application messages</button>
+          </div>
         ) : activeConv && activePartner && activeTab === 'direct' ? (
           <>
             {/* Chat stage header – sits cleanly below the sticky app header */}
