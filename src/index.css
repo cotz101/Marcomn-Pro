@@ -4670,6 +4670,46 @@ body.liker-modal-active .btn-leave {
   }
 }
 
+/* UI-2 Company Wallet — Internal Card Spacing Standards */
+.wallet-card-internal {
+  padding: 24px !important;
+}
 
+@media (min-width: 640px) {
+  .wallet-card-internal {
+    padding: 28px 32px !important;
+  }
+}
 
+.about-card-internal {
+  padding: 24px 24px !important;
+}
 
+@media (min-width: 640px) {
+  .about-card-internal {
+    padding: 28px 28px !important;
+  }
+}
+
+.history-card-internal {
+  padding: 24px !important;
+}
+
+@media (min-width: 640px) {
+  .history-card-internal {
+    padding: 28px 32px !important;
+  }
+}
+
+/* UI-2 Company Wallet — Mobile Outer Page Gutter Standard */
+.company-wallet-page-root {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+@media (min-width: 640px) {
+  .company-wallet-page-root {
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+  }
+}

@@ -554,7 +554,7 @@ export default function CompanyWalletPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 font-sans">
+    <div className="company-wallet-page-root w-full max-w-5xl mx-auto pb-12 font-sans">
       {/* Navigation */}
       <Link
         href={`/company/${myCompany.id}`}
@@ -578,10 +578,10 @@ export default function CompanyWalletPage() {
       )}
 
       {/* Top row: Wallet header & About MCredits side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 items-stretch">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 mb-6 items-stretch">
         {/* Left: Wallet Header Info */}
-        <div className="lg:col-span-2">
-          <div className="bg-white border border-gray-100 rounded-2xl p-6 lg:p-8 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 h-full">
+        <div className="xl:col-span-8">
+          <div className="wallet-card-internal bg-white border border-gray-100 rounded-2xl shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 h-full">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-blue-50 text-blue-900 rounded-xl flex items-center justify-center shrink-0 border border-blue-100">
                 {myCompany.logo_url ? (
@@ -625,8 +625,8 @@ export default function CompanyWalletPage() {
         </div>
 
         {/* Right: Info Widget */}
-        <div>
-          <div className="bg-[#002b4e] rounded-2xl px-6 py-5 text-white shadow-sm relative overflow-hidden h-full flex flex-col justify-center">
+        <div className="xl:col-span-4">
+          <div className="about-card-internal bg-[#002b4e] rounded-2xl text-white shadow-sm relative overflow-hidden h-full flex flex-col justify-center">
             {/* Decorative background element */}
             <div className="absolute -right-6 -top-6 text-blue-800/30">
               <Coins size={120} />
@@ -660,7 +660,7 @@ export default function CompanyWalletPage() {
       </div>
 
       {/* Second row: Full-width History Card with Tabs */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-hidden min-h-[400px] mb-8">
+      <div className="history-card-internal bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden min-h-[400px] mb-8">
         {/* Tabs Header */}
         <div className="flex border-b border-gray-100 mb-6 gap-6">
           <button
