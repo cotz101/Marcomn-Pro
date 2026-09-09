@@ -1158,88 +1158,6 @@ html.dark .btn-primary {
   font-family: var(--font-family);
 }
 
-.modal-overlay-glass {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  align-items: flex-end; /* Mobile baseline: bottom-sheet */
-  justify-content: center;
-  z-index: 3000;
-  padding: 0;
-  transition: all 0.3s ease;
-}
-
-@media (min-width: 768px) {
-  .modal-overlay-glass {
-    align-items: flex-start;
-    padding: 60px 16px 20px;
-  }
-}
-
-.modal-content-standard {
-  background-color: var(--surface-bright);
-  width: 100%;
-  border-radius: 20px 20px 0 0; /* Mobile baseline: bottom drawer rounded top corners */
-  max-width: 100% !important;
-  overflow: hidden;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
-  animation: drawerSlideUp 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-@media (min-width: 768px) {
-  .modal-content-standard {
-    border-radius: 12px;
-    max-width: 600px !important;
-    animation: modalFadeUp 0.3s ease-out;
-  }
-}
-
-@keyframes drawerSlideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-.modal-header-navy {
-  background-color: #002b4e;
-  padding: 16px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-title-white {
-  color: white;
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.modal-close-btn-white {
-  background: transparent;
-  border: none;
-  color: white;
-  opacity: 0.8;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border-radius: 50%;
-  transition: all 0.2s;
-}
-
-.modal-close-btn-white:hover {
-  opacity: 1;
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.modal-body-standard {
-  padding: 24px;
-}
-
 /* Onboarding Modal Styles */
 .onboarding-card {
   background-color: var(--surface);
@@ -3119,6 +3037,79 @@ body {
   padding: 20px;
   max-height: 80vh;
   overflow-y: auto;
+}
+
+/* MarComn Dialog System v1 — Authoritative Gutters */
+.dialog-header-gutters {
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+}
+
+@media (min-width: 640px) {
+  .dialog-header-gutters {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+    padding-top: 18px !important;
+    padding-bottom: 18px !important;
+  }
+}
+
+.dialog-body-gutters {
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+  padding-top: 20px !important;
+  padding-bottom: 24px !important;
+}
+
+@media (min-width: 640px) {
+  .dialog-body-gutters {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+    padding-top: 24px !important;
+    padding-bottom: 24px !important;
+  }
+}
+
+.dialog-footer-gutters {
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+}
+
+@media (min-width: 640px) {
+  .dialog-footer-gutters {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+}
+
+.dialog-close-btn {
+  position: absolute !important;
+  right: 20px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+@media (min-width: 640px) {
+  .dialog-close-btn {
+    right: 24px !important;
+  }
+}
+
+/* Optional close button support when explicitly requested */
+.dialog-header-has-close {
+  padding-left: 56px !important;
+  padding-right: 56px !important;
+}
+
+@media (min-width: 640px) {
+  .dialog-header-has-close {
+    padding-left: 64px !important;
+    padding-right: 64px !important;
+  }
 }
 
 /* Loading Skeletons & Empty States */

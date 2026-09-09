@@ -12,6 +12,14 @@ import { requestAdvancePayment, cancelAdvanceRequest, acceptCounterOffer, declin
 import { calculateAdvanceLedger } from '@/lib/advancesLedger';
 import { formatCompensation } from '@/lib/compensation';
 import BaseModal from '@/src/components/layout/BaseModal';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogNotice,
+} from '@/src/components/ui/dialog';
 import ApplicationStatusTabs, { getApplicationCategory } from '@/src/components/jobs/ApplicationStatusTabs';
 import EngagementTimeline from '@/src/components/engagement/EngagementTimeline';
 
@@ -1310,84 +1318,172 @@ export default function MyApplicationsPage() {
         </div>
       )}
 
-      {/* Accept Offer Modal */}
-      <BaseModal
+      {/* Accept Offer Modal — Migrated to MarComn Dialog System v1 */}
+      <Dialog
         isOpen={isAcceptModalOpen && appToAccept !== null}
-        onClose={() => { setIsAcceptModalOpen(false); setAppToAccept(null); }}
-        title="Accept Job Offer"
-        maxWidth="600px"
+        onClose={() => {
+          if (!isAccepting) {
+            setIsAcceptModalOpen(false);
+            setAppToAccept(null);
+          }
+        }}
         disableBackdropClick={isAccepting}
       >
-        <div className="flex flex-col space-y-4">
-          <p className="text-sm text-gray-600">
-            You are accepting the offer for <span className="font-semibold text-gray-800">{appToAccept?.job?.title}</span> from <span className="font-semibold text-gray-800">{appToAccept?.job?.company_id && appToAccept?.job?.company?.name ? appToAccept.job.company.name : (appToAccept?.job?.poster?.name || 'the poster')}</span>.
-          </p>
+        <DialogContent maxWidth="md">
+          <DialogHeader
+            title="Accept Job Offer"
+            onClose={() => {
+              if (!isAccepting) {
+                setIsAcceptModalOpen(false);
+                setAppToAccept(null);
+              }
+            }}
+          />
 
-          {!feePreview ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="animate-spin text-blue-900" size={24} />
-            </div>
-          ) : (
-            <div className={`rounded-xl px-4 py-4 border ${
-              acceptingError && acceptingError.includes('Insufficient')
-                ? 'bg-red-50 border-red-200'
-                : feePreview.enabled === false || feePreview.fee === 0
-                  ? 'bg-blue-50 border-blue-200'
-                  : 'bg-emerald-50 border-emerald-200'
-            }`}>
-              <div className="flex items-start gap-3">
-                {acceptingError && acceptingError.includes('Insufficient') ? (
-                  <AlertTriangle size={18} className="text-red-600 shrink-0 mt-0.5" />
-                ) : feePreview.enabled === false || feePreview.fee === 0 ? (
-                  <Coins size={18} className="text-blue-700 shrink-0 mt-0.5" />
-                ) : (
-                  <Coins size={18} className="text-emerald-700 shrink-0 mt-0.5" />
-                )}
-                <div className="text-sm w-full">
-                  <p className="font-semibold text-gray-800">
-                    Acceptance Fee:{' '}
-                    {feePreview.enabled === false || feePreview.fee === 0 ? (
-                      <span className="font-bold text-blue-800">0.00 MC (Waived / Free)</span>
-                    ) : (
-                      <span className="font-bold">{feePreview.fee.toFixed(2)} MC</span>
-                    )}
-                  </p>
-                  {walletBalance !== null && (
-                    <p className="text-gray-600 mt-0.5">
-                      Your Wallet: <span className="font-bold">{walletBalance.toFixed(2)} MC</span>
-                    </p>
-                  )}
-                  {acceptingError && (
-                    <div className="mt-1.5 space-y-2">
-                      <p className="text-red-700 font-semibold leading-tight">{acceptingError}</p>
-                      {acceptingError.includes('Insufficient') && (
-                        <div className="pt-0.5">
-                          <Link
-                            href="/profile/wallet"
-                            className="inline-flex items-center justify-center rounded-md border border-[#004173]/20 bg-[#eaf3fb] px-4 py-2 text-sm font-semibold text-[#004173] hover:bg-[#dcecf8] transition-colors"
-                          >
-                            Top up your wallet
-                          </Link>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+          <DialogBody className="space-y-6 pt-5 pb-6">
+            {/* Introductory Description */}
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+              Review the details below before accepting this job offer.
+            </p>
+
+            {/* Job Offer Summary Section */}
+            <div className="space-y-2">
+              <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 block">
+                Job Offer
+              </span>
+              <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-4">
+                <h3 className="text-base font-bold text-[#002b4e] leading-snug">
+                  {appToAccept?.job?.title || 'Maritime Position'}
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-1.5 flex items-center gap-1.5">
+                  <Building2 size={14} className="text-slate-400 shrink-0" />
+                  <span>
+                    {appToAccept?.job?.company_id && appToAccept?.job?.company?.name
+                      ? appToAccept.job.company.name
+                      : (appToAccept?.job?.poster?.name || 'the poster')}
+                  </span>
+                </p>
               </div>
             </div>
-          )}
 
-          <div className="pt-4 flex flex-col-reverse sm:flex-row justify-end gap-3">
+            {/* Acceptance Fee Section */}
+            <div className="border-t border-slate-100 pt-5 space-y-2">
+              <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 block">
+                Acceptance Fee
+              </span>
+
+              {!feePreview ? (
+                <div className="flex items-center justify-center py-6 gap-2.5 text-sm text-slate-500">
+                  <Loader2 className="animate-spin text-[#004173]" size={20} />
+                  <span>Loading fee details...</span>
+                </div>
+              ) : (() => {
+                const isWaived = feePreview.enabled === false || feePreview.fee === 0;
+                const hasInsufficientFunds = !isWaived && walletBalance !== null && walletBalance < feePreview.fee;
+
+                if (hasInsufficientFunds || (acceptingError && acceptingError.includes('Insufficient'))) {
+                  return (
+                    <div className="space-y-3">
+                      <DialogNotice
+                        variant="warning"
+                        icon={<AlertTriangle size={18} className="text-amber-600" />}
+                        title="Insufficient MCredits"
+                        description="Your wallet does not have enough MCredits to cover the acceptance fee."
+                      >
+                        <div className="flex items-baseline justify-between mt-1 pt-2 border-t border-amber-200/60 text-xs">
+                          <span className="font-semibold text-amber-900">Required Fee:</span>
+                          <span className="font-extrabold text-amber-950 text-sm">{feePreview.fee.toFixed(2)} MC</span>
+                        </div>
+                        <div className="flex items-baseline justify-between text-xs mt-0.5">
+                          <span className="text-amber-800">Your Balance:</span>
+                          <span className="font-bold text-amber-900">{walletBalance !== null ? walletBalance.toFixed(2) : '0.00'} MC</span>
+                        </div>
+                      </DialogNotice>
+
+                      <div className="pt-1">
+                        <Link
+                          href="/profile/wallet"
+                          className="inline-flex items-center justify-center w-full rounded-xl border border-[#004173]/20 bg-[#eaf3fb] hover:bg-[#dcecf8] px-4 py-2.5 text-sm font-bold text-[#004173] transition-colors"
+                        >
+                          Top up your wallet
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (isWaived) {
+                  return (
+                    <DialogNotice
+                      variant="info"
+                      icon={<Coins size={18} className="text-[#004173]" />}
+                      title="Waived / Free"
+                      description="Your wallet will not be charged."
+                    >
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-lg font-extrabold text-[#002b4e]">0.00 MC</span>
+                        <span className="px-2 py-0.5 rounded-md bg-blue-100/80 text-[10px] font-bold text-[#004173] uppercase tracking-wide">
+                          Waived
+                        </span>
+                      </div>
+                    </DialogNotice>
+                  );
+                }
+
+                return (
+                  <DialogNotice
+                    variant="neutral"
+                    icon={<Coins size={18} className="text-[#004173]" />}
+                    title="Required Fee"
+                    description="This fee will be deducted from your wallet upon acceptance."
+                  >
+                    <div className="flex items-baseline justify-between mt-1 pt-2 border-t border-slate-200 text-xs">
+                      <span className="font-semibold text-slate-600">Fee Amount:</span>
+                      <span className="text-base font-extrabold text-[#002b4e]">{feePreview.fee.toFixed(2)} MC</span>
+                    </div>
+                  </DialogNotice>
+                );
+              })()}
+
+              {/* Non-insufficient generic error display */}
+              {acceptingError && !acceptingError.includes('Insufficient') && (
+                <DialogNotice
+                  variant="destructive"
+                  icon={<AlertTriangle size={18} />}
+                  title="Error"
+                >
+                  {acceptingError}
+                </DialogNotice>
+              )}
+            </div>
+
+            {/* Current Wallet Section */}
+            {feePreview && walletBalance !== null && (
+              <div className="border-t border-slate-100 pt-4 flex items-center justify-between text-xs text-slate-500">
+                <span className="font-medium">Current Wallet Balance:</span>
+                <span className="font-bold text-slate-800 text-sm">{walletBalance.toFixed(2)} MC</span>
+              </div>
+            )}
+          </DialogBody>
+
+          <DialogFooter>
             <button
-              onClick={() => { setIsAcceptModalOpen(false); setAppToAccept(null); }}
-              className="w-full sm:w-auto px-5 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors text-center shrink-0"
+              type="button"
+              onClick={() => {
+                if (!isAccepting) {
+                  setIsAcceptModalOpen(false);
+                  setAppToAccept(null);
+                }
+              }}
+              className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] text-xs sm:text-sm font-bold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 rounded-xl transition-all cursor-pointer border border-slate-200 shadow-2xs hover:shadow-xs active:scale-[0.98] text-center shrink-0 disabled:opacity-50"
               disabled={isAccepting}
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleConfirmAcceptance}
-              className="w-full sm:w-auto bg-[#004173] hover:bg-blue-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-50 text-center shrink-0"
+              className="w-full sm:w-auto min-h-[44px] bg-[#004173] hover:bg-[#002b4e] text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none flex items-center justify-center gap-2 text-center shrink-0 cursor-pointer"
               disabled={
                 isAccepting ||
                 feePreview === null ||
@@ -1395,11 +1491,18 @@ export default function MyApplicationsPage() {
                 ((feePreview.enabled !== false && feePreview.fee > 0) && walletBalance < feePreview.fee)
               }
             >
-              {isAccepting ? 'Confirming...' : 'Confirm Acceptance'}
+              {isAccepting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Confirming...</span>
+                </>
+              ) : (
+                'Accept Job Offer'
+              )}
             </button>
-          </div>
-        </div>
-      </BaseModal>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Cancel Engagement Modal */}
       {isCancelModalOpen && appToCancel && (
