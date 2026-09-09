@@ -4713,3 +4713,16 @@ body.liker-modal-active .btn-leave {
     padding-right: 0px !important;
   }
 }
+
+/* MD-017 Create Company Profile — Form Rhythm Standards */
+.create-company-form-fields {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.create-company-field-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
