@@ -4726,3 +4726,16 @@ body.liker-modal-active .btn-leave {
   flex-direction: column !important;
   gap: 6px !important;
 }
+
+/* MD-018 Create Maritime Group — Form Rhythm Standards */
+.create-group-form-fields {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.create-group-field-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
