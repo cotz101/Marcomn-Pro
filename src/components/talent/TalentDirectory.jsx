@@ -26,9 +26,9 @@ export default function TalentDirectory() {
     setLoading(true);
     try {
       let query = supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('id, name, currentRole, yearsExperience, skills, openToWork, location, avatar_url')
-        .order('updated_at', { ascending: false });
+        .order('name', { ascending: true });
 
       if (debouncedSearchTerm.trim() !== '') {
         query = query.or(`name.ilike.%${debouncedSearchTerm}%,currentRole.ilike.%${debouncedSearchTerm}%,location.ilike.%${debouncedSearchTerm}%,skills.cs.{${debouncedSearchTerm}}`);

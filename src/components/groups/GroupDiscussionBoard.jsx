@@ -100,7 +100,7 @@ export default function GroupDiscussionBoard({ groupId }) {
         // Batch fetch profiles
         const uids = [...new Set(postsData.map(p => p.user_id))];
         const { data: profilesData } = await supabase
-          .from('profiles')
+          .from('public_profiles')
           .select('id, name, avatar_url, headline')
           .in('id', uids);
 

@@ -547,8 +547,8 @@ export default function ApplicantsPage() {
       // ── 5. Step Two: Fetch public profiles ───────────────────────────────
       const applicantIds = apps.map((app) => app.applicant_id);
       const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
+        .from('public_profiles')
+        .select('id, name, username, avatar_url, headline, currentRole, current_company, previousRole, yearsExperience, skills, location, bio, about, website, cover_photo_url, isSailing, openToWork')
         .in('id', applicantIds);
 
       if (profilesError) throw profilesError;

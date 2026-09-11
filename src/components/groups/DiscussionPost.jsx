@@ -195,7 +195,7 @@ export default function DiscussionPost({ post, groupId }) {
 
       // Step B: Fetch the 'profiles' data for these user IDs
       const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('id, username, name')
         .in('id', userIds);
 
@@ -279,7 +279,7 @@ export default function DiscussionPost({ post, groupId }) {
 
         // Step B: Fetch profiles for these user_ids
         const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
+          .from('public_profiles')
           .select('id, username, name')
           .in('id', userIds);
 

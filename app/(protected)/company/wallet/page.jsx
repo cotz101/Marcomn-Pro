@@ -200,7 +200,7 @@ export default function CompanyWalletPage() {
             const profileNameMap = {};
             if (uniqueProfileIdsToFetch.length > 0) {
               const { data: profilesData } = await supabase
-                .from('profiles')
+                .from('public_profiles')
                 .select('id, name')
                 .in('id', uniqueProfileIdsToFetch);
               if (profilesData) {

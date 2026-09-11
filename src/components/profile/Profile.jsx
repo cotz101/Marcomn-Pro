@@ -74,8 +74,9 @@ export default function Profile({
     const fetchViewedProfile = async () => {
       setLoading(true);
       const supabase = createClient();
+      const targetTable = isOwnProfile ? 'profiles' : 'public_profiles';
       const { data, error } = await supabase
-        .from('profiles')
+        .from(targetTable)
         .select('*')
         .eq('id', viewUid)
         .maybeSingle();
@@ -593,8 +594,8 @@ export default function Profile({
                   {/* Sailing Status */}
                   {profile.isSailing && (
                     <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
-                      <Ship size={16} />
-                      <span className="text-sm font-bold">Currently Sailing: {profile.vesselName || 'Vessel'}</span>
+                       <Ship size={16} />
+                       <span className="text-sm font-bold">Currently Sailing{isOwnProfile && profile.vesselName ? `: ${profile.vesselName}` : ''}</span>
                     </div>
                   )}
                 </div>

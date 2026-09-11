@@ -53,14 +53,6 @@ export default function ProfessionalCard({ profile, currentUser, onFollow }) {
       
       if (followBackData) setIsFollowedBack(true);
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('message_privacy')
-        .eq('id', profile.id)
-        .maybeSingle();
-
-      if (profileData) setMessagePrivacy(profileData.message_privacy || 'connections');
-      
       if (canFriend) {
         const fs = await getFriendshipStatus(profile.id);
         setFriendStatus(fs);

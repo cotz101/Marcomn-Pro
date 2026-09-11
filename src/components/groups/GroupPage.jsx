@@ -137,7 +137,7 @@ export default function GroupPage({ groupId: propGroupId }) {
         const uids = approvedMembers.slice(0, 5).map(m => m.user_id);
         if (uids.length > 0) {
           const { data: profs } = await supabase
-            .from('profiles')
+            .from('public_profiles')
             .select('avatar_url')
             .in('id', uids);
           setMemberAvatars(profs?.map(p => p.avatar_url).filter(Boolean) || []);
@@ -150,14 +150,14 @@ export default function GroupPage({ groupId: propGroupId }) {
         const joinedUids = membersData.filter(m => m.status === 'member').map(m => m.user_id);
 
         if (pendingUids.length > 0) {
-          const { data: pProfs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', pendingUids);
+          const { data: pProfs } = await supabase.from('public_profiles').select('id, name, avatar_url').in('id', pendingUids);
           setPendingRequests(pProfs || []);
         } else {
           setPendingRequests([]);
         }
 
         if (joinedUids.length > 0) {
-          const { data: jProfs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', joinedUids);
+          const { data: jProfs } = await supabase.from('public_profiles').select('id, name, avatar_url').in('id', joinedUids);
           setCurrentMembers(jProfs?.map(p => ({
             ...p,
             role: membersData.find(m => m.user_id === p.id)?.role || 'member'
@@ -278,7 +278,7 @@ export default function GroupPage({ groupId: propGroupId }) {
     if (missingIds.length === 0) return;
 
     const { data: profiles } = await supabase
-      .from('profiles')
+      .from('public_profiles')
       .select('id, name, avatar_url')
       .in('id', missingIds);
 
@@ -628,14 +628,14 @@ export default function GroupPage({ groupId: propGroupId }) {
         const joinedUids = updatedMembers.filter(m => m.status === 'member').map(m => m.user_id);
 
         if (pendingUids.length > 0) {
-          const { data: pProfs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', pendingUids);
+          const { data: pProfs } = await supabase.from('public_profiles').select('id, name, avatar_url').in('id', pendingUids);
           setPendingRequests(pProfs || []);
         } else {
           setPendingRequests([]);
         }
 
         if (joinedUids.length > 0) {
-          const { data: jProfs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', joinedUids);
+          const { data: jProfs } = await supabase.from('public_profiles').select('id, name, avatar_url').in('id', joinedUids);
           setCurrentMembers(jProfs?.map(p => ({
             ...p,
             role: updatedMembers.find(m => m.user_id === p.id)?.role || 'member'
@@ -649,7 +649,7 @@ export default function GroupPage({ groupId: propGroupId }) {
         setMemberCount(approved.length);
         const avatarsUids = approved.slice(0, 5).map(m => m.user_id);
         if (avatarsUids.length > 0) {
-          const { data: profs } = await supabase.from('profiles').select('avatar_url').in('id', avatarsUids);
+          const { data: profs } = await supabase.from('public_profiles').select('avatar_url').in('id', avatarsUids);
           setMemberAvatars(profs?.map(p => p.avatar_url).filter(Boolean) || []);
         }
       }

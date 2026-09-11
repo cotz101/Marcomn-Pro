@@ -43,7 +43,7 @@ export default function GroupPostFeed({ groupId }) {
       // 2. Fetch unique profiles for these posts (Batch Fetch strategy)
       const userIds = [...new Set(postsData.map(p => p.user_id))];
       const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('id, name, avatar_url, headline')
         .in('id', userIds);
 

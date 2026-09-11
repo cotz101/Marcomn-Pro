@@ -142,7 +142,7 @@ export default function InboxPage() {
 
         if (otherUserIds.length > 0) {
           const { data: profData, error: profError } = await supabase
-            .from('profiles')
+            .from('public_profiles')
             .select('id, name, avatar_url, currentRole')
             .in('id', otherUserIds);
 
@@ -366,7 +366,7 @@ export default function InboxPage() {
 
         // Fetch authors
         const authorIds = [...new Set(threads.map(t => t.created_by))];
-        const { data: profilesData } = await supabase.from('profiles').select('id, name, avatar_url').in('id', authorIds);
+        const { data: profilesData } = await supabase.from('public_profiles').select('id, name, avatar_url').in('id', authorIds);
         
         const profMap = {};
         if (profilesData) {

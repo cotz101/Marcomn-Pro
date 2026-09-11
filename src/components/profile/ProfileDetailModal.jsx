@@ -87,7 +87,7 @@ export default function ProfileDetailModal({ isOpen, onClose, profile, isSelf })
                 <div>
                   <span className="block text-xs font-bold text-[#002b4e] uppercase tracking-wider mb-1">Professional Status</span>
                   <p className="text-lg font-bold text-[#1e293b]">
-                    Currently Sailing: {profile.vesselName || 'Active Vessel'}
+                    Currently Sailing{isSelf && profile.vesselName ? `: ${profile.vesselName}` : ''}
                   </p>
                 </div>
               </div>

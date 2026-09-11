@@ -77,7 +77,7 @@ export default function GroupThreadConversation({ thread, groupName, onBack, emb
     setMessages(loaded); setError('');
     const ids = [...new Set(loaded.map(message => message.user_id).filter(Boolean))];
     if (ids.length) {
-      const { data: rows } = await supabase.from('profiles').select('id,name,avatar_url').in('id', ids);
+      const { data: rows } = await supabase.from('public_profiles').select('id,name,avatar_url').in('id', ids);
       setProfiles(Object.fromEntries((rows || []).map(profile => [profile.id, profile])));
     }
     setLoading(false);

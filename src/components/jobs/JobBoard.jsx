@@ -99,7 +99,7 @@ export default function JobBoard() {
         let postersMap = {};
         if (posterIds.length > 0) {
           try {
-            const { data } = await supabase.from('profiles').select('id, name, avatar_url').in('id', posterIds);
+            const { data } = await supabase.from('public_profiles').select('id, name, avatar_url').in('id', posterIds);
             if (data) {
               data.forEach(p => postersMap[p.id] = p);
             }

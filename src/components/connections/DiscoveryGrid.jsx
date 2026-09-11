@@ -27,7 +27,7 @@ export default function DiscoveryGrid({ activeTab = 'discovery', searchTerm = ''
       setCurrentUserId(userId);
       setCurrentUser(user);
 
-      let query = supabase.from('profiles').select('*');
+      let query = supabase.from('public_profiles').select('id, name, username, avatar_url, headline, currentRole, current_company, previousRole, yearsExperience, skills, location, bio, about, website, cover_photo_url, isSailing, openToWork');
 
       if (activeTab === 'following') {
         if (!userId) {
@@ -60,7 +60,7 @@ export default function DiscoveryGrid({ activeTab = 'discovery', searchTerm = ''
 
       const { data, error } = await query
         .range(0, PAGE_SIZE - 1)
-        .order('updated_at', { ascending: false });
+        .order('name', { ascending: true });
       
       if (!error && data) {
         setProfiles(data);
@@ -94,7 +94,7 @@ export default function DiscoveryGrid({ activeTab = 'discovery', searchTerm = ''
     setLoadingMore(true);
     const nextLimit = offset + LOAD_MORE_SIZE - 1;
     
-    let query = supabase.from('profiles').select('*');
+    let query = supabase.from('public_profiles').select('id, name, username, avatar_url, headline, currentRole, current_company, previousRole, yearsExperience, skills, location, bio, about, website, cover_photo_url, isSailing, openToWork');
 
     if (activeTab === 'following') {
       const { data: followData } = await supabase
@@ -112,7 +112,7 @@ export default function DiscoveryGrid({ activeTab = 'discovery', searchTerm = ''
 
     const { data, error } = await query
       .range(offset, nextLimit)
-      .order('updated_at', { ascending: false });
+      .order('name', { ascending: true });
 
     if (!error && data) {
       if (data.length > 0) {

@@ -267,7 +267,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
       }
       
       const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('id, name, avatar_url, username')
         .in('id', followingIds);
         
@@ -349,7 +349,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
     
     try {
       const { data: allProfiles, error } = await supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('id, username, name');
         
       if (error || !allProfiles) return [];

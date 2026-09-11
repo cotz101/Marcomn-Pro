@@ -73,7 +73,7 @@ export default function GroupsDirectory() {
       let profilesMap = {};
       if (uniqueUserIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('public_profiles')
           .select('id, name, avatar_url')
           .in('id', uniqueUserIds);
         
