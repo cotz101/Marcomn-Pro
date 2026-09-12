@@ -1,77 +1,26 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
+import { createClient, createServiceClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { checkAndNotifyVacancyReopened } from './notifications';
 import { handleOccupancyChange } from './cache';
 
 /**
- * Recalculate and update the candidate's reputation summary.
- * - completed_jobs: count of job_orders with status 'Completed' for this candidate
- * - cancelled_jobs: count of job_orders with status 'Candidate Cancelled'
- * - completion_rate: (completed / (completed + cancelled)) * 100
- * - feedback_count: total feedback rows
- * - positive/negative counts
+ * Recalculate and update the candidate's reputation summary via canonical database RPC.
+ * Executed via trusted server-only client (service_role) to protect the RPC from public/browser execution.
  */
 export async function refreshCandidateReputation(candidateId) {
   if (!candidateId) return { success: false, error: 'Candidate ID required' };
   
-  const supabase = await createClient();
   try {
-    // Get completed jobs
-    const { count: completedCount, error: compErr } = await supabase
-      .from('job_orders')
-      .select('id', { count: 'exact', head: true })
-      .eq('candidate_id', candidateId)
-      .eq('status', 'Completed');
-      
-    if (compErr) throw compErr;
+    const supabaseAdmin = createServiceClient();
+    const { data: res, error: rpcErr } = await supabaseAdmin
+      .rpc('recalculate_candidate_reputation', { p_candidate_id: candidateId });
 
-    // Get candidate cancelled jobs
-    const { count: cancelledCount, error: cancErr } = await supabase
-      .from('job_orders')
-      .select('id', { count: 'exact', head: true })
-      .eq('candidate_id', candidateId)
-      .eq('status', 'Candidate Cancelled');
-      
-    if (cancErr) throw cancErr;
+    if (rpcErr) throw rpcErr;
+    if (res && !res.success) throw new Error(res.message || res.error || 'Failed to recalculate reputation');
 
-    // Calculate completion rate
-    const totalConsidered = completedCount + cancelledCount;
-    let completionRate = 0; // default to 0
-    if (totalConsidered > 0) {
-      completionRate = Math.round((completedCount / totalConsidered) * 100);
-    }
-
-    // Get feedback counts
-    const { data: feedbackData, error: feedErr } = await supabase
-      .from('job_feedback')
-      .select('feedback_sentiment')
-      .eq('candidate_id', candidateId);
-      
-    if (feedErr) throw feedErr;
-
-    const feedbackCount = feedbackData.length;
-    const positiveCount = feedbackData.filter(f => f.feedback_sentiment === 'positive').length;
-    const negativeCount = feedbackData.filter(f => f.feedback_sentiment === 'negative').length;
-
-    // Upsert into candidate_reputation_summary
-    const { error: upsertErr } = await supabase
-      .from('candidate_reputation_summary')
-      .upsert({
-        candidate_id: candidateId,
-        completed_jobs: completedCount,
-        cancelled_jobs: cancelledCount,
-        completion_rate: completionRate,
-        feedback_count: feedbackCount,
-        positive_feedback_count: positiveCount,
-        negative_feedback_count: negativeCount,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'candidate_id' });
-
-    if (upsertErr) throw upsertErr;
-
-    return { success: true };
+    return { success: true, data: res };
   } catch (err) {
     console.error('Error refreshing candidate reputation:', err);
     return { success: false, error: err.message || 'Failed to refresh reputation' };
