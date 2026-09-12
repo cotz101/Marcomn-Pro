@@ -90,77 +90,27 @@ export async function markJobOrderCompleted({ jobOrderId, feedbackData }) {
   const supabase = await createClient();
 
   try {
-    // 1. Get the job order to verify and extract IDs (join applications to get fallback applicant_id)
-    const { data: order, error: orderErr } = await supabase
-      .from('job_orders')
-      .select('*, applications(applicant_id)')
-      .eq('id', jobOrderId)
-      .single();
+    const { data: res, error: rpcError } = await supabase
+      .rpc('mark_job_order_completed', {
+        p_job_order_id: jobOrderId,
+        p_sentiment: feedbackData.sentiment,
+        p_tags: feedbackData.tags || [],
+        p_comment: feedbackData.comment || ''
+      });
 
-    if (orderErr || !order) throw new Error('Job order not found');
-    if (order.status !== 'Active' && order.status !== 'Completed') {
-      throw new Error(`Only Active engagements can be marked completed. Current status: ${order.status}`);
+    if (rpcError) throw new Error(rpcError.message);
+    if (!res || !res.success) throw new Error(res?.message || res?.error || 'Failed to complete engagement.');
+
+    // Refresh candidate reputation
+    if (res.candidate_id) {
+      await refreshCandidateReputation(res.candidate_id);
+      revalidatePath(`/profile/${res.candidate_id}`);
     }
 
-    const resolvedCandidateId = order.candidate_id || order.applications?.applicant_id;
-    if (!resolvedCandidateId) throw new Error('Candidate ID could not be resolved for this job order.');
-
-    // 2. Update job_orders status to 'Completed' if not already
-    if (order.status !== 'Completed') {
-      const { error: updateOrderErr } = await supabase
-        .from('job_orders')
-        .update({ status: 'Completed', updated_at: new Date().toISOString() })
-        .eq('id', jobOrderId);
-
-      if (updateOrderErr) throw updateOrderErr;
-    }
-
-    // 3. Update application status to 'Completed'
-    if (order.application_id) {
-      const { error: appErr } = await supabase
-        .from('applications')
-        .update({ status: 'Completed' })
-        .eq('id', order.application_id);
-        
-      if (appErr) throw appErr;
-    }
-
-    // 4. Insert Feedback if it doesn't already exist for this job_order_id
-    const { data: existingFeedback } = await supabase
-      .from('job_feedback')
-      .select('id')
-      .eq('job_order_id', jobOrderId)
-      .maybeSingle();
-
-    if (!existingFeedback) {
-      const { error: feedErr } = await supabase
-        .from('job_feedback')
-        .insert({
-          job_order_id: jobOrderId,
-          job_id: order.job_id,
-          application_id: order.application_id,
-          company_id: order.company_id,
-          candidate_id: resolvedCandidateId,
-          feedback_by: feedbackData.submittedByUserId, // Assuming company user ID
-          feedback_sentiment: feedbackData.sentiment,
-          feedback_tags: feedbackData.tags || [],
-          feedback_comment: feedbackData.comment || '',
-          feedback_context: 'completed_job',
-          created_at: new Date().toISOString()
-        });
-
-      if (feedErr) throw feedErr;
-    }
-
-    // 5. Refresh candidate reputation
-    await refreshCandidateReputation(resolvedCandidateId);
-
-    revalidatePath(`/profile/${resolvedCandidateId}`);
-    revalidatePath(`/jobs/my-postings/${order.job_id}/applicants`);
-
-    if (order.job_id) {
-      await checkAndNotifyVacancyReopened(order.job_id);
-      await handleOccupancyChange(order.job_id);
+    if (res.job_id) {
+      revalidatePath(`/jobs/my-postings/${res.job_id}/applicants`);
+      await checkAndNotifyVacancyReopened(res.job_id);
+      await handleOccupancyChange(res.job_id);
     }
 
     return { success: true };

@@ -38,23 +38,14 @@ export default function EmployerDashboardPage() {
     try {
       const supabase = createClient();
       
-      // Database Step 1: Update Job to Closed
-      const { error: jobError } = await supabase
-        .from('jobs')
-        .update({ status: 'Closed' })
-        .eq('id', job.id);
+      const { data: res, error } = await supabase
+        .rpc('employer_close_job_posting', {
+          p_job_id: job.id
+        });
 
-      if (jobError) throw jobError;
-
-      // Database Step 2: Update Applications (except Accepted or Withdrawn)
-      const { error: appError } = await supabase
-        .from('applications')
-        .update({ status: 'Closed' })
-        .eq('job_id', job.id)
-        .neq('status', 'Accepted')
-        .neq('status', 'Withdrawn');
-
-      if (appError) throw appError;
+      if (error || (res && !res.success)) {
+        throw new Error(res?.message || error?.message || 'Failed to close job posting.');
+      }
 
       // UI State Sync: instantly move from Active array to Closed array
       setJobs(prevJobs =>
@@ -68,7 +59,7 @@ export default function EmployerDashboardPage() {
     } catch (err) {
       console.error('Error closing job:', err.message || err);
       if (showToast) {
-        showToast('Error closing job: ' + err.message, 'error');
+        showToast('Error closing job: ' + (err.message || err), 'error');
       }
     }
   };

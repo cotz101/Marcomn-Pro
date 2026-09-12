@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { useProfile } from '@/app/context/ProfileContext';
 import { createClient } from '@/lib/supabase';
 import { Briefcase, MapPin, Calendar, Building2, Loader2, ExternalLink, Building, AlertTriangle, Coins, ChevronDown, ChevronUp } from 'lucide-react';
-import { getCandidateAcceptanceFeePreview, getUserWalletBalance, deductCandidateAcceptanceFee } from '@/app/actions/mcreditsJobs';
-import { createJobOrderFromAcceptedApplication, cancelJobOrderByCandidate } from '@/app/actions/jobOrders';
+import { getCandidateAcceptanceFeePreview, getUserWalletBalance, acceptCandidateJobOffer } from '@/app/actions/mcreditsJobs';
+import { cancelJobOrderByCandidate } from '@/app/actions/jobOrders';
 import { markWorkCompletedByApplicant, confirmPaymentReceivedByApplicant } from '@/app/actions/engagementLifecycle';
 import { requestAdvancePayment, cancelAdvanceRequest, acceptCounterOffer, declineCounterOffer, confirmReceipt, disputeReceipt } from '@/app/actions/advances';
 import { calculateAdvanceLedger } from '@/lib/advancesLedger';
@@ -447,21 +447,40 @@ export default function MyApplicationsPage() {
     setAcceptingError('');
 
     try {
-      const salaryNumeric = appToAccept.job?.salary_numeric || 0;
-      await deductCandidateAcceptanceFee(userId, appToAccept.id, salaryNumeric);
+      const res = await acceptCandidateJobOffer(appToAccept.id);
 
-      const orderRes = await createJobOrderFromAcceptedApplication(appToAccept.id);
-      let newOrders = [];
-      if (orderRes.success && orderRes.order) {
-        newOrders = [orderRes.order];
-      } else {
-        console.error('Failed to create job order:', orderRes.error);
+      if (!res.success) {
+        if (res.error === 'OFFER_EXPIRED') {
+          setApplications(prev => prev.map(a => a.id === appToAccept.id ? { ...a, status: 'Expired' } : a));
+          setAcceptingError(res.message || 'This job offer has expired.');
+        } else if (res.error === 'INSUFFICIENT_BALANCE') {
+          setAcceptingError(res.message || 'Insufficient MCredits balance to accept this offer.');
+        } else if (res.error === 'CAPACITY_REACHED') {
+          setAcceptingError(res.message || 'All positions for this job are already filled.');
+        } else if (res.error === 'ENGAGEMENT_TERMINATED') {
+          setAcceptingError(res.message || 'Engagement has already ended.');
+        } else {
+          setAcceptingError(res.message || 'Failed to accept offer. Check your balance or try again.');
+        }
+        return;
+      }
+
+      // Success or ALREADY_ACCEPTED
+      let newOrders = appToAccept.job_orders || [];
+      if (res.order_id) {
+        newOrders = [{
+          id: res.order_id,
+          application_id: appToAccept.id,
+          job_id: res.job_id || appToAccept.job_id,
+          status: 'Active',
+          created_at: new Date().toISOString()
+        }];
       }
 
       setApplications(prev => prev.map(a => a.id === appToAccept.id ? { ...a, status: 'Accepted', job_orders: newOrders } : a));
       setIsAcceptModalOpen(false);
       setAppToAccept(null);
-      alert('Offer accepted successfully!');
+      alert(res.code === 'ALREADY_ACCEPTED' ? 'Offer already accepted.' : 'Offer accepted successfully!');
     } catch (err) {
       console.error('Acceptance error:', err);
       setAcceptingError(err.message || 'Failed to accept offer. Check your balance or try again.');

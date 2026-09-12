@@ -98,102 +98,53 @@ export async function getJobOrderForApplication(applicationId) {
 /**
  * Handles candidate cancellation of an active job order.
  */
+/**
+ * Handles candidate cancellation of an active job order.
+ */
 export async function cancelJobOrderByCandidate({ jobOrderId, reason, remarks }) {
   const supabase = await createClient();
 
   try {
-    // Authenticate
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session?.user) {
-      throw new Error('Unauthorized');
-    }
-    const userId = session.user.id;
-
-    // 1. Fetch job order
-    const { data: order, error: orderError } = await supabase
-      .from('job_orders')
-      .select('*, application:applications(*), job:jobs(*)')
-      .eq('id', jobOrderId)
-      .maybeSingle();
-
-    if (orderError || !order) {
-      throw new Error('Job order not found');
-    }
-
-    // Verify candidate identity
-    if (order.candidate_id !== userId) {
-      throw new Error('Unauthorized: only the candidate can cancel their engagement');
-    }
-
-    // Verify status
-    if (order.status !== 'Active') {
-      throw new Error(`Cannot cancel job order that is ${order.status}`);
-    }
-
-    // 2. Insert job_cancellations row
-    const { error: cancelInsertError } = await supabase
-      .from('job_cancellations')
-      .insert({
-        job_order_id: order.id,
-        job_id: order.job_id,
-        application_id: order.application_id,
-        cancelled_by: userId,
-        cancelled_by_type: 'candidate',
-        cancellation_reason: reason,
-        cancellation_remarks: remarks || null
+    const { data: res, error: rpcError } = await supabase
+      .rpc('cancel_job_order_by_candidate', {
+        p_job_order_id: jobOrderId,
+        p_reason: reason,
+        p_remarks: remarks || null
       });
 
-    if (cancelInsertError) throw new Error(`Cancellation record error: ${cancelInsertError.message}`);
+    if (rpcError) throw new Error(rpcError.message);
+    if (!res || !res.success) throw new Error(res?.message || res?.error || 'Failed to cancel engagement.');
 
-    // 3. Update job_order.status
-    const { error: orderUpdateError } = await supabase
-      .from('job_orders')
-      .update({ status: 'Candidate Cancelled' })
-      .eq('id', order.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id || res.candidate_id;
 
-    if (orderUpdateError) throw new Error(`Order update error: ${orderUpdateError.message}`);
-
-    // 4. Optionally update application status to 'Candidate Cancelled'
-    const { error: appUpdateError } = await supabase
-      .from('applications')
-      .update({ status: 'Candidate Cancelled' })
-      .eq('id', order.application_id);
-      
-    if (appUpdateError) {
-        console.error('Warning: Could not update application status to Candidate Cancelled', appUpdateError);
-    }
-
-    // 5. Create platform notification for job poster/company
-    const notificationMessage = `A candidate cancelled an accepted job for ${order.job?.title || 'Unknown Job'}. Reason: ${reason}.`;
+    // Create platform notification for job poster/company
+    const notificationMessage = `A candidate cancelled an accepted job for ${res.job_title || 'Unknown Job'}. Reason: ${reason}.`;
     
-    // We send this to the poster_id
-    if (order.job?.poster_id) {
-        try {
-            await createPlatformNotification({
-                userId: order.job.poster_id,
-                title: 'Job Engagement Cancelled',
-                message: notificationMessage,
-                type: 'job_cancelled',
-                linkUrl: `/jobs/my-postings/${order.job_id}/applicants`
-            });
-        } catch (notifErr) {
-            console.error('Failed to create platform notification:', notifErr);
-        }
+    if (res.poster_id) {
+      try {
+        await createPlatformNotification({
+          userId: res.poster_id,
+          title: 'Job Engagement Cancelled',
+          message: notificationMessage,
+          type: 'job_cancelled',
+          linkUrl: `/jobs/my-postings/${res.job_id}/applicants`
+        });
+      } catch (notifErr) {
+        console.error('Failed to create platform notification:', notifErr);
+      }
     }
-
-    // TODO: Send or prepare email notification
-    // if existing email infrastructure exists, call it here.
 
     // Record reputation if safe (Stage 3E preparation)
     try {
-      await refreshCandidateReputation(userId);
+      if (userId) await refreshCandidateReputation(userId);
     } catch (repErr) {
       console.error('Failed to refresh candidate reputation:', repErr);
     }
 
     // Stage 3D-1: Process financial distribution (non-blocking)
     try {
-      const finResult = await processCandidateCancellationFinancials(order.id);
+      const finResult = await processCandidateCancellationFinancials(res.order_id);
       if (!finResult.success && !finResult.skipped) {
         console.warn('Financial processing warning (candidate cancel):', finResult.error);
       }
@@ -201,9 +152,9 @@ export async function cancelJobOrderByCandidate({ jobOrderId, reason, remarks })
       console.error('Financial processing failed (candidate cancel) — cancellation stands:', finErr);
     }
 
-    if (order.job_id) {
-      await checkAndNotifyVacancyReopened(order.job_id);
-      await handleOccupancyChange(order.job_id);
+    if (res.job_id) {
+      await checkAndNotifyVacancyReopened(res.job_id);
+      await handleOccupancyChange(res.job_id);
     }
 
     return { success: true };
@@ -220,93 +171,43 @@ export async function cancelJobOrderByCandidate({ jobOrderId, reason, remarks })
 export async function cancelJobOrderByCompany({ jobOrderId, reason, remarks }) {
   try {
     const supabase = await createClient();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-    if (userError || !user) {
-      throw new Error('Unauthorized');
-    }
-
-    const userId = user.id;
-
-    // 1. Fetch job order and job to verify ownership
-    const { data: order, error: orderError } = await supabase
-      .from('job_orders')
-      .select('*, job:jobs(*)')
-      .eq('id', jobOrderId)
-      .maybeSingle();
-
-    if (orderError || !order) {
-      throw new Error('Job order not found');
-    }
-
-    // Verify company/poster identity
-    if (order.job.poster_id !== userId) {
-      throw new Error('Unauthorized: only the job poster can cancel this engagement');
-    }
-
-    // Verify status
-    if (order.status !== 'Active') {
-      throw new Error(`Cannot cancel job order that is ${order.status}`);
-    }
-
-    // 2. Insert job_cancellations row
-    const { error: cancelInsertError } = await supabase
-      .from('job_cancellations')
-      .insert({
-        job_order_id: order.id,
-        job_id: order.job_id,
-        application_id: order.application_id,
-        cancelled_by: userId,
-        cancelled_by_type: 'company',
-        cancellation_reason: reason,
-        cancellation_remarks: remarks || null
+    const { data: res, error: rpcError } = await supabase
+      .rpc('cancel_job_order_by_company', {
+        p_job_order_id: jobOrderId,
+        p_reason: reason,
+        p_remarks: remarks || null
       });
 
-    if (cancelInsertError) throw new Error(`Cancellation record error: ${cancelInsertError.message}`);
+    if (rpcError) throw new Error(rpcError.message);
+    if (!res || !res.success) throw new Error(res?.message || res?.error || 'Failed to cancel engagement.');
 
-    // 3. Update job_order.status
-    const { error: orderUpdateError } = await supabase
-      .from('job_orders')
-      .update({ status: 'Company Cancelled' })
-      .eq('id', order.id);
-
-    if (orderUpdateError) throw new Error(`Order update error: ${orderUpdateError.message}`);
-
-    // 4. Optionally update application status to 'Company Cancelled'
-    const { error: appUpdateError } = await supabase
-      .from('applications')
-      .update({ status: 'Company Cancelled' })
-      .eq('id', order.application_id);
-      
-    if (appUpdateError) {
-        console.error('Warning: Could not update application status to Company Cancelled', appUpdateError);
-    }
-
-    // 5. Create platform notification for candidate
-    const companyName = order.job.company || 'A company';
-    const notificationMessage = `${companyName} cancelled the engagement for ${order.job?.title || 'Unknown Job'}.`;
+    // Create platform notification for candidate
+    const notificationMessage = `The employer cancelled the engagement for ${res.job_title || 'Unknown Job'}.`;
     
-    try {
+    if (res.candidate_id) {
+      try {
         await createPlatformNotification({
-            userId: order.candidate_id,
-            title: 'Job Engagement Cancelled',
-            message: notificationMessage,
-            type: 'job_cancelled',
-            linkUrl: `/jobs/my-applications`
+          userId: res.candidate_id,
+          title: 'Job Engagement Cancelled',
+          message: notificationMessage,
+          type: 'job_cancelled',
+          linkUrl: `/jobs/my-applications`
         });
-    } catch (notifErr) {
+      } catch (notifErr) {
         console.error('Failed to create platform notification:', notifErr);
-    }
+      }
 
-    try {
-        await refreshCandidateReputation(order.applicant_id);
-    } catch (repErr) {
+      try {
+        await refreshCandidateReputation(res.candidate_id);
+      } catch (repErr) {
         console.error('Failed to refresh candidate reputation:', repErr);
+      }
     }
 
     // Stage 3D-1: Process financial distribution (non-blocking)
     try {
-      const finResult = await processCompanyCancellationFinancials(order.id);
+      const finResult = await processCompanyCancellationFinancials(res.order_id);
       if (!finResult.success && !finResult.skipped) {
         console.warn('Financial processing warning (company cancel):', finResult.error);
       }
@@ -314,9 +215,9 @@ export async function cancelJobOrderByCompany({ jobOrderId, reason, remarks }) {
       console.error('Financial processing failed (company cancel) — cancellation stands:', finErr);
     }
 
-    if (order.job_id) {
-      await checkAndNotifyVacancyReopened(order.job_id);
-      await handleOccupancyChange(order.job_id);
+    if (res.job_id) {
+      await checkAndNotifyVacancyReopened(res.job_id);
+      await handleOccupancyChange(res.job_id);
     }
 
     return { success: true };

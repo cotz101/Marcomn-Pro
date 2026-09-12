@@ -604,19 +604,25 @@ export default function ApplicantsPage() {
   const handleStatusChange = async (applicationId, newStatus) => {
     try {
       const supabase = createClient();
-      const { error } = await supabase
-        .from('applications')
-        .update({ status: newStatus })
-        .eq('id', applicationId);
+      const { data: res, error } = await supabase
+        .rpc('employer_update_application_status', {
+          p_application_id: applicationId,
+          p_new_status: newStatus
+        });
 
-      if (error) throw error;
+      if (error || (res && !res.success)) {
+        const errMsg = res?.message || error?.message || 'Failed to update application status';
+        throw new Error(errMsg);
+      }
+
+      const authoritativeStatus = res.status || newStatus;
 
       setApplicants((prev) =>
-        prev.map((app) => (app.id === applicationId ? { ...app, status: newStatus } : app))
+        prev.map((app) => (app.id === applicationId ? { ...app, status: authoritativeStatus } : app))
       );
 
       if (showToast) {
-        showToast(`Application status updated to "${newStatus === 'Rejected' ? 'Job Unsuccessful' : newStatus}"`, 'success');
+        showToast(`Application status updated to "${authoritativeStatus === 'Rejected' ? 'Job Unsuccessful' : authoritativeStatus}"`, 'success');
       }
     } catch (err) {
       console.error('Error updating application status:', err);
@@ -630,27 +636,24 @@ export default function ApplicantsPage() {
     if (!appToOffer) return;
     try {
       const supabase = createClient();
-      const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + selectedExpiryHours);
+      const { data: res, error } = await supabase
+        .rpc('employer_send_job_offer', {
+          p_application_id: appToOffer.id,
+          p_expiry_hours: selectedExpiryHours
+        });
 
-      const { error } = await supabase
-        .from('applications')
-        .update({ 
-          status: 'Offered',
-          offer_sent_at: new Date().toISOString(),
-          offer_expires_at: expiresAt.toISOString(),
-          offer_expiry_hours: selectedExpiryHours
-        })
-        .eq('id', appToOffer.id);
-
-      if (error) throw error;
+      if (error || (res && !res.success)) {
+        const errMsg = res?.message || error?.message || 'Failed to send offer';
+        throw new Error(errMsg);
+      }
 
       setApplicants((prev) =>
         prev.map((app) => (app.id === appToOffer.id ? { 
           ...app, 
-          status: 'Offered',
-          offer_sent_at: new Date().toISOString(),
-          offer_expires_at: expiresAt.toISOString()
+          status: res.status || 'Offered',
+          offer_sent_at: res.offer_sent_at,
+          offer_expires_at: res.offer_expires_at,
+          offer_expiry_hours: res.offer_expiry_hours
         } : app))
       );
 

@@ -222,20 +222,21 @@ export default function OpportunityDetailsPage() {
     setIsWithdrawing(true);
     try {
       const supabase = createClient();
-      const newCount = (myApplication.withdrawal_count ?? 0) + 1;
-      const { data: updated, error } = await supabase
-        .from('applications')
-        .update({ status: 'Withdrawn', withdrawal_count: newCount })
-        .eq('id', myApplication.id)
-        .select('id, status, withdrawal_count, documents')
-        .maybeSingle();
+      const { data: res, error } = await supabase
+        .rpc('candidate_withdraw_application', {
+          p_application_id: myApplication.id
+        });
 
-      if (error) {
-        if (showToast) showToast('Failed to withdraw: ' + error.message, 'error');
+      if (error || (res && !res.success)) {
+        const errMsg = res?.message || error?.message || 'Failed to withdraw';
+        if (showToast) showToast(errMsg, 'error');
+        else alert(errMsg);
       } else {
-        if (updated) {
-          setMyApplication(updated);
-        }
+        setMyApplication(prev => ({
+          ...prev,
+          status: res.status || 'Withdrawn',
+          withdrawal_count: res.withdrawal_count ?? ((prev?.withdrawal_count ?? 0) + 1)
+        }));
         setSelectedFiles([]);
         if (showToast) showToast('Application withdrawn.', 'success');
       }
@@ -254,25 +255,25 @@ export default function OpportunityDetailsPage() {
       const supabase = createClient();
       const uploadedDocs = selectedFiles.length > 0
         ? await uploadApplicationDocuments(supabase, currentUser.id, selectedFiles)
-        : [];
+        : null;
 
-      const { data: updated, error } = await supabase
-        .from('applications')
-        .update({
-          status: 'Pending',
-          documents: uploadedDocs,
-          applied_at: new Date().toISOString(),
-        })
-        .eq('id', myApplication.id)
-        .select('id, status, withdrawal_count, documents')
-        .maybeSingle();
+      const { data: res, error } = await supabase
+        .rpc('candidate_reapply_application', {
+          p_application_id: myApplication.id,
+          p_documents: uploadedDocs
+        });
 
-      if (error) {
-        if (showToast) showToast('Failed to re-apply: ' + error.message, 'error');
+      if (error || (res && !res.success)) {
+        const errMsg = res?.message || error?.message || 'Failed to re-apply';
+        if (showToast) showToast(errMsg, 'error');
+        else alert(errMsg);
       } else {
-        if (updated) {
-          setMyApplication(updated);
-        }
+        setMyApplication(prev => ({
+          ...prev,
+          status: res.status || 'Pending',
+          applied_at: res.applied_at || new Date().toISOString(),
+          documents: uploadedDocs || prev?.documents
+        }));
         setSelectedFiles([]);
         if (showToast) showToast('Re-application submitted!', 'success');
       }
