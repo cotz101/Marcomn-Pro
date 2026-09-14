@@ -171,6 +171,7 @@ export function ProfileProvider({ children, userId, userEmail }) {
         message_privacy: data.message_privacy || 'connections',
         global_role: data.global_role || 'guest_user',
         admin_permissions: activePermissions,
+        admin_roles: activeRoles,
         is_platform_admin: activeRoles.length > 0 || ['super_admin', 'admin', 'brand_manager'].includes(data.global_role || 'guest_user'),
       });
     } else {

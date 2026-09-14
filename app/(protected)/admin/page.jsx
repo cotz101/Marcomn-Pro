@@ -18,7 +18,8 @@ import {
   ToggleRight,
   Receipt,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  BookOpen
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -35,6 +36,7 @@ export default function PlatformAdminDashboard() {
   if (!mounted) return null;
 
   const isLegacyAdmin = profile && ['super_admin', 'admin', 'brand_manager'].includes(profile?.global_role);
+  const isSuperAdmin = profile?.admin_roles?.includes('super_admin') || profile?.global_role === 'super_admin';
   const perms = profile?.admin_permissions || [];
   const hasPerm = (key) => isLegacyAdmin || perms.includes(key);
 
@@ -99,6 +101,13 @@ export default function PlatformAdminDashboard() {
           icon: <FileText size={20} />,
           href: '/admin/content',
           active: hasContentManagement,
+        },
+        {
+          name: 'Operations & Handover',
+          description: 'Access operational runbooks, handover packs, and launch procedures.',
+          icon: <BookOpen size={20} />,
+          href: '/admin/operations',
+          active: isSuperAdmin,
         },
         {
           name: 'Branding / Logo',
