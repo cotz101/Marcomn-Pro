@@ -85,29 +85,47 @@ export default function LoginPage() {
           {/* Email step */}
           {step === 'email' && (
             <>
-              <div className="mb-6">
+              <div className="mb-5">
                 <h1 className="text-xl font-bold mb-1" style={{ color: '#0e2a4d' }}>Sign in</h1>
                 <p className="text-sm text-gray-400">We'll send a secure code to your email.</p>
               </div>
 
-              <form onSubmit={handleSendOtp} className="flex flex-col gap-3">
+              <form onSubmit={handleSendOtp} className="flex flex-col gap-3.5">
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+                  className="w-full min-h-[44px] px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-normal text-slate-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
                 />
                 {error && <p className="text-red-400 text-xs">{error}</p>}
                 <button
                   type="submit"
                   disabled={sending}
-                  className="w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-60"
+                  className="w-full min-h-[44px] py-2.5 px-4 rounded-xl text-sm font-bold text-white transition-all flex items-center justify-center cursor-pointer shadow-sm hover:opacity-95 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{ backgroundColor: '#0e2a4d' }}
                 >
                   {sending ? 'Sending…' : 'Send Secure Code'}
                 </button>
+
+                <p className="pt-1.5 text-center text-xs leading-relaxed text-slate-500">
+                  By continuing, you agree to Marcomn&apos;s{' '}
+                  <Link
+                    href="/legal/terms"
+                    className="font-medium text-[#007f9b] underline decoration-[#00B4D8]/40 underline-offset-2 hover:text-[#005f74] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#007f9b] rounded-xs"
+                  >
+                    Terms of Use
+                  </Link>{' '}
+                  and acknowledge our{' '}
+                  <Link
+                    href="/legal/privacy"
+                    className="font-medium text-[#007f9b] underline decoration-[#00B4D8]/40 underline-offset-2 hover:text-[#005f74] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#007f9b] rounded-xs"
+                  >
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
               </form>
             </>
           )}
@@ -115,14 +133,14 @@ export default function LoginPage() {
           {/* OTP step */}
           {step === 'otp' && (
             <>
-              <div className="mb-6">
+              <div className="mb-5">
                 <h1 className="text-xl font-bold mb-1" style={{ color: '#0e2a4d' }}>Check your inbox</h1>
                 <p className="text-sm text-gray-400">
                   6-digit code sent to <span className="font-medium text-gray-600">{email}</span>
                 </p>
               </div>
 
-              <form onSubmit={handleVerify} className="flex flex-col gap-5">
+              <form onSubmit={handleVerify} className="flex flex-col gap-4">
                 <div className="flex gap-2 justify-center">
                   {otp.map((digit, i) => (
                     <input
@@ -134,7 +152,7 @@ export default function LoginPage() {
                       value={digit}
                       onChange={(e) => handleOtpChange(i, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                      className="w-10 h-12 text-center text-lg font-bold border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-400 transition"
+                      className="w-10 h-12 text-center text-lg font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 transition"
                       style={{ color: '#0e2a4d' }}
                     />
                   ))}
@@ -145,17 +163,17 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={otp.join('').length !== 6}
-                  className="w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-40"
+                  className="w-full min-h-[44px] py-2.5 px-4 rounded-xl text-sm font-bold text-white transition-all flex items-center justify-center cursor-pointer shadow-sm hover:opacity-95 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ backgroundColor: '#0e2a4d' }}
                 >
                   Verify &amp; Sign in
                 </button>
 
-                <div className="flex justify-between text-xs text-gray-400">
-                  <button type="button" onClick={() => setStep('email')} className="hover:text-gray-600">
+                <div className="flex justify-between items-center text-xs text-gray-400 pt-1">
+                  <button type="button" onClick={() => setStep('email')} className="hover:text-gray-600 cursor-pointer py-1">
                     ← Back
                   </button>
-                  <button type="button" onClick={() => { setOtp(['','','','','','']); handleSendOtp({ preventDefault: () => {} }); }} className="hover:text-blue-500">
+                  <button type="button" onClick={() => { setOtp(['','','','','','']); handleSendOtp({ preventDefault: () => {} }); }} className="hover:text-blue-500 cursor-pointer py-1">
                     Resend code
                   </button>
                 </div>
@@ -165,8 +183,8 @@ export default function LoginPage() {
         </div>
       </main>
 
-      <footer className="text-center py-5 text-xs text-gray-300">
-        © 2026 Marcomn · <span className="text-blue-400">The professional network.</span>
+      <footer className="text-center py-5 text-xs text-slate-400">
+        © 2026 Marcomn · <span className="text-blue-500">The professional network.</span>
       </footer>
     </div>
   );
