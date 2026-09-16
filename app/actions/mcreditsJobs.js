@@ -7,7 +7,7 @@ import {
   getMCreditSetting,
   createWalletTransaction
 } from '@/lib/services/mcreditService';
-import { createPlatformNotification } from '@/app/actions/notifications';
+import { createPlatformNotification } from '@/lib/server/notifications';
 import { handleOccupancyChange } from '@/app/actions/cache';
 
 /**

@@ -2,7 +2,7 @@
 
 import { createClient, createServiceClient } from '@/lib/supabase-server';
 import Stripe from 'stripe';
-import { createPlatformNotification } from './notifications';
+import { createPlatformNotification } from '@/lib/server/notifications';
 import { isPlatformAdmin, userHasAdminPermission } from '@/lib/adminPermissions';
 import { logPlatformAdminAction } from '@/lib/adminAuditLogger';
 

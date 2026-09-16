@@ -233,9 +233,10 @@ export default function DiscussionPost({ post, groupId }) {
           recipient_id: post.user_id,
           sender_id: userId,
           link: '/mnetwork/groups/' + groupId + '?focus=' + post.id,
-          content: 'Liked your post in the group',
-          group_id: groupId,
-          is_read: false
+          title: 'New Group Like',
+          body: 'Liked your post in the group',
+          is_read: false,
+          metadata: { group_id: groupId }
         }])
       ]).catch(err => console.error('Failed to send group like notification:', err));
     }
@@ -353,9 +354,10 @@ export default function DiscussionPost({ post, groupId }) {
                   recipient_id: mentionedUserId,
                   sender_id: userId,
                   link: '/mnetwork/groups/' + groupId + '?focus=' + data.id,
-                  content: 'Mentioned you in a group discussion',
-                  group_id: groupId,
-                  is_read: false
+                  title: 'New Group Mention',
+                  body: 'Mentioned you in a group discussion',
+                  is_read: false,
+                  metadata: { group_id: groupId }
                 }]);
               })
             );

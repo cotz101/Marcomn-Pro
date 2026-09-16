@@ -1,6 +1,6 @@
-'use server'
-
+'use server';
 import { createClient } from '@/lib/supabase-server';
+import { createPlatformNotification } from '@/lib/server/notifications';
 
 export async function createApplicationMessageNotification(threadId, companyIdentityId = null) {
   const supabase = await createClient();
@@ -130,31 +130,6 @@ export async function sendNotification(targetUserId, senderUserId, message, conv
   return { success: true };
 }
 
-export async function createPlatformNotification({ userId, title, message, type, linkUrl, senderId = null, metadata = null }) {
-  const supabase = await createClient();
-  
-  const { error } = await supabase
-    .from('notifications')
-    .insert([
-      {
-        recipient_id: userId,
-        sender_id: senderId,
-        type: type || 'system',
-        title: title,
-        body: message,
-        link: linkUrl || null,
-        is_read: false,
-        metadata: metadata || {}
-      }
-    ]);
-  
-  if (error) {
-    console.error('Server Action DB Error:', error);
-    return { success: false, error: error.message };
-  }
-  
-  return { success: true };
-}
 
 export async function checkAndNotifyVacancyReopened(jobId) {
   const supabase = await createClient();

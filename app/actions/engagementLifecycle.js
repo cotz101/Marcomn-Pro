@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
-import { createPlatformNotification } from '@/app/actions/notifications';
+import { createPlatformNotification } from '@/lib/server/notifications';
 import { refreshCandidateReputation } from '@/app/actions/reputation';
 import { revalidatePath } from 'next/cache';
 

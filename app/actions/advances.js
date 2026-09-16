@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
+import { createClient, createServiceClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -16,11 +16,12 @@ async function getAuthSession() {
 }
 
 /**
- * Helper to send notifications inside database transactions
+ * Helper to send notifications inside database transactions (using service client for trusted advance transitions)
  */
-async function sendNotification(supabase, { recipientId, senderId, type, title, body, link }) {
+async function sendNotification(_supabase, { recipientId, senderId, type, title, body, link }) {
   try {
-    await supabase.from('notifications').insert({
+    const serviceClient = createServiceClient();
+    await serviceClient.from('notifications').insert({
       recipient_id: recipientId,
       sender_id: senderId,
       type,

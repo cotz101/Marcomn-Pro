@@ -1,7 +1,8 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
-import { createPlatformNotification, checkAndNotifyVacancyReopened } from './notifications';
+import { checkAndNotifyVacancyReopened } from './notifications';
+import { createPlatformNotification } from '@/lib/server/notifications';
 import { handleOccupancyChange } from './cache';
 import {
   processCandidateCancellationFinancials,
