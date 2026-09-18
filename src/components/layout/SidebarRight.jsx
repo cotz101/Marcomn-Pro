@@ -205,7 +205,7 @@ export default function SidebarRight() {
 
   if (isMBlogPage) {
     return (
-      <aside className="sidebar-right sticky top-24 hidden lg:block w-[300px]">
+      <aside className="sidebar-right sidebar-right-mblog sticky top-24 hidden lg:block w-[300px]">
         <div className="flex flex-col gap-5">
           {/* Top Most Liked */}
           <div className="card p-4 border border-[#f0f0f0] bg-white rounded-lg shadow-sm">

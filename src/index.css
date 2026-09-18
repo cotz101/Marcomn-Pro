@@ -2305,6 +2305,12 @@ html.dark .btn-primary {
     overflow-y: auto !important;
     overscroll-behavior-y: contain;
   }
+
+  .sidebar-right.sidebar-right-mblog {
+    max-height: none !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
 }
 
 @media (min-width: 1024px) {
