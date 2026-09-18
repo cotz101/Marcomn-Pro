@@ -198,7 +198,7 @@ export default function SidebarLeft() {
 
       const sortedAuthors = Object.values(authorCountsMap)
         .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
+        .slice(0, 3);
 
       setTopContributors(sortedAuthors);
     } catch (err) {

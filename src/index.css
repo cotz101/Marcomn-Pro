@@ -2293,7 +2293,13 @@ html.dark .btn-primary {
 
 /* 4. Grid & Sidebar Logic */
 @media (min-width: 768px) {
-  .sidebar-left, .sidebar-right {
+  .sidebar-left {
+    max-height: none !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
+
+  .sidebar-right {
     max-height: calc(100dvh - 96px) !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
