@@ -2,8 +2,16 @@
 
 import React, { useState, useEffect, memo } from 'react';
 import Link from 'next/link';
-import { User, Calendar, ThumbsUp, MessageSquare, Save, X, Loader2, BookOpen, FileText, Eye, Download } from 'lucide-react';
+import { User, Calendar, ThumbsUp, MessageSquare, Save, X, Loader2, BookOpen, FileText, Eye, Download, Building2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
+
+function getCompanyInitials(name) {
+  if (!name || typeof name !== 'string') return '';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+}
 import { useProfile } from '@/app/context/ProfileContext';
 import LogbookActionBar from './LogbookActionBar';
 import RichTextEditor from '@/src/components/common/RichTextEditor';
@@ -125,6 +133,12 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
     setCommentsList(post.comments || []);
   }, [post.likes, post.comments]);
 
+  const [avatarError, setAvatarError] = useState(false);
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [post.id, post.company?.logo_url]);
+
   const isCompanyPost = !!(post.posted_as_company_id || post.company);
 
   // Resilient author resolver with strict identity isolation
@@ -135,7 +149,7 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
       return {
         id: companyObj?.id || post.posted_as_company_id,
         name: companyObj?.name || 'Company Profile',
-        avatar_url: companyObj?.logo_url || '/company_placeholder.png',
+        avatar_url: companyObj?.logo_url || null,
         headline: companyObj?.industry || 'Corporate Identity',
         isCompany: true
       };
@@ -861,17 +875,31 @@ const LogbookPostCard = memo(({ post, userId, onPostDeleted, onPostUpdated, reso
                 className="shrink-0 cursor-pointer block"
                 aria-label="Open poster profile"
               >
-                {author.avatar_url ? (
+                {author.avatar_url && !avatarError ? (
                   <img
                     src={author.avatar_url}
                     alt={author.name}
+                    onError={() => setAvatarError(true)}
                     className="w-10 h-10 object-cover border border-gray-100 shadow-xs hover:opacity-90 transition-opacity"
                     style={{ borderRadius: author.isCompany ? '8px' : '50%' }}
                   />
+                ) : author.isCompany ? (
+                  <div
+                    className="w-10 h-10 bg-slate-100 border border-slate-200/80 rounded-lg flex items-center justify-center shadow-xs text-[#004173] font-bold select-none hover:bg-slate-200/80 transition-colors"
+                    aria-label={`${author.name || 'Company'} company`}
+                    role="img"
+                  >
+                    {getCompanyInitials(author.name) ? (
+                      <span className="text-xs font-bold text-[#004173]">
+                        {getCompanyInitials(author.name)}
+                      </span>
+                    ) : (
+                      <Building2 size={18} className="text-[#004173]" />
+                    )}
+                  </div>
                 ) : (
                   <div 
-                    className="w-10 h-10 bg-gray-100 flex items-center justify-center border border-gray-100 hover:bg-gray-200 transition-colors"
-                    style={{ borderRadius: author.isCompany ? '8px' : '50%' }}
+                    className="w-10 h-10 bg-gray-100 flex items-center justify-center border border-gray-100 hover:bg-gray-200 transition-colors rounded-full"
                   >
                     <User size={18} className="text-gray-400" />
                   </div>

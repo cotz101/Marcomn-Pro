@@ -3,8 +3,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { useProfile } from '@/app/context/ProfileContext';
-import { Image as ImageIcon, X, Loader2, Globe, FileText } from 'lucide-react';
+import { Image as ImageIcon, X, Loader2, Globe, FileText, Building2 } from 'lucide-react';
 import RichTextEditor from '@/src/components/common/RichTextEditor';
+
+function getCompanyInitials(name) {
+  if (!name || typeof name !== 'string') return '';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+}
 
 const detectMediaType = (url, type) => {
   if (!url) return null;
@@ -59,8 +67,13 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }) {
   const supabase = createClient();
 
   const isCompany = currentIdentity?.type === 'company';
-  const identityImage = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (profile?.profilePic || '/avatar_placeholder.png');
+  const identityImage = isCompany ? (currentIdentity.data?.logo_url || null) : (profile?.profilePic || '/avatar_placeholder.png');
   const identityName = isCompany ? (currentIdentity.data?.name || 'Company') : (profile?.name || 'Maritime Professional');
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    setLogoError(false);
+  }, [currentIdentity, isOpen]);
 
   const [postMode, setPostMode] = useState('quick'); // 'quick' | 'article'
   const [submitting, setSubmitting] = useState(false);
@@ -333,13 +346,28 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }) {
             
             {/* User-Avatar Alignment */}
             <div className="flex-shrink-0">
-              {identityImage ? (
+              {identityImage && !logoError ? (
                 <img
                   src={identityImage}
                   alt={identityName}
+                  onError={() => setLogoError(true)}
                   className="w-11 h-11 object-cover border border-gray-100 shadow-xs"
                   style={{ borderRadius: isCompany ? '8px' : '50%' }}
                 />
+              ) : isCompany ? (
+                <div
+                  className="w-11 h-11 bg-slate-100 border border-slate-200/80 rounded-lg flex items-center justify-center shadow-xs text-[#004173] font-bold select-none"
+                  aria-label={`${identityName} company`}
+                  role="img"
+                >
+                  {getCompanyInitials(identityName) ? (
+                    <span className="text-sm font-extrabold text-[#004173]">
+                      {getCompanyInitials(identityName)}
+                    </span>
+                  ) : (
+                    <Building2 size={20} className="text-[#004173]" />
+                  )}
+                </div>
               ) : (
                 <div className="w-11 h-11 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shadow-inner">
                   <span className="text-sm font-extrabold text-blue-900 font-sans">

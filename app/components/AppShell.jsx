@@ -27,7 +27,8 @@ import {
   Lightbulb,
   Anchor,
   BookOpen,
-  ArrowLeft
+  ArrowLeft,
+  Building2
 } from 'lucide-react';
 import { useProfile } from '@/app/context/ProfileContext';
 import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
@@ -39,6 +40,16 @@ import NotificationDropdown from '@/src/components/layout/NotificationDropdown';
 import SidebarLeft from '@/src/components/layout/SidebarLeft';
 import SidebarRight from '@/src/components/layout/SidebarRight';
 import { createClient } from '@/lib/supabase';
+
+function getCompanyInitials(name) {
+  if (!name || typeof name !== 'string') return '';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  }
+  return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+}
 
 export default function AppShell({ children, userEmail, userId }) {
   const router = useRouter();
@@ -63,6 +74,7 @@ export default function AppShell({ children, userEmail, userId }) {
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [companyLogoError, setCompanyLogoError] = useState(false);
   const unreadCount = notifications.filter(n => !n.is_read).length;
   const unreadMessageCount = notifications.filter(n => 
     !n.is_read && 
@@ -261,7 +273,14 @@ export default function AppShell({ children, userEmail, userId }) {
 
 
   const isCompany = currentIdentity?.type === 'company';
-  const identityImage = isCompany ? (currentIdentity.data?.logo_url || '/company_placeholder.png') : (profile?.profilePic || '/avatar_placeholder.png');
+  const companyName = currentIdentity?.data?.name || '';
+  const companyLogo = currentIdentity?.data?.logo_url || null;
+  const companyInitials = isCompany ? getCompanyInitials(companyName) : '';
+  const personalAvatar = profile?.profilePic || '/avatar_placeholder.png';
+
+  useEffect(() => {
+    setCompanyLogoError(false);
+  }, [currentIdentity?.id, currentIdentity?.data?.logo_url]);
 
   return (
     <div className={`flex flex-col ${pathname === '/messages' ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'} bg-[#F4F4F4]`}>
@@ -418,12 +437,37 @@ export default function AppShell({ children, userEmail, userId }) {
               {/* Avatar (Mobile + Desktop) */}
               <div className="relative ml-1 md:ml-2 pr-2 flex-shrink-0" ref={avatarRef}>
                 <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => setDropdownOpen(!dropdownOpen)}>
-                  <img 
-                     src={identityImage} 
-                     alt="Me" 
-                     className="header-avatar-img flex-shrink-0" 
-                     style={{ width: '34px', height: '34px', objectFit: 'cover', borderRadius: isCompany ? '8px' : '50%' }}
-                  />
+                  {isCompany ? (
+                    companyLogo && !companyLogoError ? (
+                      <img
+                        src={companyLogo}
+                        alt={`${companyName || 'Company'} logo`}
+                        className="header-avatar-img flex-shrink-0"
+                        style={{ width: '34px', height: '34px', objectFit: 'cover', borderRadius: '8px' }}
+                        onError={() => setCompanyLogoError(true)}
+                      />
+                    ) : (
+                      <div
+                        className="header-avatar-img flex-shrink-0 flex items-center justify-center bg-slate-100 text-[#004173] font-bold text-xs border border-slate-200/80 select-none"
+                        style={{ width: '34px', height: '34px', borderRadius: '8px' }}
+                        aria-label={`${companyName || 'Company'} company`}
+                        role="img"
+                      >
+                        {companyInitials ? (
+                          <span>{companyInitials}</span>
+                        ) : (
+                          <Building2 size={16} className="text-[#004173]" />
+                        )}
+                      </div>
+                    )
+                  ) : (
+                    <img
+                      src={personalAvatar}
+                      alt={profile?.name || 'Me'}
+                      className="header-avatar-img flex-shrink-0"
+                      style={{ width: '34px', height: '34px', objectFit: 'cover', borderRadius: '50%' }}
+                    />
+                  )}
                   <ChevronDown size={14} className="hidden md:block flex-shrink-0" />
                 </div>
 
