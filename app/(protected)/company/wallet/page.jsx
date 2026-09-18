@@ -554,7 +554,7 @@ export default function CompanyWalletPage() {
   };
 
   return (
-    <div className="company-wallet-page-root w-full max-w-5xl mx-auto pb-12 font-sans">
+    <div className="wallet-page-root company-wallet-page-root w-full font-sans pb-12 pt-4 sm:pt-6">
       {/* Navigation */}
       <Link
         href={`/company/${myCompany.id}`}
@@ -578,82 +578,85 @@ export default function CompanyWalletPage() {
       )}
 
       {/* Top row: Wallet header & About MCredits side by side */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 mb-6 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-5 items-stretch">
         {/* Left: Wallet Header Info */}
-        <div className="xl:col-span-8">
-          <div className="wallet-card-internal bg-white border border-gray-100 rounded-2xl shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 h-full">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-blue-50 text-blue-900 rounded-xl flex items-center justify-center shrink-0 border border-blue-100">
-                {myCompany.logo_url ? (
+        <div className="lg:col-span-8">
+          <div className="wallet-card-internal bg-white border border-gray-100 rounded-2xl shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 h-full">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 bg-blue-50 text-blue-900 rounded-xl flex items-center justify-center shrink-0 border border-blue-100 overflow-hidden">
+                {myCompany?.logo_url ? (
                   <img src={myCompany.logo_url} alt={myCompany.name} className="w-full h-full object-cover rounded-xl" />
                 ) : (
-                  <Building2 size={24} />
+                  <Building2 size={22} />
                 )}
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-[#0e2a4d] leading-tight">Company Wallet</h1>
-                <p className="text-sm text-gray-500 mt-1 font-medium flex items-center gap-2">
-                  <span>{myCompany.name}</span>
+                <h1 className="text-xl sm:text-2xl font-bold text-[#0e2a4d] leading-tight">Company Wallet</h1>
+                <p className="text-sm text-gray-500 mt-0.5 font-medium flex items-center gap-2">
+                  <span>{myCompany?.name || 'Company'}</span>
                 </p>
               </div>
             </div>
 
-            {/* Balance Card */}
-            <div className="bg-slate-50 border border-slate-100 rounded-xl px-6 py-4 flex flex-col sm:items-end w-full sm:w-auto">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Current Balance</span>
-              <div className="flex items-center gap-2 text-[#0e2a4d]">
-                <Coins size={22} className="text-emerald-600" />
-                <span className="text-3xl font-extrabold">{wallet ? Number(wallet.balance).toFixed(2) : '0.00'}</span>
-                <span className="text-sm font-bold text-gray-500 mb-1">MC</span>
-              </div>
-              {wallet && (
-                <div className="flex flex-col items-end gap-2 mt-2">
+            {/* Balance Box */}
+            <div className="bg-slate-50 border border-slate-100 rounded-xl px-5 py-3.5 flex flex-col sm:items-end w-full sm:w-auto">
+              <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full mb-1">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Current Balance</span>
+                {wallet && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wider">
                     {wallet.status}
                   </span>
-                  <button
-                    onClick={() => { setTopupMessage(null); setIsTopupModalOpen(true); }}
-                    className="mt-2 bg-[#002b4e] hover:bg-blue-800 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5"
-                  >
-                    <Plus size={14} />
-                    <span>Request Company Top-Up</span>
-                  </button>
-                </div>
+                )}
+              </div>
+              <div className="flex items-baseline gap-1.5 text-[#0e2a4d]">
+                <Coins size={20} className="text-emerald-600 self-center" />
+                <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">{wallet ? Number(wallet.balance).toFixed(2) : '0.00'}</span>
+                <span className="text-xs font-bold text-gray-500">MC</span>
+              </div>
+              {wallet && (
+                <button
+                  onClick={() => { setTopupMessage(null); setIsTopupModalOpen(true); }}
+                  className="mt-2.5 bg-[#002b4e] hover:bg-[#001f38] text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer border-none"
+                >
+                  <Plus size={14} />
+                  <span>Request Company Top-Up</span>
+                </button>
               )}
             </div>
           </div>
         </div>
 
         {/* Right: Info Widget */}
-        <div className="xl:col-span-4">
-          <div className="about-card-internal bg-[#002b4e] rounded-2xl text-white shadow-sm relative overflow-hidden h-full flex flex-col justify-center">
+        <div className="lg:col-span-4">
+          <div className="about-card-internal bg-[#002b4e] rounded-2xl text-white shadow-sm relative overflow-hidden h-full flex flex-col justify-between">
             {/* Decorative background element */}
-            <div className="absolute -right-6 -top-6 text-blue-800/30">
-              <Coins size={120} />
+            <div className="absolute -right-4 -top-4 text-blue-800/25 pointer-events-none select-none">
+              <Coins size={100} />
             </div>
             
             <div className="relative z-10">
-              <h3 className="text-base font-bold mb-3 flex items-center gap-2">
-                <Info size={18} className="text-blue-300" />
+              <h3 className="text-sm font-bold mb-2 flex items-center gap-2 text-white">
+                <Info size={16} className="text-blue-300 shrink-0" />
                 <span>About MCredits</span>
               </h3>
               
-              <div className="space-y-3 text-xs text-blue-100/90 leading-relaxed font-medium">
+              <div className="space-y-1.5 text-xs text-blue-100/90 leading-relaxed font-medium">
                 <p>
                   Company MCredits are used for job posting and company-side platform services.
                 </p>
                 <p>
                   Top up your company wallet securely online via card through Stripe for instant credit.
                 </p>
-                <div className="pt-1 select-none">
-                  <Link 
-                    href="/credits" 
-                    className="text-xs text-blue-300 hover:text-white underline font-bold transition-colors"
-                  >
-                    Learn how MCredits work →
-                  </Link>
-                </div>
               </div>
+            </div>
+
+            <div className="relative z-10 pt-2 select-none">
+              <Link
+                href="/credits"
+                className="text-xs text-blue-300 hover:text-white underline font-bold transition-colors inline-block"
+              >
+                Learn how MCredits work →
+              </Link>
             </div>
           </div>
         </div>
@@ -706,14 +709,14 @@ export default function CompanyWalletPage() {
             </p>
 
             {transactions.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm border-collapse">
+              <div className="overflow-x-auto -mx-1 sm:mx-0">
+                <table className="w-full text-left text-sm border-collapse min-w-[620px]">
                   <thead>
                     <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[11px] font-bold">
-                      <th className="pb-3 pr-4">Date</th>
-                      <th className="pb-3 px-2">Details</th>
-                      <th className="pb-3 px-2 text-right">Amount</th>
-                      <th className="pb-3 pl-4 text-right">Balance After</th>
+                      <th className="pb-3 pr-4 pl-1 w-[140px] min-w-[140px]">Date</th>
+                      <th className="pb-3 px-3">Details</th>
+                      <th className="pb-3 px-3 text-right w-[110px] min-w-[110px]">Amount</th>
+                      <th className="pb-3 pl-3 pr-4 text-right w-[130px] min-w-[130px]">Balance After</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 text-gray-700 font-medium">
@@ -721,36 +724,30 @@ export default function CompanyWalletPage() {
                       const isCredit = tx.direction === 'credit';
                       return (
                         <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-4 pr-4 whitespace-nowrap text-xs text-gray-500 font-mono">
-                            {new Date(tx.created_at).toLocaleDateString()}
+                          <td className="py-3.5 pr-4 pl-1 whitespace-nowrap text-xs text-gray-500 font-mono w-[140px] min-w-[140px] align-top">
+                            <span className="font-semibold text-gray-700">{new Date(tx.created_at).toLocaleDateString()}</span>
                             <br/>
                             <span className="text-[10px] text-gray-400">{new Date(tx.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                           </td>
-                          <td className="py-4 px-2">
+                          <td className="py-3.5 px-3 align-top">
                             <div className="flex flex-col gap-1">
                               {tx.jobDetails ? (
                                 <>
-                                  <span className="text-xs font-bold text-slate-800 capitalize truncate max-w-[200px]" title={`Job Posting Fee — ${tx.jobDetails.title}`}>
+                                  <span className="text-xs font-bold text-slate-800 leading-snug">
                                     Job Posting Fee — {tx.jobDetails.title}
                                   </span>
-                                  <span className="text-[11px] text-gray-500 leading-snug max-w-xs">
+                                  <span className="text-[11px] text-gray-500 leading-relaxed">
                                     {(() => {
                                       const note = tx.justification_note || tx.description || '';
                                       const match = note.match(/\(([^)]+)\)/);
                                       return match ? `Posting fee: ${match[1]}` : note;
                                     })()}
-                                    <span className="block text-[9px] text-gray-300 font-mono mt-0.5 truncate max-w-[150px]" title={tx.reference_id}>ID: {tx.reference_id}</span>
+                                    <span className="block text-[9px] text-gray-400 font-mono mt-0.5">ID: {tx.reference_id}</span>
                                   </span>
                                 </>
                               ) : tx.cancellationDetails ? (
                                 <>
-                                  <span className="text-xs font-bold text-slate-800" title={
-                                    tx.reference_type === 'candidate_cancellation'
-                                      ? `Candidate Cancellation Compensation — ${tx.cancellationDetails.candidateName || 'Unknown Candidate'}`
-                                      : tx.reference_type === 'company_cancellation_refund'
-                                      ? `Company Cancellation Refund — ${tx.cancellationDetails.candidateName || 'Unknown Candidate'}`
-                                      : `Platform Share (Candidate Cancel) — ${tx.cancellationDetails.candidateName || 'Unknown Candidate'}`
-                                  }>
+                                  <span className="text-xs font-bold text-slate-800 leading-snug">
                                     {tx.reference_type === 'candidate_cancellation' && (
                                       tx.cancellationDetails.candidateName
                                         ? `Candidate Cancellation Compensation — ${tx.cancellationDetails.candidateName}`
@@ -767,21 +764,21 @@ export default function CompanyWalletPage() {
                                         : 'Platform Share (Candidate Cancel)'
                                     )}
                                   </span>
-                                  <span className="text-[11px] text-gray-500 leading-snug max-w-xs">
+                                  <span className="text-[11px] text-gray-500 leading-relaxed">
                                     {tx.cancellationDetails.jobTitle ? (
                                       `For job: ${tx.cancellationDetails.jobTitle}`
                                     ) : (
                                       tx.justification_note || tx.description || 'No description provided'
                                     )}
-                                    <span className="block text-[9px] text-gray-300 font-mono mt-0.5 truncate max-w-[150px]" title={tx.reference_id}>ID: {tx.reference_id}</span>
+                                    <span className="block text-[9px] text-gray-400 font-mono mt-0.5">ID: {tx.reference_id}</span>
                                   </span>
                                 </>
                               ) : (
                                 <>
-                                  <span className="text-xs font-bold text-slate-800 capitalize">
+                                  <span className="text-xs font-bold text-slate-800 capitalize leading-snug">
                                     {tx.transaction_type.replace('_', ' ')}
                                   </span>
-                                  <span className="text-[11px] text-gray-500 leading-snug max-w-xs" title={tx.justification_note}>
+                                  <span className="text-[11px] text-gray-500 leading-relaxed">
                                     {tx.justification_note || tx.description || 'No description provided'}
                                   </span>
                                 </>
@@ -803,12 +800,12 @@ export default function CompanyWalletPage() {
                               })()}
                             </div>
                           </td>
-                          <td className="py-4 px-2 text-right whitespace-nowrap">
-                            <span className={`inline-flex items-center justify-end gap-1 font-bold ${isCredit ? 'text-emerald-600' : 'text-red-600'}`}>
+                          <td className="py-3.5 px-3 text-right whitespace-nowrap w-[110px] min-w-[110px] align-top">
+                            <span className={`inline-flex items-center justify-end gap-1 font-bold text-sm ${isCredit ? 'text-emerald-600' : 'text-red-600'}`}>
                               {isCredit ? '+' : '-'}{Number(tx.amount).toFixed(2)}
                             </span>
                           </td>
-                          <td className="py-4 pl-4 text-right whitespace-nowrap font-bold text-[#0e2a4d]">
+                          <td className="py-3.5 pl-3 pr-4 text-right whitespace-nowrap font-bold text-sm text-[#0e2a4d] w-[130px] min-w-[130px] align-top">
                             {Number(tx.balance_after).toFixed(2)} MC
                           </td>
                         </tr>
@@ -832,26 +829,26 @@ export default function CompanyWalletPage() {
             </p>
 
             {topupRequests.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm border-collapse">
+              <div className="overflow-x-auto -mx-1 sm:mx-0">
+                <table className="w-full text-left text-sm border-collapse min-w-[550px]">
                   <thead>
                     <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[11px] font-bold">
-                      <th className="pb-3 pr-4">Date</th>
-                      <th className="pb-3 px-2">Amount</th>
-                      <th className="pb-3 px-2">Status</th>
-                      <th className="pb-3 pl-4">Actions</th>
+                      <th className="pb-3 pr-4 pl-1 w-[140px] min-w-[140px]">Date</th>
+                      <th className="pb-3 px-3 w-[120px] min-w-[120px]">Amount</th>
+                      <th className="pb-3 px-3 w-[130px] min-w-[130px]">Status</th>
+                      <th className="pb-3 pl-3 pr-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 text-gray-700 font-medium">
                     {topupRequests.map((req) => (
                       <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-4 pr-4 whitespace-nowrap text-xs text-gray-500 font-mono">
-                          {new Date(req.created_at).toLocaleDateString()}
+                        <td className="py-3.5 pr-4 pl-1 whitespace-nowrap text-xs text-gray-500 font-mono w-[140px] min-w-[140px] align-top">
+                          <span className="font-semibold text-gray-700">{new Date(req.created_at).toLocaleDateString()}</span>
                         </td>
-                        <td className="py-4 px-2 font-bold text-[#0e2a4d]">
+                        <td className="py-3.5 px-3 font-bold text-sm text-[#0e2a4d] w-[120px] min-w-[120px] align-top">
                           {Number(req.amount).toFixed(2)} MC
                         </td>
-                        <td className="py-4 px-2">
+                        <td className="py-3.5 px-3 w-[130px] min-w-[130px] align-top">
                           <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
                             req.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                             req.status === 'Rejected' ? 'bg-red-50 text-red-700 border-red-200' :
@@ -861,11 +858,11 @@ export default function CompanyWalletPage() {
                             {req.status}
                           </span>
                         </td>
-                        <td className="py-4 pl-4 text-xs">
+                        <td className="py-3.5 pl-3 pr-4 text-xs text-right align-top">
                           {req.status === 'Pending' && (
                             <button
                               onClick={() => handleCancelTopup(req.id)}
-                              className="text-red-500 hover:text-red-700 font-semibold mr-3"
+                              className="text-red-500 hover:text-red-700 font-semibold mr-3 cursor-pointer"
                             >
                               Cancel
                             </button>
@@ -878,7 +875,7 @@ export default function CompanyWalletPage() {
                                   if (receipt) setSelectedReceipt(receipt);
                                   else alert('Receipt not generated yet.');
                                 }}
-                                className="text-blue-600 hover:text-blue-800 font-bold hover:underline"
+                                className="text-blue-600 hover:text-blue-800 font-bold hover:underline cursor-pointer"
                               >
                                 View Receipt
                               </button>

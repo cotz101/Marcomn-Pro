@@ -2324,6 +2324,10 @@ html.dark .btn-primary {
     justify-content: center !important;
     align-items: stretch !important;
   }
+
+  .main-grid.hide-sidebar-right {
+    grid-template-columns: 191px 1fr !important;
+  }
   
   .sidebar-left, .sidebar-right {
     display: block !important;
@@ -4682,47 +4686,50 @@ body.liker-modal-active .btn-leave {
   }
 }
 
-/* UI-2 Company Wallet — Internal Card Spacing Standards */
-.wallet-card-internal {
-  padding: 24px !important;
-}
-
-@media (min-width: 640px) {
-  .wallet-card-internal {
-    padding: 28px 32px !important;
-  }
-}
-
-.about-card-internal {
-  padding: 24px 24px !important;
-}
-
-@media (min-width: 640px) {
-  .about-card-internal {
-    padding: 28px 28px !important;
-  }
-}
-
-.history-card-internal {
-  padding: 24px !important;
-}
-
-@media (min-width: 640px) {
-  .history-card-internal {
-    padding: 28px 32px !important;
-  }
-}
-
-/* UI-2 Company Wallet — Mobile Outer Page Gutter Standard */
+/* UI-8 Wallet UI Standards — Shared between Personal & Company Wallet */
+.wallet-page-root,
 .company-wallet-page-root {
+  width: 100% !important;
+  max-width: 100% !important;
   padding-left: 16px !important;
   padding-right: 16px !important;
 }
 
 @media (min-width: 640px) {
+  .wallet-page-root,
   .company-wallet-page-root {
     padding-left: 0px !important;
     padding-right: 0px !important;
+  }
+}
+
+.wallet-card-internal {
+  padding: 20px 20px !important;
+}
+
+@media (min-width: 640px) {
+  .wallet-card-internal {
+    padding: 22px 24px !important;
+  }
+}
+
+.about-card-internal {
+  padding: 20px 20px !important;
+}
+
+@media (min-width: 640px) {
+  .about-card-internal {
+    padding: 22px 24px !important;
+  }
+}
+
+.history-card-internal {
+  padding: 20px 20px !important;
+}
+
+@media (min-width: 640px) {
+  .history-card-internal {
+    padding: 24px 28px !important;
   }
 }
 
