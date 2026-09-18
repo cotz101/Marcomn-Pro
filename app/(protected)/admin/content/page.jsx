@@ -320,23 +320,23 @@ export default function AdminContentPage() {
   }
 
   return (
-    <div className="max-w-[1000px] mx-auto px-4 md:px-8 py-6 md:py-8 pb-[calc(var(--mobile-nav-height,72px)+env(safe-area-inset-bottom)+32px)] md:pb-8 font-sans w-full">
+    <div className="max-w-[1280px] mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 pb-[calc(var(--mobile-nav-height,72px)+env(safe-area-inset-bottom)+32px)] md:pb-8 font-sans w-full">
       {/* Breadcrumbs & Title */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-4 mb-8">
         <button
           onClick={handleBack}
-          className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-gray-500"
+          className="p-2.5 hover:bg-slate-100 rounded-xl transition-colors text-gray-500 hover:text-[#0e2a4d] border border-gray-200/70 bg-white shadow-3xs cursor-pointer"
           title="Back to Admin"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={18} />
         </button>
         <div>
-          <div className="flex items-center gap-2 text-xs text-gray-400 font-bold uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">
             <span>Admin</span>
             <span>/</span>
             <span>Global Settings</span>
           </div>
-          <h1 className="text-xl md:text-2xl font-extrabold text-[#0e2a4d] mt-0.5">
+          <h1 className="text-xl md:text-2xl font-extrabold text-[#0e2a4d] leading-tight">
             Website Content & Legal Pages
           </h1>
         </div>
@@ -345,43 +345,43 @@ export default function AdminContentPage() {
       {/* Main Container Layout */}
       <div className="flex flex-col gap-6">
         {/* Navigation Tabs */}
-        <div className="bg-white border border-gray-150 p-1 rounded-2xl flex w-full shadow-3xs overflow-x-auto select-none gap-1">
+        <div className="bg-slate-100/70 border border-gray-200/80 p-1.5 rounded-2xl flex w-full shadow-3xs overflow-x-auto select-none gap-1.5 mb-2">
           <button
             onClick={() => handleTabChange('pages')}
-            className={`flex-1 py-3 px-4 text-xs font-extrabold text-center rounded-xl transition-all whitespace-nowrap ${
+            className={`flex-1 py-2.5 px-4 text-xs font-bold text-center rounded-xl transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'pages'
-                ? 'bg-[#0e2a4d] text-white shadow-3xs'
-                : 'text-gray-400 hover:text-gray-600 hover:bg-slate-50'
+                ? 'bg-white text-[#0e2a4d] shadow-sm font-extrabold ring-1 ring-gray-200/60'
+                : 'text-gray-500 hover:text-gray-800 hover:bg-white/60'
             }`}
           >
             CMS Pages
           </button>
           <button
             onClick={() => handleTabChange('sections')}
-            className={`flex-1 py-3 px-4 text-xs font-extrabold text-center rounded-xl transition-all whitespace-nowrap ${
+            className={`flex-1 py-2.5 px-4 text-xs font-bold text-center rounded-xl transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'sections'
-                ? 'bg-[#0e2a4d] text-white shadow-3xs'
-                : 'text-gray-400 hover:text-gray-600 hover:bg-slate-50'
+                ? 'bg-white text-[#0e2a4d] shadow-sm font-extrabold ring-1 ring-gray-200/60'
+                : 'text-gray-500 hover:text-gray-800 hover:bg-white/60'
             }`}
           >
             Page Sections
           </button>
           <button
             onClick={() => handleTabChange('faqs')}
-            className={`flex-1 py-3 px-4 text-xs font-extrabold text-center rounded-xl transition-all whitespace-nowrap ${
+            className={`flex-1 py-2.5 px-4 text-xs font-bold text-center rounded-xl transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'faqs'
-                ? 'bg-[#0e2a4d] text-white shadow-3xs'
-                : 'text-gray-400 hover:text-gray-600 hover:bg-slate-50'
+                ? 'bg-white text-[#0e2a4d] shadow-sm font-extrabold ring-1 ring-gray-200/60'
+                : 'text-gray-500 hover:text-gray-800 hover:bg-white/60'
             }`}
           >
             Frequently Asked Questions
           </button>
           <button
             onClick={() => handleTabChange('variables')}
-            className={`flex-1 py-3 px-4 text-xs font-extrabold text-center rounded-xl transition-all whitespace-nowrap ${
+            className={`flex-1 py-2.5 px-4 text-xs font-bold text-center rounded-xl transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'variables'
-                ? 'bg-[#0e2a4d] text-white shadow-3xs'
-                : 'text-gray-400 hover:text-gray-600 hover:bg-slate-50'
+                ? 'bg-white text-[#0e2a4d] shadow-sm font-extrabold ring-1 ring-gray-200/60'
+                : 'text-gray-500 hover:text-gray-800 hover:bg-white/60'
             }`}
           >
             CMS Variables
@@ -644,38 +644,38 @@ export default function AdminContentPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="border-b border-gray-150 text-gray-400 font-bold">
-                          <th className="py-3 px-4">Title</th>
-                          <th className="py-3 px-4">Slug (Route)</th>
-                          <th className="py-3 px-4 text-center">Status</th>
-                          <th className="py-3 px-4 text-right">Actions</th>
+                        <tr className="bg-slate-50/70 border-b border-gray-150 text-gray-500 font-bold uppercase text-[10px] tracking-wider">
+                          <th className="py-4 pl-6 pr-4 min-w-[220px]">Title</th>
+                          <th className="py-4 px-4 min-w-[200px]">Slug (Route)</th>
+                          <th className="py-4 px-4 text-center min-w-[130px]">Status</th>
+                          <th className="py-4 pl-4 pr-6 text-right min-w-[170px]">Actions</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-gray-100">
                         {pages.map((p) => (
-                          <tr key={p.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors font-medium text-gray-700">
-                            <td className="py-3.5 px-4 font-bold text-[#0e2a4d]">{p.title}</td>
-                            <td className="py-3.5 px-4 text-slate-500 font-mono">/{p.slug}</td>
-                            <td className="py-3.5 px-4 text-center">
+                          <tr key={p.id} className="hover:bg-slate-50/40 transition-colors font-medium text-gray-700">
+                            <td className="py-4 pl-6 pr-4 font-bold text-[#0e2a4d]">{p.title}</td>
+                            <td className="py-4 px-4 text-slate-500 font-mono">/{p.slug}</td>
+                            <td className="py-4 px-4 text-center whitespace-nowrap">
                               {p.is_published ? (
-                                <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full select-none">
-                                  <Globe size={10} /> Published
+                                <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-extrabold px-3 py-1 rounded-full select-none">
+                                  <Globe size={11} /> Published
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 bg-slate-50 border border-gray-100 text-gray-400 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full select-none">
-                                  <EyeOff size={10} /> Draft
+                                <span className="inline-flex items-center gap-1.5 bg-slate-100 border border-gray-200 text-gray-500 text-[10px] font-extrabold px-3 py-1 rounded-full select-none">
+                                  <EyeOff size={11} /> Draft
                                 </span>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-right">
-                              <div className="flex justify-end gap-2">
+                            <td className="py-4 pl-4 pr-6 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-2.5">
                                 {canPages && (
                                   <>
                                     <button
                                       onClick={() => handleTogglePublish(p.id, p.title, p.is_published)}
-                                      className={`px-3 py-1 rounded-lg text-[10px] font-bold border cursor-pointer transition-colors ${
+                                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border cursor-pointer transition-all shadow-3xs ${
                                         p.is_published 
-                                          ? 'border-gray-200 text-gray-500 hover:bg-slate-100'
+                                          ? 'border-gray-250 text-gray-600 hover:bg-slate-100'
                                           : 'border-blue-200 bg-blue-50 text-[#0e2a4d] hover:bg-blue-100'
                                       }`}
                                     >
@@ -687,7 +687,7 @@ export default function AdminContentPage() {
                                         setFormData(p);
                                         setIsEditing(true);
                                       }}
-                                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-blue-900 cursor-pointer"
+                                      className="p-2 hover:bg-slate-100 rounded-xl text-slate-500 hover:text-blue-900 border border-gray-200 cursor-pointer transition-colors shadow-3xs bg-white"
                                       title="Edit Page"
                                     >
                                       <Edit2 size={14} />
@@ -755,23 +755,23 @@ export default function AdminContentPage() {
                     {sections
                       .filter(s => s.page_id === selectedPageId)
                       .map((sec) => (
-                        <div key={sec.id} className="border border-gray-150 rounded-2xl p-5 shadow-3xs flex flex-col sm:flex-row justify-between gap-4 bg-slate-50/20">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-3">
+                        <div key={sec.id} className="border border-gray-150 rounded-2xl p-5 sm:p-6 shadow-3xs flex flex-col sm:flex-row justify-between gap-5 bg-slate-50/20 hover:border-gray-200 transition-colors">
+                          <div className="space-y-2 flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
                               <h3 className="font-extrabold text-sm text-[#0e2a4d]">{sec.title}</h3>
                               <span className="text-[10px] font-mono text-gray-400 bg-slate-100 px-2 py-0.5 rounded-md">Key: {sec.section_key}</span>
                               <span className="text-[10px] font-bold text-slate-500 inline-flex items-center gap-0.5"><Hash size={10} /> Order {sec.sort_order}</span>
                             </div>
-                            <p className="text-xs text-gray-500 font-medium line-clamp-3 whitespace-pre-wrap">{sec.content}</p>
+                            <p className="text-xs text-gray-600 font-normal line-clamp-3 whitespace-pre-wrap leading-relaxed mt-1.5">{sec.content}</p>
                             <div className="pt-1 select-none">
                               {sec.is_active ? (
-                                <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-md">Active</span>
+                                <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-md">Active</span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 bg-red-50 border border-red-100 text-red-800 text-[10px] font-extrabold px-2 py-0.5 rounded-md">Disabled</span>
+                                <span className="inline-flex items-center gap-1 bg-red-50 border border-red-100 text-red-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-md">Disabled</span>
                               )}
                             </div>
                           </div>
-                          <div className="flex sm:flex-col justify-end gap-2 h-fit">
+                          <div className="flex items-center sm:flex-col justify-end gap-2.5 h-fit shrink-0">
                             {canPages && (
                               <>
                                 <button
@@ -780,14 +780,14 @@ export default function AdminContentPage() {
                                     setFormData(sec);
                                     setIsEditing(true);
                                   }}
-                                  className="p-2 bg-white border border-gray-200 text-slate-500 hover:text-blue-900 rounded-lg cursor-pointer transition-colors shadow-3xs"
+                                  className="p-2.5 bg-white border border-gray-200 text-slate-500 hover:text-blue-900 rounded-xl cursor-pointer transition-all shadow-3xs hover:bg-slate-50"
                                   title="Edit Section"
                                 >
                                   <Edit2 size={14} />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteSection(sec.id, sec.title)}
-                                  className="p-2 bg-white border border-gray-200 text-slate-400 hover:text-red-600 rounded-lg cursor-pointer transition-colors shadow-3xs"
+                                  className="p-2.5 bg-white border border-gray-200 text-slate-400 hover:text-red-600 rounded-xl cursor-pointer transition-all shadow-3xs hover:bg-red-50"
                                   title="Delete Section"
                                 >
                                   <Trash2 size={14} />
@@ -849,22 +849,22 @@ export default function AdminContentPage() {
                     {faqs
                       .filter(f => f.page_id === (selectedPageId || null))
                       .map((faq) => (
-                        <div key={faq.id} className="border border-gray-150 rounded-2xl p-5 shadow-3xs flex flex-col sm:flex-row justify-between gap-4 bg-slate-50/20">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-3">
+                        <div key={faq.id} className="border border-gray-150 rounded-2xl p-5 sm:p-6 shadow-3xs flex flex-col sm:flex-row justify-between gap-5 bg-slate-50/20 hover:border-gray-200 transition-colors">
+                          <div className="space-y-2 flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
                               <h3 className="font-extrabold text-sm text-[#0e2a4d]">{faq.question}</h3>
                               <span className="text-[10px] font-bold text-slate-500 inline-flex items-center gap-0.5"><Hash size={10} /> Order {faq.sort_order}</span>
                             </div>
-                            <p className="text-xs text-gray-500 font-medium">{faq.answer}</p>
+                            <p className="text-xs text-gray-600 font-normal leading-relaxed mt-1.5">{faq.answer}</p>
                             <div className="pt-1 select-none">
                               {faq.is_published ? (
-                                <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-md">Published</span>
+                                <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-md">Published</span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 bg-red-50 border border-red-100 text-red-800 text-[10px] font-extrabold px-2 py-0.5 rounded-md">Draft</span>
+                                <span className="inline-flex items-center gap-1 bg-red-50 border border-red-100 text-red-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-md">Draft</span>
                               )}
                             </div>
                           </div>
-                          <div className="flex sm:flex-col justify-end gap-2 h-fit">
+                          <div className="flex items-center sm:flex-col justify-end gap-2.5 h-fit shrink-0">
                             {canFaqs && (
                               <>
                                 <button
@@ -873,14 +873,14 @@ export default function AdminContentPage() {
                                     setFormData(faq);
                                     setIsEditing(true);
                                   }}
-                                  className="p-2 bg-white border border-gray-200 text-slate-500 hover:text-blue-900 rounded-lg cursor-pointer transition-colors shadow-3xs"
+                                  className="p-2.5 bg-white border border-gray-200 text-slate-500 hover:text-blue-900 rounded-xl cursor-pointer transition-all shadow-3xs hover:bg-slate-50"
                                   title="Edit FAQ"
                                 >
                                   <Edit2 size={14} />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteFAQ(faq.id)}
-                                  className="p-2 bg-white border border-gray-200 text-slate-400 hover:text-red-600 rounded-lg cursor-pointer transition-colors shadow-3xs"
+                                  className="p-2.5 bg-white border border-gray-200 text-slate-400 hover:text-red-600 rounded-xl cursor-pointer transition-all shadow-3xs hover:bg-red-50"
                                   title="Delete FAQ"
                                 >
                                   <Trash2 size={14} />
@@ -910,39 +910,39 @@ export default function AdminContentPage() {
                 ) : (
                   <div className="space-y-4">
                     {variables.map((v) => (
-                      <div key={v.id} className="border border-gray-150 rounded-2xl p-4 sm:p-5 shadow-3xs bg-slate-50/10">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                          <div className="space-y-1">
-                            <span className="text-xs font-mono font-extrabold text-[#0e2a4d]">{v.variable_key}</span>
-                            {v.description && <p className="text-[11px] text-gray-400 font-medium">{v.description}</p>}
+                      <div key={v.id} className="border border-gray-150 rounded-2xl p-4 sm:p-5 shadow-3xs bg-slate-50/20 hover:border-gray-200 transition-colors">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                          <div className="space-y-1 sm:max-w-xs min-w-0">
+                            <span className="text-xs font-mono font-extrabold text-[#0e2a4d] block">{v.variable_key}</span>
+                            {v.description && <p className="text-[11px] text-gray-500 font-medium leading-relaxed">{v.description}</p>}
                           </div>
                           
-                          <div className="w-full sm:w-2/3 flex gap-2">
+                          <div className="w-full sm:w-2/3 flex items-center gap-2.5">
                             {editingVarId === v.id ? (
                               <>
                                 <input
                                   type="text"
                                   value={editingVarValue}
                                   onChange={(e) => setEditingVarValue(e.target.value)}
-                                  className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs outline-none focus:border-blue-900 font-medium"
+                                  className="flex-1 bg-white border border-gray-200 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-blue-900 font-medium"
                                 />
                                 <button
                                   onClick={() => handleSaveVariable(v.id, v.variable_key)}
-                                  className="bg-[#0e2a4d] hover:bg-[#071c35] text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-3xs flex items-center gap-1 cursor-pointer"
+                                  className="bg-[#0e2a4d] hover:bg-[#071c35] text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-3xs flex items-center gap-1.5 cursor-pointer shrink-0"
                                 >
-                                  <Save size={12} />
+                                  <Save size={13} />
                                   <span>Save</span>
                                 </button>
                                 <button
                                   onClick={() => setEditingVarId('')}
-                                  className="border border-gray-250 text-gray-500 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer"
+                                  className="border border-gray-250 text-gray-500 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer shrink-0"
                                 >
                                   Cancel
                                 </button>
                               </>
                             ) : (
                               <>
-                                <span className="flex-1 bg-slate-100 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-gray-600 font-mono overflow-x-auto whitespace-nowrap">
+                                <span className="flex-1 bg-white border border-gray-200 rounded-xl px-3.5 py-2 text-xs text-gray-700 font-mono overflow-x-auto whitespace-nowrap shadow-3xs">
                                   {v.value}
                                 </span>
                                 {canPages && (
@@ -951,10 +951,10 @@ export default function AdminContentPage() {
                                       setEditingVarId(v.id);
                                       setEditingVarValue(v.value);
                                     }}
-                                    className="p-1.5 border border-gray-200 hover:border-blue-200 hover:text-blue-900 rounded-lg cursor-pointer transition-colors shadow-3xs bg-white text-slate-500"
+                                    className="p-2.5 border border-gray-200 hover:border-blue-200 hover:text-blue-900 rounded-xl cursor-pointer transition-all shadow-3xs bg-white text-slate-500 shrink-0 hover:bg-slate-50"
                                     title="Edit Variable Value"
                                   >
-                                    <Edit2 size={12} />
+                                    <Edit2 size={13} />
                                   </button>
                                 )}
                               </>

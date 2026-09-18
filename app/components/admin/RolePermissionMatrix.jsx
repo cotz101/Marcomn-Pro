@@ -270,45 +270,54 @@ export default function RolePermissionMatrix() {
 
               {/* Permissions List */}
               <div className="p-6 overflow-y-auto max-h-[600px]">
-                <div className="space-y-8">
-                  {PERMISSION_GROUPS.map((group, idx) => (
-                    <div key={idx}>
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
-                        {group.title}
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {group.keys.map(key => {
-                          const pInfo = permDetails[key];
-                          if (!pInfo) return null; // If a permission key isn't in the DB yet, skip it gracefully
-                          const isChecked = rolePerms.includes(key);
+                <div className="space-y-6">
+                  {PERMISSION_GROUPS.map((group, idx) => {
+                    const validKeys = group.keys.filter(key => permDetails[key]);
+                    if (validKeys.length === 0) return null;
 
-                          return (
-                            <label 
-                              key={key} 
-                              className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${
-                                isSuperAdmin ? 'cursor-default bg-gray-50/50 border-gray-100 opacity-80' : 'cursor-pointer hover:border-blue-200 hover:bg-blue-50/20'
-                              } ${isChecked ? 'border-blue-200 bg-blue-50/10' : 'border-gray-100'}`}
-                            >
-                              <div className="mt-0.5">
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  onChange={() => handleTogglePermission(key)}
-                                  disabled={isSuperAdmin}
-                                  className={`w-4 h-4 rounded text-blue-600 border-gray-300 focus:ring-blue-500 ${isSuperAdmin ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-                                />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-xs font-bold text-gray-800">{pInfo.permission_name}</span>
-                                <span className="text-[10px] text-gray-500 mt-0.5 leading-snug">{pInfo.description}</span>
-                                <span className="text-[9px] text-gray-400 font-mono mt-1">{key}</span>
-                              </div>
-                            </label>
-                          );
-                        })}
+                    return (
+                      <div key={idx} className="bg-slate-50/40 border border-gray-150 rounded-2xl p-4 sm:p-5 shadow-3xs">
+                        <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-200/80">
+                          <h4 className="text-xs font-extrabold text-[#0e2a4d] uppercase tracking-wider">
+                            {group.title}
+                          </h4>
+                          <span className="text-[10px] font-bold text-gray-500 bg-white px-2.5 py-0.5 rounded-full border border-gray-200 shadow-3xs">
+                            {validKeys.length} {validKeys.length === 1 ? 'Permission' : 'Permissions'}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                          {validKeys.map(key => {
+                            const pInfo = permDetails[key];
+                            const isChecked = rolePerms.includes(key);
+
+                            return (
+                              <label
+                                key={key}
+                                className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl border transition-all select-none min-h-[72px] ${
+                                  isSuperAdmin ? 'cursor-default bg-gray-50/60 border-gray-200 opacity-80' : 'cursor-pointer hover:border-blue-300 hover:bg-blue-50/30'
+                                } ${isChecked ? 'border-blue-200 bg-blue-50/15 shadow-3xs' : 'border-gray-200/80 bg-white'}`}
+                              >
+                                <div className="mt-0.5 shrink-0">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => handleTogglePermission(key)}
+                                    disabled={isSuperAdmin}
+                                    className={`w-4.5 h-4.5 rounded text-blue-600 border-gray-300 focus:ring-blue-500 transition-colors ${isSuperAdmin ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                                  />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-xs font-bold text-gray-900 leading-snug">{pInfo.permission_name}</span>
+                                  <span className="text-[11px] text-gray-500 mt-1 leading-normal">{pInfo.description}</span>
+                                  <span className="text-[9px] text-gray-400 font-mono mt-1.5">{key}</span>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </>

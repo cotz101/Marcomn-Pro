@@ -167,13 +167,13 @@ export default function UserRoleAssignment({ roles, userRoles, onRefresh, caller
       )}
 
       {/* Admin users table */}
-      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div className="bg-white border border-gray-150 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-150 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-bold text-[#0e2a4d]">Active Platform Administrators</h3>
             <p className="text-xs text-gray-400 font-medium mt-0.5">Currently active administrative accounts and roles.</p>
-            <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1.5 rounded-lg border border-blue-100 w-fit">
-              <Info size={12} />
+            <div className="flex items-center gap-1.5 mt-2.5 text-[11px] font-bold text-blue-700 bg-blue-50/80 px-2.5 py-1.5 rounded-lg border border-blue-100 w-fit">
+              <Info size={13} />
               Users may have multiple active roles. Effective permissions are combined from all active roles.
             </div>
           </div>
@@ -187,13 +187,13 @@ export default function UserRoleAssignment({ roles, userRoles, onRefresh, caller
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-xs text-gray-500 font-medium">
               <thead>
-                <tr className="bg-slate-50/50 border-b border-gray-100 text-gray-400 font-bold uppercase text-[9px] tracking-wider">
-                  <th className="px-6 py-3.5">Administrator</th>
-                  <th className="px-6 py-3.5">Assigned Role</th>
-                  <th className="px-6 py-3.5">Reason / Notes</th>
-                  <th className="px-6 py-3.5">Assigned By</th>
-                  <th className="px-6 py-3.5">Date</th>
-                  <th className="px-6 py-3.5 text-center">Actions</th>
+                <tr className="bg-slate-50/70 border-b border-gray-150 text-gray-500 font-bold uppercase text-[10px] tracking-wider">
+                  <th className="py-4 pl-6 pr-4 min-w-[220px]">Administrator</th>
+                  <th className="py-4 px-4 min-w-[150px]">Assigned Role</th>
+                  <th className="py-4 px-4 min-w-[220px]">Reason / Notes</th>
+                  <th className="py-4 px-4 min-w-[140px]">Assigned By</th>
+                  <th className="py-4 px-4 min-w-[120px]">Date</th>
+                  <th className="py-4 pl-4 pr-6 text-center w-24">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -202,55 +202,57 @@ export default function UserRoleAssignment({ roles, userRoles, onRefresh, caller
                   const isSuper = ur.platform_admin_roles?.role_key === 'super_admin';
                   
                   return (
-                    <tr key={ur.id} className="hover:bg-slate-50/30 transition-colors">
+                    <tr key={ur.id} className="hover:bg-slate-50/40 transition-colors">
                       {/* Admin Profile */}
-                      <td className="px-6 py-4 flex items-center gap-3">
-                        {ur.profile?.avatar_url ? (
-                          <img 
-                            src={ur.profile.avatar_url} 
-                            alt="" 
-                            className="w-7 h-7 rounded-full border border-gray-100 object-cover" 
-                          />
-                        ) : (
-                          <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500">
-                            {ur.profile?.name?.charAt(0).toUpperCase()}
+                      <td className="py-4 pl-6 pr-4">
+                        <div className="flex items-center gap-3">
+                          {ur.profile?.avatar_url ? (
+                            <img
+                              src={ur.profile.avatar_url}
+                              alt=""
+                              className="w-8 h-8 rounded-full border border-gray-200 object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500 shrink-0">
+                              {ur.profile?.name?.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-bold text-gray-800 text-xs">{ur.profile?.name}</p>
+                            <p className="text-[11px] text-gray-400 truncate">{ur.profile?.email}</p>
                           </div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="font-bold text-gray-800">{ur.profile?.name}</p>
-                          <p className="text-[10px] text-gray-400">{ur.profile?.email}</p>
                         </div>
                       </td>
 
                       {/* Assigned Role */}
-                      <td className="px-6 py-4">
-                        <span className={`inline-block px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <span className={`inline-block px-3 py-1 rounded-full font-bold text-[11px] whitespace-nowrap ${
                           isSuper 
-                            ? 'bg-rose-50 border border-rose-100 text-rose-700'
+                            ? 'bg-rose-50 border border-rose-200 text-rose-700'
                             : ur.platform_admin_roles?.role_key === 'finance_admin'
-                            ? 'bg-cyan-50 border border-cyan-100 text-cyan-700'
+                            ? 'bg-cyan-50 border border-cyan-200 text-cyan-700'
                             : ur.platform_admin_roles?.role_key === 'wallet_admin'
-                            ? 'bg-amber-50 border border-amber-100 text-amber-700'
-                            : 'bg-slate-100 border border-slate-250 text-slate-700'
+                            ? 'bg-amber-50 border border-amber-200 text-amber-700'
+                            : 'bg-slate-100 border border-slate-200 text-slate-700'
                         }`}>
                           {ur.platform_admin_roles?.role_name}
                         </span>
                       </td>
 
                       {/* Assigned Reason */}
-                      <td className="px-6 py-4 max-w-xs">
-                        <p className="truncate text-gray-600 font-medium" title={ur.assigned_reason}>
+                      <td className="py-4 px-4 max-w-xs">
+                        <p className="truncate text-gray-600 font-medium text-xs" title={ur.assigned_reason}>
                           {ur.assigned_reason || 'No details provided.'}
                         </p>
                       </td>
 
                       {/* Assigned By */}
-                      <td className="px-6 py-4 text-gray-600 font-medium">
+                      <td className="py-4 px-4 text-gray-600 font-medium whitespace-nowrap text-xs">
                         {ur.assignor?.name || 'System'}
                       </td>
 
                       {/* Assignment Date */}
-                      <td className="px-6 py-4 text-gray-400">
+                      <td className="py-4 px-4 text-gray-400 whitespace-nowrap text-xs">
                         {new Date(ur.created_at).toLocaleDateString(undefined, { 
                           year: 'numeric', 
                           month: 'short', 
@@ -259,21 +261,21 @@ export default function UserRoleAssignment({ roles, userRoles, onRefresh, caller
                       </td>
 
                       {/* Actions */}
-                      <td className="px-6 py-4 text-center">
+                      <td className="py-4 pl-4 pr-6 text-center whitespace-nowrap">
                         <button
                           onClick={() => handleRevokeRole(ur.id)}
                           disabled={actionLoadingId === ur.id || isSelf}
-                          className={`p-1.5 rounded-lg border-none bg-transparent transition-colors cursor-pointer inline-flex items-center justify-center outline-none ${
+                          className={`p-2 rounded-xl border-none bg-transparent transition-colors cursor-pointer inline-flex items-center justify-center outline-none ${
                             isSelf
-                              ? 'text-gray-250 cursor-not-allowed'
+                              ? 'text-gray-300 cursor-not-allowed'
                               : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
                           }`}
                           title={isSelf ? "Self-lockout protection: You cannot revoke your own role." : "Revoke platform role"}
                         >
                           {actionLoadingId === ur.id ? (
-                            <Loader2 size={15} className="animate-spin" />
+                            <Loader2 size={16} className="animate-spin" />
                           ) : (
-                            <Trash2 size={15} />
+                            <Trash2 size={16} />
                           )}
                         </button>
                       </td>

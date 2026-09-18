@@ -676,13 +676,13 @@ export default function AppShell({ children, userEmail, userId }) {
             </div>
           ) : (
             <div className={`main-grid ${
-              (pathname?.startsWith('/jobs/my-postings') || pathname?.endsWith('/wallet') || pathname?.startsWith('/admin')) ? 'hide-sidebar-right' : ''
+              (pathname?.startsWith('/jobs') || pathname?.endsWith('/wallet') || pathname?.startsWith('/admin')) ? 'hide-sidebar-right' : ''
             }`}>
               <SidebarLeft />
               <div className="center-feed">
                 {children}
               </div>
-              {!(pathname?.startsWith('/jobs/my-postings') || pathname?.endsWith('/wallet') || pathname?.startsWith('/admin')) && <SidebarRight />}
+              {!(pathname?.startsWith('/jobs') || pathname?.endsWith('/wallet') || pathname?.startsWith('/admin')) && <SidebarRight />}
             </div>
           )}
         </div>

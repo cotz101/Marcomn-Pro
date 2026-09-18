@@ -92,7 +92,7 @@ export default function AdminRolesPage() {
   }
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 py-8 font-sans w-full">
+    <div className="max-w-[1280px] mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 font-sans w-full">
       {/* Back to Admin Dashboard Button */}
       <button
         onClick={() => router.push('/admin')}
@@ -102,14 +102,14 @@ export default function AdminRolesPage() {
       </button>
 
       {/* Page Header */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div className="bg-white border border-gray-150 rounded-2xl p-6 sm:p-7 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5 mb-8">
         <div className="flex items-start gap-4">
-          <div className="p-3 bg-blue-50 text-blue-950 rounded-xl flex items-center justify-center shrink-0">
-            <ShieldCheck size={24} className="text-blue-900" />
+          <div className="p-3.5 bg-blue-50 text-blue-950 rounded-xl flex items-center justify-center shrink-0 border border-blue-100/60">
+            <ShieldCheck size={26} className="text-blue-900" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-[#0e2a4d] leading-tight">Platform Roles & Access Control</h1>
-            <p className="text-sm text-gray-500 mt-1 font-medium">
+            <h1 className="text-xl sm:text-2xl font-bold text-[#0e2a4d] leading-tight">Platform Roles & Access Control</h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1.5 font-medium">
               Manage platform administrative roles, assign roles to users, and control access permissions.
             </p>
           </div>
@@ -117,7 +117,7 @@ export default function AdminRolesPage() {
         <div className="shrink-0 flex items-center justify-end">
           <button
             onClick={() => router.push('/admin/audit-logs')}
-            className="flex items-center gap-2 bg-[#0e2a4d] hover:bg-blue-900 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm border-none cursor-pointer"
+            className="flex items-center gap-2 bg-[#0e2a4d] hover:bg-blue-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-3xs border-none cursor-pointer"
           >
             <ShieldCheck size={14} />
             View Audit Logs
@@ -126,10 +126,10 @@ export default function AdminRolesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 gap-6 mb-6 overflow-x-auto pb-px w-full">
+      <div className="flex border-b border-gray-200 gap-8 mb-8 overflow-x-auto pb-px w-full">
         <button
           onClick={() => setActiveTab('users')}
-          className={`pb-3 text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex items-center gap-2 bg-transparent border-t-0 border-x-0 ${
+          className={`pb-3.5 text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex items-center gap-2 bg-transparent border-t-0 border-x-0 ${
             activeTab === 'users'
               ? 'border-blue-900 text-blue-900 border-solid'
               : 'border-transparent text-gray-400 hover:text-gray-600'
@@ -140,7 +140,7 @@ export default function AdminRolesPage() {
         </button>
         <button
           onClick={() => setActiveTab('matrix')}
-          className={`pb-3 text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex items-center gap-2 bg-transparent border-t-0 border-x-0 ${
+          className={`pb-3.5 text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex items-center gap-2 bg-transparent border-t-0 border-x-0 ${
             activeTab === 'matrix'
               ? 'border-blue-900 text-blue-900 border-solid'
               : 'border-transparent text-gray-400 hover:text-gray-600'

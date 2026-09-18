@@ -248,18 +248,18 @@ export default function NotificationsFeedPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 font-sans">
+    <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 font-sans">
       
       {/* Header Info */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-extrabold text-navy-900 leading-tight" style={{ color: '#0e2a4d' }}>Notifications</h1>
-          <p className="text-sm text-gray-500 mt-1">Keep track of your network activity, mentions, and updates.</p>
+          <h1 className="text-2xl font-extrabold text-[#0e2a4d] leading-tight">Notifications</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">Keep track of your network activity, mentions, and updates.</p>
         </div>
         {notifications.filter(n => !n.is_read).length > 0 && (
           <button
             onClick={markAllAsRead}
-            className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-600 hover:text-navy-900 rounded-full text-xs font-bold transition-all shadow-3xs cursor-pointer select-none bg-white hover:bg-slate-50 outline-none focus:outline-none"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 border border-gray-200 text-gray-600 hover:text-[#0e2a4d] hover:border-gray-300 rounded-full text-xs font-bold transition-all shadow-3xs cursor-pointer select-none bg-white hover:bg-slate-50 outline-none focus:outline-none shrink-0 self-start sm:self-center"
           >
             <Check size={14} />
             <span>Mark all as read</span>
@@ -269,7 +269,7 @@ export default function NotificationsFeedPage() {
 
       {/* Pill Filters */}
       {activeFilters.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none scroll-smooth select-none">
+        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 scrollbar-none scroll-smooth select-none -mx-1 px-1">
           {activeFilters.map(filter => {
             const isSelected = selectedFilter === filter;
             const count = categoriesWithCounts[filter] || 0;
@@ -277,7 +277,7 @@ export default function NotificationsFeedPage() {
               <button
                 key={filter}
                 onClick={() => setSelectedFilter(filter)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap outline-none focus:outline-none ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap outline-none focus:outline-none shrink-0 ${
                   isSelected 
                     ? 'bg-[#002b4e] text-white shadow-3xs'
                     : 'bg-white border border-gray-200 hover:bg-gray-50 text-slate-600'
@@ -302,7 +302,7 @@ export default function NotificationsFeedPage() {
           <span className="text-sm text-gray-500 font-semibold">Loading notifications...</span>
         </div>
       ) : filteredNotifications.length > 0 ? (
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-100">
+        <div className="bg-white border border-gray-150 rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-100">
           {filteredNotifications.map((notification) => {
             const isRead = notification.is_read;
             const isMilestone = notification.type === 'milestone';
@@ -311,7 +311,7 @@ export default function NotificationsFeedPage() {
               <div
                 key={notification.id}
                 onClick={() => handleNotificationClick(notification)}
-                className={`p-5 transition-all duration-150 flex gap-4 items-start cursor-pointer hover:bg-slate-50/50 ${
+                className={`p-4 sm:p-5 transition-all duration-150 flex gap-3.5 sm:gap-4 items-start cursor-pointer hover:bg-slate-50/70 relative ${
                   !isRead ? 'bg-blue-50/20' : ''
                 } ${isMilestone && !isRead ? 'border-l-4 border-blue-500' : ''}`}
               >
@@ -321,27 +321,29 @@ export default function NotificationsFeedPage() {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start gap-3 mb-1">
-                    <h3 className={`text-sm font-bold truncate ${isRead ? 'text-gray-600' : 'text-gray-900'}`}>
+                <div className="flex-1 min-w-0 pr-1">
+                  <div className="flex items-baseline justify-between gap-3 mb-1">
+                    <h3 className={`text-sm font-bold truncate ${isRead ? 'text-gray-700' : 'text-gray-900 font-extrabold'}`}>
                       {notification.title}
                     </h3>
-                    <span className={`text-[11px] font-semibold whitespace-nowrap ${isRead ? 'text-gray-400' : 'text-blue-500'}`}>
+                    <span className={`text-[11px] font-semibold whitespace-nowrap shrink-0 ${isRead ? 'text-gray-400' : 'text-blue-600 font-bold'}`}>
                       {formatTimeAgo(notification.created_at)}
                     </span>
                   </div>
-                  <p className={`text-sm leading-relaxed break-words ${isRead ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <p className={`text-xs sm:text-sm leading-relaxed break-words ${isRead ? 'text-gray-500' : 'text-gray-700 font-medium'}`}>
                     {notification.body}
                   </p>
                 </div>
 
-                {/* Unread Dot Indicator */}
-                {!isRead && (
-                  <div 
-                    className="w-2.5 h-2.5 rounded-full bg-[#002b4e] shrink-0 mt-2.5 animate-pulse" 
-                    title="Unread"
-                  />
-                )}
+                {/* Unread Indicator Slot - always maintains consistent right gutter */}
+                <div className="w-2.5 shrink-0 flex items-center justify-center pt-2">
+                  {!isRead && (
+                    <div
+                      className="w-2 h-2 rounded-full bg-[#002b4e] animate-pulse"
+                      title="Unread"
+                    />
+                  )}
+                </div>
               </div>
             );
           })}
