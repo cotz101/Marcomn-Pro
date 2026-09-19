@@ -772,7 +772,7 @@ export default function MyApplicationsPage() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 pb-[calc(var(--mobile-nav-height,72px)+env(safe-area-inset-bottom)+96px)] md:pb-8 font-sans">
+    <div className="max-w-5xl mx-auto px-4 py-8 pb-[calc(var(--mobile-nav-height,72px)+env(safe-area-inset-bottom)+96px)] sm:px-6 md:pb-8">
       {/* Header bar */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-blue-900">My Job Applications</h1>
@@ -843,7 +843,7 @@ export default function MyApplicationsPage() {
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 sm:space-y-5">
           {filteredApplications.map((app) => {
             const job = app.job || {};
             const isTimelineExpanded = expandedTimelineIds.has(app.id);
@@ -851,10 +851,10 @@ export default function MyApplicationsPage() {
             return (
               <div
                 key={app.id}
-                className="flex flex-col p-5 sm:p-7 mb-5 bg-white border border-gray-150 rounded-2xl shadow-sm hover:shadow-md transition-shadow gap-0"
+                className="bg-white border border-gray-200 rounded-xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all flex flex-col"
               >
                 {/* Top Section: Job Info & Status Badge */}
-                <div className="flex flex-row justify-between items-start gap-4 w-full">
+                <div className="flex flex-row justify-between items-start gap-3 w-full">
                   <div className="flex items-start gap-3 min-w-0 flex-1">
                     {/* Logo Container */}
                     <div className="shrink-0">
@@ -1259,12 +1259,12 @@ export default function MyApplicationsPage() {
                     return null;
                   })()}
 
-                  <div className="flex flex-row flex-wrap items-center justify-end gap-3 w-full mt-4 pt-4 border-t border-slate-100">
+                  <div className="flex flex-row flex-wrap items-center justify-end gap-2 w-full mt-1">
                     {app.status === 'Offered' && (
-                      <div className="flex flex-col items-center gap-1.5 w-full sm:w-auto">
+                      <div className="flex flex-col items-center gap-1 w-full sm:w-auto">
                         <button
                           onClick={() => handleOpenAcceptModal(app)}
-                          className="px-5 py-2.5 text-xs sm:text-sm font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-sm w-full text-center cursor-pointer"
+                          className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-full text-center"
                         >
                           Click to Accept the Offer
                         </button>
@@ -1287,13 +1287,13 @@ export default function MyApplicationsPage() {
                             <>
                               <button
                                 onClick={() => handleOpenWorkCompletedModal(order.id)}
-                                className="px-4 py-2.5 text-xs sm:text-sm font-semibold bg-green-50 text-green-700 border border-green-200 rounded-xl hover:bg-green-100 transition-colors flex-1 min-w-[150px] text-center cursor-pointer"
+                                className="px-4 py-2 text-sm font-semibold bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors flex-1 min-w-[140px] text-center"
                               >
                                 Mark Work Completed
                               </button>
                               <button
                                 onClick={() => handleOpenCancelModal(app)}
-                                className="px-4 py-2.5 text-xs sm:text-sm font-semibold bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors flex-1 min-w-[150px] text-center cursor-pointer"
+                                className="px-4 py-2 text-sm font-semibold bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors flex-1 min-w-[140px] text-center"
                               >
                                 Cancel Engagement
                               </button>
@@ -1305,14 +1305,14 @@ export default function MyApplicationsPage() {
                           return (
                             <button
                               onClick={() => handleOpenConfirmPaymentModal(order.id)}
-                              className="px-5 py-2.5 text-xs sm:text-sm font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-sm flex-1 min-w-[160px] text-center cursor-pointer"
+                              className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-1 min-w-[140px] text-center"
                             >
                               Press to Confirm Payment Received
                             </button>
                           );
                         case 'Payment Confirmed by Applicant':
                           return (
-                            <p className="text-xs text-gray-500 text-center sm:text-right w-full mb-2 font-medium">
+                            <p className="text-xs text-gray-500 text-center sm:text-right w-full mb-2">
                               Waiting for company to close engagement
                             </p>
                           );
@@ -1325,7 +1325,7 @@ export default function MyApplicationsPage() {
 
                     <Link
                       href={`/mservices/opportunity/${app.job_id}?source=my-applications`}
-                      className="px-4 py-2.5 text-xs sm:text-sm font-semibold text-blue-900 bg-white border border-blue-200 rounded-xl hover:bg-blue-50 transition-colors flex-1 min-w-[120px] text-center shadow-3xs"
+                      className="px-4 py-2 text-sm font-semibold text-blue-900 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors flex-1 min-w-[140px] text-center"
                     >
                       View Job
                     </Link>
