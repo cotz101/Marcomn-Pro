@@ -177,69 +177,72 @@ export default function RolePermissionMatrix() {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-6 items-start">
+      <div className="flex flex-col md:flex-row gap-6 items-start w-full min-w-0">
         {/* Left Panel: Role List */}
-        <div className="w-full md:w-1/3 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden shrink-0">
-          <div className="px-5 py-4 border-b border-gray-100 bg-slate-50/50">
-            <h3 className="text-sm font-bold text-[#0e2a4d]">Platform Roles</h3>
-            <p className="text-[11px] text-gray-500 font-medium mt-0.5">Select a role to manage its permissions</p>
+        <div className="w-full md:w-1/3 bg-white border border-gray-150 rounded-2xl shadow-sm overflow-hidden shrink-0">
+          <div className="p-4 sm:p-6 border-b border-gray-150 bg-slate-50/50">
+            <h3 className="text-sm sm:text-base font-bold text-[#0e2a4d]">Platform Roles</h3>
+            <p className="text-xs text-gray-500 font-medium mt-1">Select a role to manage its permissions</p>
           </div>
           <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
             {roles.map(role => (
               <button
                 key={role.id}
                 onClick={() => setSelectedRoleId(role.id)}
-                className={`w-full text-left px-5 py-4 transition-colors border-none outline-none cursor-pointer flex flex-col gap-1 ${
-                  selectedRoleId === role.id 
-                    ? 'bg-blue-50/50 border-l-4 border-l-blue-600' 
-                    : 'bg-white hover:bg-slate-50 border-l-4 border-l-transparent'
+                className={`w-full text-left px-4 sm:px-6 py-4 transition-colors relative border-none outline-none cursor-pointer flex flex-col gap-1.5 ${
+                  selectedRoleId === role.id
+                    ? 'bg-blue-50/60'
+                    : 'bg-white hover:bg-slate-50'
                 }`}
               >
+                {selectedRoleId === role.id && (
+                  <div className="absolute left-0 inset-y-0 w-1 bg-[#0e2a4d] rounded-r" />
+                )}
                 <div className="flex items-center justify-between">
-                  <span className={`text-sm font-bold ${selectedRoleId === role.id ? 'text-blue-900' : 'text-gray-700'}`}>
+                  <span className={`text-sm font-bold ${selectedRoleId === role.id ? 'text-[#0e2a4d]' : 'text-gray-800'}`}>
                     {role.role_name}
                   </span>
                   {role.role_key === 'super_admin' && (
-                    <ShieldCheck size={14} className="text-rose-500" />
+                    <ShieldCheck size={16} className="text-rose-600 shrink-0" />
                   )}
                 </div>
-                <span className="text-[10px] text-gray-400 font-mono">{role.role_key}</span>
+                <span className="text-[11px] text-gray-400 font-mono mt-0.5">{role.role_key}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Right Panel: Role Details & Permissions */}
-        <div className="w-full md:w-2/3 bg-white border border-gray-100 rounded-2xl shadow-sm flex flex-col">
+        <div className="w-full md:w-2/3 bg-white border border-gray-150 rounded-2xl shadow-sm flex flex-col">
           {selectedRole ? (
             <>
               {/* Top Summary */}
-              <div className="px-6 py-5 border-b border-gray-100 bg-slate-50/30 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-bold text-[#0e2a4d] flex items-center gap-2">
+              <div className="p-4 sm:p-6 border-b border-gray-150 bg-slate-50/30 flex flex-col sm:flex-row sm:items-start justify-between gap-5">
+                <div className="min-w-0">
+                  <h2 className="text-lg sm:text-xl font-bold text-[#0e2a4d] flex items-center gap-2">
                     {selectedRole.role_name}
                   </h2>
-                  <p className="text-xs text-gray-500 mt-1 max-w-md leading-relaxed">
+                  <p className="text-xs text-gray-500 mt-2 max-w-lg leading-relaxed font-medium">
                     {selectedRole.description || 'No description available for this role.'}
                   </p>
-                  <div className="mt-3 flex items-center gap-3">
-                    <span className="text-[10px] font-mono font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+                  <div className="mt-3.5 flex flex-wrap items-center gap-2.5">
+                    <span className="text-[10px] font-mono font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg border border-gray-200/80">
                       {selectedRole.role_key}
                     </span>
-                    <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-md">
+                    <span className="text-[10px] font-bold text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
                       {rolePerms.length} Active Permissions
                     </span>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 shrink-0">
+                <div className="flex sm:flex-col gap-2.5 shrink-0">
                   <button
                     onClick={handleSave}
                     disabled={isSuperAdmin || !hasChanges || saving}
-                    className={`px-4 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all outline-none border-none cursor-pointer ${
+                    className={`px-4 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all outline-none border-none cursor-pointer min-h-[38px] ${
                       isSuperAdmin || !hasChanges || saving
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
+                        : 'bg-[#0e2a4d] hover:bg-blue-900 text-white shadow-3xs'
                     }`}
                   >
                     {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
@@ -248,9 +251,9 @@ export default function RolePermissionMatrix() {
                   <button
                     onClick={handleReset}
                     disabled={isSuperAdmin || !hasChanges || saving}
-                    className={`px-4 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all outline-none border cursor-pointer ${
+                    className={`px-4 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all outline-none border cursor-pointer min-h-[38px] ${
                       isSuperAdmin || !hasChanges || saving
-                        ? 'bg-transparent border-transparent text-transparent cursor-not-allowed hidden'
+                        ? 'hidden'
                         : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                     }`}
                   >
@@ -262,14 +265,14 @@ export default function RolePermissionMatrix() {
 
               {/* Super Admin Warning */}
               {isSuperAdmin && (
-                <div className="px-6 py-3 bg-rose-50 border-b border-rose-100 flex items-center gap-2 text-rose-700 text-xs font-bold">
-                  <AlertTriangle size={16} />
-                  System protected role. Permissions are read-only and cannot be modified.
+                <div className="px-4 sm:px-6 py-3 bg-rose-50 border-b border-rose-100 flex items-center gap-2.5 text-rose-700 text-xs font-bold">
+                  <AlertTriangle size={16} className="shrink-0" />
+                  <span>System protected role. Permissions are read-only and cannot be modified.</span>
                 </div>
               )}
 
               {/* Permissions List */}
-              <div className="p-6 overflow-y-auto max-h-[600px]">
+              <div className="p-4 sm:p-6 overflow-y-auto max-h-[600px]">
                 <div className="space-y-6">
                   {PERMISSION_GROUPS.map((group, idx) => {
                     const validKeys = group.keys.filter(key => permDetails[key]);
@@ -277,7 +280,7 @@ export default function RolePermissionMatrix() {
 
                     return (
                       <div key={idx} className="bg-slate-50/40 border border-gray-150 rounded-2xl p-4 sm:p-5 shadow-3xs">
-                        <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-200/80">
+                        <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-gray-200/80">
                           <h4 className="text-xs font-extrabold text-[#0e2a4d] uppercase tracking-wider">
                             {group.title}
                           </h4>
@@ -303,10 +306,10 @@ export default function RolePermissionMatrix() {
                                     checked={isChecked}
                                     onChange={() => handleTogglePermission(key)}
                                     disabled={isSuperAdmin}
-                                    className={`w-4.5 h-4.5 rounded text-blue-600 border-gray-300 focus:ring-blue-500 transition-colors ${isSuperAdmin ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                                    className={`w-4 h-4 rounded text-[#0e2a4d] border-gray-300 focus:ring-[#0e2a4d] transition-colors ${isSuperAdmin ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                                   />
                                 </div>
-                                <div className="flex flex-col min-w-0">
+                                <div className="flex flex-col min-w-0 flex-1">
                                   <span className="text-xs font-bold text-gray-900 leading-snug">{pInfo.permission_name}</span>
                                   <span className="text-[11px] text-gray-500 mt-1 leading-normal">{pInfo.description}</span>
                                   <span className="text-[9px] text-gray-400 font-mono mt-1.5">{key}</span>
@@ -322,7 +325,7 @@ export default function RolePermissionMatrix() {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center">
               <Settings size={48} className="text-gray-200 mb-4" />
               <h3 className="text-sm font-bold text-gray-400">No Role Selected</h3>
               <p className="text-xs text-gray-400 mt-1">Select a role from the left panel to view its permissions.</p>

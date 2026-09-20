@@ -88,35 +88,35 @@ export default function UserRoleAssignment({ roles, userRoles, onRefresh, caller
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 w-full min-w-0">
       {/* Top action: Search & promote user */}
-      <div className="bg-white border border-gray-150 rounded-2xl p-6 shadow-sm flex flex-col">
+      <div className="bg-white border border-gray-150 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col">
         <div>
-          <h3 className="text-sm font-bold text-[#0e2a4d] flex items-center gap-2">
-            <UserPlus size={16} /> Promote User to Platform Admin
+          <h3 className="text-sm sm:text-base font-bold text-[#0e2a4d] flex items-center gap-2">
+            <UserPlus size={18} className="text-[#0e2a4d]" /> Promote User to Platform Admin
           </h3>
-          <p className="text-xs text-gray-500 font-medium mt-1">
+          <p className="text-xs text-gray-500 font-medium mt-1.5 leading-relaxed">
             Search users by name or email to assign them administrative roles.
           </p>
         </div>
 
         {/* Search bar */}
-        <div className="relative w-full max-w-lg mt-4">
-          <div className="flex items-center gap-2 bg-slate-50 border border-gray-200 rounded-xl px-3 py-2.5">
-            <Search size={16} className="text-gray-400" />
+        <div className="relative w-full max-w-lg mt-4 sm:mt-5">
+          <div className="flex items-center gap-2.5 bg-slate-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus-within:border-[#0e2a4d] focus-within:bg-white transition-colors">
+            <Search size={16} className="text-gray-400 shrink-0" />
             <input
               type="text"
               placeholder="Search user name or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent outline-none border-none text-sm font-medium placeholder-gray-400"
+              className="w-full bg-transparent outline-none border-none text-sm font-medium placeholder-gray-400 text-gray-800"
             />
-            {searchLoading && <Loader2 size={16} className="animate-spin text-gray-400" />}
+            {searchLoading && <Loader2 size={16} className="animate-spin text-gray-400 shrink-0" />}
           </div>
 
           {/* Search suggestions dropdown */}
           {searchResults.length > 0 && (
-            <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl z-10 max-h-60 overflow-y-auto divide-y divide-gray-50">
+            <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-150 rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto divide-y divide-gray-100">
               {searchResults.map((user) => (
                 <button
                   key={user.id}
@@ -124,13 +124,13 @@ export default function UserRoleAssignment({ roles, userRoles, onRefresh, caller
                   className="w-full text-left px-4 py-3 hover:bg-slate-50 flex items-center gap-3 transition-colors border-none bg-transparent outline-none cursor-pointer"
                 >
                   {user.avatar_url ? (
-                    <img 
-                      src={user.avatar_url} 
-                      alt="" 
-                      className="w-8 h-8 rounded-full border border-gray-200 object-cover" 
+                    <img
+                      src={user.avatar_url}
+                      alt=""
+                      className="w-8 h-8 rounded-full border border-gray-200 object-cover shrink-0"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-600">
+                    <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-600 shrink-0">
                       {user.name?.charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -147,7 +147,7 @@ export default function UserRoleAssignment({ roles, userRoles, onRefresh, caller
           )}
 
           {searchQuery.trim().length >= 2 && searchResults.length === 0 && !searchLoading && (
-            <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl p-4 text-center text-xs text-gray-400 font-medium z-10">
+            <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-150 rounded-xl shadow-xl p-4 text-center text-xs text-gray-400 font-medium z-20">
               No users found matching your search.
             </div>
           )}
@@ -167,33 +167,33 @@ export default function UserRoleAssignment({ roles, userRoles, onRefresh, caller
       )}
 
       {/* Admin users table */}
-      <div className="bg-white border border-gray-150 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-5 sm:p-6 border-b border-gray-150 flex flex-col gap-3">
+      <div className="bg-white border border-gray-150 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+        <div className="p-4 sm:p-6 border-b border-gray-150 flex flex-col gap-3">
           <div>
-            <h3 className="text-sm font-bold text-[#0e2a4d]">Active Platform Administrators</h3>
-            <p className="text-xs text-gray-500 font-medium mt-1">Currently active administrative accounts and roles.</p>
+            <h3 className="text-sm sm:text-base font-bold text-[#0e2a4d]">Active Platform Administrators</h3>
+            <p className="text-xs text-gray-500 font-medium mt-1 leading-relaxed">Currently active administrative accounts and roles.</p>
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-100 w-fit">
-            <Info size={12} className="shrink-0" />
+          <div className="flex items-center gap-2 text-xs font-semibold text-blue-700 bg-blue-50/80 px-3 py-2 rounded-xl border border-blue-100/80 w-fit max-w-full leading-normal">
+            <Info size={14} className="shrink-0 text-blue-600" />
             <span>Users may have multiple active roles. Effective permissions are combined from all active roles.</span>
           </div>
         </div>
 
         {userRoles.length === 0 ? (
-          <div className="text-center py-16 px-6 text-sm text-gray-500 font-medium bg-slate-50/20">
+          <div className="text-center py-16 px-4 sm:px-6 text-sm text-gray-500 font-medium bg-slate-50/20">
             No active platform administrators assigned.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-xs text-gray-500 font-medium">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full min-w-[780px] border-collapse text-left text-xs text-gray-500 font-medium">
               <thead>
-                <tr className="bg-slate-50/50 border-b border-gray-100 text-gray-400 font-bold uppercase text-[9px] tracking-wider">
-                  <th className="px-6 py-3.5">Administrator</th>
-                  <th className="px-6 py-3.5">Assigned Role</th>
-                  <th className="px-6 py-3.5">Reason / Notes</th>
-                  <th className="px-6 py-3.5">Assigned By</th>
-                  <th className="px-6 py-3.5">Date</th>
-                  <th className="px-6 py-3.5 text-center">Actions</th>
+                <tr className="bg-slate-50/70 border-b border-gray-150 text-gray-400 font-bold uppercase text-[9px] tracking-wider">
+                  <th className="pl-4 sm:pl-6 pr-4 py-3.5 text-left">Administrator</th>
+                  <th className="px-4 py-3.5 text-left">Assigned Role</th>
+                  <th className="px-4 py-3.5 text-left">Reason / Notes</th>
+                  <th className="px-4 py-3.5 text-left">Assigned By</th>
+                  <th className="px-4 py-3.5 text-left">Date</th>
+                  <th className="pl-4 pr-4 sm:pr-6 py-3.5 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -202,55 +202,57 @@ export default function UserRoleAssignment({ roles, userRoles, onRefresh, caller
                   const isSuper = ur.platform_admin_roles?.role_key === 'super_admin';
                   
                   return (
-                    <tr key={ur.id} className="hover:bg-slate-50/30 transition-colors">
+                    <tr key={ur.id} className="hover:bg-slate-50/40 transition-colors">
                       {/* Admin Profile */}
-                      <td className="px-6 py-4 flex items-center gap-3">
-                        {ur.profile?.avatar_url ? (
-                          <img
-                            src={ur.profile.avatar_url}
-                            alt=""
-                            className="w-7 h-7 rounded-full border border-gray-100 object-cover"
-                          />
-                        ) : (
-                          <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500">
-                            {ur.profile?.name?.charAt(0).toUpperCase()}
+                      <td className="pl-4 sm:pl-6 pr-4 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          {ur.profile?.avatar_url ? (
+                            <img
+                              src={ur.profile.avatar_url}
+                              alt=""
+                              className="w-8 h-8 rounded-full border border-gray-200 object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 shrink-0">
+                              {ur.profile?.name?.charAt(0).toUpperCase() || '?'}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-bold text-gray-900 text-xs sm:text-sm">{ur.profile?.name || 'Unknown'}</p>
+                            <p className="text-[11px] text-gray-400 truncate">{ur.profile?.email}</p>
                           </div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="font-bold text-gray-800">{ur.profile?.name}</p>
-                          <p className="text-[10px] text-gray-400">{ur.profile?.email}</p>
                         </div>
                       </td>
 
                       {/* Assigned Role */}
-                      <td className="px-6 py-4">
-                        <span className={`inline-block px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md font-bold text-[10px] tracking-wide ${
                           isSuper 
-                            ? 'bg-rose-50 border border-rose-100 text-rose-700'
+                            ? 'bg-rose-50 border border-rose-200/80 text-rose-700'
                             : ur.platform_admin_roles?.role_key === 'finance_admin'
-                            ? 'bg-cyan-50 border border-cyan-100 text-cyan-700'
+                            ? 'bg-cyan-50 border border-cyan-200/80 text-cyan-700'
                             : ur.platform_admin_roles?.role_key === 'wallet_admin'
-                            ? 'bg-amber-50 border border-amber-100 text-amber-700'
-                            : 'bg-slate-100 border border-slate-250 text-slate-700'
+                            ? 'bg-amber-50 border border-amber-200/80 text-amber-700'
+                            : 'bg-slate-100 border border-slate-200 text-slate-700'
                         }`}>
                           {ur.platform_admin_roles?.role_name}
                         </span>
                       </td>
 
                       {/* Assigned Reason */}
-                      <td className="px-6 py-4 max-w-xs">
-                        <p className="truncate text-gray-600 font-medium" title={ur.assigned_reason}>
+                      <td className="px-4 py-4 max-w-xs">
+                        <p className="truncate text-gray-600 font-medium text-xs" title={ur.assigned_reason}>
                           {ur.assigned_reason || 'No details provided.'}
                         </p>
                       </td>
 
                       {/* Assigned By */}
-                      <td className="px-6 py-4 text-gray-600 font-medium">
+                      <td className="px-4 py-4 text-gray-600 font-medium whitespace-nowrap text-xs">
                         {ur.assignor?.name || 'System'}
                       </td>
 
                       {/* Assignment Date */}
-                      <td className="px-6 py-4 text-gray-400">
+                      <td className="px-4 py-4 text-gray-400 whitespace-nowrap text-xs">
                         {new Date(ur.created_at).toLocaleDateString(undefined, { 
                           year: 'numeric', 
                           month: 'short', 
@@ -259,11 +261,11 @@ export default function UserRoleAssignment({ roles, userRoles, onRefresh, caller
                       </td>
 
                       {/* Actions */}
-                      <td className="px-6 py-4 text-center">
+                      <td className="pl-4 pr-4 sm:pr-6 py-4 text-center whitespace-nowrap">
                         <button
                           onClick={() => handleRevokeRole(ur.id)}
                           disabled={actionLoadingId === ur.id || isSelf}
-                          className={`p-1.5 rounded-lg border-none bg-transparent transition-colors cursor-pointer inline-flex items-center justify-center outline-none ${
+                          className={`p-2 rounded-lg border-none bg-transparent transition-colors cursor-pointer inline-flex items-center justify-center outline-none ${
                             isSelf
                               ? 'text-gray-250 cursor-not-allowed'
                               : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
@@ -271,9 +273,9 @@ export default function UserRoleAssignment({ roles, userRoles, onRefresh, caller
                           title={isSelf ? "Self-lockout protection: You cannot revoke your own role." : "Revoke platform role"}
                         >
                           {actionLoadingId === ur.id ? (
-                            <Loader2 size={15} className="animate-spin" />
+                            <Loader2 size={16} className="animate-spin" />
                           ) : (
-                            <Trash2 size={15} />
+                            <Trash2 size={16} />
                           )}
                         </button>
                       </td>

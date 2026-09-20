@@ -92,24 +92,24 @@ export default function AdminRolesPage() {
   }
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 py-8 font-sans w-full">
+    <div className="max-w-[1280px] mx-auto px-4 py-8 pb-[calc(var(--mobile-nav-height,72px)+env(safe-area-inset-bottom)+32px)] md:pb-8 font-sans w-full min-w-0">
       {/* Back to Admin Dashboard Button */}
       <button
         onClick={() => router.push('/admin')}
-        className="flex items-center gap-2 text-gray-500 hover:text-[#002b4e] transition-colors mb-6 text-sm font-bold cursor-pointer bg-none border-none outline-none"
+        className="inline-flex items-center gap-2 text-gray-500 hover:text-[#0e2a4d] transition-colors mb-6 text-xs sm:text-sm font-bold cursor-pointer bg-none border-none outline-none p-0"
       >
         <ArrowLeft size={16} /> Back to Admin Dashboard
       </button>
 
       {/* Page Header */}
-      <div className="bg-white border border-gray-150 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div className="bg-white border border-gray-150 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div className="flex items-start gap-4">
           <div className="p-3 bg-blue-50 text-blue-950 rounded-xl flex items-center justify-center shrink-0">
-            <ShieldCheck size={24} className="text-blue-900" />
+            <ShieldCheck size={24} className="text-[#0e2a4d]" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-[#0e2a4d] leading-tight">Platform Roles & Access Control</h1>
-            <p className="text-sm text-gray-500 mt-1 font-medium">
+            <p className="text-xs sm:text-sm text-gray-500 mt-1 font-medium">
               Manage platform administrative roles, assign roles to users, and control access permissions.
             </p>
           </div>
@@ -117,7 +117,7 @@ export default function AdminRolesPage() {
         <div className="shrink-0 flex items-center justify-end">
           <button
             onClick={() => router.push('/admin/audit-logs')}
-            className="flex items-center gap-2 bg-[#0e2a4d] hover:bg-blue-900 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm border-none cursor-pointer"
+            className="flex items-center gap-2 bg-[#0e2a4d] hover:bg-blue-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-colors shadow-sm border-none cursor-pointer"
           >
             <ShieldCheck size={14} />
             View Audit Logs
@@ -131,7 +131,7 @@ export default function AdminRolesPage() {
           onClick={() => setActiveTab('users')}
           className={`pb-3 text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex items-center gap-2 bg-transparent border-t-0 border-x-0 ${
             activeTab === 'users'
-              ? 'border-blue-900 text-blue-900 border-solid'
+              ? 'border-[#0e2a4d] text-[#0e2a4d] border-solid'
               : 'border-transparent text-gray-400 hover:text-gray-600'
           }`}
         >
@@ -142,7 +142,7 @@ export default function AdminRolesPage() {
           onClick={() => setActiveTab('matrix')}
           className={`pb-3 text-sm font-bold transition-all border-b-2 outline-none focus:outline-none whitespace-nowrap cursor-pointer flex items-center gap-2 bg-transparent border-t-0 border-x-0 ${
             activeTab === 'matrix'
-              ? 'border-blue-900 text-blue-900 border-solid'
+              ? 'border-[#0e2a4d] text-[#0e2a4d] border-solid'
               : 'border-transparent text-gray-400 hover:text-gray-600'
           }`}
         >
@@ -152,10 +152,10 @@ export default function AdminRolesPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="mt-6">
+      <div className="w-full min-w-0">
         {loading ? (
           <div className="flex justify-center items-center py-12">
-            <Loader2 size={28} className="animate-spin text-blue-900" />
+            <Loader2 size={28} className="animate-spin text-[#0e2a4d]" />
           </div>
         ) : activeTab === 'users' ? (
           <UserRoleAssignment
