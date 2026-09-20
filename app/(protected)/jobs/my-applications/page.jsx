@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useProfile } from '@/app/context/ProfileContext';
 import { createClient } from '@/lib/supabase';
-import { Briefcase, MapPin, Calendar, Building2, Loader2, ExternalLink, Building, AlertTriangle, Coins, ChevronDown, ChevronUp } from 'lucide-react';
+import { Briefcase, MapPin, Calendar, Building2, Loader2, ExternalLink, Building, AlertTriangle, Coins, ChevronDown, ChevronUp, History } from 'lucide-react';
 import { getCandidateAcceptanceFeePreview, getUserWalletBalance, acceptCandidateJobOffer } from '@/app/actions/mcreditsJobs';
 import { cancelJobOrderByCandidate } from '@/app/actions/jobOrders';
 import { markWorkCompletedByApplicant, confirmPaymentReceivedByApplicant } from '@/app/actions/engagementLifecycle';
@@ -567,7 +567,7 @@ export default function MyApplicationsPage() {
     }
 
     return (
-      <div className="flex w-full overflow-hidden rounded-lg border border-gray-200 mt-5 bg-gray-50 h-9 sm:h-10">
+      <div className="flex w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50 h-9 sm:h-10">
         {steps.map((step, idx) => {
           let displayLabel = step;
           const isActive = idx === currentIndex && !isFailed;
@@ -851,12 +851,12 @@ export default function MyApplicationsPage() {
             return (
               <div
                 key={app.id}
-                className="bg-white border border-gray-200 rounded-xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all flex flex-col"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden"
               >
-                {/* Top Section: Job Info & Status Badge */}
-                <div className="flex flex-row justify-between items-start gap-3 w-full">
-                  <div className="flex items-start gap-3 min-w-0 flex-1">
-                    {/* Logo Container */}
+                {/* Dark Navy Job Identity Header Band */}
+                <div className="bg-[#0e2a4d] p-4 sm:p-5 sm:px-6 flex flex-row justify-between items-start gap-3 w-full">
+                  <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                    {/* Logo / Fallback Tile */}
                     <div className="shrink-0">
                       {(() => {
                         const posterCompany = typeof job.company === 'object' ? job.company : null;
@@ -873,16 +873,18 @@ export default function MyApplicationsPage() {
                             ? job.company
                             : posterCompany?.name || job.company_name || 'Company';
                           return (
-                            <img
-                              src={displayLogoUrl}
-                              alt={displayName}
-                              className="w-10 h-10 sm:w-12 sm:h-12 rounded-md object-cover border border-gray-200"
-                            />
+                            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white p-1 flex items-center justify-center border border-white/20 shadow-3xs">
+                              <img
+                                src={displayLogoUrl}
+                                alt={displayName}
+                                className="w-full h-full object-contain rounded-lg"
+                              />
+                            </div>
                           );
                         } else {
                           return (
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-md bg-blue-50 text-blue-900 flex items-center justify-center border border-blue-100">
-                              <Building size={20} className="sm:w-6 sm:h-6" />
+                            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white text-[#0e2a4d] flex items-center justify-center border border-white/20 shadow-3xs">
+                              <Building size={22} className="sm:w-6 sm:h-6 text-[#0e2a4d]" />
                             </div>
                           );
                         }
@@ -890,34 +892,34 @@ export default function MyApplicationsPage() {
                     </div>
 
                     {/* Text Block */}
-                    <div className="min-w-0">
-                      <h3 className="text-base sm:text-lg font-bold text-blue-900 truncate">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-base sm:text-lg font-bold text-white leading-snug truncate">
                         {job.title || 'Position Unspecified'}
                       </h3>
 
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5 text-xs sm:text-sm font-medium text-gray-600">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs sm:text-sm font-medium text-blue-100/90">
                         {(() => {
                           const displayName = typeof job.company === 'string'
                             ? job.company
                             : job.company?.name || job.poster?.name || job.company_name || 'Unknown Company';
 
                           return (
-                            <span className="flex items-center gap-1">
-                              <Building2 size={12} className="text-gray-400 shrink-0 sm:w-3.5 sm:h-3.5" />
+                            <span className="flex items-center gap-1.5">
+                              <Building2 size={13} className="text-blue-300/80 shrink-0" />
                               {displayName}
                             </span>
                           );
                         })()}
                         {job.location && (
-                          <span className="flex items-center gap-1">
-                            <MapPin size={12} className="text-gray-400 shrink-0 sm:w-3.5 sm:h-3.5" />
+                          <span className="flex items-center gap-1.5">
+                            <MapPin size={13} className="text-blue-300/80 shrink-0" />
                             {job.location}
                           </span>
                         )}
                       </div>
 
-                      <p className="text-[11px] sm:text-xs text-gray-400 mt-1 flex items-center gap-1">
-                        <Calendar size={12} />
+                      <p className="text-[11px] sm:text-xs text-blue-200/70 mt-1 flex items-center gap-1.5">
+                        <Calendar size={12} className="text-blue-300/70 shrink-0" />
                         Applied {getFormattedDate(app.applied_at)}
                       </p>
                     </div>
@@ -931,31 +933,31 @@ export default function MyApplicationsPage() {
                       switch (order.status) {
                         case 'Active':
                           return (
-                            <span className="shrink-0 inline-block text-[10px] sm:text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full whitespace-nowrap">
+                            <span className="shrink-0 inline-block text-[11px] sm:text-xs font-semibold text-emerald-900 bg-emerald-100 border border-emerald-300/60 px-2.5 py-0.5 rounded-full whitespace-nowrap shadow-3xs">
                               Active Engagement
                             </span>
                           );
                         case 'Work Completed by Applicant':
                           return (
-                            <span className="shrink-0 inline-block text-[10px] sm:text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-full whitespace-nowrap">
+                            <span className="shrink-0 inline-block text-[11px] sm:text-xs font-semibold text-blue-900 bg-blue-100 border border-blue-300/60 px-2.5 py-0.5 rounded-full whitespace-nowrap shadow-3xs">
                               Waiting for Company
                             </span>
                           );
                         case 'Completion Confirmed by Company':
                           return (
-                            <span className="shrink-0 inline-block text-[10px] sm:text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full whitespace-nowrap">
+                            <span className="shrink-0 inline-block text-[11px] sm:text-xs font-semibold text-emerald-900 bg-emerald-100 border border-emerald-300/60 px-2.5 py-0.5 rounded-full whitespace-nowrap shadow-3xs">
                               Completion Confirmed
                             </span>
                           );
                         case 'Payment Confirmed by Applicant':
                           return (
-                            <span className="shrink-0 inline-block text-[10px] sm:text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full whitespace-nowrap">
+                            <span className="shrink-0 inline-block text-[11px] sm:text-xs font-semibold text-emerald-900 bg-emerald-100 border border-emerald-300/60 px-2.5 py-0.5 rounded-full whitespace-nowrap shadow-3xs">
                               Payment Confirmed
                             </span>
                           );
                         case 'Completed':
                           return (
-                            <span className="shrink-0 inline-block text-[10px] sm:text-xs font-semibold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-full whitespace-nowrap">
+                            <span className="shrink-0 inline-block text-[11px] sm:text-xs font-semibold text-emerald-900 bg-emerald-100 border border-emerald-300/60 px-2.5 py-0.5 rounded-full whitespace-nowrap shadow-3xs">
                               Completed
                             </span>
                           );
@@ -967,12 +969,14 @@ export default function MyApplicationsPage() {
                   })()}
                 </div>
 
-                {/* Horizontal Stepper */}
-                {(() => {
-                  const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
-                  const order = orderArray[0];
-                  return renderStepper(app.status, order?.status);
-                })()}
+                {/* Card Body */}
+                <div className="p-4 sm:p-6 pt-3.5 sm:pt-4 flex flex-col">
+                  {/* Horizontal Stepper */}
+                  {(() => {
+                    const orderArray = Array.isArray(app.job_orders) ? app.job_orders : [app.job_orders].filter(Boolean);
+                    const order = orderArray[0];
+                    return renderStepper(app.status, order?.status);
+                  })()}
 
                 {/* Advance Payment requests */}
                 {job.advance_payment_enabled && (
@@ -1185,24 +1189,27 @@ export default function MyApplicationsPage() {
                   </div>
                 )}
 
-                {/* Engagement Timeline */}
-                <div className="mt-6 pt-6 border-t border-slate-100 text-left">
+                {/* Light Blue Engagement Timeline Accordion */}
+                <div className="mt-5 rounded-lg border border-blue-200 bg-[#edf5fd] overflow-hidden text-left shadow-3xs">
                   <button
                     type="button"
                     onClick={() => toggleTimeline(app.id)}
                     aria-expanded={isTimelineExpanded}
                     aria-controls={timelineId}
-                    className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left text-xs font-bold uppercase tracking-wider text-gray-500 transition-colors hover:bg-slate-50 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+                    className="flex min-h-[44px] w-full items-center justify-between gap-3 px-3.5 py-2.5 sm:px-4 text-left text-xs font-bold uppercase tracking-wider text-[#0e2a4d] transition-colors hover:bg-blue-100/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 cursor-pointer"
                   >
-                    <span>Engagement Timeline</span>
-                    {isTimelineExpanded ? (
-                      <ChevronUp size={18} className="shrink-0" aria-hidden="true" />
-                    ) : (
-                      <ChevronDown size={18} className="shrink-0" aria-hidden="true" />
-                    )}
+                    <div className="flex items-center gap-2 min-w-0">
+                      <History size={15} className="text-[#0e2a4d] shrink-0" aria-hidden="true" />
+                      <span className="truncate">Engagement Timeline</span>
+                    </div>
+                    <ChevronDown
+                      size={16}
+                      className={`shrink-0 text-[#0e2a4d] transition-transform duration-200 ${isTimelineExpanded ? 'rotate-180' : ''}`}
+                      aria-hidden="true"
+                    />
                   </button>
                   {isTimelineExpanded && (
-                    <div id={timelineId}>
+                    <div id={timelineId} className="border-t border-blue-200/80 bg-white/70 p-4 sm:p-5">
                       <EngagementTimeline
                         jobOrder={Array.isArray(app.job_orders) ? app.job_orders[0] : app.job_orders}
                         application={app}
@@ -1332,6 +1339,7 @@ export default function MyApplicationsPage() {
                   </div>
                 </div>
               </div>
+            </div>
             );
           })}
         </div>

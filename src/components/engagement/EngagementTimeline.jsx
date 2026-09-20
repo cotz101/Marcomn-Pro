@@ -195,8 +195,8 @@ export default function EngagementTimeline({ jobOrder, application = null }) {
 
   if (events.length === 0) {
     return (
-      <div className="text-center py-4 text-xs text-gray-400 font-medium">
-        No timeline events available yet.
+      <div className="text-center py-3 text-xs text-gray-400 font-medium italic">
+        No timeline records.
       </div>
     );
   }
